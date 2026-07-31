@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DayKeeper — understanding sketch (G1, live)</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background: #e9eef4; color: #1f2937; }
+
+  /* ---------- top toolbar ---------- */
+  .toolbar { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 10px; font-size: 13px; color: #6b7280; flex-wrap: wrap; }
+  .toolbar .name { font-weight: 700; color: #374151; }
+  .toolbar button { border: 1px solid #cbd5e1; background: #fff; padding: 6px 14px; border-radius: 999px; font-size: 13px; cursor: pointer; color: #475569; }
+  .toolbar button.on { background: #1b74c5; border-color: #1b74c5; color: #fff; }
+
+  /* ---------- phone frame ---------- */
+  .phone-wrap { display: flex; justify-content: center; padding-bottom: 30px; }
+  .phone { width: 400px; background: #f7f9fb; border: 10px solid #26303b; border-radius: 34px; overflow: hidden; position: relative; min-height: 800px; box-shadow: 0 18px 50px rgba(30,41,59,.25); }
+  .app { padding: 22px 18px 96px 18px; }
+
+  h1 { font-size: 23px; letter-spacing: -.2px; margin-bottom: 3px; }
+  .sub { color: #64748b; font-size: 14.5px; margin-bottom: 18px; }
+
+  .card { background: #fff; border-radius: 16px; padding: 16px; margin-bottom: 14px; box-shadow: 0 1px 3px rgba(15,23,42,.06); }
+  .card h2 { font-size: 12.5px; text-transform: uppercase; letter-spacing: .7px; color: #94a3b8; margin-bottom: 12px; }
+
+  /* home CTA */
+  .review-cta { background: #1b74c5; color: #fff; border-radius: 16px; padding: 18px; margin-bottom: 14px; cursor: pointer; box-shadow: 0 6px 16px rgba(27,116,197,.35); }
+  .review-cta.dim { background: #eef2f7; color: #94a3b8; box-shadow: none; }
+  .review-cta.dim .small { color: #94a3b8; }
+  .review-cta .big { font-size: 18px; font-weight: 700; margin-bottom: 3px; }
+  .review-cta .small { font-size: 13.5px; opacity: .88; }
+
+  /* task rows (confirmed things) */
+  .row { display: flex; align-items: center; gap: 12px; padding: 12px 2px; border-top: 1px solid #f1f5f9; font-size: 16px; }
+  .row:first-of-type { border-top: 0; }
+  .dot { width: 26px; height: 26px; border-radius: 50%; border: 2px solid #cbd5e1; flex: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: transparent; font-size: 15px; }
+  .row.done .dot { background: #1b74c5; border-color: #1b74c5; color: #fff; }
+  .row.done .txt { text-decoration: line-through; color: #94a3b8; }
+  .row.done .when { color: #1b74c5; font-weight: 600; }
+  .row .txt { flex: 1; min-width: 0; }
+  .row .when { color: #94a3b8; font-size: 13.5px; }
+  .doc-mark { font-size: 13px; color: #b6c2d1; flex: none; }
+
+  /* queue rows (posted letters) */
+  .item { display: flex; align-items: center; gap: 11px; padding: 11px 2px; border-top: 1px solid #f1f5f9; font-size: 15px; }
+  .item:first-of-type { border-top: 0; }
+  .thumb { width: 34px; height: 44px; border-radius: 5px; background: #e9eef4; border: 1px solid #d3dce6; flex: none; }
+  .item .txt { flex: 1; min-width: 0; }
+  .item .st { font-size: 12.5px; margin-top: 2px; }
+  .item.reading .txt { color: #94a3b8; }
+  .item.reading .st { color: #94a3b8; }
+  .item.reading .thumb { animation: pulse 1.5s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .45; } }
+  .item.ready { cursor: pointer; }
+  .item.ready .st { color: #b45309; font-weight: 600; }
+  .item.failed .st { color: #b42318; font-weight: 600; }
+  .item .go { font-size: 13px; font-weight: 700; color: #1b74c5; flex: none; }
+  .item .retake { font-size: 12.5px; font-weight: 700; color: #b42318; flex: none; cursor: pointer; }
+
+  /* scan */
+  .cam { border: 2px dashed #aecbe5; background: #f2f8fd; border-radius: 16px; padding: 34px 16px; text-align: center; color: #1b74c5; margin-bottom: 14px; cursor: pointer; }
+  .cam .ico { font-size: 32px; margin-bottom: 6px; }
+  .cam .t { font-size: 17px; font-weight: 700; }
+  .cam .d { font-size: 13.5px; color: #64748b; margin-top: 4px; }
+  .pages { display: flex; gap: 10px; flex-wrap: wrap; }
+  .pg { width: 74px; height: 100px; background: #e9eef4; border: 1px solid #d3dce6; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 12.5px; }
+  .pg.add { border: 2px dashed #aecbe5; background: #f2f8fd; color: #1b74c5; font-weight: 600; cursor: pointer; }
+  .btn { display: block; width: 100%; background: #1b74c5; color: #fff; border: none; padding: 15px; border-radius: 13px; font-size: 16.5px; font-weight: 700; cursor: pointer; margin-top: 4px; }
+  .btn.off { opacity: .4; cursor: default; }
+  .btn.ghost { background: none; color: #64748b; font-weight: 500; font-size: 14.5px; padding: 10px; }
+  .tiny { font-size: 13px; color: #94a3b8; margin-top: 10px; line-height: 1.45; }
+
+  /* review */
+  .fact { display: flex; align-items: baseline; gap: 10px; padding: 11px 2px; border-top: 1px solid #f1f5f9; }
+  .fact:first-of-type { border-top: 0; }
+  .fact .k { color: #94a3b8; font-size: 13px; width: 84px; flex: none; }
+  .fact .v { font-size: 16.5px; font-weight: 600; }
+  .fact.warn { background: #fff8e8; border-radius: 10px; padding: 11px 10px; border-top: 0; margin: 4px -4px; }
+  .fact.warn input { font-size: 17px; font-weight: 700; border: 2px solid #f0b429; border-radius: 9px; padding: 7px 10px; width: 150px; background: #fff; }
+  .warn-hint { font-size: 13px; color: #9a6b00; margin-top: 6px; }
+  .plan-row { display: flex; align-items: center; gap: 11px; padding: 11px 2px; border-top: 1px solid #f1f5f9; font-size: 15.5px; }
+  .plan-row:first-of-type { border-top: 0; }
+  .plan-row .ico { flex: none; font-size: 17px; }
+  .plan-hold { background: #fff8e8; border-radius: 10px; padding: 11px 12px; font-size: 13.5px; color: #9a6b00; margin-top: 10px; line-height: 1.45; }
+
+  /* calendar */
+  .cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+  .cal .dow { text-align: center; color: #94a3b8; font-size: 11px; padding: 4px 0; }
+  .cal .d { text-align: center; padding: 7px 0 4px; font-size: 14px; color: #475569; border-radius: 10px; min-height: 34px; }
+  .cal .d .tag { display: block; font-size: 10px; background: #f3e8cf; color: #7a5c14; border-radius: 3px; padding: 1px 3px; margin: 3px 2px 0; line-height: 1.3; }
+  .agenda-day { font-size: 13px; color: #94a3b8; margin: 14px 0 4px; font-weight: 600; }
+  .see-letter { color: #1b74c5; font-size: 13.5px; text-decoration: none; font-weight: 600; }
+
+  /* toast (batched notification) */
+  .toast { position: absolute; left: 14px; right: 14px; top: 14px; background: #1f2937; color: #fff; border-radius: 12px; padding: 12px 14px; font-size: 13.5px; box-shadow: 0 8px 24px rgba(0,0,0,.3); opacity: 0; transform: translateY(-14px); transition: all .35s; cursor: pointer; z-index: 5; }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast b { display: block; font-size: 14.5px; margin-bottom: 2px; }
+  .toast .env { font-size: 11px; opacity: .6; text-transform: uppercase; letter-spacing: .6px; margin-bottom: 5px; }
+
+  /* bottom nav */
+  .nav { position: absolute; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid #e5eaf0; display: flex; justify-content: space-around; align-items: center; padding: 8px 10px 14px; }
+  .nav button { background: none; border: none; font-size: 12px; color: #94a3b8; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 3px; width: 76px; position: relative; }
+  .nav button .i { font-size: 21px; }
+  .nav button.on { color: #1b74c5; font-weight: 700; }
+  .nav .scanbtn { background: #1b74c5; color: #fff; width: 58px; height: 58px; border-radius: 50%; font-size: 25px; display: flex; align-items: center; justify-content: center; margin-top: -26px; box-shadow: 0 6px 14px rgba(27,116,197,.4); border: 4px solid #f7f9fb; }
+  .badge { position: absolute; top: -4px; right: 14px; background: #b45309; color: #fff; font-size: 11px; font-weight: 700; border-radius: 999px; padding: 1px 6px; }
+
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* ---------- admin (desktop view) ---------- */
+  .admin-wrap { display: none; max-width: 960px; margin: 0 auto 40px; padding: 0 20px; }
+  .admin-wrap.active { display: block; }
+  .stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 14px; }
+  .stat { background: #fff; border-radius: 14px; padding: 18px; text-align: center; box-shadow: 0 1px 3px rgba(15,23,42,.06); }
+  .stat .v { font-size: 26px; color: #1f2937; font-weight: 700; }
+  .stat .v.warn { color: #b45309; }
+  .stat .v.ok { color: #15803d; }
+  .stat .k { font-size: 13px; color: #94a3b8; margin-top: 4px; }
+  .admin-wrap table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .admin-wrap th { text-align: left; font-size: 11.5px; text-transform: uppercase; letter-spacing: .5px; color: #94a3b8; padding: 6px 8px; border-bottom: 1px solid #e5eaf0; }
+  .admin-wrap td { padding: 10px 8px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+  .admin-wrap tr:last-child td { border-bottom: 0; }
+  .dim2 { color: #94a3b8; font-size: 13px; }
+  .chip { display: inline-block; font-size: 11.5px; padding: 3px 9px; border-radius: 999px; font-weight: 600; }
+  .chip.green { background: #e8f5ec; color: #15803d; }
+  .chip.amber { background: #fff4d6; color: #9a6b00; }
+  .chip.grey { background: #eef1f4; color: #64748b; }
+  .act { color: #1b74c5; font-weight: 600; font-size: 13px; text-decoration: none; cursor: pointer; }
+  .act.danger { color: #b42318; }
+  .search { width: 100%; border: 1px solid #d6dee8; border-radius: 9px; padding: 9px 12px; font-size: 14px; margin-bottom: 10px; background: #fafbfc; }
+  .log { font-family: Consolas, monospace; font-size: 12.5px; line-height: 1.9; color: #475569; }
+  .log .t { color: #94a3b8; }
+  .log .err { color: #b42318; }
+  .qhook { border: 2px dashed #cbd5e1; background: #f8fafc; border-radius: 14px; padding: 22px; color: #64748b; font-size: 15px; line-height: 1.7; }
+  .qhook b { color: #475569; }
+
+  .disclaimer { text-align: center; font-size: 12px; color: #94a3b8; padding-bottom: 26px; }
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <span class="name">DayKeeper</span> <span>understanding sketch · G1 · live flow</span>
+  <button class="on" id="tb-phone">Phone</button>
+  <button id="tb-admin">Admin (desktop)</button>
+  <button id="tb-reset" title="restart the demo">↺ Restart</button>
+</div>
+
+<!-- ================= PHONE ================= -->
+<div class="phone-wrap" id="phone-view">
+  <div class="phone">
+
+    <div class="toast" id="toast" onclick="go('home'); this.classList.remove('show')">
+      <div class="env">Email · DayKeeper</div>
+      <b id="toast-big">Letters are ready to check</b>
+      <span id="toast-small">One message, not one per letter.</span>
+    </div>
+
+    <div class="app">
+
+      <!-- HOME -->
+      <section class="screen active" id="s-home">
+        <h1>Good morning, Margaret</h1>
+        <div class="sub">Here's what needs you today.</div>
+
+        <div class="review-cta dim" id="home-cta" onclick="ctaTap()">
+          <div class="big" id="cta-big">Nothing to check right now</div>
+          <div class="small" id="cta-small">We'll tell you when something's ready.</div>
+        </div>
+
+        <div class="card" id="check-card" style="display:none">
+          <h2>To check</h2>
+          <div id="check-list"></div>
+        </div>
+
+        <div class="card">
+          <h2>Coming up</h2>
+          <div id="task-list-home"></div>
+        </div>
+      </section>
+
+      <!-- SCAN -->
+      <section class="screen" id="s-scan">
+        <h1>Take a photo</h1>
+        <div class="sub">A letter, a bill, a doctor's note: anything with a date in it.</div>
+
+        <div class="cam" onclick="addPage()">
+          <div class="ico">📷</div>
+          <div class="t">Tap to photograph</div>
+          <div class="d" id="cam-d">the camera stays open, keep going</div>
+        </div>
+
+        <div class="card" id="pages-card" style="display:none">
+          <h2 id="pages-title">This one</h2>
+          <div class="pages" id="pages-list"></div>
+        </div>
+
+        <button class="btn off" id="read-btn" onclick="postLetter()">Read it</button>
+        <div class="tiny">If a photo is too blurry to read, DayKeeper asks you to retake it straight away, and tells you why.</div>
+
+        <div class="card" id="posted-card" style="display:none">
+          <h2>Posted just now</h2>
+          <div id="posted-list"></div>
+        </div>
+      </section>
+
+      <!-- REVIEW -->
+      <section class="screen" id="s-review">
+        <h1>Check what we found</h1>
+        <div class="sub" id="review-sub">What we read, and what we'll do about it.</div>
+
+        <div class="card">
+          <h2>What it says</h2>
+          <div id="facts"></div>
+        </div>
+
+        <div class="card">
+          <h2>What DayKeeper will do</h2>
+          <div id="plan"></div>
+          <div class="plan-hold">Nothing happens until you say so, and never from a date you haven't checked.</div>
+        </div>
+
+        <button class="btn" onclick="confirmItem()">Looks right, save it</button>
+        <button class="btn ghost" onclick="go('home')">Not now</button>
+      </section>
+
+      <!-- CALENDAR -->
+      <section class="screen" id="s-calendar">
+        <h1>August 2026</h1>
+        <div class="sub">Everything you've confirmed, in one place.</div>
+
+        <div class="card">
+          <div class="cal" id="cal-grid"></div>
+          <div id="agenda"></div>
+        </div>
+
+        <div class="card">
+          <h2>Tasks</h2>
+          <div id="task-list-cal"></div>
+        </div>
+      </section>
+
+      <!-- bottom nav -->
+      <div class="nav">
+        <button data-s="home" class="on"><span class="i">🏠</span>Home<span class="badge" id="nav-badge" style="display:none">0</span></button>
+        <button class="scanbtn" data-s="scan">📷</button>
+        <button data-s="calendar"><span class="i">📅</span>Calendar</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ================= ADMIN (desktop) ================= -->
+<div class="admin-wrap" id="admin-view">
+  <h1 style="margin-bottom:4px">Admin dashboard</h1>
+  <div class="sub">The platform operator's view: accounts and system health. A different person, a different device.</div>
+
+  <div class="stat-row">
+    <div class="stat"><div class="v">148</div><div class="k">registered users</div></div>
+    <div class="stat"><div class="v">2,310</div><div class="k">documents processed</div></div>
+    <div class="stat"><div class="v warn">4.2%</div><div class="k">extraction failures, 7 days</div></div>
+    <div class="stat"><div class="v ok">99.7%</div><div class="k">uptime, 30 days</div></div>
+  </div>
+
+  <div class="card">
+    <h2>Accounts</h2>
+    <input class="search" placeholder="Search name or email…">
+    <table>
+      <tr><th>User</th><th>Status</th><th>Last active</th><th>Actions</th></tr>
+      <tr><td>Margaret W. <span class="dim2">margaret.w@…</span></td><td><span class="chip green">active</span></td><td class="dim2">today</td><td><span class="act">reset password</span> · <span class="act danger">deactivate</span></td></tr>
+      <tr><td>John P. <span class="dim2">john.p@…</span></td><td><span class="chip amber">locked out</span></td><td class="dim2">3 days ago</td><td><span class="act">reset password</span> · <span class="act danger">deactivate</span></td></tr>
+      <tr><td>Rosa M. <span class="dim2">rosa.m@…</span></td><td><span class="chip green">active</span></td><td class="dim2">yesterday</td><td><span class="act">reset password</span> · <span class="act danger">deactivate</span></td></tr>
+      <tr><td>Bill T. <span class="dim2">bill.t@…</span></td><td><span class="chip grey">deactivated</span></td><td class="dim2">June</td><td><span class="act">restore</span></td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>System events</h2>
+    <div class="log">
+      <div><span class="t">10:41</span>  extraction retry exhausted, document #4821 <span class="err">(status: extraction_failed)</span></div>
+      <div><span class="t">10:32</span>  account locked after 5 failed logins: john.p@…</div>
+      <div><span class="t">09:58</span>  vision API latency high, p95 = 14s</div>
+      <div><span class="t">09:12</span>  reminder batch sent: 37 reminders, 0 errors</div>
+    </div>
+  </div>
+
+  <div class="qhook">
+    <b>Privacy rule:</b> the operator manages accounts and watches system health. Letter content, extracted values and amounts are never visible on this page.
+  </div>
+</div>
+
+<div class="disclaimer">Wireframe sketch, for discussion. Nothing here is final; every screen is a question.</div>
+
+<script>
+  /* ---------- sample letters, posted in this order ---------- */
+  const LETTERS = [
+    { who: 'AGL Energy', what: 'Electricity bill', delay: 5200,
+      facts: [
+        { k: 'From', v: 'AGL Energy' },
+        { k: 'What to do', v: 'Pay the amount due' },
+        { k: 'Due date', v: '15 Aug 2026', warn: true, hint: '⚠ This was hard to read. Is it right?' },
+        { k: 'Amount', v: '$347.60' },
+        { k: 'Reference', v: '9201 4471 88' }
+      ],
+      plan: [
+        { ico: '🔔', t: 'Remind you: Sat 8 Aug, 9 am' },
+        { ico: '🔔', t: 'Remind you: Fri 14 Aug, 9 am' },
+        { ico: '📅', t: 'On your calendar: due Sat 15 Aug' }
+      ],
+      task: { title: 'Pay AGL electricity bill', when: 'Sat 15 Aug' },
+      marks: [ { d: 8, l: 'reminder' }, { d: 14, l: 'reminder' }, { d: 15, l: 'AGL due' } ],
+      agenda: { day: 'Saturday 15 August', line: 'Pay AGL electricity bill', sub: '$347.60 · ref 9201 4471 88' } },
+
+    { who: 'Medicare', what: 'Claim form', delay: 7000,
+      facts: [
+        { k: 'From', v: 'Services Australia' },
+        { k: 'What to do', v: 'Return the completed form' },
+        { k: 'Due date', v: '22 Aug 2026' },
+        { k: 'Reference', v: 'CLM 30991 442' }
+      ],
+      plan: [
+        { ico: '🔔', t: 'Remind you: Sat 15 Aug, 9 am' },
+        { ico: '🔔', t: 'Remind you: Fri 21 Aug, 9 am' },
+        { ico: '📅', t: 'On your calendar: due Sat 22 Aug' }
+      ],
+      task: { title: 'Return Medicare form', when: 'Sat 22 Aug' },
+      marks: [ { d: 21, l: 'reminder' }, { d: 22, l: 'Medicare' } ],
+      agenda: { day: 'Saturday 22 August', line: 'Return Medicare form', sub: 'ref CLM 30991 442' } },
+
+    { who: 'VicRoads', what: 'Registration renewal', delay: 6200,
+      facts: [
+        { k: 'From', v: 'VicRoads' },
+        { k: 'What to do', v: 'Renew the registration' },
+        { k: 'Due date', v: '1 Sep 2026' },
+        { k: 'Amount', v: '$852.10' },
+        { k: 'Reference', v: '1AB 2CD' }
+      ],
+      plan: [
+        { ico: '🔔', t: 'Remind you: Tue 25 Aug, 9 am' },
+        { ico: '🔔', t: 'Remind you: Mon 31 Aug, 9 am' },
+        { ico: '📅', t: 'On your calendar: due Tue 1 Sep' }
+      ],
+      task: { title: 'Renew car registration', when: 'Tue 1 Sep' },
+      marks: [ { d: 25, l: 'reminder' }, { d: 31, l: 'reminder' } ],
+      agenda: { day: 'Tuesday 1 September', line: 'Renew car registration', sub: '$852.10 · rego 1AB 2CD' } },
+
+    { who: 'Dr Patel', what: 'Appointment letter', delay: 6800, fails: true, retryDelay: 4200,
+      facts: [
+        { k: 'From', v: 'Dr A. Patel, GP clinic' },
+        { k: 'What to do', v: 'Attend follow-up appointment' },
+        { k: 'When', v: 'Fri 4 Sep, 10:30 am' }
+      ],
+      plan: [
+        { ico: '🔔', t: 'Remind you: Thu 3 Sep, 9 am' },
+        { ico: '📅', t: 'On your calendar: Fri 4 Sep, 10:30 am' }
+      ],
+      task: { title: 'Appointment with Dr Patel', when: 'Fri 4 Sep' },
+      marks: [],
+      agenda: { day: 'Friday 4 September', line: 'Appointment with Dr Patel', sub: '10:30 am · GP clinic' } },
+
+    { who: 'Yarra Council', what: 'Rates notice', delay: 7500,
+      facts: [
+        { k: 'From', v: 'City of Yarra' },
+        { k: 'What to do', v: 'Pay the rates instalment' },
+        { k: 'Due date', v: '31 Aug 2026' },
+        { k: 'Amount', v: '$612.40' },
+        { k: 'Reference', v: '88 3120 7' }
+      ],
+      plan: [
+        { ico: '🔔', t: 'Remind you: Mon 24 Aug, 9 am' },
+        { ico: '🔔', t: 'Remind you: Sun 30 Aug, 9 am' },
+        { ico: '📅', t: 'On your calendar: due Mon 31 Aug' }
+      ],
+      task: { title: 'Pay council rates', when: 'Mon 31 Aug' },
+      marks: [ { d: 24, l: 'reminder' }, { d: 30, l: 'reminder' }, { d: 31, l: 'Rates due' } ],
+      agenda: { day: 'Monday 31 August', line: 'Pay council rates', sub: '$612.40 · ref 88 3120 7' } }
+  ];
+
+  /* ---------- state ---------- */
+  let queue = [];        // posted letters: {idx, pages, state: reading|ready|failed}
+  let tasks = [];        // confirmed tasks: {id, title, when, done, marks, agenda}
+  let nextPost = 0, pages = 0, uid = 0, current = null;
+  let timers = [], toastTimer = null;
+
+  const INITIAL_TASKS = [
+    { id: 'w', title: 'Pay water bill', when: 'Wed 5 Aug', done: false, marks: [ { d: 5, l: 'Water due' } ],
+      agenda: { day: 'Wednesday 5 August', line: 'Pay water bill', sub: '$89.20 · ref 5501 2280' } },
+    { id: 'p', title: 'Return pension review form', when: 'Tue 11 Aug', done: false, marks: [ { d: 11, l: 'Form due' } ],
+      agenda: { day: 'Tuesday 11 August', line: 'Return pension review form', sub: 'Services Australia' } }
+  ];
+
+  /* ---------- scan: pages and posting ---------- */
+  function addPage() {
+    if (nextPost >= LETTERS.length) { document.getElementById('cam-d').textContent = 'sketch limit: five letters'; return; }
+    pages++;
+    renderPages();
+  }
+
+  function renderPages() {
+    const card = document.getElementById('pages-card');
+    card.style.display = pages ? 'block' : 'none';
+    document.getElementById('pages-title').textContent = 'This one · ' + pages + (pages === 1 ? ' page' : ' pages');
+    let h = '';
+    for (let i = 1; i <= pages; i++) h += '<div class="pg">page ' + i + '</div>';
+    h += '<div class="pg add" onclick="addPage()">+ page</div>';
+    document.getElementById('pages-list').innerHTML = h;
+    document.getElementById('read-btn').className = pages ? 'btn' : 'btn off';
+  }
+
+  function postLetter() {
+    if (!pages || nextPost >= LETTERS.length) return;
+    const it = { id: ++uid, idx: nextPost, pages: pages, state: 'reading' };
+    queue.unshift(it);
+    nextPost++; pages = 0;
+    renderPages(); renderAll();
+    const L = LETTERS[it.idx];
+    timers.push(setTimeout(() => {
+      it.state = L.fails ? 'failed' : 'ready';
+      renderAll();
+      if (it.state === 'ready') scheduleToast();
+    }, L.delay));
+  }
+
+  function retake(id) {
+    const it = queue.find(q => q.id === id);
+    if (!it) return;
+    it.state = 'reading';
+    renderAll();
+    timers.push(setTimeout(() => { it.state = 'ready'; renderAll(); scheduleToast(); }, LETTERS[it.idx].retryDelay || 4200));
+  }
+
+  /* ---------- batched notification ---------- */
+  function scheduleToast() {
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+      const n = queue.filter(q => q.state === 'ready').length;
+      if (!n) return;
+      document.getElementById('toast-big').textContent = n === 1 ? '1 letter is ready to check' : n + ' letters are ready to check';
+      const t = document.getElementById('toast');
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 4200);
+    }, 1500);
+  }
+
+  /* ---------- review ---------- */
+  function openReview(id) {
+    const it = queue.find(q => q.id === id && q.state === 'ready');
+    if (!it) return;
+    current = it;
+    const L = LETTERS[it.idx];
+    document.getElementById('review-sub').textContent = L.who + ' · ' + L.what;
+    document.getElementById('facts').innerHTML = L.facts.map(f => f.warn
+      ? '<div class="fact warn"><span class="k">' + f.k + '</span><span><input value="' + f.v + '"><div class="warn-hint">' + f.hint + '</div></span></div>'
+      : '<div class="fact"><span class="k">' + f.k + '</span><span class="v">' + f.v + '</span></div>').join('');
+    document.getElementById('plan').innerHTML = L.plan.map(p =>
+      '<div class="plan-row"><span class="ico">' + p.ico + '</span>' + p.t + '</div>').join('');
+    go('review');
+  }
+
+  function confirmItem() {
+    if (!current) { go('calendar'); return; }
+    const L = LETTERS[current.idx];
+    queue = queue.filter(q => q.id !== current.id);
+    tasks.unshift({ id: 't' + current.id, title: L.task.title, when: L.task.when, done: false, marks: L.marks, agenda: L.agenda });
+    current = null;
+    renderAll();
+    go('calendar');
+  }
+
+  /* ---------- rendering ---------- */
+  function itemRow(q) {
+    const L = LETTERS[q.idx];
+    const label = L.who + ' · ' + L.what;
+    const pg = q.pages > 1 ? ' · ' + q.pages + ' pages' : '';
+    if (q.state === 'reading')
+      return '<div class="item reading"><span class="thumb"></span><span class="txt">' + label + '<div class="st">reading…' + pg + '</div></span></div>';
+    if (q.state === 'failed')
+      return '<div class="item failed"><span class="thumb"></span><span class="txt">' + label + '<div class="st">couldn\'t read this one</div></span><span class="retake" onclick="retake(' + q.id + ')">retake</span></div>';
+    return '<div class="item ready" onclick="openReview(' + q.id + ')"><span class="thumb"></span><span class="txt">' + label + '<div class="st">ready to check</div></span><span class="go">check →</span></div>';
+  }
+
+  function taskRow(t) {
+    return '<div class="row' + (t.done ? ' done' : '') + '"><span class="dot" onclick="toggleDone(\'' + t.id + '\')">✓</span>' +
+      '<span class="txt">' + t.title + '</span><span class="doc-mark">📄</span>' +
+      '<span class="when">' + (t.done ? 'Done · reminders off' : t.when) + '</span></div>';
+  }
+
+  function toggleDone(id) {
+    const t = tasks.find(x => x.id === id);
+    if (t) { t.done = !t.done; renderAll(); }
+  }
+
+  function ctaTap() {
+    const first = queue.find(q => q.state === 'ready');
+    if (first) openReview(first.id); else go('scan');
+  }
+
+  function renderAll() {
+    /* queue lists on scan + home */
+    const rows = queue.map(itemRow).join('');
+    document.getElementById('posted-card').style.display = queue.length ? 'block' : 'none';
+    document.getElementById('posted-list').innerHTML = rows;
+    document.getElementById('check-card').style.display = queue.length ? 'block' : 'none';
+    document.getElementById('check-list').innerHTML = rows;
+
+    /* CTA + badge */
+    const ready = queue.filter(q => q.state === 'ready').length;
+    const reading = queue.filter(q => q.state === 'reading').length;
+    const cta = document.getElementById('home-cta');
+    if (ready) {
+      cta.className = 'review-cta';
+      document.getElementById('cta-big').textContent = ready === 1 ? '1 thing needs your OK' : ready + ' things need your OK';
+      document.getElementById('cta-small').textContent = 'From your photos we\'ve prepared tasks and reminders. Check them before they go on your calendar.';
+    } else {
+      cta.className = 'review-cta dim';
+      document.getElementById('cta-big').textContent = reading ? 'Reading ' + (reading === 1 ? 'your letter…' : reading + ' letters…') : 'Nothing to check right now';
+      document.getElementById('cta-small').textContent = reading ? 'You can close the app. We\'ll tell you when it\'s ready.' : 'We\'ll tell you when something\'s ready.';
+    }
+    const b = document.getElementById('nav-badge');
+    b.style.display = ready ? 'inline-block' : 'none';
+    b.textContent = ready;
+
+    /* tasks on home + calendar */
+    const trows = tasks.map(taskRow).join('') || '<div class="row"><span class="txt" style="color:#94a3b8">Nothing yet</span></div>';
+    document.getElementById('task-list-home').innerHTML = trows;
+    document.getElementById('task-list-cal').innerHTML = trows;
+
+    renderCalendar();
+  }
+
+  function renderCalendar() {
+    /* August 2026: starts Saturday, 31 days */
+    const tags = {};
+    tasks.forEach(t => (t.marks || []).forEach(m => { (tags[m.d] = tags[m.d] || []).push(m.l); }));
+    let h = ['M','T','W','T','F','S','S'].map(d => '<div class="dow">' + d + '</div>').join('');
+    for (let i = 0; i < 5; i++) h += '<div class="d"></div>';
+    for (let d = 1; d <= 31; d++) {
+      h += '<div class="d">' + d + (tags[d] ? tags[d].map(l => '<span class="tag">' + l + '</span>').join('') : '') + '</div>';
+    }
+    for (let i = 0; i < 6; i++) h += '<div class="d"></div>';
+    document.getElementById('cal-grid').innerHTML = h;
+
+    /* agenda: most recently confirmed */
+    const t = tasks[0];
+    document.getElementById('agenda').innerHTML = t
+      ? '<div class="agenda-day">' + t.agenda.day + '</div>' +
+        '<div class="row"><span class="dot" onclick="toggleDone(\'' + t.id + '\')">✓</span><span class="txt">' + t.agenda.line +
+        '<br><span style="color:#94a3b8;font-size:13px">' + t.agenda.sub + ' · <a class="see-letter" href="#">see the photo</a></span></span></div>'
+      : '';
+  }
+
+  /* ---------- navigation ---------- */
+  function go(name) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('s-' + name).classList.add('active');
+    document.querySelectorAll('.nav button').forEach(b => b.classList.toggle('on', b.dataset.s === name));
+    document.querySelector('.phone').scrollIntoView({ block: 'start' });
+  }
+  document.querySelectorAll('.nav button').forEach(b => b.addEventListener('click', () => { if (b.dataset.s) go(b.dataset.s); }));
+
+  const phoneView = document.getElementById('phone-view');
+  const adminView = document.getElementById('admin-view');
+  const tbPhone = document.getElementById('tb-phone');
+  const tbAdmin = document.getElementById('tb-admin');
+  tbPhone.addEventListener('click', () => { phoneView.style.display = 'flex'; adminView.classList.remove('active'); tbPhone.classList.add('on'); tbAdmin.classList.remove('on'); });
+  tbAdmin.addEventListener('click', () => { phoneView.style.display = 'none'; adminView.classList.add('active'); tbAdmin.classList.add('on'); tbPhone.classList.remove('on'); });
+
+  /* ---------- reset ---------- */
+  function reset() {
+    timers.forEach(clearTimeout); timers = [];
+    if (toastTimer) clearTimeout(toastTimer);
+    document.getElementById('toast').classList.remove('show');
+    queue = []; tasks = INITIAL_TASKS.map(t => Object.assign({}, t));
+    nextPost = 0; pages = 0; current = null;
+    document.getElementById('cam-d').textContent = 'the camera stays open, keep going';
+    renderPages(); renderAll(); go('home');
+  }
+  document.getElementById('tb-reset').addEventListener('click', reset);
+
+  reset();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,25 @@
+# local, never committed
+CLAUDE.local.md
+.env
+.env.*
+*.local
+
+# python
+__pycache__/
+*.pyc
+.venv/
+.uv/
+
+# node
+node_modules/
+dist/
+
+# os / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# large data stays out of git (shared drive instead); small curated fixtures/ are committed
+output/
+*.pdf
