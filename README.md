@@ -1,6 +1,6 @@
 # DayKeeper (G1)
 
-AI-powered life management system for people in vulnerable groups: photograph or scan a document, the system reads it, and it becomes tasks and reminders. RMIT COSC2648 capstone project, P000473SE, Group 1.
+AI-powered life management system for people in vulnerable groups: upload a photo of a document, the system reads it, and it becomes tasks and reminders. RMIT COSC2648 capstone project, P000473SE, Group 1.
 
 ## What is here
 
