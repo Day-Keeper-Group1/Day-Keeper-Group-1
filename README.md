@@ -4,6 +4,7 @@ AI-powered life management system for people in vulnerable groups: upload a phot
 
 ## What is here
 
+- `docs/project-description.md`: the official project description, verbatim. Our requirements baseline.
 - `docs/DayKeeper-Tech-Stack-Recommendation.md`: Sai's technology stack proposal
 - `docs/prototype/user/daykeeper-sketch-live.html`: clickable prototype of the user flow (open in a browser). The admin side is not designed yet; its prototype will come as a separate file.
 
