@@ -17,10 +17,10 @@ DayKeeper should be built as a **responsive web application**, not a native mobi
 | Authorization | **Postgres Row Level Security (RLS) + app-level roles** | Important because documents may contain private/medical/financial information. RLS gives database-level defense. |
 | Database | **Supabase Postgres** | Matches the proposed architecture: relational core tables + JSONB extraction payload. |
 | File storage | **Supabase Storage private bucket** | Uploaded documents should not be stored directly in the database. Storage policies can use RLS. |
-| AI/OCR integration | **Provider adapter layer**: RMIT/AWS Bedrock (RACE) primary, OpenAI-compatible API fallback, mock provider default until keys arrive | Do not lock the app to one model provider before resource access is confirmed. |
-| AI output contract | **Zod schema + JSON Schema / Structured Output** | Extraction output must be predictable: fields, statuses, evidence, and user-confirmation state. |
-| Background work | **Start simple: Next.js route handler + status table. Escape hatch: database webhook into a Supabase Edge Function** | OCR/LLM extraction can take time; UI should show processing status instead of blocking. No Redis on the free tier, so BullMQ is out of scope. |
-| Reminders/notifications | **pg_cron + scheduled Edge Function + in-app notification center, email via Resend free tier** | Vercel Hobby cron fires at most once per day, so the scheduler must live in Supabase. |
+| AI/OCR integration | **Provider adapter layer**: RMIT/AWS Bedrock (RACE) primary, mock provider default until keys arrive, unfunded OpenAI-compatible slot | Do not lock the app to one model provider before resource access is confirmed. |
+| AI output contract | **Zod schema + JSON Schema / Structured Output** | Extraction output must be predictable: fields, statuses, and user-confirmation state. |
+| Background work | **Route handler with an explicit maxDuration; extraction_runs doubles as the queue; hourly pg_cron sweep fails/retries stuck runs** | OCR/LLM extraction can take time; UI polls a status column. No Redis and no second runtime on the free tier. |
+| Reminders/notifications | **pg_cron + pg_net calling an internal Next.js route + in-app notification center; email only once a verified sender exists** | Vercel Hobby cron fires at most once per day, so the scheduler must live in Postgres. |
 | Evaluation layer | **Offline Python workspace (uv, pytest, opencv, Augraphy)** | Scores extraction quality against labelled fixtures; never deployed, costs nothing. See the Evaluation section. |
 | Testing | **Vitest + Playwright** | Unit/schema tests for contracts and E2E tests for upload-confirm-reminder flows. |
 | Deployment | **Vercel + Supabase for MVP**, or **Docker self-hosting** if client/RMIT requires it | Vercel/Supabase is fastest. Docker path is safer if hosting must be controlled by RMIT/client. |
@@ -56,6 +56,7 @@ flowchart LR
     U[User browser] --> UI[Next.js responsive web app]
     UI --> AUTH[Supabase Auth]
     UI --> API[Next.js server actions / route handlers]
+    UI -->|signed upload| ST
     API --> DB[(Supabase Postgres)]
     API --> ST[Supabase Storage private bucket]
     API --> AI[AI/OCR provider adapter]
@@ -165,9 +166,9 @@ audit_logs
 extraction_logs
 ```
 
-Naming note: extraction_logs was ai_prompt_logs in the first draft. Renamed to avoid confusion with docs/ai-prompts, which is a different thing: the table stores runtime prompts and outputs sent to providers, for debugging and evaluation; the folder stores the team's AI usage records for the course GenAI declaration.
+Naming note: extraction_logs was ai_prompt_logs in the first draft. Renamed to avoid confusion with docs/ai-prompts, which is a different thing: the table stores runtime prompts and outputs sent to providers, written by the adapter on every call and read by the evaluation workspace and during debugging; the folder stores the team's AI usage records for the course GenAI declaration.
 
-Migration note: organizations and organization_memberships stay in this list as design headroom but are not created in the initial migrations. Organization features are future scope; keying everything through profiles keeps that door open without carrying empty tables.
+Migration note: organizations and organization_memberships stay in this list as design headroom but are not created in the initial migrations. Organization features are future scope; keying everything through profiles keeps that door open without carrying empty tables. audit_logs joins them: it is not created until a milestone builds its reader (the admin dashboard is the natural one).
 
 Important rule:
 
@@ -184,7 +185,7 @@ RLS is only a real defense when queries carry the user's identity. Two safe patt
 
 The service role key bypasses RLS entirely. It must never appear in general request handlers. Quarantine it in one small admin module with its own review rule. The test "another user cannot view the document" in the testing section is what keeps this honest.
 
-One more free tier consequence: disable email confirmation for the MVP, or wire custom SMTP through Resend. The Supabase free tier sends only a handful of auth emails per hour, which is not enough for a live demo signup flow.
+One more free tier consequence: the Supabase default auth mailer is not a usable channel. It only delivers to the project's own team members' addresses and is capped at a couple of messages per hour; it exists for development only. Disable email confirmation for the MVP (five users and a client demo gain nothing from it), and revisit only if the email channel gets a verified sender (see Reminders and notifications).
 
 ### Why Supabase Auth over Auth.js?
 
@@ -267,62 +268,23 @@ Every extraction result should follow a strict contract:
 
 ```json
 {
-  "document_type": {
-    "value": "utility_bill",
-    "raw_text": "Electricity bill",
-    "status": "confirmed",
-    "evidence": {
-      "page": 1,
-      "bbox": [10, 20, 200, 80]
-    }
-  },
-  "issuer": {
-    "value": "Energy Provider",
-    "raw_text": "Energy Provider Pty Ltd",
-    "status": "confirmed",
-    "evidence": {
-      "page": 1,
-      "bbox": [15, 25, 220, 60]
-    }
-  },
-  "action_required": {
-    "value": "Pay bill",
-    "raw_text": "Please pay by the due date",
-    "status": "confirmed",
-    "evidence": {
-      "page": 1,
-      "bbox": [20, 300, 500, 80]
-    }
-  },
-  "due_date": {
-    "value": "2026-08-15",
-    "raw_text": "15/08/26",
-    "status": "uncertain",
-    "evidence": {
-      "page": 1,
-      "bbox": [300, 450, 120, 40]
-    }
-  },
-  "amount": {
-    "value": "125.40",
-    "raw_text": "$125.40",
-    "status": "confirmed",
-    "evidence": {
-      "page": 1,
-      "bbox": [320, 500, 120, 40]
-    }
-  },
-  "reference": {
-    "value": "REF123456",
-    "raw_text": "Reference: REF123456",
-    "status": "confirmed",
-    "evidence": {
-      "page": 1,
-      "bbox": [30, 540, 220, 40]
-    }
-  }
+  "document_type": { "value": "utility_bill", "raw_text": "Electricity bill", "status": "confirmed" },
+  "issuer": { "value": "Energy Provider", "raw_text": "Energy Provider Pty Ltd", "status": "confirmed" },
+  "action_required": { "value": "Pay bill", "raw_text": "Please pay by the due date", "status": "confirmed" },
+  "due_date": { "value": "2026-08-15", "raw_text": "15/08/26", "status": "uncertain" },
+  "amount": { "value": "125.40", "currency": "AUD", "raw_text": "$125.40", "status": "confirmed" },
+  "reference": { "value": "REF123456", "raw_text": "Reference: REF123456", "status": "confirmed" }
 }
 ```
+
+Evidence geometry (page and bounding box) was in the first draft of this contract and is deferred on purpose. The only extractor is a vision LLM, and current vision models return approximate, run-to-run unstable coordinates, so a mandatory bbox would be filled with plausible fiction that nothing in the MVP reads anyway. `raw_text` is the grounding the confirm screen actually needs: the user reads "15/08/26" next to the parsed date and judges it in one glance. Reintroduce an optional `evidence` object only when a source that emits real geometry exists (an OCR engine, not the LLM).
+
+Before freezing this in Zod (Milestone 3), settle four things:
+
+- `amount` carries an explicit `currency`.
+- `due_date` is a local calendar date; decide where it becomes a point in time (the user's profile timezone is the natural place).
+- The no-action case must be expressible: `action_required.value` may be `"none"`, so a document that requires nothing is a first-class result, not a validation error.
+- An optional `additional_fields` record (same value/raw_text/status shape, free keys) is the extension slot that justifies JSONB storage.
 
 Use `Zod` in the codebase to validate this at runtime. TypeScript alone is not enough because AI output and API responses are untrusted runtime data.
 
@@ -348,11 +310,13 @@ Then implement adapters:
 
 ```text
 providers/bedrock-extraction.ts   primary target (RMIT RACE)
-providers/openai-extraction.ts    fallback if the RACE route changes
+providers/openai-extraction.ts    empty slot: only if RMIT provides an OpenAI-compatible endpoint
 providers/mock-extraction.ts      default until real keys arrive
 ```
 
 Use `mock-extraction.ts` first so frontend and backend can be developed before real API keys arrive.
+
+The fallback slot is deliberately unfunded: personal keys and personal paid cloud are banned (see What Not To Do), and free consumer API tiers are not an acceptable place to send medical or financial documents. The zero-cost fallback for experiments is a Tesseract text-only baseline inside the evaluation workspace, not a second cloud provider.
 
 A separate Python API service was considered and rejected for the MVP: it adds a second deployment surface for a call that is one HTTP request in either language. Python earns its seat in the evaluation layer instead (see the Evaluation section).
 
@@ -410,15 +374,25 @@ documents/{user_id}/{document_id}/original.{ext}
 documents/{user_id}/{document_id}/preview.webp
 ```
 
-### Upload normalization (before anything else sees the image)
+### Upload path (browser to Storage, not through the API)
+
+Vercel route handlers cap request bodies at 4.5 MB, and phone photos regularly exceed that. Uploads therefore go straight to Supabase Storage:
+
+1. The browser asks our API for a signed upload URL (auth and quota are checked there).
+2. The browser PUTs the file directly to Storage with that URL.
+3. The API then creates the document row and runs normalization server-side on the stored file.
+
+The architecture diagram shows this as the direct "signed upload" arrow from the browser to Storage.
+
+### Upload normalization (after storage, before anything else sees the image)
 
 Normalize every upload in one pass:
 
-- convert HEIC to a web format (sharp built with libheif support)
+- HEIC: do not list image/heic in the upload accept attribute, so iOS Safari converts to JPEG client-side on its own; for files that still arrive as HEIC, decode with heic-convert and hand the result to sharp (sharp's prebuilt binaries ship no HEIC decoder)
 - apply EXIF orientation, then strip it
-- downscale the longest edge to about 1600 px and store a webp working copy alongside the original
+- downscale the longest edge to 1568 px (the standard vision tier's long-edge cap; adjust if the RACE model's tier differs) and store a webp working copy alongside the original
 
-One code path, three wins: the 1 GB free storage budget stretches roughly 10x, AI calls get faster and cheaper, and iPhone photos stop arriving sideways.
+One code path, two wins and one decision: AI payloads shrink roughly 10x (faster and cheaper calls), photos stop arriving sideways, and storage still grows by roughly the original's size per upload, so decide at Milestone 2 how long originals are retained alongside the working copy within the 1 GB budget.
 
 ## 9. Background Jobs
 
@@ -439,24 +413,34 @@ queued
 processing
 needs_review
 failed
-confirmed
+user_confirmed
 ```
 
-### Escape hatch (decided; switch on measured numbers)
+Run-level status tracks the pipeline; field-level status (confirmed / uncertain / unreadable) is the model's own assertion about one field. The final run state is named user_confirmed so the two vocabularies cannot be confused: only the user confirms, the model only asserts.
 
-If real extraction latency breaches the Vercel function ceiling, move the AI call off Vercel entirely: a database webhook on `extraction_runs` insert triggers a Supabase Edge Function, which runs the extraction and writes the result back. The UI keeps polling the same status column and never notices the difference.
+The route wraps the provider call in try/catch and writes failed plus an error message on any exception. The hourly pg_cron job doubles as a sweeper: any run stuck in processing for more than 10 minutes is marked failed, so the UI never polls forever.
 
-Until then, set an explicit `maxDuration` on the extraction route and downscale images before calling the provider (see Upload normalization). The decision point is fixed: as soon as real provider keys arrive, measure latency and pick the venue on those numbers.
+### Extraction venue (measured, not assumed)
 
-BullMQ + Redis is out of scope for this project: there is no free seat for Redis, and the Edge Function path covers the same need without new infrastructure.
+Vercel Hobby route handlers can run up to 300 seconds with maxDuration set, which comfortably covers a single vision-LLM call on a downscaled image. So the MVP runs extraction inside the route handler, and the reason to ever move it would be reliability and user experience, not a timeout ceiling.
+
+If decoupling becomes necessary, the queue already exists: extraction_runs is the queue table, and the same hourly sweep that fails stuck runs can retry them. No new infrastructure is named until measured latency demands it.
+
+BullMQ + Redis stays out of scope: it needs a persistent worker process, which serverless hosting does not provide. A free Redis tier exists (Upstash), but that does not change the worker problem.
 
 ### Reminders and notifications
 
-Vercel Hobby cron fires at most once per day, which is useless for reminders. The scheduler therefore lives in Supabase:
+Vercel Hobby cron fires at most once per day, which is useless for reminders. The scheduler therefore lives in Postgres, and no second runtime is introduced:
 
-- pg_cron scans for due tasks hourly
-- a scheduled Edge Function turns hits into notification rows and sends email
-- channels for the MVP: in-app notification center first (the notifications table plus an unread badge), email through the Resend free tier second, web push later (the PWA manifest is its prerequisite)
+- pg_cron runs an hourly job
+- the job calls net.http_post (pg_net) against an internal Next.js route, /api/internal/reminders/scan, authenticated with a shared secret header
+- the route scans due tasks, writes notification rows, and sends email if the email channel is unblocked (see below)
+
+Channels for the MVP, in honesty order:
+
+- in-app notification center (the notifications table plus an unread badge): the only channel that is guaranteed free and unblocked
+- email: blocked until the team controls a verified sender. Resend's free tier only sends from onboarding@resend.dev to the account owner's own address until a custom domain is verified, and the Supabase default mailer only delivers to team members' own addresses. Neither reaches a real user at $0 without a domain. Record this in the A1 risk register; a free SMTP provider with single-sender verification is the likely unblock.
+- web push: later; the PWA manifest is its prerequisite
 
 ## 10. Deployment Options
 
@@ -482,9 +466,11 @@ Cons:
 
 ### Free tier operations (read before demo week)
 
-- Supabase free projects pause after about a week of inactivity. A paused database on demo day is the classic failure of this stack. Zero-cost fix: a scheduled GitHub Actions workflow pings the project weekly.
-- Register Vercel, Supabase and Resend under a team address, not anyone's personal account. The project must hand over cleanly at semester end.
-- Keep the Docker Compose file working from mid-project onwards. It is the exit if hosting constraints change, and it should not be written for the first time in week 12.
+- Vercel Hobby has exactly one seat. The project lives under one team-owned account; teammates deploy by merging to main through the GitHub integration, and nobody deploys from a personal Vercel login. Hobby is also licensed for non-commercial use only: the deployed URL is a coursework demo, not the handover target.
+- The handover artifact is the Docker Compose stack, built and verified once at a scheduled handover rehearsal (around week 10), not maintained continuously as a second deployment path. Any commercial continuation after the semester needs paid hosting anyway.
+- Supabase free projects pause after about a week of low activity, and a weekly ping has no margin. A daily GitHub Actions cron does a real database write (insert into a small heartbeat table). A paused database on demo day is the classic failure of this stack.
+- Preview deployments all point at the single production Supabase project (database branching is a paid feature): a preview is production data, say it out loud in the team. The development default is the Supabase CLI local stack (supabase start) in Docker, with migrations tested locally before they touch the cloud project.
+- Register Vercel, Supabase and any SMTP provider under a team address, not anyone's personal account. The project must hand over cleanly at semester end.
 
 ### Alternative: Docker self-hosted
 
@@ -648,17 +634,19 @@ Avoid these choices for Phase 1:
 
 ### Milestone 2: Document upload and archive
 
-- User uploads file.
+- User uploads file (signed upload URL, direct to Storage).
 - File stored in private bucket.
+- Upload normalized after storage (HEIC, EXIF orientation, downscale).
 - Document record created.
 - User sees document archive.
+- Retention rule for originals decided (keep both within the 1 GB budget, or discard originals after confirmation).
 
 ### Milestone 3: Extraction contract
 
 - Contract JSON schema created with Zod.
 - Mock extraction provider implemented.
 - Extraction result saved to database.
-- Exit check: as soon as real provider keys arrive, measure extraction latency and decide the extraction venue (route handler vs Edge Function) on measured numbers.
+- Exit check: as soon as real provider keys arrive, measure real extraction latency, then set the route's maxDuration and the downscale target on measured numbers.
 
 ### Milestone 4: Confirm box
 
@@ -672,6 +660,7 @@ Avoid these choices for Phase 1:
 - Confirmed extraction creates task/reminder.
 - User can edit/complete tasks.
 - Dashboard shows upcoming deadlines.
+- Reminder delivery works end to end: pg_cron job, notifications table, unread badge.
 
 ### Milestone 6: Admin/operator prototype
 
@@ -726,5 +715,10 @@ If the team gets those foundations right, the AI model can be swapped later.
 - Supabase pricing and free project pausing: https://supabase.com/pricing
 - Resend pricing: https://resend.com/pricing
 - sharp image processing: https://sharp.pixelplumbing.com/
+- heic-convert: https://www.npmjs.com/package/heic-convert
+- Supabase pg_net docs: https://supabase.com/docs/guides/database/extensions/pg_net
+- Supabase local development: https://supabase.com/docs/guides/local-development
+- Vercel function limits (body size): https://vercel.com/docs/functions/limitations
+- Resend domain verification: https://resend.com/docs/dashboard/domains/introduction
 - Augraphy: https://github.com/sparkfish/augraphy
 - uv: https://docs.astral.sh/uv/
