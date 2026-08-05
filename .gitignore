@@ -13,6 +13,15 @@ __pycache__/
 # node
 node_modules/
 dist/
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+
+# third-party AI coding-agent skills (personal tooling, not project code)
+.agents/
+.claude/
+skills-lock.json
 
 # os / editor
 .DS_Store

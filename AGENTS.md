@@ -6,8 +6,10 @@ DayKeeper (Group 1): an AI-powered life management system for people in vulnerab
 
 - `docs/project-description.md`: the official project description, verbatim. Our requirements baseline; when wording conflicts, this file wins.
 - `docs/DayKeeper-Tech-Stack-Recommendation.md`: the tech stack recommendation (draft until the team adopts it).
+- `docs/Technical-Research-and-Implementation-Roadmap.md`: step-by-step research and build plan; check this before starting new feature work.
 - `docs/prototype/user/daykeeper-sketch-live.html`: clickable prototype of the user flow. The admin prototype will come as a separate file.
 - `docs/ai-prompts/`: AI usage records for the course GenAI declaration (create on first use). If AI helped with a change, log it there.
+- `src/`: Next.js (App Router) + TypeScript + Tailwind + shadcn/ui app. `AI_EXTRACTION_PROVIDER` defaults to a mock adapter; real OCR/AI provider wiring is owned by the AI teammate and lands separately.
 
 ## Conventions
 
@@ -19,4 +21,21 @@ DayKeeper (Group 1): an AI-powered life management system for people in vulnerab
 
 ## Build and test
 
-No application code yet. When the scaffold lands, this section gets the real commands (install, dev server, lint, test); keep it current with the code.
+```bash
+npm install
+npm run dev      # http://localhost:3000
+npm run build
+npm run lint
+```
+
+No automated tests yet (Vitest/Playwright land per the roadmap's Step 11). Copy `.env.example` to `.env.local` before touching auth/storage code.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->
