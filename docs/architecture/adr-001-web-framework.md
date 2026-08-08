@@ -1,7 +1,7 @@
 # ADR 001: One Next.js application, no separate backend service
 
 Status: accepted, 9 August 2026
-Decision by: Jason (technical lead), implemented on `jason/core-contracts`
+Decision by: Jason (technical lead)
 
 ## Context
 

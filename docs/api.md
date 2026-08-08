@@ -14,9 +14,9 @@ The types are already in `src/lib/contract/api.ts`: `DocumentSummary`,
 were already written against, so a handler that returns one of these needs no
 translation on the way to the screen.
 
-A worked implementation of all of this exists on the `jason/core-contracts`
-branch. It is a spike, not something to merge: look at it if you are stuck, and
-write your own.
+This specification was written after building the whole thing once as a spike
+and throwing it away. That is why the awkward parts are specified rather than
+left open: they are the places where the first attempt went wrong.
 
 ## How to talk to it
 
@@ -143,8 +143,8 @@ would mean building the wrong thing twice:
   table is built so it cannot be
 - **settings**: profile, notifications, password change, delete account
 - **rate limiting on sign-in**, before anything is public
-- **object storage**, and therefore signed URLs. `storagePathFor` in the spike
-  shows the layout the tech-stack note proposes
+- **object storage**, and therefore signed URLs. The tech-stack note proposes
+  the layout `documents/{user_id}/{document_id}/page-{n}.{ext}`
 - **sending reminders.** They are rows with a `scheduled_for`; nothing dispatches
   them yet, and what does is a real decision (a cron job, a platform scheduler,
   in-app only)
