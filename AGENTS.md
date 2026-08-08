@@ -23,11 +23,13 @@ DayKeeper (Group 1): an AI-powered life management system for people in vulnerab
 ## Build and test
 
 ```bash
-npm install
+npm ci           # installs exactly what package-lock.json says; never rewrites it
 npm run dev      # http://localhost:3000
 npm run build
 npm run lint
 ```
+
+Use `npm install <pkg>` only to intentionally change dependencies, and commit the resulting `package-lock.json` diff together with that change. If `git diff` shows lockfile churn and you did not change dependencies, revert it (`git checkout -- package-lock.json`). Node >=20.17 and npm >=11 are enforced through `engines` plus `.npmrc` engine-strict.
 
 No automated tests yet (Vitest/Playwright land per the roadmap's Step 11). Copy `.env.example` to `.env.local` before touching auth/storage code.
 
