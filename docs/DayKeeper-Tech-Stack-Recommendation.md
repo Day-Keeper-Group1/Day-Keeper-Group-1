@@ -1,5 +1,11 @@
 # DayKeeper Group 1 - Technical Stack Recommendation
 
+> **Superseded in part.** This document predates the architecture decision
+> records in `docs/architecture/`. Where the two disagree, **the ADRs win**:
+> this project does not use Supabase Auth (ADR 002), has no migrations and runs
+> Postgres locally in Docker (ADR 003), and the extraction contract is six
+> fields, not seven (ADR 004). The rest of this document still stands.
+
 Date: 31 July 2026  
 Author: Sai / Group 1 working note  
 Status: Draft for team discussion

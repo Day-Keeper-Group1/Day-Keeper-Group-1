@@ -33,8 +33,8 @@ npm ci                    # installs exactly what package-lock.json says; never 
 cp .env.example .env.local
 docker compose up -d      # Postgres on 55432; a database viewer on 8080
 npm run db:reset          # rebuild the schema from db/schema.sql, then seed
-npm run dev               # http://localhost:3000, sign in as margaret@example.com / daykeeper
-npm test                  # contract tests and database tests
+npm run dev               # http://localhost:3000
+npm test                  # the contract tests
 npm run typecheck
 npm run build
 npm run lint
@@ -42,7 +42,9 @@ npm run lint
 
 Use `npm install <pkg>` only to intentionally change dependencies, and commit the resulting `package-lock.json` diff together with that change. If `git diff` shows lockfile churn and you did not change dependencies, revert it (`git checkout -- package-lock.json`). Node >=20.17 and npm >=11 are enforced through `engines` plus `.npmrc` engine-strict.
 
-Tests are Vitest, in `tests/`. The database tests skip themselves with a hint when Docker is not running rather than failing.
+Tests are Vitest, in `tests/`. `tests/contract.test.ts` needs no database and no network: it checks that the agreement between the reader and everything else still holds.
+
+The pages have no working sign-in yet and read `src/lib/mock-data.ts`, so `npm run dev` shows the interface with fixture data. The seeded accounts (`margaret@example.com` and `operator@example.com`, password `daykeeper`) are already in the database and will work once somebody builds authentication.
 
 Two rules that are easy to break by accident:
 

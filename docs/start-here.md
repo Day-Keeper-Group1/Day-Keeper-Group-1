@@ -27,17 +27,32 @@ You need Node 20.17 or newer, npm 11 or newer, and Docker Desktop.
 npm ci                    # exactly what package-lock.json says
 cp .env.example .env.local
 docker compose up -d      # Postgres on 55432, a database viewer on 8080
+docker compose ps         # wait until db says "healthy", usually a few seconds
 npm run db:reset          # build the schema, then seed it
 npm test                  # the contract tests
 ```
+
+On Windows, run these in PowerShell or Git Bash. In `cmd.exe` there is no `cp`;
+use `copy .env.example .env.local`.
 
 The database viewer is at http://localhost:8080. Server `db`, user, password and
 database are all `daykeeper`. That is the quickest way to see what the seed put
 in the tables.
 
-If `npm ci` complains about your npm version, that is the guard working: run
+### If something goes wrong
+
+**`npm ci` complains about your npm version.** That is the guard working: run
 `npm i -g npm@11`. Different npm versions write `package-lock.json` differently,
 and the resulting churn wastes everyone's time.
+
+**`npm run db:reset` cannot connect.** The container is up but Postgres inside
+it is still starting. `docker compose up -d` returns before the health check
+passes. Wait for `docker compose ps` to show `healthy` and run it again.
+
+**Port 8080 is already in use.** Something else on your machine has it; it is a
+popular port. Change the left-hand number under `adminer` in
+`docker-compose.yml` to something free, for example `8081:8080`. Postgres is on
+55432 rather than 5432 for the same reason, so that one rarely collides.
 
 ### What the seed gives you
 

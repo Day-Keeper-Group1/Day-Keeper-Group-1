@@ -10,10 +10,10 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['tests/**/*.test.ts'],
-    // The contract tests are pure and fast. The database tests need
-    // `docker compose up -d && npm run db:reset` first and skip themselves with
-    // a clear message when there is nothing to connect to, so that a teammate
-    // who has not started Docker gets a hint rather than a wall of red.
+    // The contract tests are pure and fast: no database, no network. Tests that
+    // do need the database should skip themselves with a clear message when
+    // there is nothing to connect to, so that a teammate who has not started
+    // Docker gets a hint rather than a wall of red.
     testTimeout: 20_000,
   },
   resolve: {
