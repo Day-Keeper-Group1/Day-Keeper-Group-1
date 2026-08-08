@@ -2,7 +2,8 @@
 
 Date: 31 July 2026  
 Author: Sai / Group 1 working note  
-Status: Draft for team discussion
+Status: Draft for team discussion  
+Amended: 2 August 2026 (review pass)
 
 ## 1. Executive Recommendation
 
@@ -16,13 +17,15 @@ DayKeeper should be built as a **responsive web application**, not a native mobi
 | Authorization | **Postgres Row Level Security (RLS) + app-level roles** | Important because documents may contain private/medical/financial information. RLS gives database-level defense. |
 | Database | **Supabase Postgres** | Matches the proposed architecture: relational core tables + JSONB extraction payload. |
 | File storage | **Supabase Storage private bucket** | Uploaded documents should not be stored directly in the database. Storage policies can use RLS. |
-| AI/OCR integration | **Provider adapter layer** using RMIT/AWS Bedrock or OpenAI-compatible API | Do not lock the app to one model provider before resource access is confirmed. |
-| AI output contract | **Zod schema + JSON Schema / Structured Output** | Extraction output must be predictable: fields, statuses, evidence, and user-confirmation state. |
-| Background work | **Start simple: Next.js route handler + status table. Later: Supabase Edge Function background tasks or BullMQ + Redis** | OCR/LLM extraction can take time; UI should show processing status instead of blocking. |
+| AI/OCR integration | **Provider adapter layer**: RMIT/AWS Bedrock (RACE) primary, mock provider default until keys arrive, unfunded OpenAI-compatible slot | Do not lock the app to one model provider before resource access is confirmed. |
+| AI output contract | **Zod schema + JSON Schema / Structured Output** | Extraction output must be predictable: fields, statuses, and user-confirmation state. |
+| Background work | **Route handler with an explicit maxDuration; extraction_runs doubles as the queue; hourly pg_cron sweep fails/retries stuck runs** | OCR/LLM extraction can take time; UI polls a status column. No Redis and no second runtime on the free tier. |
+| Reminders/notifications | **pg_cron + pg_net calling an internal Next.js route + in-app notification center; email only once a verified sender exists** | Vercel Hobby cron fires at most once per day, so the scheduler must live in Postgres. |
+| Evaluation layer | **Offline Python workspace (uv, pytest, opencv, Augraphy)** | Scores extraction quality against labelled fixtures; never deployed, costs nothing. See the Evaluation section. |
 | Testing | **Vitest + Playwright** | Unit/schema tests for contracts and E2E tests for upload-confirm-reminder flows. |
 | Deployment | **Vercel + Supabase for MVP**, or **Docker self-hosting** if client/RMIT requires it | Vercel/Supabase is fastest. Docker path is safer if hosting must be controlled by RMIT/client. |
 
-Short version: **Next.js + TypeScript + Supabase Auth/Postgres/Storage + Tailwind/shadcn + Zod + Playwright.**
+Short version: **Next.js + TypeScript + Supabase Auth/Postgres/Storage + Tailwind/shadcn + Zod + Playwright, plus an offline Python evaluation workspace.**
 
 ## 2. Project Requirements That Drive the Stack
 
@@ -30,7 +33,7 @@ The technology choices should fit these product requirements:
 
 - The product is a **website** usable on mobile, tablet, and desktop.
 - Phase 1 focuses on:
-  - Module 1: document upload / scan intelligence.
+  - Module 1: document photo upload and AI extraction.
   - Module 4: unified archive, tasks, reminders, user registration, admin dashboard.
 - Uploaded documents may contain sensitive information.
 - AI extraction can be wrong, so the app must support:
@@ -53,6 +56,7 @@ flowchart LR
     U[User browser] --> UI[Next.js responsive web app]
     UI --> AUTH[Supabase Auth]
     UI --> API[Next.js server actions / route handlers]
+    UI -->|signed upload| ST
     API --> DB[(Supabase Postgres)]
     API --> ST[Supabase Storage private bucket]
     API --> AI[AI/OCR provider adapter]
@@ -119,6 +123,11 @@ Why:
 
 Do not over-design the UI as a marketing landing page. DayKeeper is an operational dashboard: documents, tasks, reminders, review states, and admin panels should be easy to scan.
 
+### PWA and text scale
+
+- Ship a web app manifest and installability from the start. It costs nothing, gives users a home screen icon, and is the prerequisite for web push on iOS later.
+- shadcn defaults are tuned for dense professional dashboards. Raise the base type scale and spacing globally in the design tokens for this product's audience. Do it once in the tokens, not per component.
+
 ## 5. Authentication And Authorization
 
 ### Recommended auth: Supabase Auth
@@ -152,15 +161,31 @@ document_permissions
 extraction_runs
 tasks
 reminders
+notifications
 audit_logs
-ai_prompt_logs
+extraction_logs
 ```
+
+Naming note: extraction_logs was ai_prompt_logs in the first draft. Renamed to avoid confusion with docs/ai-prompts, which is a different thing: the table stores runtime prompts and outputs sent to providers, written by the adapter on every call and read by the evaluation workspace and during debugging; the folder stores the team's AI usage records for the course GenAI declaration.
+
+Migration note: organizations and organization_memberships stay in this list as design headroom but are not created in the initial migrations. Organization features are future scope; keying everything through profiles keeps that door open without carrying empty tables. audit_logs joins them: it is not created until a milestone builds its reader (the admin dashboard is the natural one).
 
 Important rule:
 
 > Authentication answers "who is this user?" Authorization answers "what is this user allowed to see or do?"
 
 For this project, authorization is more important than usual because documents may include bills, medical letters, government forms, and personal information.
+
+### Database access pattern (decision to confirm)
+
+RLS is only a real defense when queries carry the user's identity. Two safe patterns:
+
+1. The browser talks to Supabase with the anon key; RLS is the primary gate.
+2. Server code builds a per-request client with the user's JWT, so queries still run as that user.
+
+The service role key bypasses RLS entirely. It must never appear in general request handlers. Quarantine it in one small admin module with its own review rule. The test "another user cannot view the document" in the testing section is what keeps this honest.
+
+One more free tier consequence: the Supabase default auth mailer is not a usable channel. It only delivers to the project's own team members' addresses and is capped at a couple of messages per hour; it exists for development only. Disable email confirmation for the MVP (five users and a client demo gain nothing from it), and revisit only if the email channel gets a verified sender (see Reminders and notifications).
 
 ### Why Supabase Auth over Auth.js?
 
@@ -243,62 +268,23 @@ Every extraction result should follow a strict contract:
 
 ```json
 {
-  "document_type": {
-    "value": "utility_bill",
-    "raw_text": "Electricity bill",
-    "status": "confirmed",
-    "evidence": {
-      "page": 1,
-      "bbox": [10, 20, 200, 80]
-    }
-  },
-  "issuer": {
-    "value": "Energy Provider",
-    "raw_text": "Energy Provider Pty Ltd",
-    "status": "confirmed",
-    "evidence": {
-      "page": 1,
-      "bbox": [15, 25, 220, 60]
-    }
-  },
-  "action_required": {
-    "value": "Pay bill",
-    "raw_text": "Please pay by the due date",
-    "status": "confirmed",
-    "evidence": {
-      "page": 1,
-      "bbox": [20, 300, 500, 80]
-    }
-  },
-  "due_date": {
-    "value": "2026-08-15",
-    "raw_text": "15/08/26",
-    "status": "uncertain",
-    "evidence": {
-      "page": 1,
-      "bbox": [300, 450, 120, 40]
-    }
-  },
-  "amount": {
-    "value": "125.40",
-    "raw_text": "$125.40",
-    "status": "confirmed",
-    "evidence": {
-      "page": 1,
-      "bbox": [320, 500, 120, 40]
-    }
-  },
-  "reference": {
-    "value": "REF123456",
-    "raw_text": "Reference: REF123456",
-    "status": "confirmed",
-    "evidence": {
-      "page": 1,
-      "bbox": [30, 540, 220, 40]
-    }
-  }
+  "document_type": { "value": "utility_bill", "raw_text": "Electricity bill", "status": "confirmed" },
+  "issuer": { "value": "Energy Provider", "raw_text": "Energy Provider Pty Ltd", "status": "confirmed" },
+  "action_required": { "value": "Pay bill", "raw_text": "Please pay by the due date", "status": "confirmed" },
+  "due_date": { "value": "2026-08-15", "raw_text": "15/08/26", "status": "uncertain" },
+  "amount": { "value": "125.40", "currency": "AUD", "raw_text": "$125.40", "status": "confirmed" },
+  "reference": { "value": "REF123456", "raw_text": "Reference: REF123456", "status": "confirmed" }
 }
 ```
+
+Evidence geometry (page and bounding box) was in the first draft of this contract and is deferred on purpose. The only extractor is a vision LLM, and current vision models return approximate, run-to-run unstable coordinates, so a mandatory bbox would be filled with plausible fiction that nothing in the MVP reads anyway. `raw_text` is the grounding the confirm screen actually needs: the user reads "15/08/26" next to the parsed date and judges it in one glance. Reintroduce an optional `evidence` object only when a source that emits real geometry exists (an OCR engine, not the LLM).
+
+Before freezing this in Zod (Milestone 3), settle four things:
+
+- `amount` carries an explicit `currency`.
+- `due_date` is a local calendar date; decide where it becomes a point in time (the user's profile timezone is the natural place).
+- The no-action case must be expressible: `action_required.value` may be `"none"`, so a document that requires nothing is a first-class result, not a validation error.
+- An optional `additional_fields` record (same value/raw_text/status shape, free keys) is the extension slot that justifies JSONB storage.
 
 Use `Zod` in the codebase to validate this at runtime. TypeScript alone is not enough because AI output and API responses are untrusted runtime data.
 
@@ -312,21 +298,27 @@ Do not directly scatter OpenAI/Claude/Bedrock calls across the app. Create one i
 export interface DocumentExtractionProvider {
   extract(input: {
     documentId: string
-    imageUrl: string
+    storagePath: string
     documentHint?: string
   }): Promise<ContractJson>
 }
 ```
 
+The adapter fetches file bytes server-side from storage. Signed URLs must not be handed to external providers: that would send user documents outside our infrastructure as links, and Bedrock-style APIs want bytes anyway.
+
 Then implement adapters:
 
 ```text
-providers/openai-extraction.ts
-providers/bedrock-extraction.ts
-providers/mock-extraction.ts
+providers/bedrock-extraction.ts   primary target (RMIT RACE)
+providers/openai-extraction.ts    empty slot: only if RMIT provides an OpenAI-compatible endpoint
+providers/mock-extraction.ts      default until real keys arrive
 ```
 
 Use `mock-extraction.ts` first so frontend and backend can be developed before real API keys arrive.
+
+The fallback slot is deliberately unfunded: personal keys and personal paid cloud are banned (see What Not To Do), and free consumer API tiers are not an acceptable place to send medical or financial documents. The zero-cost fallback for experiments is a Tesseract text-only baseline inside the evaluation workspace, not a second cloud provider.
+
+A separate Python API service was considered and rejected for the MVP: it adds a second deployment surface for a call that is one HTTP request in either language. Python earns its seat in the evaluation layer instead (see the Evaluation section).
 
 ### Recommended AI output mode
 
@@ -382,6 +374,26 @@ documents/{user_id}/{document_id}/original.{ext}
 documents/{user_id}/{document_id}/preview.webp
 ```
 
+### Upload path (browser to Storage, not through the API)
+
+Vercel route handlers cap request bodies at 4.5 MB, and phone photos regularly exceed that. Uploads therefore go straight to Supabase Storage:
+
+1. The browser asks our API for a signed upload URL (auth and quota are checked there).
+2. The browser PUTs the file directly to Storage with that URL.
+3. The API then creates the document row and runs normalization server-side on the stored file.
+
+The architecture diagram shows this as the direct "signed upload" arrow from the browser to Storage.
+
+### Upload normalization (after storage, before anything else sees the image)
+
+Normalize every upload in one pass:
+
+- HEIC: do not list image/heic in the upload accept attribute, so iOS Safari converts to JPEG client-side on its own; for files that still arrive as HEIC, decode with heic-convert and hand the result to sharp (sharp's prebuilt binaries ship no HEIC decoder)
+- apply EXIF orientation, then strip it
+- downscale the longest edge to 1568 px (the standard vision tier's long-edge cap; adjust if the RACE model's tier differs) and store a webp working copy alongside the original
+
+One code path, two wins and one decision: AI payloads shrink roughly 10x (faster and cheaper calls), photos stop arriving sideways, and storage still grows by roughly the original's size per upload, so decide at Milestone 2 how long originals are retained alongside the working copy within the 1 GB budget.
+
 ## 9. Background Jobs
 
 Document extraction should not block the browser request for too long.
@@ -401,17 +413,34 @@ queued
 processing
 needs_review
 failed
-confirmed
+user_confirmed
 ```
 
-### Better later approach
+Run-level status tracks the pipeline; field-level status (confirmed / uncertain / unreadable) is the model's own assertion about one field. The final run state is named user_confirmed so the two vocabularies cannot be confused: only the user confirms, the model only asserts.
 
-If extraction becomes slow or unreliable, use:
+The route wraps the provider call in try/catch and writes failed plus an error message on any exception. The hourly pg_cron job doubles as a sweeper: any run stuck in processing for more than 10 minutes is marked failed, so the UI never polls forever.
 
-- Supabase Edge Function background tasks, if staying in Supabase
-- BullMQ + Redis, if self-hosting Node workers
+### Extraction venue (measured, not assumed)
 
-Do not start with BullMQ unless you already know deployment will support Redis. It adds operational overhead.
+Vercel Hobby route handlers can run up to 300 seconds with maxDuration set, which comfortably covers a single vision-LLM call on a downscaled image. So the MVP runs extraction inside the route handler, and the reason to ever move it would be reliability and user experience, not a timeout ceiling.
+
+If decoupling becomes necessary, the queue already exists: extraction_runs is the queue table, and the same hourly sweep that fails stuck runs can retry them. No new infrastructure is named until measured latency demands it.
+
+BullMQ + Redis stays out of scope: it needs a persistent worker process, which serverless hosting does not provide. A free Redis tier exists (Upstash), but that does not change the worker problem.
+
+### Reminders and notifications
+
+Vercel Hobby cron fires at most once per day, which is useless for reminders. The scheduler therefore lives in Postgres, and no second runtime is introduced:
+
+- pg_cron runs an hourly job
+- the job calls net.http_post (pg_net) against an internal Next.js route, /api/internal/reminders/scan, authenticated with a shared secret header
+- the route scans due tasks, writes notification rows, and sends email if the email channel is unblocked (see below)
+
+Channels for the MVP, in honesty order:
+
+- in-app notification center (the notifications table plus an unread badge): the only channel that is guaranteed free and unblocked
+- email: blocked until the team controls a verified sender. Resend's free tier only sends from onboarding@resend.dev to the account owner's own address until a custom domain is verified, and the Supabase default mailer only delivers to team members' own addresses. Neither reaches a real user at $0 without a domain. Record this in the A1 risk register; a free SMTP provider with single-sender verification is the likely unblock.
+- web push: later; the PWA manifest is its prerequisite
 
 ## 10. Deployment Options
 
@@ -434,6 +463,14 @@ Cons:
 
 - must confirm data/privacy requirements
 - may not satisfy client/RMIT hosting constraints
+
+### Free tier operations (read before demo week)
+
+- Vercel Hobby has exactly one seat. The project lives under one team-owned account; teammates deploy by merging to main through the GitHub integration, and nobody deploys from a personal Vercel login. Hobby is also licensed for non-commercial use only: the deployed URL is a coursework demo, not the handover target.
+- The handover artifact is the Docker Compose stack, built and verified once at a scheduled handover rehearsal (around week 10), not maintained continuously as a second deployment path. Any commercial continuation after the semester needs paid hosting anyway.
+- Supabase free projects pause after about a week of low activity, and a weekly ping has no margin. A daily GitHub Actions cron does a real database write (insert into a small heartbeat table). A paused database on demo day is the classic failure of this stack.
+- Preview deployments all point at the single production Supabase project (database branching is a paid feature): a preview is production data, say it out loud in the team. The development default is the Supabase CLI local stack (supabase start) in Docker, with migrations tested locally before they touch the cloud project.
+- Register Vercel, Supabase and any SMTP provider under a team address, not anyone's personal account. The project must hand over cleanly at semester end.
 
 ### Alternative: Docker self-hosted
 
@@ -459,7 +496,21 @@ Cons:
 - team must manage auth/session/storage more carefully
 - deployment is more work
 
-## 11. Testing Strategy
+## 11. Evaluation And Experiments (Python, Offline)
+
+The app runtime is TypeScript end to end. Alongside it, the repo carries an offline evaluation workspace in Python (managed with uv), because the tooling for this layer lives in Python: image degradation libraries such as Augraphy, opencv and Pillow for image quality measurement, pytest for harness discipline.
+
+What it is for:
+
+- scoring extraction output against labelled fixtures: per-field accuracy, and false positives on documents that require no action
+- comparing providers, models and prompts before changing adapter defaults
+- generating and checking synthetic test fixtures (the AI/OCR section already lists these as a planned improvement)
+
+The boundary is the Contract JSON: the harness consumes exactly what the adapter emits. It is not deployed, costs nothing to host, and any team member can run it locally. Its results feed back into the app only as configuration: prompt text, model choice, few-shot examples.
+
+One promotion this implies: the Contract JSON should move out of this document into code. Define it once as a Zod schema, generate a JSON Schema export for the Python side, and version changes through pull requests. A contract that lives as an example in a stack document will drift; a contract that lives as code fails loudly.
+
+## 12. Testing Strategy
 
 Use three levels:
 
@@ -468,6 +519,8 @@ Use three levels:
 | Schema/unit tests | Vitest | Contract JSON validation, due-date parsing, status transitions. |
 | Component tests | Vitest + Testing Library | Confirm box, task card, reminder form, role-based UI states. |
 | E2E tests | Playwright | Login, upload document, extraction result appears, user confirms, task/reminder created. |
+
+All tests run against the mock provider in CI, so results stay deterministic and free.
 
 Minimum tests before demo:
 
@@ -479,7 +532,7 @@ Minimum tests before demo:
 - Another user cannot view the document.
 - Admin/operator views do not expose private document content unless permission allows it.
 
-## 12. Suggested Folder Structure
+## 13. Suggested Folder Structure
 
 ```text
 day-keeper-group-1/
@@ -518,7 +571,7 @@ day-keeper-group-1/
     meeting-minutes/
 ```
 
-## 13. Team Workflow
+## 14. Team Workflow
 
 Use GitHub with:
 
@@ -555,7 +608,7 @@ Recommended PR checklist:
 ## Jira ticket
 ```
 
-## 14. What Not To Do
+## 15. What Not To Do
 
 Avoid these choices for Phase 1:
 
@@ -569,7 +622,7 @@ Avoid these choices for Phase 1:
 - Do not rely only on model confidence scores.
 - Do not use personal API keys or personal paid cloud resources.
 
-## 15. Recommended MVP Milestones
+## 16. Recommended MVP Milestones
 
 ### Milestone 1: Project foundation
 
@@ -581,16 +634,19 @@ Avoid these choices for Phase 1:
 
 ### Milestone 2: Document upload and archive
 
-- User uploads file.
+- User uploads file (signed upload URL, direct to Storage).
 - File stored in private bucket.
+- Upload normalized after storage (HEIC, EXIF orientation, downscale).
 - Document record created.
 - User sees document archive.
+- Retention rule for originals decided (keep both within the 1 GB budget, or discard originals after confirmation).
 
 ### Milestone 3: Extraction contract
 
 - Contract JSON schema created with Zod.
 - Mock extraction provider implemented.
 - Extraction result saved to database.
+- Exit check: as soon as real provider keys arrive, measure real extraction latency, then set the route's maxDuration and the downscale target on measured numbers.
 
 ### Milestone 4: Confirm box
 
@@ -604,6 +660,7 @@ Avoid these choices for Phase 1:
 - Confirmed extraction creates task/reminder.
 - User can edit/complete tasks.
 - Dashboard shows upcoming deadlines.
+- Reminder delivery works end to end: pg_cron job, notifications table, unread badge.
 
 ### Milestone 6: Admin/operator prototype
 
@@ -611,7 +668,7 @@ Avoid these choices for Phase 1:
 - Platform operator can see system status.
 - Organization features remain clearly marked as future/optional unless client prioritizes them.
 
-## 16. Decision Summary
+## 17. Decision Summary
 
 The best default stack is:
 
@@ -628,6 +685,7 @@ OpenAI/RMIT Bedrock provider adapter
 Vitest
 Playwright
 Vercel or Docker deployment
+Offline Python evaluation workspace (uv)
 ```
 
 The most important design decision is not the exact model provider. It is this:
@@ -636,7 +694,7 @@ The most important design decision is not the exact model provider. It is this:
 
 If the team gets those foundations right, the AI model can be swapped later.
 
-## 17. Sources Checked
+## 18. Sources Checked
 
 - Next.js docs: https://nextjs.org/docs
 - Tailwind CSS with Next.js: https://tailwindcss.com/docs/installation/framework-guides/nextjs
@@ -651,3 +709,16 @@ If the team gets those foundations right, the AI model can be swapped later.
 - Auth.js Prisma Adapter docs: https://authjs.dev/getting-started/adapters/prisma
 - Zod docs: https://zod.dev/
 - Playwright docs: https://playwright.dev/docs/intro
+- Vercel cron jobs usage and limits: https://vercel.com/docs/cron-jobs/usage-and-pricing
+- Vercel function max duration: https://vercel.com/docs/functions/configuring-functions/duration
+- Supabase pg_cron docs: https://supabase.com/docs/guides/database/extensions/pg_cron
+- Supabase pricing and free project pausing: https://supabase.com/pricing
+- Resend pricing: https://resend.com/pricing
+- sharp image processing: https://sharp.pixelplumbing.com/
+- heic-convert: https://www.npmjs.com/package/heic-convert
+- Supabase pg_net docs: https://supabase.com/docs/guides/database/extensions/pg_net
+- Supabase local development: https://supabase.com/docs/guides/local-development
+- Vercel function limits (body size): https://vercel.com/docs/functions/limitations
+- Resend domain verification: https://resend.com/docs/dashboard/domains/introduction
+- Augraphy: https://github.com/sparkfish/augraphy
+- uv: https://docs.astral.sh/uv/
