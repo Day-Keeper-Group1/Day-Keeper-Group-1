@@ -1,0 +1,46 @@
+# Local development database.
+#
+#   docker compose up -d      start Postgres (and Adminer on :8080)
+#   npm run db:reset          build the schema and seed it
+#   docker compose down       stop
+#   docker compose down -v    stop and throw the data away
+#
+# Nothing here is deployed. It exists so that a teammate can clone the
+# repository and have a working database in one command, without an account
+# anywhere and without waiting for anyone to hand out credentials.
+
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: daykeeper-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: daykeeper
+      POSTGRES_PASSWORD: daykeeper_local_dev
+      POSTGRES_DB: daykeeper
+    ports:
+      # Deliberately not 5432: a teammate may already run Postgres locally for
+      # another unit, and a port collision is a bad first five minutes.
+      - "55432:5432"
+    volumes:
+      - daykeeper_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U daykeeper -d daykeeper"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # A database viewer on http://localhost:8080, so nobody has to install a
+  # client to look at the tables. Server: db, user/password/database: daykeeper.
+  adminer:
+    image: adminer:5
+    container_name: daykeeper-adminer
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  daykeeper_pgdata:

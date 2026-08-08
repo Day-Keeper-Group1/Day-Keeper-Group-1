@@ -4,13 +4,19 @@ DayKeeper (Group 1): an AI-powered life management system for people in vulnerab
 
 ## Where things live
 
+- `docs/start-here.md`: how to run the whole thing, what the seed contains, and where everything lives. Read this first.
+- `docs/api.md`: the API specification. **Not built yet**: this is the shape to build against, with the reasoning for the parts that look arbitrary.
+- `docs/architecture/adr-00*.md`: the four decisions that shape the rest (one Next.js app, our own auth behind one function, plain Postgres with no migrations, the six-field extraction contract). When something looks odd, the reason is in one of these.
 - `docs/project-description.md`: the official project description, verbatim. Our requirements baseline; when wording conflicts, this file wins.
 - `docs/DayKeeper-Tech-Stack-Recommendation.md`: the tech stack recommendation (draft until the team adopts it).
 - `docs/Technical-Research-and-Implementation-Roadmap.md`: step-by-step research and build plan; check this before starting new feature work.
 - `docs/prototype/user/daykeeper-sketch-live.html`: clickable prototype of the user flow (phone). The live one; this is where user-flow design work happens.
 - `docs/prototype/admin/daykeeper-admin-sketch.html`: wireframe of the admin dashboard (desktop). Static, no interaction. Keep the two prototypes separate: different device, different person, different module.
 - `docs/ai-prompts/`: AI usage records for the course GenAI declaration (create on first use). If AI helped with a change, log it there.
-- `src/`: Next.js (App Router) + TypeScript + Tailwind + shadcn/ui app. `AI_EXTRACTION_PROVIDER` defaults to a mock adapter; real OCR/AI provider wiring is owned by the AI teammate and lands separately.
+- `db/schema.sql`: the database, and its only definition. No migrations: edit it and run `npm run db:reset`.
+- `src/lib/contract/`: the six-field extraction contract in TypeScript, with a validator. Import these types; do not restate them.
+- `src/server/`: server-only code. `db.ts` for queries, `extraction/` for the reader interface and its mock. `src/lib` is safe anywhere; `src/server` never reaches the browser.
+- `src/app/`: the interface. The pages still read from `src/lib/mock-data.ts`; wiring them to real endpoints is the work.
 
 ## Conventions
 
@@ -23,15 +29,25 @@ DayKeeper (Group 1): an AI-powered life management system for people in vulnerab
 ## Build and test
 
 ```bash
-npm ci           # installs exactly what package-lock.json says; never rewrites it
-npm run dev      # http://localhost:3000
+npm ci                    # installs exactly what package-lock.json says; never rewrites it
+cp .env.example .env.local
+docker compose up -d      # Postgres on 55432; a database viewer on 8080
+npm run db:reset          # rebuild the schema from db/schema.sql, then seed
+npm run dev               # http://localhost:3000, sign in as margaret@example.com / daykeeper
+npm test                  # contract tests and database tests
+npm run typecheck
 npm run build
 npm run lint
 ```
 
 Use `npm install <pkg>` only to intentionally change dependencies, and commit the resulting `package-lock.json` diff together with that change. If `git diff` shows lockfile churn and you did not change dependencies, revert it (`git checkout -- package-lock.json`). Node >=20.17 and npm >=11 are enforced through `engines` plus `.npmrc` engine-strict.
 
-No automated tests yet (Vitest/Playwright land per the roadmap's Step 11). Copy `.env.example` to `.env.local` before touching auth/storage code.
+Tests are Vitest, in `tests/`. The database tests skip themselves with a hint when Docker is not running rather than failing.
+
+Two rules that are easy to break by accident:
+
+- **The six fields are a floor, not a ceiling.** A reader may return more, and the extra is kept in `open_payload`. But all six must be present, and a field that could not be read says `unreadable` rather than being omitted. `summary` is deliberately not one of them; see ADR 004.
+- **Never drop `rawText` from the review screen.** Showing the snippet the value came from is what turns confirming into checking. Without it the product's central safety claim is theatre.
 
 <!-- BEGIN:nextjs-agent-rules -->
 
