@@ -7,7 +7,8 @@ DayKeeper (Group 1): an AI-powered life management system for people in vulnerab
 - `docs/project-description.md`: the official project description, verbatim. Our requirements baseline; when wording conflicts, this file wins.
 - `docs/DayKeeper-Tech-Stack-Recommendation.md`: the tech stack recommendation (draft until the team adopts it).
 - `docs/Technical-Research-and-Implementation-Roadmap.md`: step-by-step research and build plan; check this before starting new feature work.
-- `docs/prototype/user/daykeeper-sketch-live.html`: clickable prototype of the user flow. The admin prototype will come as a separate file.
+- `docs/prototype/user/daykeeper-sketch-live.html`: clickable prototype of the user flow (phone). The live one; this is where user-flow design work happens.
+- `docs/prototype/admin/daykeeper-admin-sketch.html`: wireframe of the admin dashboard (desktop). Static, no interaction. Keep the two prototypes separate: different device, different person, different module.
 - `docs/ai-prompts/`: AI usage records for the course GenAI declaration (create on first use). If AI helped with a change, log it there.
 - `src/`: Next.js (App Router) + TypeScript + Tailwind + shadcn/ui app. `AI_EXTRACTION_PROVIDER` defaults to a mock adapter; real OCR/AI provider wiring is owned by the AI teammate and lands separately.
 

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DayKeeper — admin dashboard sketch (G1)</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background: #e9eef4; color: #1f2937; }
+
+  /* ---------- top toolbar ---------- */
+  .toolbar { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 10px; font-size: 13px; color: #6b7280; flex-wrap: wrap; }
+  .toolbar .name { font-weight: 700; color: #374151; }
+  .toolbar a { border: 1px solid #cbd5e1; background: #fff; padding: 6px 14px; border-radius: 999px; font-size: 13px; color: #475569; text-decoration: none; }
+
+  /* ---------- page ---------- */
+  .admin-wrap { max-width: 960px; margin: 0 auto 40px; padding: 0 20px; }
+  h1 { font-size: 23px; letter-spacing: -.2px; margin-bottom: 4px; }
+  .sub { color: #64748b; font-size: 14.5px; margin-bottom: 18px; }
+
+  .card { background: #fff; border-radius: 16px; padding: 16px; margin-bottom: 14px; box-shadow: 0 1px 3px rgba(15,23,42,.06); }
+  .card h2 { font-size: 12.5px; text-transform: uppercase; letter-spacing: .7px; color: #94a3b8; margin-bottom: 12px; }
+
+  .stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 14px; }
+  .stat { background: #fff; border-radius: 14px; padding: 18px; text-align: center; box-shadow: 0 1px 3px rgba(15,23,42,.06); }
+  .stat .v { font-size: 26px; color: #1f2937; font-weight: 700; }
+  .stat .v.warn { color: #b45309; }
+  .stat .v.ok { color: #15803d; }
+  .stat .k { font-size: 13px; color: #94a3b8; margin-top: 4px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { text-align: left; font-size: 11.5px; text-transform: uppercase; letter-spacing: .5px; color: #94a3b8; padding: 6px 8px; border-bottom: 1px solid #e5eaf0; }
+  td { padding: 10px 8px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+  tr:last-child td { border-bottom: 0; }
+  .dim2 { color: #94a3b8; font-size: 13px; }
+  .chip { display: inline-block; font-size: 11.5px; padding: 3px 9px; border-radius: 999px; font-weight: 600; }
+  .chip.green { background: #e8f5ec; color: #15803d; }
+  .chip.amber { background: #fff4d6; color: #9a6b00; }
+  .chip.grey { background: #eef1f4; color: #64748b; }
+  .act { color: #1b74c5; font-weight: 600; font-size: 13px; text-decoration: none; cursor: pointer; }
+  .act.danger { color: #b42318; }
+  .search { width: 100%; border: 1px solid #d6dee8; border-radius: 9px; padding: 9px 12px; font-size: 14px; margin-bottom: 10px; background: #fafbfc; }
+  .log { font-family: Consolas, monospace; font-size: 12.5px; line-height: 1.9; color: #475569; }
+  .log .t { color: #94a3b8; }
+  .log .err { color: #b42318; }
+  .qhook { border: 2px dashed #cbd5e1; background: #f8fafc; border-radius: 14px; padding: 22px; color: #64748b; font-size: 15px; line-height: 1.7; }
+  .qhook b { color: #475569; }
+
+  .disclaimer { text-align: center; font-size: 12px; color: #94a3b8; padding-bottom: 26px; }
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <span class="name">DayKeeper</span> <span>admin dashboard sketch · G1</span>
+  <a href="../user/daykeeper-sketch-live.html">→ user prototype</a>
+</div>
+
+<div class="admin-wrap">
+  <h1>Admin dashboard</h1>
+  <div class="sub">The platform operator's view: accounts and system health. A different person, a different device.</div>
+
+  <div class="stat-row">
+    <div class="stat"><div class="v">148</div><div class="k">registered users</div></div>
+    <div class="stat"><div class="v">2,310</div><div class="k">documents processed</div></div>
+    <div class="stat"><div class="v warn">4.2%</div><div class="k">extraction failures, 7 days</div></div>
+    <div class="stat"><div class="v ok">99.7%</div><div class="k">uptime, 30 days</div></div>
+  </div>
+
+  <div class="card">
+    <h2>Accounts</h2>
+    <input class="search" placeholder="Search name or email…">
+    <table>
+      <tr><th>User</th><th>Status</th><th>Last active</th><th>Actions</th></tr>
+      <tr><td>Margaret W. <span class="dim2">margaret.w@…</span></td><td><span class="chip green">active</span></td><td class="dim2">today</td><td><span class="act">reset password</span> · <span class="act danger">deactivate</span></td></tr>
+      <tr><td>John P. <span class="dim2">john.p@…</span></td><td><span class="chip amber">locked out</span></td><td class="dim2">3 days ago</td><td><span class="act">reset password</span> · <span class="act danger">deactivate</span></td></tr>
+      <tr><td>Rosa M. <span class="dim2">rosa.m@…</span></td><td><span class="chip green">active</span></td><td class="dim2">yesterday</td><td><span class="act">reset password</span> · <span class="act danger">deactivate</span></td></tr>
+      <tr><td>Bill T. <span class="dim2">bill.t@…</span></td><td><span class="chip grey">deactivated</span></td><td class="dim2">June</td><td><span class="act">restore</span></td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>System events</h2>
+    <div class="log">
+      <div><span class="t">10:41</span>  extraction retry exhausted, document #4821 <span class="err">(status: extraction_failed)</span></div>
+      <div><span class="t">10:32</span>  account locked after 5 failed logins: john.p@…</div>
+      <div><span class="t">09:58</span>  vision API latency high, p95 = 14s</div>
+      <div><span class="t">09:12</span>  reminder batch sent: 37 reminders, 0 errors</div>
+    </div>
+  </div>
+
+  <div class="qhook">
+    <b>Privacy rule:</b> the operator manages accounts and watches system health. Letter content, extracted values and amounts are never visible on this page.
+  </div>
+</div>
+
+<div class="disclaimer">Wireframe sketch, for discussion. Nothing here is final; every screen is a question.</div>
+
+</body>
+</html>

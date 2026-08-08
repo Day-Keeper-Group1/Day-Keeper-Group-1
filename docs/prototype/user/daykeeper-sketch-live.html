@@ -12,12 +12,13 @@
   .toolbar { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 10px; font-size: 13px; color: #6b7280; flex-wrap: wrap; }
   .toolbar .name { font-weight: 700; color: #374151; }
   .toolbar button { border: 1px solid #cbd5e1; background: #fff; padding: 6px 14px; border-radius: 999px; font-size: 13px; cursor: pointer; color: #475569; }
-  .toolbar button.on { background: #1b74c5; border-color: #1b74c5; color: #fff; }
+  .toolbar a { border: 1px solid #cbd5e1; background: #fff; padding: 6px 14px; border-radius: 999px; font-size: 13px; color: #475569; text-decoration: none; }
 
   /* ---------- phone frame ---------- */
   .phone-wrap { display: flex; justify-content: center; padding-bottom: 30px; }
-  .phone { width: 400px; background: #f7f9fb; border: 10px solid #26303b; border-radius: 34px; overflow: hidden; position: relative; min-height: 800px; box-shadow: 0 18px 50px rgba(30,41,59,.25); }
-  .app { padding: 22px 18px 96px 18px; }
+  .phone { width: 400px; background: #f7f9fb; border: 10px solid #26303b; border-radius: 34px; overflow: hidden; position: relative; height: 800px; box-shadow: 0 18px 50px rgba(30,41,59,.25); }
+  .app { padding: 22px 18px 96px 18px; height: 100%; overflow-y: auto; scrollbar-width: none; }
+  .app::-webkit-scrollbar { display: none; }
 
   h1 { font-size: 23px; letter-spacing: -.2px; margin-bottom: 3px; }
   .sub { color: #64748b; font-size: 14.5px; margin-bottom: 18px; }
@@ -86,16 +87,39 @@
   .plan-hold { background: #fff8e8; border-radius: 10px; padding: 11px 12px; font-size: 13.5px; color: #9a6b00; margin-top: 10px; line-height: 1.45; }
 
   /* calendar */
+  .cal-screen-head { display: flex; align-items: center; justify-content: space-between; }
+  .today-btn { border: 1px solid #cbd5e1; background: #fff; color: #1b74c5; font-weight: 600; font-size: 13px; padding: 6px 12px; border-radius: 999px; cursor: pointer; }
+  .today-btn.home { opacity: .35; }
+  .cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .cal-nav { border: none; background: #eef2f7; color: #1b74c5; width: 36px; height: 36px; border-radius: 10px; font-size: 20px; cursor: pointer; line-height: 1; }
+  .cal-title { font-size: 16px; font-weight: 700; }
   .cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
   .cal .dow { text-align: center; color: #94a3b8; font-size: 11px; padding: 4px 0; }
   .cal .d { text-align: center; padding: 7px 0 4px; font-size: 14px; color: #475569; border-radius: 10px; min-height: 34px; }
-  .cal .d .tag { display: block; font-size: 10px; background: #f3e8cf; color: #7a5c14; border-radius: 3px; padding: 1px 3px; margin: 3px 2px 0; line-height: 1.3; }
-  .agenda-day { font-size: 13px; color: #94a3b8; margin: 14px 0 4px; font-weight: 600; }
-  .see-letter { color: #1b74c5; font-size: 13.5px; text-decoration: none; font-weight: 600; }
+  .cal .d .dots { display: flex; gap: 3px; justify-content: center; align-items: center; height: 6px; margin-top: 2px; }
+  .cdot { width: 5px; height: 5px; border-radius: 50%; }
+  .cdot.due { background: #b45309; }
+  .cdot.rem { background: #b6c2d1; }
+  .cal .d.has { cursor: pointer; }
+  .cal .d.sel { background: #1b74c5; color: #fff; }
+  .cal .d.sel .cdot { background: #fff; }
+
+  /* day sheet: tap a marked day, only that day's details come forward */
+  .sheet-mask { position: absolute; inset: 0; background: rgba(15,23,42,.35); opacity: 0; visibility: hidden; transition: opacity .25s; z-index: 8; }
+  .sheet-mask.show { opacity: 1; visibility: visible; }
+  .sheet { position: absolute; left: 0; right: 0; bottom: 0; background: #fff; border-radius: 22px 22px 0 0; padding: 18px 18px 24px; box-shadow: 0 -12px 34px rgba(15,23,42,.18); transform: translateY(105%); transition: transform .3s; z-index: 9; max-height: 76%; overflow-y: auto; }
+  .sheet.show { transform: translateY(0); }
+  .dd-day { font-size: 13px; color: #94a3b8; font-weight: 600; margin-bottom: 8px; }
+  .sheet .ent + .ent { border-top: 1px solid #f1f5f9; padding-top: 12px; margin-top: 12px; }
+  .sheet .t { font-size: 16.5px; font-weight: 700; }
+  .sheet .remind { font-size: 14.5px; color: #64748b; margin-bottom: 3px; }
+  .photo-row { display: flex; align-items: center; gap: 11px; margin-top: 10px; cursor: pointer; }
+  .photo-row .cap { font-size: 13.5px; color: #1b74c5; font-weight: 600; }
+  .cap2 { font-size: 12.5px; color: #94a3b8; }
 
   /* toast (batched notification) */
-  .toast { position: absolute; left: 14px; right: 14px; top: 14px; background: #1f2937; color: #fff; border-radius: 12px; padding: 12px 14px; font-size: 13.5px; box-shadow: 0 8px 24px rgba(0,0,0,.3); opacity: 0; transform: translateY(-14px); transition: all .35s; cursor: pointer; z-index: 5; }
-  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast { position: absolute; left: 14px; right: 14px; top: 14px; background: #1f2937; color: #fff; border-radius: 12px; padding: 12px 14px; font-size: 13.5px; box-shadow: 0 8px 24px rgba(0,0,0,.3); opacity: 0; visibility: hidden; pointer-events: none; transform: translateY(-14px); transition: all .35s; cursor: pointer; z-index: 5; }
+  .toast.show { opacity: 1; visibility: visible; pointer-events: auto; transform: translateY(0); }
   .toast b { display: block; font-size: 14.5px; margin-bottom: 2px; }
   .toast .env { font-size: 11px; opacity: .6; text-transform: uppercase; letter-spacing: .6px; margin-bottom: 5px; }
 
@@ -110,33 +134,6 @@
   .screen { display: none; }
   .screen.active { display: block; }
 
-  /* ---------- admin (desktop view) ---------- */
-  .admin-wrap { display: none; max-width: 960px; margin: 0 auto 40px; padding: 0 20px; }
-  .admin-wrap.active { display: block; }
-  .stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 14px; }
-  .stat { background: #fff; border-radius: 14px; padding: 18px; text-align: center; box-shadow: 0 1px 3px rgba(15,23,42,.06); }
-  .stat .v { font-size: 26px; color: #1f2937; font-weight: 700; }
-  .stat .v.warn { color: #b45309; }
-  .stat .v.ok { color: #15803d; }
-  .stat .k { font-size: 13px; color: #94a3b8; margin-top: 4px; }
-  .admin-wrap table { width: 100%; border-collapse: collapse; font-size: 14px; }
-  .admin-wrap th { text-align: left; font-size: 11.5px; text-transform: uppercase; letter-spacing: .5px; color: #94a3b8; padding: 6px 8px; border-bottom: 1px solid #e5eaf0; }
-  .admin-wrap td { padding: 10px 8px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
-  .admin-wrap tr:last-child td { border-bottom: 0; }
-  .dim2 { color: #94a3b8; font-size: 13px; }
-  .chip { display: inline-block; font-size: 11.5px; padding: 3px 9px; border-radius: 999px; font-weight: 600; }
-  .chip.green { background: #e8f5ec; color: #15803d; }
-  .chip.amber { background: #fff4d6; color: #9a6b00; }
-  .chip.grey { background: #eef1f4; color: #64748b; }
-  .act { color: #1b74c5; font-weight: 600; font-size: 13px; text-decoration: none; cursor: pointer; }
-  .act.danger { color: #b42318; }
-  .search { width: 100%; border: 1px solid #d6dee8; border-radius: 9px; padding: 9px 12px; font-size: 14px; margin-bottom: 10px; background: #fafbfc; }
-  .log { font-family: Consolas, monospace; font-size: 12.5px; line-height: 1.9; color: #475569; }
-  .log .t { color: #94a3b8; }
-  .log .err { color: #b42318; }
-  .qhook { border: 2px dashed #cbd5e1; background: #f8fafc; border-radius: 14px; padding: 22px; color: #64748b; font-size: 15px; line-height: 1.7; }
-  .qhook b { color: #475569; }
-
   .disclaimer { text-align: center; font-size: 12px; color: #94a3b8; padding-bottom: 26px; }
 </style>
 </head>
@@ -144,9 +141,8 @@
 
 <div class="toolbar">
   <span class="name">DayKeeper</span> <span>understanding sketch · G1 · live flow</span>
-  <button class="on" id="tb-phone">Phone</button>
-  <button id="tb-admin">Admin (desktop)</button>
   <button id="tb-reset" title="restart the demo">↺ Restart</button>
+  <a href="../admin/daykeeper-admin-sketch.html">→ admin sketch</a>
 </div>
 
 <!-- ================= PHONE ================= -->
@@ -229,12 +225,19 @@
 
       <!-- CALENDAR -->
       <section class="screen" id="s-calendar">
-        <h1>August 2026</h1>
+        <div class="cal-screen-head">
+          <h1>Calendar</h1>
+          <button class="today-btn" id="today-btn" onclick="goToday()">Back to today</button>
+        </div>
         <div class="sub">Everything you've confirmed, in one place.</div>
 
         <div class="card">
+          <div class="cal-head">
+            <button class="cal-nav" onclick="moveMonth(-1)">‹</button>
+            <div class="cal-title" id="cal-title">August 2026</div>
+            <button class="cal-nav" onclick="moveMonth(1)">›</button>
+          </div>
           <div class="cal" id="cal-grid"></div>
-          <div id="agenda"></div>
         </div>
 
         <div class="card">
@@ -250,46 +253,11 @@
         <button data-s="calendar"><span class="i">📅</span>Calendar</button>
       </div>
 
+      <!-- day sheet -->
+      <div class="sheet-mask" id="sheet-mask" onclick="closeDay()"></div>
+      <div class="sheet" id="sheet"></div>
+
     </div>
-  </div>
-</div>
-
-<!-- ================= ADMIN (desktop) ================= -->
-<div class="admin-wrap" id="admin-view">
-  <h1 style="margin-bottom:4px">Admin dashboard</h1>
-  <div class="sub">The platform operator's view: accounts and system health. A different person, a different device.</div>
-
-  <div class="stat-row">
-    <div class="stat"><div class="v">148</div><div class="k">registered users</div></div>
-    <div class="stat"><div class="v">2,310</div><div class="k">documents processed</div></div>
-    <div class="stat"><div class="v warn">4.2%</div><div class="k">extraction failures, 7 days</div></div>
-    <div class="stat"><div class="v ok">99.7%</div><div class="k">uptime, 30 days</div></div>
-  </div>
-
-  <div class="card">
-    <h2>Accounts</h2>
-    <input class="search" placeholder="Search name or email…">
-    <table>
-      <tr><th>User</th><th>Status</th><th>Last active</th><th>Actions</th></tr>
-      <tr><td>Margaret W. <span class="dim2">margaret.w@…</span></td><td><span class="chip green">active</span></td><td class="dim2">today</td><td><span class="act">reset password</span> · <span class="act danger">deactivate</span></td></tr>
-      <tr><td>John P. <span class="dim2">john.p@…</span></td><td><span class="chip amber">locked out</span></td><td class="dim2">3 days ago</td><td><span class="act">reset password</span> · <span class="act danger">deactivate</span></td></tr>
-      <tr><td>Rosa M. <span class="dim2">rosa.m@…</span></td><td><span class="chip green">active</span></td><td class="dim2">yesterday</td><td><span class="act">reset password</span> · <span class="act danger">deactivate</span></td></tr>
-      <tr><td>Bill T. <span class="dim2">bill.t@…</span></td><td><span class="chip grey">deactivated</span></td><td class="dim2">June</td><td><span class="act">restore</span></td></tr>
-    </table>
-  </div>
-
-  <div class="card">
-    <h2>System events</h2>
-    <div class="log">
-      <div><span class="t">10:41</span>  extraction retry exhausted, document #4821 <span class="err">(status: extraction_failed)</span></div>
-      <div><span class="t">10:32</span>  account locked after 5 failed logins: john.p@…</div>
-      <div><span class="t">09:58</span>  vision API latency high, p95 = 14s</div>
-      <div><span class="t">09:12</span>  reminder batch sent: 37 reminders, 0 errors</div>
-    </div>
-  </div>
-
-  <div class="qhook">
-    <b>Privacy rule:</b> the operator manages accounts and watches system health. Letter content, extracted values and amounts are never visible on this page.
   </div>
 </div>
 
@@ -312,7 +280,7 @@
         { ico: '📅', t: 'On your calendar: due Sat 15 Aug' }
       ],
       task: { title: 'Pay AGL electricity bill', when: 'Sat 15 Aug' },
-      marks: [ { d: 8, l: 'reminder' }, { d: 14, l: 'reminder' }, { d: 15, l: 'AGL due' } ],
+      marks: [ { mo: 8, d: 8, l: 'reminder' }, { mo: 8, d: 14, l: 'reminder' }, { mo: 8, d: 15, l: 'AGL due' } ],
       agenda: { day: 'Saturday 15 August', line: 'Pay AGL electricity bill', sub: '$347.60 · ref 9201 4471 88' } },
 
     { who: 'Medicare', what: 'Claim form', delay: 7000,
@@ -328,7 +296,7 @@
         { ico: '📅', t: 'On your calendar: due Sat 22 Aug' }
       ],
       task: { title: 'Return Medicare form', when: 'Sat 22 Aug' },
-      marks: [ { d: 21, l: 'reminder' }, { d: 22, l: 'Medicare' } ],
+      marks: [ { mo: 8, d: 21, l: 'reminder' }, { mo: 8, d: 22, l: 'Medicare' } ],
       agenda: { day: 'Saturday 22 August', line: 'Return Medicare form', sub: 'ref CLM 30991 442' } },
 
     { who: 'VicRoads', what: 'Registration renewal', delay: 6200,
@@ -345,7 +313,7 @@
         { ico: '📅', t: 'On your calendar: due Tue 1 Sep' }
       ],
       task: { title: 'Renew car registration', when: 'Tue 1 Sep' },
-      marks: [ { d: 25, l: 'reminder' }, { d: 31, l: 'reminder' } ],
+      marks: [ { mo: 8, d: 25, l: 'reminder' }, { mo: 8, d: 31, l: 'reminder' }, { mo: 9, d: 1, l: 'Rego due' } ],
       agenda: { day: 'Tuesday 1 September', line: 'Renew car registration', sub: '$852.10 · rego 1AB 2CD' } },
 
     { who: 'Dr Patel', what: 'Appointment letter', delay: 6800, fails: true, retryDelay: 4200,
@@ -359,7 +327,7 @@
         { ico: '📅', t: 'On your calendar: Fri 4 Sep, 10:30 am' }
       ],
       task: { title: 'Appointment with Dr Patel', when: 'Fri 4 Sep' },
-      marks: [],
+      marks: [ { mo: 9, d: 3, l: 'reminder' }, { mo: 9, d: 4, l: 'Dr Patel' } ],
       agenda: { day: 'Friday 4 September', line: 'Appointment with Dr Patel', sub: '10:30 am · GP clinic' } },
 
     { who: 'Yarra Council', what: 'Rates notice', delay: 7500,
@@ -376,21 +344,35 @@
         { ico: '📅', t: 'On your calendar: due Mon 31 Aug' }
       ],
       task: { title: 'Pay council rates', when: 'Mon 31 Aug' },
-      marks: [ { d: 24, l: 'reminder' }, { d: 30, l: 'reminder' }, { d: 31, l: 'Rates due' } ],
+      marks: [ { mo: 8, d: 24, l: 'reminder' }, { mo: 8, d: 30, l: 'reminder' }, { mo: 8, d: 31, l: 'Rates due' } ],
       agenda: { day: 'Monday 31 August', line: 'Pay council rates', sub: '$612.40 · ref 88 3120 7' } }
   ];
 
   /* ---------- state ---------- */
   let queue = [];        // posted letters: {idx, pages, state: reading|ready|failed}
   let tasks = [];        // confirmed tasks: {id, title, when, done, marks, agenda}
-  let nextPost = 0, pages = 0, uid = 0, current = null;
+  let nextPost = 0, pages = 0, uid = 0, current = null, selDay = null, calMo = 8, calYr = 2026;
   let timers = [], toastTimer = null;
 
   const INITIAL_TASKS = [
-    { id: 'w', title: 'Pay water bill', when: 'Wed 5 Aug', done: false, marks: [ { d: 5, l: 'Water due' } ],
-      agenda: { day: 'Wednesday 5 August', line: 'Pay water bill', sub: '$89.20 · ref 5501 2280' } },
-    { id: 'p', title: 'Return pension review form', when: 'Tue 11 Aug', done: false, marks: [ { d: 11, l: 'Form due' } ],
-      agenda: { day: 'Tuesday 11 August', line: 'Return pension review form', sub: 'Services Australia' } }
+    { id: 'w', title: 'Pay water bill', when: 'Wed 5 Aug', done: false, marks: [ { mo: 8, d: 5, l: 'Water due' } ],
+      agenda: { day: 'Wednesday 5 August', line: 'Pay water bill', sub: '$89.20 · ref 5501 2280' },
+      pages: 1,
+      facts: [
+        { k: 'From', v: 'Yarra Valley Water' },
+        { k: 'What to do', v: 'Pay the amount due' },
+        { k: 'Due date', v: 'Wed 5 Aug' },
+        { k: 'Amount', v: '$89.20' },
+        { k: 'Reference', v: '5501 2280' }
+      ] },
+    { id: 'p', title: 'Return pension review form', when: 'Tue 11 Aug', done: false, marks: [ { mo: 8, d: 11, l: 'Form due' } ],
+      agenda: { day: 'Tuesday 11 August', line: 'Return pension review form', sub: 'Services Australia' },
+      pages: 2,
+      facts: [
+        { k: 'From', v: 'Services Australia' },
+        { k: 'What to do', v: 'Return the completed form' },
+        { k: 'Due date', v: 'Tue 11 Aug' }
+      ] }
   ];
 
   /* ---------- scan: pages and posting ---------- */
@@ -465,7 +447,7 @@
     if (!current) { go('calendar'); return; }
     const L = LETTERS[current.idx];
     queue = queue.filter(q => q.id !== current.id);
-    tasks.unshift({ id: 't' + current.id, title: L.task.title, when: L.task.when, done: false, marks: L.marks, agenda: L.agenda });
+    tasks.unshift({ id: 't' + current.id, title: L.task.title, when: L.task.when, done: false, marks: L.marks, agenda: L.agenda, pages: current.pages, facts: L.facts });
     current = null;
     renderAll();
     go('calendar');
@@ -532,29 +514,85 @@
     renderCalendar();
   }
 
-  function renderCalendar() {
-    /* August 2026: starts Saturday, 31 days */
-    const tags = {};
-    tasks.forEach(t => (t.marks || []).forEach(m => { (tags[m.d] = tags[m.d] || []).push(m.l); }));
-    let h = ['M','T','W','T','F','S','S'].map(d => '<div class="dow">' + d + '</div>').join('');
-    for (let i = 0; i < 5; i++) h += '<div class="d"></div>';
-    for (let d = 1; d <= 31; d++) {
-      h += '<div class="d">' + d + (tags[d] ? tags[d].map(l => '<span class="tag">' + l + '</span>').join('') : '') + '</div>';
-    }
-    for (let i = 0; i < 6; i++) h += '<div class="d"></div>';
-    document.getElementById('cal-grid').innerHTML = h;
+  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const TODAY_MO = 8, TODAY_YR = 2026;   /* the sketch's fictional "today" lives in August 2026 */
 
-    /* agenda: most recently confirmed */
-    const t = tasks[0];
-    document.getElementById('agenda').innerHTML = t
-      ? '<div class="agenda-day">' + t.agenda.day + '</div>' +
-        '<div class="row"><span class="dot" onclick="toggleDone(\'' + t.id + '\')">✓</span><span class="txt">' + t.agenda.line +
-        '<br><span style="color:#94a3b8;font-size:13px">' + t.agenda.sub + ' · <a class="see-letter" href="#">see the photo</a></span></span></div>'
-      : '';
+  function goToday() {
+    if (calMo === TODAY_MO && calYr === TODAY_YR) return;
+    closeDay();
+    calMo = TODAY_MO; calYr = TODAY_YR;
+    renderCalendar();
+  }
+
+  function renderCalendar() {
+    const tags = {};
+    tasks.forEach(t => (t.marks || []).forEach(m => { if (m.mo === calMo) (tags[m.d] = tags[m.d] || []).push(m.l); }));
+    if (selDay && !tags[selDay]) selDay = null;
+    document.getElementById('cal-title').textContent = MONTHS[calMo - 1] + ' ' + calYr;
+    document.getElementById('today-btn').classList.toggle('home', calMo === TODAY_MO && calYr === TODAY_YR);
+    const offset = (new Date(calYr, calMo - 1, 1).getDay() + 6) % 7;   /* Monday-first grid */
+    const days = new Date(calYr, calMo, 0).getDate();
+    let h = ['M','T','W','T','F','S','S'].map(d => '<div class="dow">' + d + '</div>').join('');
+    for (let i = 0; i < offset; i++) h += '<div class="d"></div>';
+    for (let d = 1; d <= days; d++) {
+      if (tags[d]) {
+        const dots = tags[d].slice(0, 3).map(l => '<span class="cdot ' + (l === 'reminder' ? 'rem' : 'due') + '"></span>').join('');
+        h += '<div class="d has' + (selDay === d ? ' sel' : '') + '" onclick="openDay(' + d + ')">' + d + '<span class="dots">' + dots + '</span></div>';
+      } else {
+        h += '<div class="d">' + d + '<span class="dots"></span></div>';
+      }
+    }
+    const trail = (7 - (offset + days) % 7) % 7;
+    for (let i = 0; i < trail; i++) h += '<div class="d"></div>';
+    document.getElementById('cal-grid').innerHTML = h;
+  }
+
+  function moveMonth(step) {
+    closeDay();
+    calMo += step;
+    if (calMo < 1) { calMo = 12; calYr--; }
+    if (calMo > 12) { calMo = 1; calYr++; }
+    renderCalendar();
+  }
+
+  /* ---------- day sheet ---------- */
+  function openDay(d) {
+    selDay = d;
+    renderCalendar();
+    const DOW = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const entries = [];
+    tasks.forEach(t => (t.marks || []).forEach(m => { if (m.mo === calMo && m.d === d) entries.push({ t: t, l: m.l }); }));
+    if (!entries.length) return;
+    let h = '<div class="dd-day">' + DOW[new Date(calYr, calMo - 1, d).getDay()] + ' ' + d + ' ' + MONTHS[calMo - 1] + '</div>';
+    entries.forEach(e => {
+      const t = e.t;
+      if (e.l === 'reminder') {
+        h += '<div class="ent"><div class="remind">🔔 A reminder goes out this morning, 9 am</div>' +
+             '<div class="t">' + t.title + '</div><div class="cap2">due ' + t.when + '</div></div>';
+        return;
+      }
+      h += '<div class="ent"><div class="t">' + t.title + '</div>';
+      (t.facts || []).forEach(f => { h += '<div class="fact"><span class="k">' + f.k + '</span><span class="v">' + f.v + '</span></div>'; });
+      h += '<div class="photo-row"><span class="thumb"></span><span><span class="cap">See the photo you took</span>' +
+           '<div class="cap2">' + (t.pages || 1) + (t.pages > 1 ? ' pages' : ' page') + ' · kept with this task</div></span></div>';
+      h += '</div>';
+    });
+    h += '<button class="btn ghost" onclick="closeDay()">Close</button>';
+    document.getElementById('sheet').innerHTML = h;
+    document.getElementById('sheet-mask').classList.add('show');
+    document.getElementById('sheet').classList.add('show');
+  }
+
+  function closeDay() {
+    selDay = null;
+    document.getElementById('sheet-mask').classList.remove('show');
+    document.getElementById('sheet').classList.remove('show');
+    renderCalendar();
   }
 
   /* ---------- navigation ---------- */
   function go(name) {
+    closeDay();
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById('s-' + name).classList.add('active');
     document.querySelectorAll('.nav button').forEach(b => b.classList.toggle('on', b.dataset.s === name));
@@ -562,20 +600,13 @@
   }
   document.querySelectorAll('.nav button').forEach(b => b.addEventListener('click', () => { if (b.dataset.s) go(b.dataset.s); }));
 
-  const phoneView = document.getElementById('phone-view');
-  const adminView = document.getElementById('admin-view');
-  const tbPhone = document.getElementById('tb-phone');
-  const tbAdmin = document.getElementById('tb-admin');
-  tbPhone.addEventListener('click', () => { phoneView.style.display = 'flex'; adminView.classList.remove('active'); tbPhone.classList.add('on'); tbAdmin.classList.remove('on'); });
-  tbAdmin.addEventListener('click', () => { phoneView.style.display = 'none'; adminView.classList.add('active'); tbAdmin.classList.add('on'); tbPhone.classList.remove('on'); });
-
   /* ---------- reset ---------- */
   function reset() {
     timers.forEach(clearTimeout); timers = [];
     if (toastTimer) clearTimeout(toastTimer);
     document.getElementById('toast').classList.remove('show');
     queue = []; tasks = INITIAL_TASKS.map(t => Object.assign({}, t));
-    nextPost = 0; pages = 0; current = null;
+    nextPost = 0; pages = 0; current = null; selDay = null; calMo = 8; calYr = 2026;
     document.getElementById('cam-d').textContent = 'the camera stays open, keep going';
     renderPages(); renderAll(); go('home');
   }
