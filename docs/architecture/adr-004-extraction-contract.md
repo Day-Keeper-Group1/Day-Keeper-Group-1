@@ -100,3 +100,18 @@ rows is to be built.
   stored on every run.
 - Adding a field to the contract means changing `CONTRACT_FIELD_KEYS`, the seed,
   the prompt, and the stored rows together. That friction is intentional.
+
+## Revisions
+
+**9 August 2026 — `due_time`, an optional seventh key.** An appointment happens
+AT a time, not just BY a date; the prototype shows "Fri 4 Sep, 10:30 am" and a
+`date` column silently truncates it. `due_time` (`HH:mm`, only when the page
+prints one) is added to `OPTIONAL_FIELD_KEYS`: known to the contract, with
+columns waiting for it, never required. **The six-field floor is unchanged** —
+a provider that omits `due_time` is fully conformant. Its presence is also what
+marks a document as an appointment for reminder scheduling (one reminder, the
+day before, instead of two): see `src/lib/contract/reminders.ts`.
+
+Same date: `FIELD_LABELS` rewritten to the prototype's vocabulary ("From",
+"What to do", "Reference"). The keys did not change; the labels are read by
+people who never chose this software and should not have to learn its words.

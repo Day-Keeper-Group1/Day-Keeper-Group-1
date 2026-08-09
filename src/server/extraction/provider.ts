@@ -13,6 +13,7 @@
 
 import 'server-only';
 import type { ExtractionResult } from '@/lib/contract/extraction';
+import type { ExtractionFailureKind } from '@/lib/contract/api';
 
 export type ExtractionInput = {
   documentId: string;
@@ -42,11 +43,11 @@ export type ExtractionInput = {
  * them to retake the photo, which is something they can act on. An unsupported
  * document is a dead end and should say so plainly instead of inviting a
  * retake that will fail the same way.
+ *
+ * The union itself is defined in the shared contract (the browser draws these
+ * kinds); this module re-exports it so server code keeps importing from here.
  */
-export type ExtractionFailureKind =
-  | 'transient'
-  | 'unreadable_image'
-  | 'unsupported_document';
+export type { ExtractionFailureKind };
 
 export class ExtractionFailure extends Error {
   constructor(

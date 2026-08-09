@@ -10,6 +10,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   CONTRACT_VERSION,
+  extraFieldsOf,
   extractionResultSchema,
   fieldOf,
   fieldsNeedingAttention,
@@ -80,6 +81,19 @@ describe('the six fields', () => {
     if (parsed.success) {
       expect(parsed.data.fields).toHaveLength(7);
     }
+  });
+
+  it('knows due_time as optional, not extra: it has a column, not an open_payload slot', () => {
+    const withTime = extractionResultSchema.parse(
+      validResult({
+        fields: [
+          ...CONTRACT_FIELD_KEYS.map(validField),
+          { ...validField('due_time'), value: '10:30' },
+          validField('bpay_biller_code'),
+        ],
+      }),
+    );
+    expect(extraFieldsOf(withTime).map((f) => f.key)).toEqual(['bpay_biller_code']);
   });
 });
 
@@ -179,7 +193,7 @@ describe('the mock reader', () => {
 });
 
 describe('when a task counts as overdue', () => {
-  const now = new Date('2026-08-15T10:00:00Z');
+  const now = new Date('2026-08-15T10:00:00Z'); // 8 pm in Melbourne
 
   it('is not overdue on the day it is due', () => {
     expect(deriveTaskStatus('open', '2026-08-15', now)).toBe('upcoming');
@@ -195,6 +209,15 @@ describe('when a task counts as overdue', () => {
 
   it('without a date, is simply upcoming', () => {
     expect(deriveTaskStatus('open', null, now)).toBe('upcoming');
+  });
+
+  it("turns overdue at the person's midnight, not UTC's", () => {
+    // 15:00 UTC on the 15th is 1 am on the 16th in Melbourne: the due day is
+    // over where the person lives, even though UTC disagrees for nine more
+    // hours. The old implementation compared against UTC end-of-day and kept
+    // this task 'upcoming' until ten the next morning.
+    const melbourneSmallHours = new Date('2026-08-15T15:00:00Z');
+    expect(deriveTaskStatus('open', '2026-08-15', melbourneSmallHours)).toBe('overdue');
   });
 });
 

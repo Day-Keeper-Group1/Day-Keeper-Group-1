@@ -13,7 +13,11 @@
  */
 
 import { z } from 'zod';
-import { CONTRACT_FIELD_KEYS, type ContractFieldKey } from './fields';
+import {
+  CONTRACT_FIELD_KEYS,
+  KNOWN_FIELD_KEYS,
+  type ContractFieldKey,
+} from './fields';
 
 /**
  * Bumped when the shape changes in a way that older stored payloads would fail.
@@ -142,10 +146,14 @@ export function fieldOf(
   return found;
 }
 
-/** Fields a provider returned that are not part of the contract. */
+/**
+ * Fields a provider returned that the system does not recognise at all.
+ * These are what lands in open_payload. Optional fields the contract knows
+ * (due_time) are not "extra": they have columns and screens waiting for them.
+ */
 export function extraFieldsOf(result: ExtractionResult): ExtractedFieldPayload[] {
   return result.fields.filter(
-    (f) => !(CONTRACT_FIELD_KEYS as readonly string[]).includes(f.key),
+    (f) => !(KNOWN_FIELD_KEYS as readonly string[]).includes(f.key),
   );
 }
 

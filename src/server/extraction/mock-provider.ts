@@ -15,6 +15,7 @@
 import 'server-only';
 import { createHash } from 'node:crypto';
 import { CONTRACT_VERSION } from '@/lib/contract/extraction';
+import { NO_PAYMENT_REQUIRED } from '@/lib/contract/fields';
 import {
   DocumentExtractionProvider,
   ExtractionFailure,
@@ -31,6 +32,7 @@ const SPECIMENS = [
     issuer: 'AGL Energy',
     action_required: 'Pay the amount due',
     due_date: '2026-08-15',
+    due_time: null,
     amount: '$347.60',
     reference: '9201 4471 88',
     raw: {
@@ -47,6 +49,7 @@ const SPECIMENS = [
     issuer: 'Services Australia',
     action_required: 'Return the completed form',
     due_date: '2026-08-22',
+    due_time: null,
     amount: null,
     reference: 'CLM 30991 442',
     raw: {
@@ -63,6 +66,7 @@ const SPECIMENS = [
     issuer: 'VicRoads',
     action_required: 'Renew the registration',
     due_date: '2026-09-01',
+    due_time: null,
     amount: '$852.10',
     reference: '1AB 2CD',
     raw: {
@@ -79,6 +83,7 @@ const SPECIMENS = [
     issuer: 'City of Yarra',
     action_required: 'Pay the rates instalment',
     due_date: '2026-08-31',
+    due_time: null,
     amount: '$612.40',
     reference: '88 3120 7',
     raw: {
@@ -95,6 +100,9 @@ const SPECIMENS = [
     issuer: 'Dr A. Patel, GP clinic',
     action_required: 'Attend the follow-up appointment',
     due_date: '2026-09-04',
+    // An appointment happens AT a time. This is the one specimen that
+    // exercises the optional due_time field; see src/lib/contract/fields.ts.
+    due_time: '10:30',
     amount: null,
     reference: 'PT-40192',
     raw: {
@@ -187,7 +195,7 @@ export class MockExtractionProvider implements DocumentExtractionProvider {
       specimen.amount === null
         ? {
             key: 'amount',
-            value: 'No payment required',
+            value: NO_PAYMENT_REQUIRED,
             raw_text: null,
             status: 'confirmed' as const,
             confidence: 0.9,
@@ -214,6 +222,19 @@ export class MockExtractionProvider implements DocumentExtractionProvider {
             status: 'confirmed' as const,
             confidence: 0.88,
           },
+      // Optional field: present only when the page prints a time. The contract
+      // knows due_time but never requires it; the floor stays at six.
+      ...(specimen.due_time
+        ? [
+            {
+              key: 'due_time',
+              value: specimen.due_time,
+              raw_text: '10:30 am',
+              status: 'confirmed' as const,
+              confidence: 0.93,
+            },
+          ]
+        : []),
     ];
 
     return {

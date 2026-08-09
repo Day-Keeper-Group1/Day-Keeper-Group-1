@@ -32,14 +32,19 @@ export function isContractFieldKey(key: string): key is ContractFieldKey {
  * The order is the order a person reads a letter: who it is from, what they
  * want, by when, how much, and the number to quote. It is not alphabetical and
  * it is not the order the model happens to return.
+ *
+ * The wording is the product prototype's, verbatim. "From", not "Issuer":
+ * these labels are read by people who did not choose this software and should
+ * never have to learn its vocabulary. The snake_case keys keep the technical
+ * names; the labels speak person.
  */
 export const FIELD_LABELS: Record<ContractFieldKey, string> = {
   document_type: 'Document type',
-  issuer: 'Issuer',
-  action_required: 'Action required',
+  issuer: 'From',
+  action_required: 'What to do',
   due_date: 'Due date',
   amount: 'Amount',
-  reference: 'Reference number',
+  reference: 'Reference',
 };
 
 /**
@@ -60,6 +65,63 @@ export const FIELD_DESCRIPTIONS: Record<ContractFieldKey, string> = {
     'The amount payable, exactly as written on the page including the currency symbol. Do not convert, round, or reformat.',
   reference:
     'The reference, account, or customer number the person must quote. Keep the spacing as printed.',
+};
+
+/**
+ * Optional fields: known to the contract, never required.
+ *
+ * `due_time` exists because an appointment happens AT a time, not just BY a
+ * date, and the prototype shows "Fri 4 Sep, 10:30 am". The six-field floor is
+ * unchanged: a provider that omits `due_time` is fine, and a provider that
+ * returns it for a document with no printed time is wrong. Its presence is
+ * also what marks a document as an appointment for reminder scheduling; see
+ * ./reminders.ts.
+ */
+export const OPTIONAL_FIELD_KEYS = ['due_time'] as const;
+
+export type OptionalFieldKey = (typeof OPTIONAL_FIELD_KEYS)[number];
+
+export const OPTIONAL_FIELD_LABELS: Record<OptionalFieldKey, string> = {
+  due_time: 'Time',
+};
+
+export const OPTIONAL_FIELD_DESCRIPTIONS: Record<OptionalFieldKey, string> = {
+  due_time:
+    'The time of day the action happens, as 24-hour HH:mm, only when the page prints one (an appointment time, a hearing time). Omit this field entirely for documents that name no time. Never invent a time from a due date.',
+};
+
+/**
+ * Every key the system recognises: the six required plus the optional ones.
+ * Anything a provider returns outside this list lands in open_payload.
+ */
+export const KNOWN_FIELD_KEYS = [
+  ...CONTRACT_FIELD_KEYS,
+  ...OPTIONAL_FIELD_KEYS,
+] as const;
+
+/**
+ * The one value that means "this document asks for no money".
+ *
+ * The contract requires all six fields, so a document with nothing to pay
+ * still reports an amount; this is what it says. Shared so the reader, the
+ * seed, and any screen that decides to hide the row all agree on the spelling.
+ * If it were two literals, the screen's comparison would silently stop
+ * matching the day someone reworded one of them.
+ */
+export const NO_PAYMENT_REQUIRED = 'No payment required';
+
+/**
+ * The sentence shown under a flagged field, resolved from status the way
+ * FIELD_LABELS is resolved from key, so every surface says it identically.
+ * The `uncertain` wording is the prototype's, verbatim.
+ */
+export const FIELD_STATUS_HINTS: Record<
+  'confirmed' | 'uncertain' | 'unreadable',
+  string | null
+> = {
+  confirmed: null,
+  uncertain: '⚠ This was hard to read. Is it right?',
+  unreadable: "⚠ We couldn't read this. Please type it in.",
 };
 
 /**
