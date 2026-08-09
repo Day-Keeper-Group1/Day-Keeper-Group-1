@@ -132,8 +132,20 @@ export class MockExtractionProvider implements DocumentExtractionProvider {
     // Reading takes time. The interface has a waiting state and a batched
     // notification precisely because it does, so the mock has to take time too
     // or that whole design goes untested.
-    const delayMs = 2500 + Math.floor(hashUnit(`${seed}:delay`) * 4000);
-    await new Promise((resolve) => setTimeout(resolve, delayMs));
+    //
+    // MOCK_EXTRACTION_DELAY_MS overrides it; vitest.config.mts sets 0. The
+    // delay is product behaviour for the interface, not something any test
+    // asserts, and paying it dozens of times per run turned a two-second
+    // suite into a thirty-second one. Everything else stays deterministic
+    // either way: the delay never feeds the result.
+    const envDelay = process.env.MOCK_EXTRACTION_DELAY_MS;
+    const delayMs =
+      envDelay !== undefined
+        ? Number(envDelay)
+        : 2500 + Math.floor(hashUnit(`${seed}:delay`) * 4000);
+    if (delayMs > 0) {
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
 
     // One document in eight cannot be read on the first try. The person is
     // asked to retake the photo, which is the path the whole quality gate

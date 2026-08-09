@@ -15,6 +15,12 @@ export default defineConfig({
     // there is nothing to connect to, so that a teammate who has not started
     // Docker gets a hint rather than a wall of red.
     testTimeout: 20_000,
+    env: {
+      // The mock reader's deliberate slowness is for the interface, not for
+      // assertions. Without this the suite spends ~25 of its ~27 seconds
+      // sleeping. See src/server/extraction/mock-provider.ts.
+      MOCK_EXTRACTION_DELAY_MS: "0",
+    },
   },
   resolve: {
     alias: {
