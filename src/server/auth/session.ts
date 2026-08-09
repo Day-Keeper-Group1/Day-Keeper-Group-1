@@ -18,14 +18,14 @@
  * row signs out everywhere, immediately.
  */
 
-import 'server-only';
-import { cookies } from 'next/headers';
-import { queryOne } from '../db';
-import type { SessionUser } from '@/lib/contract/api';
-import { generateSessionToken, hashSessionToken } from './token';
+import "server-only";
+import { cookies } from "next/headers";
+import { queryOne } from "../db";
+import type { SessionUser } from "@/lib/contract/api";
+import { generateSessionToken, hashSessionToken } from "./token";
 
 /** The cookie's name, shared with the login/logout handlers that set and clear it. */
-export const SESSION_COOKIE_NAME = 'dk_session';
+export const SESSION_COOKIE_NAME = "dk_session";
 
 /** How long a session lives without being renewed. */
 export const SESSION_TTL_DAYS = 30;
@@ -37,8 +37,8 @@ export const SESSION_TTL_DAYS = 30;
 export class UnauthenticatedError extends Error {
   readonly status = 401;
   constructor() {
-    super('Please sign in.');
-    this.name = 'UnauthenticatedError';
+    super("Please sign in.");
+    this.name = "UnauthenticatedError";
   }
 }
 
@@ -57,7 +57,9 @@ export async function createSession(
   userAgent?: string,
 ): Promise<{ token: string; expiresAt: Date }> {
   const token = generateSessionToken();
-  const expiresAt = new Date(Date.now() + SESSION_TTL_DAYS * 24 * 60 * 60 * 1000);
+  const expiresAt = new Date(
+    Date.now() + SESSION_TTL_DAYS * 24 * 60 * 60 * 1000,
+  );
   await queryOne(
     `INSERT INTO sessions (user_id, token_hash, expires_at, user_agent)
      VALUES ($1, $2, $3, $4)`,
@@ -82,7 +84,7 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
     id: string;
     email: string;
     display_name: string;
-    role: SessionUser['role'];
+    role: SessionUser["role"];
     timezone: string;
   }>(
     `UPDATE sessions s SET last_seen_at = now()

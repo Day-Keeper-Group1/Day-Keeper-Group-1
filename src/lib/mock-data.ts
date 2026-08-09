@@ -4,7 +4,10 @@ export type MockDocument = {
   id: string;
   issuer: string;
   documentType: string;
-  status: Extract<Status, "processing" | "needs-review" | "confirmed" | "failed" | "archived">;
+  status: Extract<
+    Status,
+    "processing" | "needs-review" | "confirmed" | "failed" | "archived"
+  >;
   dueDate?: string;
   amount?: string;
   reference?: string;

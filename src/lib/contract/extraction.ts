@@ -12,19 +12,19 @@
  * vocabulary can each change without dragging the other along.
  */
 
-import { z } from 'zod';
+import { z } from "zod";
 import {
   CONTRACT_FIELD_KEYS,
   KNOWN_FIELD_KEYS,
   type ContractFieldKey,
-} from './fields';
+} from "./fields";
 
 /**
  * Bumped when the shape changes in a way that older stored payloads would fail.
  * Stored on every extraction run so that a payload read back in six weeks can
  * still be interpreted.
  */
-export const CONTRACT_VERSION = '1.0' as const;
+export const CONTRACT_VERSION = "1.0" as const;
 
 /**
  * How much the reader trusts one field.
@@ -37,7 +37,11 @@ export const CONTRACT_VERSION = '1.0' as const;
  * There is no fourth state for "missing". A field the model did not address is
  * a contract violation, not a state: it must say unreadable and say why.
  */
-export const fieldStatusSchema = z.enum(['confirmed', 'uncertain', 'unreadable']);
+export const fieldStatusSchema = z.enum([
+  "confirmed",
+  "uncertain",
+  "unreadable",
+]);
 export type FieldStatus = z.infer<typeof fieldStatusSchema>;
 
 /**
@@ -57,18 +61,18 @@ export const extractedFieldSchema = z
     confidence: z.number().min(0).max(1).nullish(),
   })
   .superRefine((field, ctx) => {
-    if (field.status === 'unreadable' && field.value !== null) {
+    if (field.status === "unreadable" && field.value !== null) {
       ctx.addIssue({
-        code: 'custom',
+        code: "custom",
         message: `field "${field.key}" is unreadable, so value must be null`,
-        path: ['value'],
+        path: ["value"],
       });
     }
-    if (field.status !== 'unreadable' && field.value === null) {
+    if (field.status !== "unreadable" && field.value === null) {
       ctx.addIssue({
-        code: 'custom',
+        code: "custom",
         message: `field "${field.key}" has status "${field.status}" but no value; use "unreadable" when there is nothing to report`,
-        path: ['value'],
+        path: ["value"],
       });
     }
   });
@@ -96,9 +100,9 @@ export const extractionResultSchema = z
     for (const field of result.fields) {
       if (seen.has(field.key)) {
         ctx.addIssue({
-          code: 'custom',
+          code: "custom",
           message: `field "${field.key}" appears more than once`,
-          path: ['fields'],
+          path: ["fields"],
         });
       }
       seen.add(field.key);
@@ -107,9 +111,9 @@ export const extractionResultSchema = z
     const missing = CONTRACT_FIELD_KEYS.filter((key) => !seen.has(key));
     if (missing.length > 0) {
       ctx.addIssue({
-        code: 'custom',
-        message: `missing required contract field(s): ${missing.join(', ')}. Six is a floor: report a field as unreadable rather than omitting it.`,
-        path: ['fields'],
+        code: "custom",
+        message: `missing required contract field(s): ${missing.join(", ")}. Six is a floor: report a field as unreadable rather than omitting it.`,
+        path: ["fields"],
       });
     }
   });
@@ -151,7 +155,9 @@ export function fieldOf(
  * These are what lands in open_payload. Optional fields the contract knows
  * (due_time) are not "extra": they have columns and screens waiting for them.
  */
-export function extraFieldsOf(result: ExtractionResult): ExtractedFieldPayload[] {
+export function extraFieldsOf(
+  result: ExtractionResult,
+): ExtractedFieldPayload[] {
   return result.fields.filter(
     (f) => !(KNOWN_FIELD_KEYS as readonly string[]).includes(f.key),
   );
@@ -166,11 +172,11 @@ export function extraFieldsOf(result: ExtractionResult): ExtractedFieldPayload[]
  * reporting, not a shortcut.
  */
 export function isFullyConfident(result: ExtractionResult): boolean {
-  return result.fields.every((f) => f.status === 'confirmed');
+  return result.fields.every((f) => f.status === "confirmed");
 }
 
 export function fieldsNeedingAttention(
   result: ExtractionResult,
 ): ExtractedFieldPayload[] {
-  return result.fields.filter((f) => f.status !== 'confirmed');
+  return result.fields.filter((f) => f.status !== "confirmed");
 }

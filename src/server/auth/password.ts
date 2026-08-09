@@ -15,8 +15,12 @@
 // Deliberately not marked server-only: this module is pure computation with no
 // database, no environment and no secrets of its own, and the seed script and
 // the tests both need it.
-import { randomBytes, scrypt as scryptCallback, timingSafeEqual } from 'node:crypto';
-import { promisify } from 'node:util';
+import {
+  randomBytes,
+  scrypt as scryptCallback,
+  timingSafeEqual,
+} from "node:crypto";
+import { promisify } from "node:util";
 
 const scrypt = promisify(scryptCallback) as (
   password: string | Buffer,
@@ -37,15 +41,20 @@ const SALT_LENGTH = 16;
 
 export async function hashPassword(password: string): Promise<string> {
   const salt = randomBytes(SALT_LENGTH);
-  const derived = await scrypt(password.normalize('NFKC'), salt, KEY_LENGTH, PARAMS);
+  const derived = await scrypt(
+    password.normalize("NFKC"),
+    salt,
+    KEY_LENGTH,
+    PARAMS,
+  );
   return [
-    'scrypt',
+    "scrypt",
     PARAMS.N,
     PARAMS.r,
     PARAMS.p,
-    salt.toString('base64'),
-    derived.toString('base64'),
-  ].join('$');
+    salt.toString("base64"),
+    derived.toString("base64"),
+  ].join("$");
 }
 
 /**
@@ -59,23 +68,29 @@ export async function verifyPassword(
   stored: string,
 ): Promise<boolean> {
   try {
-    const parts = stored.split('$');
-    if (parts.length !== 6 || parts[0] !== 'scrypt') return false;
+    const parts = stored.split("$");
+    if (parts.length !== 6 || parts[0] !== "scrypt") return false;
 
     const [, nRaw, rRaw, pRaw, saltB64, hashB64] = parts;
     const N = Number(nRaw);
     const r = Number(rRaw);
     const p = Number(pRaw);
-    if (!Number.isInteger(N) || !Number.isInteger(r) || !Number.isInteger(p)) return false;
+    if (!Number.isInteger(N) || !Number.isInteger(r) || !Number.isInteger(p))
+      return false;
 
-    const salt = Buffer.from(saltB64, 'base64');
-    const expected = Buffer.from(hashB64, 'base64');
-    const derived = await scrypt(password.normalize('NFKC'), salt, expected.length, {
-      N,
-      r,
-      p,
-      maxmem: PARAMS.maxmem,
-    });
+    const salt = Buffer.from(saltB64, "base64");
+    const expected = Buffer.from(hashB64, "base64");
+    const derived = await scrypt(
+      password.normalize("NFKC"),
+      salt,
+      expected.length,
+      {
+        N,
+        r,
+        p,
+        maxmem: PARAMS.maxmem,
+      },
+    );
 
     // Length check first: timingSafeEqual throws on a mismatch rather than
     // returning false.
@@ -94,7 +109,7 @@ export async function verifyPassword(
  * outcome than a long simple phrase.
  */
 export function validatePasswordStrength(password: string): string | null {
-  if (password.length < 8) return 'Please use at least 8 characters.';
-  if (password.length > 200) return 'That password is too long.';
+  if (password.length < 8) return "Please use at least 8 characters.";
+  if (password.length > 200) return "That password is too long.";
   return null;
 }

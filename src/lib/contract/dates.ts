@@ -29,31 +29,51 @@
  * hand. One-zone-per-deployment is a deliberate simplification for a Melbourne
  * pilot, not an oversight.
  */
-export const APP_TIME_ZONE = 'Australia/Melbourne';
+export const APP_TIME_ZONE = "Australia/Melbourne";
 
 const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
 
-const WEEKDAYS_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const WEEKDAYS_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const WEEKDAYS_LONG = [
-  'Sunday',
-  'Monday',
-  'Tuesday',
-  'Wednesday',
-  'Thursday',
-  'Friday',
-  'Saturday',
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
 ];
 const MONTHS_SHORT = [
-  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
 ];
 const MONTHS_LONG = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];
 
 function pad2(n: number): string {
-  return String(n).padStart(2, '0');
+  return String(n).padStart(2, "0");
 }
 
 /** True for a real calendar date written 'YYYY-MM-DD'. '2026-02-30' is false. */
@@ -86,18 +106,18 @@ export function todayInZone(
   now: Date = new Date(),
 ): string {
   // en-CA is the locale whose default date format is YYYY-MM-DD.
-  return new Intl.DateTimeFormat('en-CA', {
+  return new Intl.DateTimeFormat("en-CA", {
     timeZone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
   }).format(now);
 }
 
 /** Calendar arithmetic on 'YYYY-MM-DD', no timezone involved. Days may be negative. */
 export function addDays(isoDate: string, days: number): string {
-  assertIsoDate(isoDate, 'addDays');
-  const [y, mo, d] = isoDate.split('-').map(Number);
+  assertIsoDate(isoDate, "addDays");
+  const [y, mo, d] = isoDate.split("-").map(Number);
   const shifted = new Date(Date.UTC(y, mo - 1, d + days));
   return `${shifted.getUTCFullYear()}-${pad2(shifted.getUTCMonth() + 1)}-${pad2(shifted.getUTCDate())}`;
 }
@@ -115,17 +135,17 @@ export function addDays(isoDate: string, days: number): string {
  */
 export function formatDueDate(
   isoDate: string,
-  style: 'fact' | 'short' | 'long',
+  style: "fact" | "short" | "long",
 ): string {
-  assertIsoDate(isoDate, 'formatDueDate');
-  const [y, mo, d] = isoDate.split('-').map(Number);
+  assertIsoDate(isoDate, "formatDueDate");
+  const [y, mo, d] = isoDate.split("-").map(Number);
   const weekday = new Date(Date.UTC(y, mo - 1, d)).getUTCDay();
   switch (style) {
-    case 'fact':
+    case "fact":
       return `${d} ${MONTHS_SHORT[mo - 1]} ${y}`;
-    case 'short':
+    case "short":
       return `${WEEKDAYS_SHORT[weekday]} ${d} ${MONTHS_SHORT[mo - 1]}`;
-    case 'long':
+    case "long":
       return `${WEEKDAYS_LONG[weekday]} ${d} ${MONTHS_LONG[mo - 1]}`;
   }
 }
@@ -139,7 +159,7 @@ export function formatDueTime(hhmm: string): string {
   if (hour > 23 || Number(minute) > 59) {
     throw new TypeError(`formatDueTime expects a real time, got "${hhmm}"`);
   }
-  const half = hour < 12 ? 'am' : 'pm';
+  const half = hour < 12 ? "am" : "pm";
   const clock = hour % 12 === 0 ? 12 : hour % 12;
   return `${clock}:${minute} ${half}`;
 }
@@ -166,7 +186,8 @@ export function parseHumanDate(input: string): string | null {
   if (slashed) {
     const d = Number(slashed[1]);
     const mo = Number(slashed[2]);
-    const y = slashed[3].length === 2 ? 2000 + Number(slashed[3]) : Number(slashed[3]);
+    const y =
+      slashed[3].length === 2 ? 2000 + Number(slashed[3]) : Number(slashed[3]);
     const iso = `${y}-${pad2(mo)}-${pad2(d)}`;
     return isIsoDate(iso) ? iso : null;
   }
@@ -206,28 +227,28 @@ export function zonedTimeToInstant(
   minute: number,
   timeZone: string = APP_TIME_ZONE,
 ): Date {
-  assertIsoDate(isoDate, 'zonedTimeToInstant');
-  const [y, mo, d] = isoDate.split('-').map(Number);
+  assertIsoDate(isoDate, "zonedTimeToInstant");
+  const [y, mo, d] = isoDate.split("-").map(Number);
   const guess = Date.UTC(y, mo - 1, d, hour, minute);
 
-  const parts = new Intl.DateTimeFormat('en-CA', {
+  const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hourCycle: 'h23',
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
   }).formatToParts(new Date(guess));
   const get = (type: string) =>
     Number(parts.find((p) => p.type === type)?.value ?? 0);
 
   const shownAsUtc = Date.UTC(
-    get('year'),
-    get('month') - 1,
-    get('day'),
-    get('hour'),
-    get('minute'),
+    get("year"),
+    get("month") - 1,
+    get("day"),
+    get("hour"),
+    get("minute"),
   );
   return new Date(guess - (shownAsUtc - guess));
 }

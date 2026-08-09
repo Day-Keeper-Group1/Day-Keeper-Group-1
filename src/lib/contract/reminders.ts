@@ -21,11 +21,7 @@
  * at review, not silently in the seed.
  */
 
-import {
-  APP_TIME_ZONE,
-  addDays,
-  zonedTimeToInstant,
-} from './dates';
+import { APP_TIME_ZONE, addDays, zonedTimeToInstant } from "./dates";
 
 /** The local wall-clock hour reminders go out. "9 am" is product copy. */
 export const REMINDER_HOUR_LOCAL = 9;
@@ -69,8 +65,13 @@ export function planReminders(
     return {
       offsetDays,
       localDate,
-      localTime: `${String(REMINDER_HOUR_LOCAL).padStart(2, '0')}:00`,
-      scheduledFor: zonedTimeToInstant(localDate, REMINDER_HOUR_LOCAL, 0, timeZone),
+      localTime: `${String(REMINDER_HOUR_LOCAL).padStart(2, "0")}:00`,
+      scheduledFor: zonedTimeToInstant(
+        localDate,
+        REMINDER_HOUR_LOCAL,
+        0,
+        timeZone,
+      ),
     };
   });
 }

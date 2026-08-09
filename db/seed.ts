@@ -14,32 +14,36 @@
  *   npm run db:seed
  */
 
-import { randomUUID } from 'node:crypto';
-import { Client } from 'pg';
-import { config } from 'dotenv';
-import { hashPassword } from '../src/server/auth/password';
-import { hashSessionToken } from '../src/server/auth/token';
-import { APP_TIME_ZONE, addDays, todayInZone } from '../src/lib/contract/dates';
-import { NO_PAYMENT_REQUIRED } from '../src/lib/contract/fields';
-import { planReminders } from '../src/lib/contract/reminders';
+import { randomUUID } from "node:crypto";
+import { Client } from "pg";
+import { config } from "dotenv";
+import { hashPassword } from "../src/server/auth/password";
+import { hashSessionToken } from "../src/server/auth/token";
+import { APP_TIME_ZONE, addDays, todayInZone } from "../src/lib/contract/dates";
+import { NO_PAYMENT_REQUIRED } from "../src/lib/contract/fields";
+import { planReminders } from "../src/lib/contract/reminders";
 
-config({ path: '.env.local', quiet: true });
-config({ path: '.env', quiet: true });
+config({ path: ".env.local", quiet: true });
+config({ path: ".env", quiet: true });
 
 const DATABASE_URL = process.env.DATABASE_URL;
 if (!DATABASE_URL) {
-  console.error('DATABASE_URL is not set. Copy .env.example to .env.local first.');
+  console.error(
+    "DATABASE_URL is not set. Copy .env.example to .env.local first.",
+  );
   process.exit(1);
 }
 
 // The same guard db/reset.ts has, for the same reason plus one more: the seed
 // truncates every table, and it plants a development session with a token that
 // is printed in this file. Neither belongs anywhere shared.
-const isLocal = /@(localhost|127\.0\.0\.1|host\.docker\.internal)[:/]/.test(DATABASE_URL);
-if (!isLocal && process.env.DK_ALLOW_REMOTE_RESET !== 'yes') {
+const isLocal = /@(localhost|127\.0\.0\.1|host\.docker\.internal)[:/]/.test(
+  DATABASE_URL,
+);
+if (!isLocal && process.env.DK_ALLOW_REMOTE_RESET !== "yes") {
   console.error(
     `Refusing to seed a database that is not local.\n\n` +
-      `  DATABASE_URL: ${DATABASE_URL.replace(/:[^:@/]+@/, ':****@')}\n\n` +
+      `  DATABASE_URL: ${DATABASE_URL.replace(/:[^:@/]+@/, ":****@")}\n\n` +
       `The seed truncates every table and inserts a well-known development\n` +
       `session token. If you really mean it, set DK_ALLOW_REMOTE_RESET=yes.`,
   );
@@ -53,7 +57,7 @@ if (!isLocal && process.env.DK_ALLOW_REMOTE_RESET !== 'yes') {
  *
  * Obviously not a secret. The guard above keeps it off anything shared.
  */
-export const DEV_SESSION_TOKEN = 'dk-dev-session-margaret-do-not-ship';
+export const DEV_SESSION_TOKEN = "dk-dev-session-margaret-do-not-ship";
 
 /**
  * Dates relative to today IN MELBOURNE, so the seed never goes stale and
@@ -74,7 +78,7 @@ async function main() {
   await db.connect();
 
   try {
-    await db.query('BEGIN');
+    await db.query("BEGIN");
 
     // Wipe in dependency order. The seed is idempotent: run it as often as you
     // like and you get the same world back.
@@ -84,7 +88,7 @@ async function main() {
                 sessions, users RESTART IDENTITY CASCADE`,
     );
 
-    const password = await hashPassword('daykeeper');
+    const password = await hashPassword("daykeeper");
 
     const margaretId = randomUUID();
     const operatorId = randomUUID();
@@ -127,12 +131,24 @@ async function main() {
       [aglRun, agl],
     );
     await insertFields(db, aglRun, [
-      ['document_type', 'Utility bill', 'Electricity account statement', 'confirmed', 0.97],
-      ['issuer', 'AGL Energy', 'AGL Energy Limited', 'confirmed', 0.96],
-      ['action_required', 'Pay the amount due', 'Please pay by the due date shown below', 'confirmed', 0.92],
-      ['due_date', isoDaysFromNow(6), '15/08/26', 'uncertain', 0.61],
-      ['amount', '$347.60', '$347.60', 'confirmed', 0.95],
-      ['reference', null, '(smudged in photo)', 'unreadable', 0.18],
+      [
+        "document_type",
+        "Utility bill",
+        "Electricity account statement",
+        "confirmed",
+        0.97,
+      ],
+      ["issuer", "AGL Energy", "AGL Energy Limited", "confirmed", 0.96],
+      [
+        "action_required",
+        "Pay the amount due",
+        "Please pay by the due date shown below",
+        "confirmed",
+        0.92,
+      ],
+      ["due_date", isoDaysFromNow(6), "15/08/26", "uncertain", 0.61],
+      ["amount", "$347.60", "$347.60", "confirmed", 0.95],
+      ["reference", null, "(smudged in photo)", "unreadable", 0.18],
     ]);
 
     // ---- A letter still being read ----------------------------------------
@@ -186,24 +202,24 @@ async function main() {
 
     // Overdue: the date has passed and nobody has ticked it off.
     const centrelink = await confirmedDocument(db, margaretId, {
-      issuer: 'Services Australia',
-      documentType: 'Government letter',
-      action: 'Return the completed form',
+      issuer: "Services Australia",
+      documentType: "Government letter",
+      action: "Return the completed form",
       dueDate: isoDaysFromNow(-3),
       amount: NO_PAYMENT_REQUIRED,
-      reference: 'CRN 2201 8845',
+      reference: "CRN 2201 8845",
       pages: 2, // a form is rarely a single sheet
       uploadedDaysAgo: 9,
     });
 
     // Upcoming: the ordinary case.
     const water = await confirmedDocument(db, margaretId, {
-      issuer: 'Yarra Valley Water',
-      documentType: 'Utility bill',
-      action: 'Pay the amount due',
+      issuer: "Yarra Valley Water",
+      documentType: "Utility bill",
+      action: "Pay the amount due",
       dueDate: isoDaysFromNow(12),
-      amount: '$89.20',
-      reference: '5501 2280',
+      amount: "$89.20",
+      reference: "5501 2280",
       pages: 1,
       uploadedDaysAgo: 4,
     });
@@ -213,13 +229,13 @@ async function main() {
     // reminder (the day before) rather than two. Both rules live in
     // src/lib/contract; this row exists so nobody has to imagine them.
     const gp = await confirmedDocument(db, margaretId, {
-      issuer: 'Dr A. Patel, GP clinic',
-      documentType: 'Medical letter',
-      action: 'Attend the appointment',
+      issuer: "Dr A. Patel, GP clinic",
+      documentType: "Medical letter",
+      action: "Attend the appointment",
       dueDate: isoDaysFromNow(26),
-      dueTime: '10:30',
+      dueTime: "10:30",
       amount: NO_PAYMENT_REQUIRED,
-      reference: 'Clinic ref 8871',
+      reference: "Clinic ref 8871",
       pages: 1,
       uploadedDaysAgo: 1,
     });
@@ -228,12 +244,12 @@ async function main() {
     // something already handled is the anxiety this product exists to remove,
     // so that path needs to be visible in the data.
     const telstra = await confirmedDocument(db, margaretId, {
-      issuer: 'Telstra',
-      documentType: 'Utility bill',
-      action: 'Pay the amount due',
+      issuer: "Telstra",
+      documentType: "Utility bill",
+      action: "Pay the amount due",
       dueDate: isoDaysFromNow(-20),
-      amount: '$79.00',
-      reference: '4417 9902',
+      amount: "$79.00",
+      reference: "4417 9902",
       pages: 1,
       uploadedDaysAgo: 30,
     });
@@ -258,7 +274,7 @@ async function main() {
       [margaretId, centrelink, water, gp, telstra],
     );
 
-    await db.query('COMMIT');
+    await db.query("COMMIT");
 
     console.log(`
 Seeded.
@@ -280,7 +296,7 @@ The page images are not on disk: these rows describe photographs that were
 never taken. Upload something through the app to see a real one.
 `);
   } catch (error) {
-    await db.query('ROLLBACK');
+    await db.query("ROLLBACK");
     throw error;
   } finally {
     await db.end();
@@ -355,21 +371,17 @@ async function confirmedDocument(
     [runId, documentId],
   );
   await insertFields(db, runId, [
-    ['document_type', spec.documentType, spec.documentType, 'confirmed', 0.96],
-    ['issuer', spec.issuer, spec.issuer, 'confirmed', 0.95],
-    ['action_required', spec.action, spec.action, 'confirmed', 0.93],
-    ['due_date', spec.dueDate, spec.dueDate, 'confirmed', 0.94],
+    ["document_type", spec.documentType, spec.documentType, "confirmed", 0.96],
+    ["issuer", spec.issuer, spec.issuer, "confirmed", 0.95],
+    ["action_required", spec.action, spec.action, "confirmed", 0.93],
+    ["due_date", spec.dueDate, spec.dueDate, "confirmed", 0.94],
     ...(spec.dueTime
-      ? ([[
-          'due_time',
-          spec.dueTime,
-          spec.dueTime,
-          'confirmed',
-          0.9,
-        ]] as Array<[string, string | null, string | null, string, number]>)
+      ? ([["due_time", spec.dueTime, spec.dueTime, "confirmed", 0.9]] as Array<
+          [string, string | null, string | null, string, number]
+        >)
       : []),
-    ['amount', spec.amount, spec.amount, 'confirmed', 0.95],
-    ['reference', spec.reference, spec.reference, 'confirmed', 0.9],
+    ["amount", spec.amount, spec.amount, "confirmed", 0.95],
+    ["reference", spec.reference, spec.reference, "confirmed", 0.9],
   ]);
 
   const { rows } = await db.query<{ id: string }>(
@@ -403,7 +415,7 @@ async function confirmedDocument(
       [
         taskId,
         planned.scheduledFor,
-        alreadySent ? 'sent' : 'scheduled',
+        alreadySent ? "sent" : "scheduled",
         alreadySent ? planned.scheduledFor : null,
       ],
     );

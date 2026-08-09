@@ -18,14 +18,16 @@ export function EmptyState({
     <div
       className={cn(
         "flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-border px-6 py-12 text-center",
-        className
+        className,
       )}
     >
       <Icon className="size-8 text-muted-foreground" strokeWidth={1.5} />
       <div className="space-y-1">
         <p className="text-sm font-medium text-foreground">{title}</p>
         {description ? (
-          <p className="max-w-sm text-sm text-muted-foreground">{description}</p>
+          <p className="max-w-sm text-sm text-muted-foreground">
+            {description}
+          </p>
         ) : null}
       </div>
       {action}

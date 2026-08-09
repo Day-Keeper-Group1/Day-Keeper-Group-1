@@ -12,12 +12,12 @@
  * changing the prompt, the seed data, and the database rows together.
  */
 export const CONTRACT_FIELD_KEYS = [
-  'document_type',
-  'issuer',
-  'action_required',
-  'due_date',
-  'amount',
-  'reference',
+  "document_type",
+  "issuer",
+  "action_required",
+  "due_date",
+  "amount",
+  "reference",
 ] as const;
 
 export type ContractFieldKey = (typeof CONTRACT_FIELD_KEYS)[number];
@@ -39,12 +39,12 @@ export function isContractFieldKey(key: string): key is ContractFieldKey {
  * names; the labels speak person.
  */
 export const FIELD_LABELS: Record<ContractFieldKey, string> = {
-  document_type: 'Document type',
-  issuer: 'From',
-  action_required: 'What to do',
-  due_date: 'Due date',
-  amount: 'Amount',
-  reference: 'Reference',
+  document_type: "Document type",
+  issuer: "From",
+  action_required: "What to do",
+  due_date: "Due date",
+  amount: "Amount",
+  reference: "Reference",
 };
 
 /**
@@ -54,17 +54,17 @@ export const FIELD_LABELS: Record<ContractFieldKey, string> = {
  */
 export const FIELD_DESCRIPTIONS: Record<ContractFieldKey, string> = {
   document_type:
-    'What kind of document this is, in plain words a person would use: utility bill, government letter, fine notice, medical letter, insurance renewal.',
+    "What kind of document this is, in plain words a person would use: utility bill, government letter, fine notice, medical letter, insurance renewal.",
   issuer:
-    'The organisation that sent it, as printed on the page. Prefer the name a person would recognise over a legal entity name.',
+    "The organisation that sent it, as printed on the page. Prefer the name a person would recognise over a legal entity name.",
   action_required:
-    'What the person has to do, as a short imperative phrase: pay the amount due, return the completed form, attend the appointment. If the document requires nothing, say so plainly.',
+    "What the person has to do, as a short imperative phrase: pay the amount due, return the completed form, attend the appointment. If the document requires nothing, say so plainly.",
   due_date:
-    'The date the action is due, as ISO 8601 (YYYY-MM-DD). If the page shows an ambiguous format, resolve it in favour of Australian day-first convention and mark the field uncertain.',
+    "The date the action is due, as ISO 8601 (YYYY-MM-DD). If the page shows an ambiguous format, resolve it in favour of Australian day-first convention and mark the field uncertain.",
   amount:
-    'The amount payable, exactly as written on the page including the currency symbol. Do not convert, round, or reformat.',
+    "The amount payable, exactly as written on the page including the currency symbol. Do not convert, round, or reformat.",
   reference:
-    'The reference, account, or customer number the person must quote. Keep the spacing as printed.',
+    "The reference, account, or customer number the person must quote. Keep the spacing as printed.",
 };
 
 /**
@@ -77,17 +77,17 @@ export const FIELD_DESCRIPTIONS: Record<ContractFieldKey, string> = {
  * also what marks a document as an appointment for reminder scheduling; see
  * ./reminders.ts.
  */
-export const OPTIONAL_FIELD_KEYS = ['due_time'] as const;
+export const OPTIONAL_FIELD_KEYS = ["due_time"] as const;
 
 export type OptionalFieldKey = (typeof OPTIONAL_FIELD_KEYS)[number];
 
 export const OPTIONAL_FIELD_LABELS: Record<OptionalFieldKey, string> = {
-  due_time: 'Time',
+  due_time: "Time",
 };
 
 export const OPTIONAL_FIELD_DESCRIPTIONS: Record<OptionalFieldKey, string> = {
   due_time:
-    'The time of day the action happens, as 24-hour HH:mm, only when the page prints one (an appointment time, a hearing time). Omit this field entirely for documents that name no time. Never invent a time from a due date.',
+    "The time of day the action happens, as 24-hour HH:mm, only when the page prints one (an appointment time, a hearing time). Omit this field entirely for documents that name no time. Never invent a time from a due date.",
 };
 
 /**
@@ -108,7 +108,7 @@ export const KNOWN_FIELD_KEYS = [
  * If it were two literals, the screen's comparison would silently stop
  * matching the day someone reworded one of them.
  */
-export const NO_PAYMENT_REQUIRED = 'No payment required';
+export const NO_PAYMENT_REQUIRED = "No payment required";
 
 /**
  * The sentence shown under a flagged field, resolved from status the way
@@ -116,11 +116,11 @@ export const NO_PAYMENT_REQUIRED = 'No payment required';
  * The `uncertain` wording is the prototype's, verbatim.
  */
 export const FIELD_STATUS_HINTS: Record<
-  'confirmed' | 'uncertain' | 'unreadable',
+  "confirmed" | "uncertain" | "unreadable",
   string | null
 > = {
   confirmed: null,
-  uncertain: '⚠ This was hard to read. Is it right?',
+  uncertain: "⚠ This was hard to read. Is it right?",
   unreadable: "⚠ We couldn't read this. Please type it in.",
 };
 
@@ -135,4 +135,4 @@ export const FIELD_STATUS_HINTS: Record<
  * whoever revisits it knows it was considered. See
  * docs/architecture/adr-004-extraction-contract.md.
  */
-export const DEFERRED_FIELD_KEYS = ['summary'] as const;
+export const DEFERRED_FIELD_KEYS = ["summary"] as const;

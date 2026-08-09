@@ -11,9 +11,9 @@
  * contract before it is allowed anywhere near the database.
  */
 
-import 'server-only';
-import type { ExtractionResult } from '@/lib/contract/extraction';
-import type { ExtractionFailureKind } from '@/lib/contract/api';
+import "server-only";
+import type { ExtractionResult } from "@/lib/contract/extraction";
+import type { ExtractionFailureKind } from "@/lib/contract/api";
 
 export type ExtractionInput = {
   documentId: string;
@@ -56,17 +56,17 @@ export class ExtractionFailure extends Error {
     readonly detail?: string,
   ) {
     super(message);
-    this.name = 'ExtractionFailure';
+    this.name = "ExtractionFailure";
   }
 
   /** Whether offering "take the photo again" makes sense for this failure. */
   get canRetake(): boolean {
-    return this.kind === 'unreadable_image';
+    return this.kind === "unreadable_image";
   }
 
   /** Whether the system should try again by itself, without bothering anyone. */
   get shouldAutoRetry(): boolean {
-    return this.kind === 'transient';
+    return this.kind === "transient";
   }
 }
 

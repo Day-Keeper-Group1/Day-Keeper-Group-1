@@ -15,7 +15,11 @@ export default function UploadDocumentPage() {
   function handleFile(selected: File | null) {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     setFile(selected);
-    setPreviewUrl(selected && selected.type.startsWith("image/") ? URL.createObjectURL(selected) : null);
+    setPreviewUrl(
+      selected && selected.type.startsWith("image/")
+        ? URL.createObjectURL(selected)
+        : null,
+    );
   }
 
   function handleSubmit() {
@@ -67,7 +71,10 @@ export default function UploadDocumentPage() {
               />
             ) : (
               <div className="flex items-center gap-3 px-4 py-6">
-                <FileText className="size-6 shrink-0 text-muted-foreground" strokeWidth={1.75} />
+                <FileText
+                  className="size-6 shrink-0 text-muted-foreground"
+                  strokeWidth={1.75}
+                />
                 <span className="truncate text-sm font-medium text-foreground">
                   {file.name}
                 </span>
@@ -89,7 +96,13 @@ export default function UploadDocumentPage() {
         </div>
       )}
 
-      <Button type="button" size="lg" className="w-full" disabled={!file} onClick={handleSubmit}>
+      <Button
+        type="button"
+        size="lg"
+        className="w-full"
+        disabled={!file}
+        onClick={handleSubmit}
+      >
         <Upload className="size-4" strokeWidth={1.75} />
         Submit for processing
       </Button>

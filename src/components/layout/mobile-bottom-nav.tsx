@@ -2,7 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, FolderOpen, ListChecks, Settings, Upload } from "lucide-react";
+import {
+  LayoutDashboard,
+  FolderOpen,
+  ListChecks,
+  Settings,
+  Upload,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const SIDE_ITEMS = [
@@ -30,7 +36,7 @@ export function MobileBottomNav() {
               aria-current={isActive(item.href) ? "page" : undefined}
               className={cn(
                 "flex flex-col items-center gap-1 py-2 text-[11px] font-medium",
-                isActive(item.href) ? "text-primary" : "text-muted-foreground"
+                isActive(item.href) ? "text-primary" : "text-muted-foreground",
               )}
             >
               <item.icon className="size-5" strokeWidth={1.75} />
@@ -57,7 +63,7 @@ export function MobileBottomNav() {
               aria-current={isActive(item.href) ? "page" : undefined}
               className={cn(
                 "flex flex-col items-center gap-1 py-2 text-[11px] font-medium",
-                isActive(item.href) ? "text-primary" : "text-muted-foreground"
+                isActive(item.href) ? "text-primary" : "text-muted-foreground",
               )}
             >
               <item.icon className="size-5" strokeWidth={1.75} />

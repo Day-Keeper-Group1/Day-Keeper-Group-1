@@ -19,17 +19,13 @@
  * that way.
  */
 
-import type { FieldStatus } from './extraction';
-import type { ContractFieldKey } from './fields';
-import { APP_TIME_ZONE, todayInZone } from './dates';
+import type { FieldStatus } from "./extraction";
+import type { ContractFieldKey } from "./fields";
+import { APP_TIME_ZONE, todayInZone } from "./dates";
 
 /** Where a document is in its life. Mirrors the document_status enum. */
 export type DocumentStatus =
-  | 'processing'
-  | 'needs-review'
-  | 'confirmed'
-  | 'failed'
-  | 'archived';
+  "processing" | "needs-review" | "confirmed" | "failed" | "archived";
 
 /**
  * A task's state as the interface wants it.
@@ -38,7 +34,7 @@ export type DocumentStatus =
  * stored: a task becomes overdue because time passed, and nothing in the system
  * wakes up at midnight to write that down. `completed` is stored.
  */
-export type TaskStatus = 'upcoming' | 'overdue' | 'completed';
+export type TaskStatus = "upcoming" | "overdue" | "completed";
 
 /**
  * Why a reading failed, in the three kinds the whole system distinguishes.
@@ -46,9 +42,7 @@ export type TaskStatus = 'upcoming' | 'overdue' | 'completed';
  * one definition the browser may import.
  */
 export type ExtractionFailureKind =
-  | 'transient'
-  | 'unreadable_image'
-  | 'unsupported_document';
+  "transient" | "unreadable_image" | "unsupported_document";
 
 /**
  * What the person is told for each kind of failure.
@@ -59,7 +53,7 @@ export type ExtractionFailureKind =
  */
 export const FAILURE_MESSAGES: Record<ExtractionFailureKind, string> = {
   transient: "Something went wrong on our side. We're trying again.",
-  unreadable_image: 'The photo was too blurry to read. Please take it again.',
+  unreadable_image: "The photo was too blurry to read. Please take it again.",
   unsupported_document: "DayKeeper can't read this kind of document yet.",
 };
 
@@ -118,8 +112,8 @@ export type ReminderView = {
   scheduledFor: string;
   /** The day it lands on for calendar purposes, 'YYYY-MM-DD'. */
   localDate: string;
-  channel: 'in_app' | 'email';
-  status: 'scheduled' | 'sent' | 'cancelled' | 'failed';
+  channel: "in_app" | "email";
+  status: "scheduled" | "sent" | "cancelled" | "failed";
 };
 
 export type TaskSummary = {
@@ -240,12 +234,12 @@ export type HomePayload = {
 export type ApiError = {
   error: {
     code:
-      | 'unauthenticated'
-      | 'forbidden'
-      | 'not_found'
-      | 'invalid_request'
-      | 'conflict'
-      | 'server_error';
+      | "unauthenticated"
+      | "forbidden"
+      | "not_found"
+      | "invalid_request"
+      | "conflict"
+      | "server_error";
     message: string;
     /** Field-level problems, keyed by field name, for form errors. */
     fields?: Record<string, string>;
@@ -256,7 +250,7 @@ export type SessionUser = {
   id: string;
   email: string;
   displayName: string;
-  role: 'user' | 'platform_operator' | 'org_admin' | 'org_worker';
+  role: "user" | "platform_operator" | "org_admin" | "org_worker";
   /** IANA zone name, defaulted server-side. "9 am" means 9 am here. */
   timeZone: string;
 };
@@ -272,13 +266,13 @@ export type SessionUser = {
  * keeps a Melbourne task "upcoming" until ten the next morning.
  */
 export function deriveTaskStatus(
-  state: 'open' | 'completed' | 'dismissed',
+  state: "open" | "completed" | "dismissed",
   dueDate: string | null,
   now: Date = new Date(),
   timeZone: string = APP_TIME_ZONE,
 ): TaskStatus {
-  if (state === 'completed') return 'completed';
-  if (!dueDate) return 'upcoming';
+  if (state === "completed") return "completed";
+  if (!dueDate) return "upcoming";
   // Something due today is not overdue until today, in the user's zone, is over.
-  return dueDate < todayInZone(timeZone, now) ? 'overdue' : 'upcoming';
+  return dueDate < todayInZone(timeZone, now) ? "overdue" : "upcoming";
 }

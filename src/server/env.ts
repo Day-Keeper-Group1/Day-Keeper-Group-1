@@ -9,16 +9,19 @@
  * component: it would put the database password in the browser bundle.
  */
 
-import 'server-only';
-import { z } from 'zod';
+import "server-only";
+import { z } from "zod";
 
 const envSchema = z.object({
   DATABASE_URL: z
     .string()
-    .min(1, 'DATABASE_URL is not set. Copy .env.example to .env.local, then run: docker compose up -d')
+    .min(
+      1,
+      "DATABASE_URL is not set. Copy .env.example to .env.local, then run: docker compose up -d",
+    )
     .refine(
-      (v) => v.startsWith('postgres://') || v.startsWith('postgresql://'),
-      'DATABASE_URL must be a postgres:// connection string',
+      (v) => v.startsWith("postgres://") || v.startsWith("postgresql://"),
+      "DATABASE_URL must be a postgres:// connection string",
     ),
 
   /**
@@ -28,7 +31,7 @@ const envSchema = z.object({
    * end to end before anyone has an API key. Swapping this is the single switch
    * that turns the real reader on.
    */
-  AI_EXTRACTION_PROVIDER: z.enum(['mock', 'openai', 'bedrock']).default('mock'),
+  AI_EXTRACTION_PROVIDER: z.enum(["mock", "openai", "bedrock"]).default("mock"),
 
   /**
    * How long a signed-in session lasts. Long, because asking someone with a
@@ -36,7 +39,9 @@ const envSchema = z.object({
    */
   SESSION_TTL_DAYS: z.coerce.number().int().positive().default(30),
 
-  NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+  NODE_ENV: z
+    .enum(["development", "test", "production"])
+    .default("development"),
 });
 
 export type Env = z.infer<typeof envSchema>;
@@ -49,10 +54,10 @@ export function env(): Env {
   const parsed = envSchema.safeParse(process.env);
   if (!parsed.success) {
     const lines = parsed.error.issues.map(
-      (issue) => `  ${issue.path.join('.') || '(root)'}: ${issue.message}`,
+      (issue) => `  ${issue.path.join(".") || "(root)"}: ${issue.message}`,
     );
     throw new Error(
-      `Environment is not configured.\n${lines.join('\n')}\n\nSee .env.example.`,
+      `Environment is not configured.\n${lines.join("\n")}\n\nSee .env.example.`,
     );
   }
 

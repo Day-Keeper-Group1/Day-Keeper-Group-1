@@ -7,7 +7,9 @@ import { StatusBadge } from "@/components/status-badge";
 import { MOCK_DOCUMENTS, MOCK_TASKS } from "@/lib/mock-data";
 
 export default function DashboardPage() {
-  const needsReview = MOCK_DOCUMENTS.filter((doc) => doc.status === "needs-review");
+  const needsReview = MOCK_DOCUMENTS.filter(
+    (doc) => doc.status === "needs-review",
+  );
   const overdueTasks = MOCK_TASKS.filter((task) => task.status === "overdue");
   const upcomingTasks = MOCK_TASKS.filter((task) => task.status === "upcoming");
   const recentDocuments = [...MOCK_DOCUMENTS]
@@ -44,7 +46,10 @@ export default function DashboardPage() {
             </span>
           </span>
         </span>
-        <ArrowRight className="size-4 text-muted-foreground" strokeWidth={1.75} />
+        <ArrowRight
+          className="size-4 text-muted-foreground"
+          strokeWidth={1.75}
+        />
       </Link>
 
       <div className="grid gap-8 md:grid-cols-3">
@@ -72,11 +77,16 @@ export default function DashboardPage() {
             ))}
           </DashboardSection>
 
-          <DashboardSection title="Overdue" emptyLabel="Nothing overdue. Good work.">
+          <DashboardSection
+            title="Overdue"
+            emptyLabel="Nothing overdue. Good work."
+          >
             {overdueTasks.map((task) => (
               <Link
                 key={task.id}
-                href={task.documentId ? `/documents/${task.documentId}` : "/tasks"}
+                href={
+                  task.documentId ? `/documents/${task.documentId}` : "/tasks"
+                }
                 className="flex items-center justify-between rounded-lg border border-border px-4 py-3 transition-colors hover:bg-muted/60"
               >
                 <span>
@@ -92,11 +102,16 @@ export default function DashboardPage() {
             ))}
           </DashboardSection>
 
-          <DashboardSection title="Upcoming" emptyLabel="No upcoming tasks yet.">
+          <DashboardSection
+            title="Upcoming"
+            emptyLabel="No upcoming tasks yet."
+          >
             {upcomingTasks.map((task) => (
               <Link
                 key={task.id}
-                href={task.documentId ? `/documents/${task.documentId}` : "/tasks"}
+                href={
+                  task.documentId ? `/documents/${task.documentId}` : "/tasks"
+                }
                 className="flex items-center justify-between rounded-lg border border-border px-4 py-3 transition-colors hover:bg-muted/60"
               >
                 <span>
@@ -115,7 +130,9 @@ export default function DashboardPage() {
 
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-medium text-foreground">Recent documents</h2>
+            <h2 className="text-sm font-medium text-foreground">
+              Recent documents
+            </h2>
             <Link
               href="/documents"
               className="text-xs font-medium text-primary hover:underline"
@@ -130,7 +147,10 @@ export default function DashboardPage() {
                   href={`/documents/${doc.id}`}
                   className="flex items-center gap-3 rounded-lg border border-border px-3 py-2.5 transition-colors hover:bg-muted/60"
                 >
-                  <FileText className="size-4 shrink-0 text-muted-foreground" strokeWidth={1.75} />
+                  <FileText
+                    className="size-4 shrink-0 text-muted-foreground"
+                    strokeWidth={1.75}
+                  />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-medium text-foreground">
                       {doc.issuer}
@@ -154,7 +174,9 @@ function SummaryStat({ label, value }: { label: string; value: number }) {
   return (
     <Card className="py-0">
       <CardContent className="px-4 py-3">
-        <p className="text-2xl font-semibold tabular-nums text-foreground">{value}</p>
+        <p className="text-2xl font-semibold tabular-nums text-foreground">
+          {value}
+        </p>
         <p className="text-xs text-muted-foreground">{label}</p>
       </CardContent>
     </Card>
@@ -170,7 +192,9 @@ function DashboardSection({
   emptyLabel: string;
   children: React.ReactNode;
 }) {
-  const hasContent = Array.isArray(children) ? children.length > 0 : Boolean(children);
+  const hasContent = Array.isArray(children)
+    ? children.length > 0
+    : Boolean(children);
 
   return (
     <section className="space-y-3">

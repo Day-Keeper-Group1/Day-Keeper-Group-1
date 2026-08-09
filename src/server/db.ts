@@ -10,9 +10,9 @@
  * string to the browser, so the guard is a real one, not a convention.
  */
 
-import 'server-only';
-import { Pool, types, type PoolClient, type QueryResultRow } from 'pg';
-import { env } from './env';
+import "server-only";
+import { Pool, types, type PoolClient, type QueryResultRow } from "pg";
+import { env } from "./env";
 
 /**
  * A due date is a day, not an instant.
@@ -50,10 +50,10 @@ export function pool(): Pool {
       connectionTimeoutMillis: 10_000,
     });
 
-    globalForDb.__daykeeperPool.on('error', (err) => {
+    globalForDb.__daykeeperPool.on("error", (err) => {
       // An idle client blew up. Log it rather than letting it take the process
       // down, which is the default behaviour of an unhandled 'error' event.
-      console.error('[db] idle client error', err);
+      console.error("[db] idle client error", err);
     });
   }
   return globalForDb.__daykeeperPool;
@@ -89,12 +89,12 @@ export async function transaction<T>(
 ): Promise<T> {
   const client = await pool().connect();
   try {
-    await client.query('BEGIN');
+    await client.query("BEGIN");
     const result = await fn(client);
-    await client.query('COMMIT');
+    await client.query("COMMIT");
     return result;
   } catch (error) {
-    await client.query('ROLLBACK');
+    await client.query("ROLLBACK");
     throw error;
   } finally {
     client.release();
