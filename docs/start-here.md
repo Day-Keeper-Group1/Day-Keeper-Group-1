@@ -90,8 +90,22 @@ that were never taken.
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run dev` | the application |
 | `npm run lint` | eslint |
+| `npm run format` | prettier over the whole repository |
 | `docker compose down` | stop the database |
 | `docker compose down -v` | stop it and throw the data away |
+
+### Git hooks
+
+`npm ci` installs them; there is nothing to set up. On commit, the staged files
+are formatted (Prettier, default style, config in `.prettierrc`) and linted,
+and the commit message is checked against the no-AI-attribution convention. On
+push, the whole project is type-checked. So the things CI would bounce a pull
+request for are caught in seconds, locally, before they cost a round trip.
+
+`--no-verify` skips a hook in an emergency; CI still runs the same checks, so
+skipping changes when a problem is found, not whether. The prototypes and the
+markdown files are deliberately not formatted (`.prettierignore`): prose and
+hand-built artefacts keep their hand-set shape.
 
 ## Changing the database
 

@@ -1,0 +1,10 @@
+# The team convention (AGENTS.md): commit messages carry no AI attribution.
+# Assistants add these lines silently unless told otherwise, so the rule is
+# enforced where the message arrives rather than remembered by everyone.
+if grep -qiE 'co-authored-by|generated with (claude|chatgpt|codex|copilot|gemini|ai)|🤖' "$1"; then
+  echo "" >&2
+  echo "This commit message contains an AI attribution line (Co-Authored-By /" >&2
+  echo "\"Generated with ...\" / robot emoji). The convention in AGENTS.md is" >&2
+  echo "that commits carry none. Remove the line and commit again." >&2
+  exit 1
+fi
