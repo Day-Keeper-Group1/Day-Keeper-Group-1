@@ -18,6 +18,10 @@ import { randomUUID } from 'node:crypto';
 import { Client } from 'pg';
 import { config } from 'dotenv';
 import { hashPassword } from '../src/server/auth/password';
+import { hashSessionToken } from '../src/server/auth/token';
+import { APP_TIME_ZONE, addDays, todayInZone } from '../src/lib/contract/dates';
+import { NO_PAYMENT_REQUIRED } from '../src/lib/contract/fields';
+import { planReminders } from '../src/lib/contract/reminders';
 
 config({ path: '.env.local', quiet: true });
 config({ path: '.env', quiet: true });
@@ -28,11 +32,41 @@ if (!DATABASE_URL) {
   process.exit(1);
 }
 
-/** Dates relative to today, so the seed never goes stale and "overdue" stays overdue. */
+// The same guard db/reset.ts has, for the same reason plus one more: the seed
+// truncates every table, and it plants a development session with a token that
+// is printed in this file. Neither belongs anywhere shared.
+const isLocal = /@(localhost|127\.0\.0\.1|host\.docker\.internal)[:/]/.test(DATABASE_URL);
+if (!isLocal && process.env.DK_ALLOW_REMOTE_RESET !== 'yes') {
+  console.error(
+    `Refusing to seed a database that is not local.\n\n` +
+      `  DATABASE_URL: ${DATABASE_URL.replace(/:[^:@/]+@/, ':****@')}\n\n` +
+      `The seed truncates every table and inserts a well-known development\n` +
+      `session token. If you really mean it, set DK_ALLOW_REMOTE_RESET=yes.`,
+  );
+  process.exit(1);
+}
+
+/**
+ * A fixed session token so teammates can call authenticated endpoints before
+ * the sign-in ticket is built: send `Cookie: dk_session=<this>` (curl, Postman,
+ * a browser devtools cookie) and requireUser() answers as Margaret.
+ *
+ * Obviously not a secret. The guard above keeps it off anything shared.
+ */
+export const DEV_SESSION_TOKEN = 'dk-dev-session-margaret-do-not-ship';
+
+/**
+ * Dates relative to today IN MELBOURNE, so the seed never goes stale and
+ * "overdue" stays overdue.
+ *
+ * The obvious `new Date()` + `toISOString()` version had a bug worth
+ * remembering: setDate works in local time and toISOString converts to UTC, so
+ * in any zone ahead of UTC an early-morning `npm run db:reset` shifted every
+ * seeded due date to the day before. The exact bug src/server/db.ts guards
+ * against, reintroduced one layer up.
+ */
 function isoDaysFromNow(days: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() + days);
-  return d.toISOString().slice(0, 10);
+  return addDays(todayInZone(APP_TIME_ZONE), days);
 }
 
 async function main() {
@@ -56,10 +90,17 @@ async function main() {
     const operatorId = randomUUID();
 
     await db.query(
-      `INSERT INTO users (id, email, display_name, password_hash, role) VALUES
-         ($1, 'margaret@example.com', 'Margaret Whitfield', $3, 'user'),
-         ($2, 'operator@example.com', 'Sam Operator', $3, 'platform_operator')`,
-      [margaretId, operatorId, password],
+      `INSERT INTO users (id, email, display_name, password_hash, role, timezone) VALUES
+         ($1, 'margaret@example.com', 'Margaret Whitfield', $3, 'user', $4),
+         ($2, 'operator@example.com', 'Sam Operator', $3, 'platform_operator', $4)`,
+      [margaretId, operatorId, password, APP_TIME_ZONE],
+    );
+
+    // The development session. See DEV_SESSION_TOKEN above.
+    await db.query(
+      `INSERT INTO sessions (user_id, token_hash, expires_at, user_agent)
+       VALUES ($1, $2, now() + interval '30 days', 'seed: development session')`,
+      [margaretId, hashSessionToken(DEV_SESSION_TOKEN)],
     );
 
     // ---- A letter waiting to be checked -----------------------------------
@@ -149,7 +190,7 @@ async function main() {
       documentType: 'Government letter',
       action: 'Return the completed form',
       dueDate: isoDaysFromNow(-3),
-      amount: 'No payment required',
+      amount: NO_PAYMENT_REQUIRED,
       reference: 'CRN 2201 8845',
       pages: 2, // a form is rarely a single sheet
       uploadedDaysAgo: 9,
@@ -165,6 +206,22 @@ async function main() {
       reference: '5501 2280',
       pages: 1,
       uploadedDaysAgo: 4,
+    });
+
+    // An appointment: the one kind of document with a time of day. Having a
+    // due_time is what makes it an appointment, and an appointment gets one
+    // reminder (the day before) rather than two. Both rules live in
+    // src/lib/contract; this row exists so nobody has to imagine them.
+    const gp = await confirmedDocument(db, margaretId, {
+      issuer: 'Dr A. Patel, GP clinic',
+      documentType: 'Medical letter',
+      action: 'Attend the appointment',
+      dueDate: isoDaysFromNow(26),
+      dueTime: '10:30',
+      amount: NO_PAYMENT_REQUIRED,
+      reference: 'Clinic ref 8871',
+      pages: 1,
+      uploadedDaysAgo: 1,
     });
 
     // Done, with its remaining reminders cancelled: being nagged about
@@ -196,8 +253,9 @@ async function main() {
          ($1, 'user.register', 'user', $1),
          ($1, 'document.confirm', 'document', $2),
          ($1, 'document.confirm', 'document', $3),
-         ($1, 'document.confirm', 'document', $4)`,
-      [margaretId, centrelink, water, telstra],
+         ($1, 'document.confirm', 'document', $4),
+         ($1, 'document.confirm', 'document', $5)`,
+      [margaretId, centrelink, water, gp, telstra],
     );
 
     await db.query('COMMIT');
@@ -208,11 +266,15 @@ Seeded.
   Sign in as        margaret@example.com / daykeeper
   Operator account  operator@example.com / daykeeper
 
+  Dev session       Cookie: dk_session=${DEV_SESSION_TOKEN}
+                    (Margaret, valid 30 days. Lets you call authenticated
+                    endpoints before sign-in is built. Local databases only.)
+
   1 letter waiting to be checked (an uncertain date and an unreadable reference)
   1 letter still being read
   1 letter that came out too blurry, twice
-  3 letters confirmed: one overdue, one upcoming, one done with its
-    remaining reminders cancelled
+  4 letters confirmed: one overdue, one upcoming, one appointment with a
+    time of day, one done with its remaining reminders cancelled
 
 The page images are not on disk: these rows describe photographs that were
 never taken. Upload something through the app to see a real one.
@@ -248,6 +310,8 @@ async function confirmedDocument(
     documentType: string;
     action: string;
     dueDate: string;
+    /** 'HH:mm'. Present makes this an appointment: one reminder, not two. */
+    dueTime?: string;
     amount: string;
     reference: string;
     pages: number;
@@ -257,17 +321,18 @@ async function confirmedDocument(
   const documentId = randomUUID();
   await db.query(
     `INSERT INTO documents
-       (id, user_id, status, issuer, document_type, due_date, amount_text, reference,
-        uploaded_at, confirmed_at)
-     VALUES ($1, $2, 'confirmed', $3, $4, $5, $6, $7,
-             now() - ($8 || ' days')::interval,
-             now() - ($8 || ' days')::interval + interval '10 minutes')`,
+       (id, user_id, status, issuer, document_type, due_date, due_time, amount_text,
+        reference, uploaded_at, confirmed_at)
+     VALUES ($1, $2, 'confirmed', $3, $4, $5, $6, $7, $8,
+             now() - ($9 || ' days')::interval,
+             now() - ($9 || ' days')::interval + interval '10 minutes')`,
     [
       documentId,
       userId,
       spec.issuer,
       spec.documentType,
       spec.dueDate,
+      spec.dueTime ?? null,
       spec.amount,
       spec.reference,
       String(spec.uploadedDaysAgo),
@@ -294,28 +359,53 @@ async function confirmedDocument(
     ['issuer', spec.issuer, spec.issuer, 'confirmed', 0.95],
     ['action_required', spec.action, spec.action, 'confirmed', 0.93],
     ['due_date', spec.dueDate, spec.dueDate, 'confirmed', 0.94],
+    ...(spec.dueTime
+      ? ([[
+          'due_time',
+          spec.dueTime,
+          spec.dueTime,
+          'confirmed',
+          0.9,
+        ]] as Array<[string, string | null, string | null, string, number]>)
+      : []),
     ['amount', spec.amount, spec.amount, 'confirmed', 0.95],
     ['reference', spec.reference, spec.reference, 'confirmed', 0.9],
   ]);
 
   const { rows } = await db.query<{ id: string }>(
-    `INSERT INTO tasks (user_id, document_id, title, issuer, due_date)
-     VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-    [userId, documentId, `${spec.action} (${spec.issuer})`, spec.issuer, spec.dueDate],
+    `INSERT INTO tasks (user_id, document_id, title, issuer, due_date, due_time)
+     VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+    [
+      userId,
+      documentId,
+      `${spec.action} (${spec.issuer})`,
+      spec.issuer,
+      spec.dueDate,
+      spec.dueTime ?? null,
+    ],
   );
   const taskId = rows[0].id;
 
-  const due = new Date(`${spec.dueDate}T09:00:00`);
-  for (const days of [7, 1]) {
-    const at = new Date(due.getTime() - days * 24 * 60 * 60 * 1000);
+  // The one scheduling rule, imported rather than restated. The confirm
+  // handler must use the same function; two copies of this rule is how the
+  // review screen ends up promising a reminder that never arrives.
+  for (const planned of planReminders(spec.dueDate, {
+    hasTime: Boolean(spec.dueTime),
+    timeZone: APP_TIME_ZONE,
+  })) {
     // A reminder whose time has passed is one that was sent, and the schema
     // will not accept 'sent' without the timestamp that says when. Both go in
     // together rather than one being patched on afterwards.
-    const alreadySent = at.getTime() < Date.now();
+    const alreadySent = planned.scheduledFor.getTime() < Date.now();
     await db.query(
       `INSERT INTO reminders (task_id, scheduled_for, channel, status, sent_at)
        VALUES ($1, $2, 'in_app', $3, $4)`,
-      [taskId, at, alreadySent ? 'sent' : 'scheduled', alreadySent ? at : null],
+      [
+        taskId,
+        planned.scheduledFor,
+        alreadySent ? 'sent' : 'scheduled',
+        alreadySent ? planned.scheduledFor : null,
+      ],
     );
   }
 
