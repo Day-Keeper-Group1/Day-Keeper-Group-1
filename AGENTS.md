@@ -23,6 +23,7 @@ DayKeeper (Group 1): an AI-powered life management system for people in vulnerab
 - Everything in this repository is written in English.
 - Say "photo upload", not "scan": the input is a phone photo of a document, per the project description's responsive web app framing.
 - Commit messages in English, imperative mood. Do not add AI attribution or Co-Authored-By lines to commits.
+- Branch names start with the Jira ticket key when there is one (`kan-13-photo-upload`): Jira attaches branches and pull requests to the ticket automatically when the key appears in the name, so the board stays wired to the code with no manual linking.
 - Never commit secrets, API keys, or `.env` files. Personal API keys and personal paid cloud accounts are banned for this project.
 - Large binaries and generated output stay out of git (see `.gitignore`); small curated fixtures are fine.
 
