@@ -15,7 +15,9 @@ export default async function DocumentDetailPage({
   const document = getDocumentById(id);
   if (!document) notFound();
 
-  const relatedTasks = MOCK_TASKS.filter((task) => task.documentId === document.id);
+  const relatedTasks = MOCK_TASKS.filter(
+    (task) => task.documentId === document.id,
+  );
   const needsReview = document.status === "needs-review";
 
   return (
@@ -39,7 +41,10 @@ export default async function DocumentDetailPage({
       <div className="grid gap-6 md:grid-cols-2">
         <div className="flex aspect-[3/4] items-center justify-center rounded-lg border border-dashed border-border bg-muted/30 md:order-2">
           <div className="flex flex-col items-center gap-2 px-6 text-center">
-            <FileText className="size-8 text-muted-foreground" strokeWidth={1.5} />
+            <FileText
+              className="size-8 text-muted-foreground"
+              strokeWidth={1.5}
+            />
             <p className="text-sm text-muted-foreground">
               Document preview isn&apos;t available yet in this prototype.
             </p>
@@ -54,30 +59,40 @@ export default async function DocumentDetailPage({
             </div>
             <dl className="grid grid-cols-2 gap-y-3 text-sm">
               <dt className="text-muted-foreground">Uploaded</dt>
-              <dd className="text-right text-foreground">{document.uploadedAt}</dd>
+              <dd className="text-right text-foreground">
+                {document.uploadedAt}
+              </dd>
               {document.dueDate ? (
                 <>
                   <dt className="text-muted-foreground">Due date</dt>
-                  <dd className="text-right text-foreground">{document.dueDate}</dd>
+                  <dd className="text-right text-foreground">
+                    {document.dueDate}
+                  </dd>
                 </>
               ) : null}
               {document.amount ? (
                 <>
                   <dt className="text-muted-foreground">Amount</dt>
-                  <dd className="text-right text-foreground">{document.amount}</dd>
+                  <dd className="text-right text-foreground">
+                    {document.amount}
+                  </dd>
                 </>
               ) : null}
               {document.reference ? (
                 <>
                   <dt className="text-muted-foreground">Reference</dt>
-                  <dd className="text-right text-foreground">{document.reference}</dd>
+                  <dd className="text-right text-foreground">
+                    {document.reference}
+                  </dd>
                 </>
               ) : null}
             </dl>
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-sm font-medium text-foreground">Related tasks</h2>
+            <h2 className="text-sm font-medium text-foreground">
+              Related tasks
+            </h2>
             {relatedTasks.length === 0 ? (
               <p className="text-sm text-muted-foreground">
                 No tasks have been created from this document yet.

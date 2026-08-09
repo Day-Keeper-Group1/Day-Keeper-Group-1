@@ -37,22 +37,28 @@ export default function TasksPage() {
 
   const sections = useMemo(
     () =>
-      SECTIONS.filter((section) => filter === "all" || filter === section.status).map(
-        (section) => ({
-          ...section,
-          tasks: MOCK_TASKS.filter((task) => task.status === section.status),
-        })
-      ),
-    [filter]
+      SECTIONS.filter(
+        (section) => filter === "all" || filter === section.status,
+      ).map((section) => ({
+        ...section,
+        tasks: MOCK_TASKS.filter((task) => task.status === section.status),
+      })),
+    [filter],
   );
 
   const hasAnyTask = sections.some((section) => section.tasks.length > 0);
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Tasks" description="Everything DayKeeper thinks you need to do." />
+      <PageHeader
+        title="Tasks"
+        description="Everything DayKeeper thinks you need to do."
+      />
 
-      <Tabs value={filter} onValueChange={(value) => setFilter(value as "all" | Status)}>
+      <Tabs
+        value={filter}
+        onValueChange={(value) => setFilter(value as "all" | Status)}
+      >
         <TabsList>
           {FILTERS.map((item) => (
             <TabsTrigger key={item.value} value={item.value}>
@@ -69,7 +75,9 @@ export default function TasksPage() {
           {sections.map((section) =>
             section.tasks.length === 0 ? null : (
               <section key={section.status} className="space-y-3">
-                <h2 className="text-sm font-medium text-foreground">{section.title}</h2>
+                <h2 className="text-sm font-medium text-foreground">
+                  {section.title}
+                </h2>
                 <ul
                   className={
                     section.status === "completed"
@@ -98,12 +106,15 @@ export default function TasksPage() {
                   ))}
                 </ul>
               </section>
-            )
+            ),
           )}
         </div>
       )}
 
-      <Sheet open={Boolean(selectedTask)} onOpenChange={(open) => !open && setSelectedTask(null)}>
+      <Sheet
+        open={Boolean(selectedTask)}
+        onOpenChange={(open) => !open && setSelectedTask(null)}
+      >
         <SheetContent>
           {selectedTask ? (
             <>
@@ -118,7 +129,9 @@ export default function TasksPage() {
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Due date</span>
-                  <span className="text-foreground">{selectedTask.dueDate}</span>
+                  <span className="text-foreground">
+                    {selectedTask.dueDate}
+                  </span>
                 </div>
                 {selectedTask.documentId ? (
                   <Link
@@ -131,7 +144,9 @@ export default function TasksPage() {
               </div>
               <SheetFooter>
                 {selectedTask.status !== "completed" ? (
-                  <Button onClick={() => setSelectedTask(null)}>Mark as complete</Button>
+                  <Button onClick={() => setSelectedTask(null)}>
+                    Mark as complete
+                  </Button>
                 ) : null}
               </SheetFooter>
             </>

@@ -12,7 +12,13 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
@@ -22,7 +28,10 @@ import { PageHeader } from "@/components/layout/page-header";
 export default function SettingsPage() {
   return (
     <div className="max-w-2xl space-y-6">
-      <PageHeader title="Settings" description="Manage your profile, notifications, and account." />
+      <PageHeader
+        title="Settings"
+        description="Manage your profile, notifications, and account."
+      />
 
       <Card>
         <CardHeader>
@@ -36,7 +45,11 @@ export default function SettingsPage() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="profile-email">Email</Label>
-            <Input id="profile-email" type="email" defaultValue="alex.nguyen@example.com" />
+            <Input
+              id="profile-email"
+              type="email"
+              defaultValue="alex.nguyen@example.com"
+            />
           </div>
           <Button size="sm">Save changes</Button>
         </CardContent>
@@ -50,7 +63,9 @@ export default function SettingsPage() {
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <p className="text-sm font-medium text-foreground">Documents needing review</p>
+              <p className="text-sm font-medium text-foreground">
+                Documents needing review
+              </p>
               <p className="text-sm text-muted-foreground">
                 Email me when a document needs my attention.
               </p>
@@ -60,7 +75,9 @@ export default function SettingsPage() {
           <Separator />
           <div className="flex items-center justify-between gap-4">
             <div>
-              <p className="text-sm font-medium text-foreground">Upcoming tasks</p>
+              <p className="text-sm font-medium text-foreground">
+                Upcoming tasks
+              </p>
               <p className="text-sm text-muted-foreground">
                 Email me a reminder before a task is due.
               </p>
@@ -78,11 +95,19 @@ export default function SettingsPage() {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="current-password">Current password</Label>
-            <Input id="current-password" type="password" autoComplete="current-password" />
+            <Input
+              id="current-password"
+              type="password"
+              autoComplete="current-password"
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="new-password">New password</Label>
-            <Input id="new-password" type="password" autoComplete="new-password" />
+            <Input
+              id="new-password"
+              type="password"
+              autoComplete="new-password"
+            />
           </div>
           <Button size="sm">Update password</Button>
         </CardContent>
@@ -91,7 +116,9 @@ export default function SettingsPage() {
       <Card className="border-destructive/30">
         <CardHeader>
           <CardTitle className="text-base">Account</CardTitle>
-          <CardDescription>Sign out or permanently delete your account.</CardDescription>
+          <CardDescription>
+            Sign out or permanently delete your account.
+          </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-3">
           <Button variant="outline">Sign out</Button>
@@ -103,8 +130,8 @@ export default function SettingsPage() {
               <AlertDialogHeader>
                 <AlertDialogTitle>Delete your account?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  This will permanently delete your documents, tasks, and reminders. This
-                  action cannot be undone.
+                  This will permanently delete your documents, tasks, and
+                  reminders. This action cannot be undone.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>

@@ -42,8 +42,8 @@ export function ReviewForm({
   function updateValue(key: string, value: string) {
     setFields((prev) =>
       prev.map((field) =>
-        field.key === key ? { ...field, value, status: "confirmed" } : field
-      )
+        field.key === key ? { ...field, value, status: "confirmed" } : field,
+      ),
     );
   }
 
@@ -85,8 +85,14 @@ export function ReviewForm({
                 <Input
                   id={field.key}
                   value={field.value}
-                  placeholder={field.status === "unreadable" ? "Enter the value" : undefined}
-                  onChange={(event) => updateValue(field.key, event.target.value)}
+                  placeholder={
+                    field.status === "unreadable"
+                      ? "Enter the value"
+                      : undefined
+                  }
+                  onChange={(event) =>
+                    updateValue(field.key, event.target.value)
+                  }
                   className={
                     field.status !== "confirmed"
                       ? "border-amber-300 focus-visible:ring-amber-300/50 aria-[invalid=true]:border-red-300"

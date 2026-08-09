@@ -32,7 +32,7 @@ export function SidebarNav() {
                   "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
                   active
                     ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                    : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                    : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                 )}
               >
                 <item.icon className="size-4 shrink-0" strokeWidth={1.75} />
@@ -46,12 +46,14 @@ export function SidebarNav() {
       <div className="mt-auto pt-2">
         <Link
           href={ADMIN_NAV.href}
-          aria-current={pathname.startsWith(ADMIN_NAV.href) ? "page" : undefined}
+          aria-current={
+            pathname.startsWith(ADMIN_NAV.href) ? "page" : undefined
+          }
           className={cn(
             "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
             pathname.startsWith(ADMIN_NAV.href)
               ? "bg-sidebar-accent text-sidebar-accent-foreground"
-              : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
           )}
         >
           <ADMIN_NAV.icon className="size-4 shrink-0" strokeWidth={1.75} />

@@ -11,7 +11,9 @@ export default function AuthGroupLayout({
         <span className="flex size-8 items-center justify-center rounded-md bg-primary text-sm font-semibold text-primary-foreground">
           D
         </span>
-        <span className="text-base font-semibold text-foreground">DayKeeper</span>
+        <span className="text-base font-semibold text-foreground">
+          DayKeeper
+        </span>
       </Link>
       <div className="w-full max-w-sm">{children}</div>
     </div>

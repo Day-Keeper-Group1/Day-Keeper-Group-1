@@ -4,7 +4,13 @@ import { useState } from "react";
 import Link from "next/link";
 import { MailCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -19,13 +25,18 @@ export default function ForgotPasswordPage() {
             <MailCheck className="size-5" strokeWidth={1.75} />
           </span>
           <div className="space-y-1">
-            <p className="text-sm font-medium text-foreground">Check your email</p>
+            <p className="text-sm font-medium text-foreground">
+              Check your email
+            </p>
             <p className="text-sm text-muted-foreground">
-              If an account exists for that email, we&apos;ve sent a link to reset your
-              password.
+              If an account exists for that email, we&apos;ve sent a link to
+              reset your password.
             </p>
           </div>
-          <Link href="/login" className="text-sm font-medium text-primary hover:underline">
+          <Link
+            href="/login"
+            className="text-sm font-medium text-primary hover:underline"
+          >
             Back to sign in
           </Link>
         </CardContent>
@@ -51,7 +62,13 @@ export default function ForgotPasswordPage() {
         >
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" name="email" type="email" autoComplete="email" required />
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              required
+            />
           </div>
 
           <Button type="submit" className="w-full">
@@ -60,7 +77,10 @@ export default function ForgotPasswordPage() {
         </form>
 
         <p className="mt-6 text-center text-sm text-muted-foreground">
-          <Link href="/login" className="font-medium text-primary hover:underline">
+          <Link
+            href="/login"
+            className="font-medium text-primary hover:underline"
+          >
             Back to sign in
           </Link>
         </p>

@@ -41,11 +41,14 @@ export default function PublicEntryPage() {
               Your letters and bills, organised for you.
             </h1>
             <p className="max-w-md text-base text-muted-foreground">
-              Upload a photo of any letter or bill. DayKeeper reads it,
-              checks it with you, and reminds you what to do next.
+              Upload a photo of any letter or bill. DayKeeper reads it, checks
+              it with you, and reminds you what to do next.
             </p>
             <div className="flex flex-col gap-3 sm:flex-row">
-              <Button size="lg" render={<Link href="/register">Create account</Link>} />
+              <Button
+                size="lg"
+                render={<Link href="/register">Create account</Link>}
+              />
               <Button
                 size="lg"
                 variant="outline"

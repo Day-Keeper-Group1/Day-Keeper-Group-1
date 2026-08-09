@@ -36,14 +36,19 @@ export default function DocumentArchivePage() {
       const matchesFilter = filter === "all" || doc.status === filter;
       const matchesQuery =
         query.trim().length === 0 ||
-        `${doc.issuer} ${doc.documentType}`.toLowerCase().includes(query.trim().toLowerCase());
+        `${doc.issuer} ${doc.documentType}`
+          .toLowerCase()
+          .includes(query.trim().toLowerCase());
       return matchesFilter && matchesQuery;
     });
   }, [query, filter]);
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Documents" description="Everything you've uploaded, in one place." />
+      <PageHeader
+        title="Documents"
+        description="Everything you've uploaded, in one place."
+      />
 
       <div className="space-y-4">
         <div className="relative max-w-sm">
@@ -60,7 +65,10 @@ export default function DocumentArchivePage() {
           />
         </div>
 
-        <Tabs value={filter} onValueChange={(value) => setFilter(value as "all" | Status)}>
+        <Tabs
+          value={filter}
+          onValueChange={(value) => setFilter(value as "all" | Status)}
+        >
           <TabsList className="flex-wrap">
             {FILTERS.map((item) => (
               <TabsTrigger key={item.value} value={item.value}>
@@ -94,18 +102,25 @@ export default function DocumentArchivePage() {
                 {documents.map((doc) => (
                   <TableRow key={doc.id} className="cursor-pointer">
                     <TableCell>
-                      <Link href={`/documents/${doc.id}`} className="block font-medium text-foreground">
+                      <Link
+                        href={`/documents/${doc.id}`}
+                        className="block font-medium text-foreground"
+                      >
                         {doc.issuer}
                       </Link>
                     </TableCell>
-                    <TableCell className="text-muted-foreground">{doc.documentType}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {doc.documentType}
+                    </TableCell>
                     <TableCell>
                       <StatusBadge status={doc.status} />
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       {doc.dueDate ?? "-"}
                     </TableCell>
-                    <TableCell className="text-muted-foreground">{doc.uploadedAt}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {doc.uploadedAt}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
