@@ -91,8 +91,13 @@ that were never taken.
 | `npm run dev` | the application |
 | `npm run lint` | eslint |
 | `npm run format` | prettier over the whole repository |
+| `npm run worktree:setup` | give a fresh git worktree its own database and port |
+| `npm run worktree:teardown` | retire them again (safe: refuses to touch the main DB) |
 | `docker compose down` | stop the database |
 | `docker compose down -v` | stop it and throw the data away |
+
+Working in parallel worktrees? The runbook lives in `AGENTS.md`, section
+"Worktrees: parallel agents without collisions".
 
 ### Git hooks
 

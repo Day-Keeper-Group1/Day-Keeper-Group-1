@@ -55,6 +55,40 @@ Two rules that are easy to break by accident:
 - **The six fields are a floor, not a ceiling.** A reader may return more, and the extra is kept in `open_payload`. But all six must be present, and a field that could not be read says `unreadable` rather than being omitted. `summary` is deliberately not one of them; see ADR 004.
 - **Never drop `rawText` from the review screen.** Showing the snippet the value came from is what turns confirming into checking. Without it the product's central safety claim is theatre.
 
+## Worktrees: parallel agents without collisions
+
+One shared docker stack serves every checkout. Each worktree owns its own **database** (inside the one Postgres) and its own **dev port**, both derived deterministically from its branch name, so any number of agents can build, seed, reset and serve side by side without touching each other. `db:reset` in a worktree nukes only that worktree's database.
+
+### Dispatching parallel worktrees (you are in the main checkout)
+
+When asked to parallelise work across worktrees:
+
+1. Create each one as `git worktree add ../daykeeper-worktrees/<slug> -b <branch>` — a sibling container directory, so checkouts never end up inside each other or inside tool scans.
+2. Hand each worktree to one agent whose working directory is **inside** it; this file loads there and the next section tells it everything it needs. If it needs a hint, one sentence suffices: "start with `npm run worktree:setup`".
+3. Split the work so that no two worktrees edit the same files. Ports and databases are isolated by the scripts; merge conflicts are prevented only by how you split the work.
+4. When a worktree's work is merged (or abandoned): inside it, `npm run worktree:teardown` (drops its database, frees its port), then from the main checkout `git worktree remove ../daykeeper-worktrees/<slug>`, and delete its branch once merged (`git branch -d`) or abandoned (`-D`).
+
+### Working in a worktree (you woke up inside one)
+
+```bash
+npm run worktree:setup   # derives this worktree's database + port, writes .env.local, creates the DB
+npm ci                   # once per worktree
+npm run db:reset         # schema + seed, into THIS worktree's database
+npm run dev              # serves on the port setup printed (it is in .env.local)
+```
+
+The main checkout keeps the shared defaults (database `daykeeper`, port 3000); `worktree:setup` refuses to run there. Everything in `docs/start-here.md` applies unchanged otherwise.
+
+**Environment problems wear a code-bug mask.** Check the environment before touching code:
+
+| what you see | what it usually is | the fix |
+|---|---|---|
+| `ECONNREFUSED` / timeout at the database | docker is down, or `.env.local` was never written | `docker compose up -d`, then `npm run worktree:setup` |
+| `EADDRINUSE` | a stale process on this worktree's own port | `npm run dev` clears its own port first; just rerun it |
+| `Cannot find module ...` | dependencies not installed here | `npm ci` |
+
+**Never edit application source or configuration to dodge an environment problem** — changing a port in code, pointing at a different database, weakening a check. If the environment blocks you, the fix is one of the commands above; if none of them fixes it, say so plainly instead of working around it.
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 # This is NOT the Next.js you know

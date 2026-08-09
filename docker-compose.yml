@@ -8,6 +8,13 @@
 # Nothing here is deployed. It exists so that a teammate can clone the
 # repository and have a working database in one command, without an account
 # anywhere and without waiting for anyone to hand out credentials.
+#
+# ONE stack serves every checkout. The project name is pinned below so that
+# running `docker compose up` from a git worktree joins this same stack
+# instead of trying to start a second one (which would fail on the ports).
+# Worktrees isolate by database, not by container: see AGENTS.md, Worktrees.
+
+name: daykeeper
 
 services:
   db:

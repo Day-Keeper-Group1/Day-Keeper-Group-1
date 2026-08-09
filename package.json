@@ -7,10 +7,12 @@
     "npm": ">=11"
   },
   "scripts": {
-    "dev": "next dev",
+    "dev": "node scripts/dev.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "worktree:setup": "node scripts/worktree-setup.mjs",
+    "worktree:teardown": "node scripts/worktree-teardown.mjs",
     "typecheck": "next typegen && tsc --noEmit",
     "db:reset": "tsx db/reset.ts && tsx db/seed.ts",
     "db:schema": "tsx db/reset.ts",
