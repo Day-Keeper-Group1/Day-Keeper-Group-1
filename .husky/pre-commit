@@ -1,4 +1,4 @@
 # Format and lint exactly the files being committed. Staged-only, so it stays
 # fast no matter how big the repository gets. Configuration: "lint-staged" in
-# package.json.
-npx lint-staged
+# package.json. --quiet: print problems, not progress.
+npx lint-staged --quiet

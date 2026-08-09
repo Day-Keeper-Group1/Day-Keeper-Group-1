@@ -17,8 +17,8 @@
     "db:seed": "tsx db/seed.ts",
     "test": "vitest run",
     "test:watch": "vitest",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
+    "format": "prettier --write . --log-level warn",
+    "format:check": "prettier --check . --log-level warn",
     "prepare": "husky"
   },
   "lint-staged": {
