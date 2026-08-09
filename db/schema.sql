@@ -80,13 +80,18 @@ CREATE TABLE users (
   display_name    text NOT NULL,
   password_hash   text NOT NULL,
   role            user_role NOT NULL DEFAULT 'user',
+  -- IANA zone name. The product promises "a reminder at 9 am", and 9 am is
+  -- meaningless without knowing whose morning. Defaulted rather than asked
+  -- for at registration; a settings screen can expose it later.
+  timezone        text NOT NULL DEFAULT 'Australia/Melbourne',
   -- Deactivating a person keeps their documents intact and stops them signing
   -- in. The admin dashboard offers this; it never offers deletion.
   deactivated_at  timestamptz,
   created_at      timestamptz NOT NULL DEFAULT now(),
   updated_at      timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT users_email_present CHECK (btrim(email) <> ''),
-  CONSTRAINT users_display_name_present CHECK (btrim(display_name) <> '')
+  CONSTRAINT users_display_name_present CHECK (btrim(display_name) <> ''),
+  CONSTRAINT users_timezone_present CHECK (btrim(timezone) <> '')
 );
 
 CREATE UNIQUE INDEX users_email_canonical_key ON users (email_canonical);
@@ -121,12 +126,21 @@ CREATE TABLE documents (
   id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id        uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   status         document_status NOT NULL DEFAULT 'processing',
-  -- Denormalised from the confirmed extraction so that lists and the calendar
-  -- do not have to join through extracted_fields on every render. These are
-  -- written when a person confirms a document, and are null before that.
+  -- Denormalised from the extraction so that lists and the calendar do not
+  -- have to join through extracted_fields on every render. Written as soon as
+  -- a reading SUCCEEDS (the "to check" list shows who a letter is from before
+  -- it is confirmed), then overwritten with the person's corrections at
+  -- confirm. Null until the first successful reading, which is why the
+  -- browser-facing types declare them nullable: a processing or failed
+  -- document genuinely has no issuer yet.
   issuer         text,
   document_type  text,
   due_date       date,
+  -- Appointments happen AT a time, not just BY a date. Null for everything
+  -- that only has a deadline. 24-hour local wall clock; the zone is the
+  -- user's. Presence of a time is what makes a document an appointment for
+  -- reminder scheduling (see src/lib/contract/reminders.ts).
+  due_time       time,
   amount_text    text,          -- kept as written on the page: "$347.60", "347.60 AUD"
   reference      text,
   -- Anything the model returned that is not one of the six contract fields.
@@ -150,9 +164,16 @@ CREATE INDEX documents_user_due_idx ON documents (user_id, due_date) WHERE due_d
 -- One photographed sheet. The bytes live in object storage; this table holds
 -- the path and enough metadata to show a thumbnail and to tell the person which
 -- page they are looking at.
+--
+-- `attempt` exists because a retake uploads a fresh set of pages for the same
+-- document, and the API promises that previous attempts stay in the history.
+-- Without it, "replaces every page" would mean deleting the very image a
+-- failed reading was judged against. The current pages of a document are the
+-- rows with the highest attempt.
 CREATE TABLE document_pages (
   id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   document_id   uuid NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+  attempt       integer NOT NULL DEFAULT 1,
   page_number   integer NOT NULL,
   storage_path  text NOT NULL,
   mime_type     text NOT NULL,
@@ -160,12 +181,13 @@ CREATE TABLE document_pages (
   width_px      integer,
   height_px     integer,
   created_at    timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT document_pages_attempt_positive CHECK (attempt >= 1),
   CONSTRAINT document_pages_page_number_positive CHECK (page_number >= 1),
   CONSTRAINT document_pages_byte_size_positive CHECK (byte_size > 0),
-  CONSTRAINT document_pages_unique_page UNIQUE (document_id, page_number)
+  CONSTRAINT document_pages_unique_page UNIQUE (document_id, attempt, page_number)
 );
 
-CREATE INDEX document_pages_document_idx ON document_pages (document_id, page_number);
+CREATE INDEX document_pages_document_idx ON document_pages (document_id, attempt DESC, page_number);
 
 -- ---------------------------------------------------------------------------
 -- Extraction
@@ -245,6 +267,8 @@ CREATE TABLE tasks (
   title        text NOT NULL,
   issuer       text,
   due_date     date,
+  -- Mirrors documents.due_time: set for appointments, null for deadlines.
+  due_time     time,
   state        task_state NOT NULL DEFAULT 'open',
   completed_at timestamptz,
   created_at   timestamptz NOT NULL DEFAULT now(),
