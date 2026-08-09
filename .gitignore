@@ -2,6 +2,8 @@
 CLAUDE.local.md
 .env
 .env.*
+# The template is meant to be committed; it holds no secrets.
+!.env.example
 *.local
 
 # python

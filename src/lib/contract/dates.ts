@@ -1,0 +1,254 @@
+/**
+ * Dates and times, in one place.
+ *
+ * Every date in this system travels as a calendar day, 'YYYY-MM-DD'. Every time
+ * of day travels as a wall clock, 'HH:mm'. Instants (timestamptz columns, Date
+ * objects) appear only at the one edge where a reminder becomes a scheduled
+ * send. There are two directions this can go wrong, and they are guarded in two
+ * places:
+ *
+ * - src/server/db.ts stops the driver turning a `date` column into a shifted
+ *   JavaScript Date on the way OUT of the database.
+ * - this module stops arithmetic and formatting shifting the day on the way TO
+ *   the screen. `new Date('2026-08-15')` parses as UTC midnight, which in any
+ *   zone behind UTC formats back as the 14th. Nothing in this file ever
+ *   constructs a Date from a bare date string.
+ *
+ * Pure functions only: no database, no environment, no `server-only`. The
+ * review screen and the seed script both import from here, which is the point.
+ * One rule, one home.
+ */
+
+/**
+ * The application's timezone.
+ *
+ * The product promises "a reminder at 9 am", and 9 am is meaningless without a
+ * zone. Users carry a `timezone` column (defaulted to this value) so the server
+ * should prefer the person's own zone when it has a session; this constant is
+ * the default for new accounts and the fallback for code that has no user in
+ * hand. One-zone-per-deployment is a deliberate simplification for a Melbourne
+ * pilot, not an oversight.
+ */
+export const APP_TIME_ZONE = "Australia/Melbourne";
+
+const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+const WEEKDAYS_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const WEEKDAYS_LONG = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+];
+const MONTHS_SHORT = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
+const MONTHS_LONG = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
+function pad2(n: number): string {
+  return String(n).padStart(2, "0");
+}
+
+/** True for a real calendar date written 'YYYY-MM-DD'. '2026-02-30' is false. */
+export function isIsoDate(value: string): boolean {
+  const m = ISO_DATE.exec(value);
+  if (!m) return false;
+  const [, y, mo, d] = m.map(Number);
+  const probe = new Date(Date.UTC(y, mo - 1, d));
+  return (
+    probe.getUTCFullYear() === y &&
+    probe.getUTCMonth() === mo - 1 &&
+    probe.getUTCDate() === d
+  );
+}
+
+function assertIsoDate(value: string, caller: string): void {
+  if (!isIsoDate(value)) {
+    throw new TypeError(`${caller} expects 'YYYY-MM-DD', got "${value}"`);
+  }
+}
+
+/**
+ * Today's date in a timezone, as 'YYYY-MM-DD'.
+ *
+ * This is how "is it overdue yet?" must be asked. Comparing against UTC's
+ * midnight makes a Melbourne task stay upcoming until ten the next morning.
+ */
+export function todayInZone(
+  timeZone: string = APP_TIME_ZONE,
+  now: Date = new Date(),
+): string {
+  // en-CA is the locale whose default date format is YYYY-MM-DD.
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(now);
+}
+
+/** Calendar arithmetic on 'YYYY-MM-DD', no timezone involved. Days may be negative. */
+export function addDays(isoDate: string, days: number): string {
+  assertIsoDate(isoDate, "addDays");
+  const [y, mo, d] = isoDate.split("-").map(Number);
+  const shifted = new Date(Date.UTC(y, mo - 1, d + days));
+  return `${shifted.getUTCFullYear()}-${pad2(shifted.getUTCMonth() + 1)}-${pad2(shifted.getUTCDate())}`;
+}
+
+/**
+ * The three ways the interface writes a date, taken from the prototype:
+ *
+ *   fact   '15 Aug 2026'         the review screen's field rows
+ *   short  'Sat 15 Aug'          task rows and day-sheet headers
+ *   long   'Saturday 15 August'  spoken-style, for the day sheet's title
+ *
+ * Deliberately hand-rolled rather than Intl: locale data varies between ICU
+ * versions (a comma appearing in 'Sat, 15 Aug' depending on the Node build),
+ * and these three strings are product copy, not localisation.
+ */
+export function formatDueDate(
+  isoDate: string,
+  style: "fact" | "short" | "long",
+): string {
+  assertIsoDate(isoDate, "formatDueDate");
+  const [y, mo, d] = isoDate.split("-").map(Number);
+  const weekday = new Date(Date.UTC(y, mo - 1, d)).getUTCDay();
+  switch (style) {
+    case "fact":
+      return `${d} ${MONTHS_SHORT[mo - 1]} ${y}`;
+    case "short":
+      return `${WEEKDAYS_SHORT[weekday]} ${d} ${MONTHS_SHORT[mo - 1]}`;
+    case "long":
+      return `${WEEKDAYS_LONG[weekday]} ${d} ${MONTHS_LONG[mo - 1]}`;
+  }
+}
+
+/** '10:30' → '10:30 am', '14:05' → '2:05 pm'. The prototype's appointment style. */
+export function formatDueTime(hhmm: string): string {
+  const m = /^(\d{2}):(\d{2})$/.exec(hhmm);
+  if (!m) throw new TypeError(`formatDueTime expects 'HH:mm', got "${hhmm}"`);
+  const hour = Number(m[1]);
+  const minute = m[2];
+  if (hour > 23 || Number(minute) > 59) {
+    throw new TypeError(`formatDueTime expects a real time, got "${hhmm}"`);
+  }
+  const half = hour < 12 ? "am" : "pm";
+  const clock = hour % 12 === 0 ? 12 : hour % 12;
+  return `${clock}:${minute} ${half}`;
+}
+
+/**
+ * Parse what a person typed into a date box, day-first, to 'YYYY-MM-DD'.
+ *
+ * The review screen's date field is a plain text input prefilled with
+ * '15 Aug 2026', so the server will receive human writing, not ISO. Accepted:
+ *
+ *   '2026-08-15'      already ISO
+ *   '15/08/2026'      day-first with / - or . and a 2- or 4-digit year
+ *   '15 Aug 2026'     day, month name (short or full), year
+ *
+ * Anything else, and any string that names an impossible day, returns null.
+ * Day-first is a product decision, not a guess: the audience is Australian and
+ * the field description already tells the model the same thing.
+ */
+export function parseHumanDate(input: string): string | null {
+  const text = input.trim();
+  if (ISO_DATE.test(text)) return isIsoDate(text) ? text : null;
+
+  const slashed = /^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2}|\d{4})$/.exec(text);
+  if (slashed) {
+    const d = Number(slashed[1]);
+    const mo = Number(slashed[2]);
+    const y =
+      slashed[3].length === 2 ? 2000 + Number(slashed[3]) : Number(slashed[3]);
+    const iso = `${y}-${pad2(mo)}-${pad2(d)}`;
+    return isIsoDate(iso) ? iso : null;
+  }
+
+  const written = /^(\d{1,2})\s+([A-Za-z]+),?\s+(\d{4})$/.exec(text);
+  if (written) {
+    const d = Number(written[1]);
+    const name = written[2].toLowerCase();
+    const y = Number(written[3]);
+    const mo =
+      MONTHS_SHORT.findIndex((m) => m.toLowerCase() === name.slice(0, 3)) + 1;
+    const isFullName = MONTHS_LONG.some((m) => m.toLowerCase() === name);
+    const isShortName = MONTHS_SHORT.some((m) => m.toLowerCase() === name);
+    if (mo === 0 || !(isFullName || isShortName)) return null;
+    const iso = `${y}-${pad2(mo)}-${pad2(d)}`;
+    return isIsoDate(iso) ? iso : null;
+  }
+
+  return null;
+}
+
+/**
+ * The instant at which a local wall-clock time occurs in a timezone.
+ *
+ * 'What UTC moment is 2026-08-08 09:00 in Melbourne?' This is the one place a
+ * calendar day becomes a timestamptz, used when reminders are scheduled.
+ *
+ * Implementation note: guess the instant as if the zone were UTC, ask Intl what
+ * wall clock that instant shows in the target zone, and correct by the
+ * difference. A single correction is exact except within a DST transition
+ * window; Melbourne's transitions happen at 2-3 am and reminders go out at 9,
+ * so the approximation never bites here.
+ */
+export function zonedTimeToInstant(
+  isoDate: string,
+  hour: number,
+  minute: number,
+  timeZone: string = APP_TIME_ZONE,
+): Date {
+  assertIsoDate(isoDate, "zonedTimeToInstant");
+  const [y, mo, d] = isoDate.split("-").map(Number);
+  const guess = Date.UTC(y, mo - 1, d, hour, minute);
+
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(new Date(guess));
+  const get = (type: string) =>
+    Number(parts.find((p) => p.type === type)?.value ?? 0);
+
+  const shownAsUtc = Date.UTC(
+    get("year"),
+    get("month") - 1,
+    get("day"),
+    get("hour"),
+    get("minute"),
+  );
+  return new Date(guess - (shownAsUtc - guess));
+}
