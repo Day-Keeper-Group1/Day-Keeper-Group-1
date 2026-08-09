@@ -1,0 +1,4 @@
+# Whole-project type checking: too slow to run on every commit, too cheap to
+# leave for a CI round trip. About ten seconds. In a genuine emergency,
+# git push --no-verify skips it and CI still catches it.
+npm run typecheck

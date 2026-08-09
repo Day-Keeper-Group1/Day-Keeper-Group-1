@@ -32,3 +32,6 @@ Thumbs.db
 # large data stays out of git (shared drive instead); small curated fixtures/ are committed
 output/
 *.pdf
+
+# Local uploads and build output
+.storage/

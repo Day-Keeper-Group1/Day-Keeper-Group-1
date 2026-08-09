@@ -10,7 +10,20 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx,mjs,cjs}": [
+      "prettier --write",
+      "eslint --fix --no-warn-ignored"
+    ],
+    "*.{json,css}": [
+      "prettier --write"
+    ]
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
@@ -31,6 +44,9 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.3.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
+    "prettier": "^3.9.6",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

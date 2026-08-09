@@ -1,0 +1,15 @@
+# Formatting is for code. Prose and frozen artefacts keep their hand-set shape.
+
+# The product prototypes are hand-built, self-contained HTML and are design
+# artefacts, not code. Reformatting them creates six-hundred-line diffs on
+# files whose whole value is that a person shaped them deliberately.
+docs/prototype/
+
+# Documentation is hand-wrapped prose; a reflow is churn, not a fix.
+*.md
+
+# Generated or machine-owned.
+package-lock.json
+.next/
+node_modules/
+next-env.d.ts

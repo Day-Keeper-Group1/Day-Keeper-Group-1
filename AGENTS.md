@@ -31,6 +31,8 @@ npm run lint
 
 Use `npm install <pkg>` only to intentionally change dependencies, and commit the resulting `package-lock.json` diff together with that change. If `git diff` shows lockfile churn and you did not change dependencies, revert it (`git checkout -- package-lock.json`). Node >=20.17 and npm >=11 are enforced through `engines` plus `.npmrc` engine-strict.
 
+Git hooks install themselves through `npm ci` (husky): staged files are formatted and linted at commit, commit messages are rejected if they carry AI attribution, and `typecheck` runs before a push. Formatting is Prettier defaults (`.prettierrc`); prototypes and markdown are exempt (`.prettierignore`). Do not fight the hook output: if it reformatted a file, that is the file's correct shape.
+
 No automated tests yet (Vitest/Playwright land per the roadmap's Step 11). Copy `.env.example` to `.env.local` before touching auth/storage code.
 
 <!-- BEGIN:nextjs-agent-rules -->
