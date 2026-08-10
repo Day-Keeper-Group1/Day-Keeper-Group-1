@@ -6,11 +6,12 @@ DayKeeper (Group 1): an AI-powered life management system for people in vulnerab
 
 - `docs/start-here.md`: how to run the whole thing, what the seed contains, and where everything lives. Read this first.
 - `docs/api.md`: the API specification. **Not built yet**: this is the shape to build against, with the reasoning for the parts that look arbitrary.
+- `docs/theme.md`: the theme. The palette, the contrast measurements, and the rules that make this product readable by the people it is for. Read it before styling a screen.
 - `docs/architecture/adr-00*.md`: the four decisions that shape the rest (one Next.js app, our own auth behind one function, plain Postgres with no migrations, the six-field extraction contract). When something looks odd, the reason is in one of these.
 - `docs/project-description.md`: the official project description, verbatim. Our requirements baseline; when wording conflicts, this file wins.
 - `docs/DayKeeper-Tech-Stack-Recommendation.md`: the tech stack recommendation (draft until the team adopts it).
 - `docs/Technical-Research-and-Implementation-Roadmap.md`: step-by-step research and build plan; check this before starting new feature work.
-- `docs/prototype/user/daykeeper-sketch-live.html`: clickable prototype of the user flow (phone). The live one; this is where user-flow design work happens.
+- `docs/prototype/user/daykeeper-sketch-live.html`: clickable prototype of the user flow (phone). The live one; user-flow design work happens here, and its `:root` block is where the theme's palette lives. See "The look" below.
 - `docs/prototype/admin/daykeeper-admin-sketch.html`: wireframe of the admin dashboard (desktop). Static, no interaction. Keep the two prototypes separate: different device, different person, different module.
 - `docs/ai-prompts/`: AI usage records for the course GenAI declaration (create on first use). If AI helped with a change, log it there.
 - `db/schema.sql`: the database, and its only definition. No migrations: edit it and run `npm run db:reset`.
@@ -26,6 +27,19 @@ DayKeeper (Group 1): an AI-powered life management system for people in vulnerab
 - Branch names start with the Jira ticket key when there is one (`kan-13-photo-upload`): Jira attaches branches and pull requests to the ticket automatically when the key appears in the name, so the board stays wired to the code with no manual linking.
 - Never commit secrets, API keys, or `.env` files. Personal API keys and personal paid cloud accounts are banned for this project.
 - Large binaries and generated output stay out of git (see `.gitignore`); small curated fixtures are fine.
+
+## The look
+
+The theme is **Eucalypt & Wattle**, adopted 9 August 2026. **Read [`docs/theme.md`](docs/theme.md) before styling anything**: it has the palette, what each colour is for, the measured contrast of every pair, and the reasoning you would otherwise have to guess at.
+
+The short version, so you know when to go and read it:
+
+- The palette lives in `src/app/globals.css`, with shadcn's own names pointed at it. An ordinary `<Button>` is already eucalypt green; prefer `bg-primary`, `text-muted-foreground`, `border-border` and the DayKeeper additions (`text-warn` on `bg-warn-bg`, and so on) over typing a hex anywhere.
+- `docs/prototype/user/daykeeper-sketch-live.html` is the worked example. Open it in a browser to see what a screen is supposed to look like.
+- Body text clears **7:1, not 4.5:1**, nothing is blue, nothing is pure white or pure black, gold is never text, and colour is never the only signal. Each of those has a reason involving eyes over 70, and `docs/theme.md` gives it.
+- Body text is at least 18px and primary buttons at least 48px tall. The prototype's own type is still the older smaller scale, so build new screens at the larger size rather than matching the sketch.
+
+`tests/theme.test.ts` keeps the three copies of the palette (the stylesheet, the prototype, the doc) in agreement, and fails the build if a colour drifts or a blue appears.
 
 ## Build and test
 

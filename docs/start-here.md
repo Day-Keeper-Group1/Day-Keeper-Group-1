@@ -99,6 +99,11 @@ that were never taken.
 Working in parallel worktrees? The runbook lives in `AGENTS.md`, section
 "Worktrees: parallel agents without collisions".
 
+Building a screen? Read [`theme.md`](theme.md) first. The palette is already
+wired into `src/app/globals.css`, so shadcn components come out on-theme; what
+the doc gives you is which colour means what, and the rules that are not
+negotiable.
+
 ### Git hooks
 
 `npm ci` installs them; there is nothing to set up. On commit, the staged files
