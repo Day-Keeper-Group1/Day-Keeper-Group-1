@@ -6,135 +6,209 @@
 <title>DayKeeper · understanding sketch (G1, live)</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background: #e9eef4; color: #1f2937; }
+
+  /* ============================================================
+     Eucalypt & Wattle. The team's theme, chosen 9 August 2026.
+
+     These values are a COPY. They live in src/app/globals.css, and
+     are repeated here because this file has to open standalone with
+     no build step. Change one and change the other;
+     tests/theme.test.ts fails when they disagree. The reasoning for
+     every value is in docs/theme.md.
+
+     Nothing below this block names a colour directly.
+
+     Three rules the values encode, so nobody undoes them by eye:
+     · No blue anywhere. Ageing eyes take roughly 2400ms longer to
+       tell blue from yellow, so blue is the one hue this product
+       cannot spend on anything that has to be caught quickly.
+     · No pure white, no pure black. The paper tones cut the glare
+       that cataracts and macular degeneration make painful.
+     · Wattle gold is never text. Saturated yellow on a light
+       ground reaches 2:1, so gold appears only as the focus ring's
+       lining and the reminder dot.
+     ============================================================ */
+  :root {
+    --bg: #f4f0e4;
+    --bg-card: #fbf8f0;
+    --ink: #1c1a15;
+    --ink-dim: #454b41;
+    --line: #8a8265;
+    --primary: #17452c;
+    --primary-ink: #f7f4ea;
+    --primary-soft: #d9e5d5;
+    --focus: #191a12;
+    --focus-ink: #ffd21f;
+    --danger: #8c0d07;
+    --danger-bg: #fbe6e2;
+    --success: #0f5130;
+    --success-bg: #d3e7d9;
+    --warn-ink: #4a3b20;
+    --warn-bg: #f0e6cd;
+    --dot-due: #8c0d07;
+    --dot-rem: #b87500;
+    --font: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --fs-body: 19px;
+    --radius-card: 10px;
+    --radius-btn: 8px;
+    --btn-h: 56px;
+    --border-w: 2px;
+    --shadow-card: 0 1px 2px rgba(23, 69, 44, 0.10);
+
+    /* Sketch scaffolding: the desk the phone sits on, and the bezel.
+       Not product tokens, and not part of the theme. The desk stays a
+       neutral near-white on purpose: tinting it warm would sit the theme
+       on a background the theme's own colour, which makes the palette
+       impossible to judge honestly. */
+    --scaffold-bg: #fcfcfb;
+    --scaffold-ink: #5c5647;
+    --bezel: #2a2720;
+  }
+
+  body { font-family: var(--font); background: var(--scaffold-bg); color: var(--ink); }
+
+  /* The focus state, everywhere: a near-black ring with a gold lining.
+     Gold alone cannot carry a focus ring on a light page, and a thin
+     outline is invisible to the eyes this is for. */
+  :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; box-shadow: 0 0 0 6px var(--focus-ink); }
 
   /* ---------- top toolbar ---------- */
-  .toolbar { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 10px; font-size: 13px; color: #6b7280; flex-wrap: wrap; }
-  .toolbar .name { font-weight: 700; color: #374151; }
-  .toolbar button { border: 1px solid #cbd5e1; background: #fff; padding: 6px 14px; border-radius: 999px; font-size: 13px; cursor: pointer; color: #475569; }
-  .toolbar a { border: 1px solid #cbd5e1; background: #fff; padding: 6px 14px; border-radius: 999px; font-size: 13px; color: #475569; text-decoration: none; }
+  .toolbar { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 10px; font-size: 13px; color: var(--scaffold-ink); flex-wrap: wrap; }
+  .toolbar .name { font-weight: 700; color: var(--ink); }
+  .toolbar button { border: 1px solid var(--line); background: var(--bg-card); padding: 6px 14px; border-radius: 999px; font-size: 13px; cursor: pointer; color: var(--ink); }
+  .toolbar a { border: 1px solid var(--line); background: var(--bg-card); padding: 6px 14px; border-radius: 999px; font-size: 13px; color: var(--ink); text-decoration: none; }
 
   /* ---------- phone frame ---------- */
   .phone-wrap { display: flex; justify-content: center; padding-bottom: 30px; }
-  .phone { width: 400px; background: #f7f9fb; border: 10px solid #26303b; border-radius: 34px; overflow: hidden; position: relative; height: 800px; box-shadow: 0 18px 50px rgba(30,41,59,.25); }
+  .phone { width: 400px; background: var(--bg); border: 10px solid var(--bezel); border-radius: 34px; overflow: hidden; position: relative; height: 800px; box-shadow: 0 18px 50px rgba(28,26,21,.22); }
   .app { padding: 22px 18px 96px 18px; height: 100%; overflow-y: auto; scrollbar-width: none; }
   .app::-webkit-scrollbar { display: none; }
 
   h1 { font-size: 23px; letter-spacing: -.2px; margin-bottom: 3px; }
-  .sub { color: #64748b; font-size: 14.5px; margin-bottom: 18px; }
+  .sub { color: var(--ink-dim); font-size: 14.5px; margin-bottom: 18px; }
 
-  .card { background: #fff; border-radius: 16px; padding: 16px; margin-bottom: 14px; box-shadow: 0 1px 3px rgba(15,23,42,.06); }
-  .card h2 { font-size: 12.5px; text-transform: uppercase; letter-spacing: .7px; color: #94a3b8; margin-bottom: 12px; }
+  .card { background: var(--bg-card); border: var(--border-w) solid var(--line); border-radius: var(--radius-card); padding: 16px; margin-bottom: 14px; box-shadow: var(--shadow-card); }
+  .card h2 { font-size: 12.5px; text-transform: uppercase; letter-spacing: .7px; color: var(--ink-dim); margin-bottom: 12px; }
 
   /* home CTA */
-  .review-cta { background: #1b74c5; color: #fff; border-radius: 16px; padding: 18px; margin-bottom: 14px; cursor: pointer; box-shadow: 0 6px 16px rgba(27,116,197,.35); }
-  .review-cta.dim { background: #eef2f7; color: #94a3b8; box-shadow: none; }
-  .review-cta.dim .small { color: #94a3b8; }
+  .review-cta { background: var(--primary); color: var(--primary-ink); border: var(--border-w) solid transparent; border-radius: var(--radius-card); padding: 18px; margin-bottom: 14px; cursor: pointer; box-shadow: var(--shadow-card); }
+  /* Nothing to do: an inert panel rather than a quieter green one. A tinted
+     version put the secondary text at 6.9:1, just under the 7:1 this
+     product holds itself to. */
+  .review-cta.dim { background: var(--bg-card); border-color: var(--line); color: var(--ink-dim); box-shadow: none; }
+  .review-cta.dim .small { color: var(--ink-dim); }
   .review-cta .big { font-size: 18px; font-weight: 700; margin-bottom: 3px; }
-  .review-cta .small { font-size: 13.5px; opacity: .88; }
+  .review-cta .small { font-size: 13.5px; opacity: .92; }
 
   /* task rows (confirmed things) */
-  .row { display: flex; align-items: center; gap: 12px; padding: 12px 2px; border-top: 1px solid #f1f5f9; font-size: 16px; }
+  .row { display: flex; align-items: center; gap: 12px; padding: 12px 2px; border-top: 1px solid var(--line); font-size: 16px; }
   .row:first-of-type { border-top: 0; }
-  .dot { width: 26px; height: 26px; border-radius: 50%; border: 2px solid #cbd5e1; flex: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: transparent; font-size: 15px; }
-  .row.done .dot { background: #1b74c5; border-color: #1b74c5; color: #fff; }
-  .row.done .txt { text-decoration: line-through; color: #94a3b8; }
-  .row.done .when { color: #1b74c5; font-weight: 600; }
+  .dot { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--ink-dim); flex: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: transparent; font-size: 15px; }
+  .row.done .dot { background: var(--success); border-color: var(--success); color: var(--primary-ink); }
+  .row.done .txt { text-decoration: line-through; color: var(--ink-dim); }
+  .row.done .when { color: var(--success); font-weight: 600; }
   .row .txt { flex: 1; min-width: 0; }
-  .row .when { color: #94a3b8; font-size: 13.5px; }
-  .doc-mark { font-size: 13px; color: #b6c2d1; flex: none; }
+  .row .when { color: var(--ink-dim); font-size: 13.5px; }
+  .doc-mark { font-size: 13px; color: var(--ink-dim); flex: none; }
 
   /* queue rows (posted letters) */
-  .item { display: flex; align-items: center; gap: 11px; padding: 11px 2px; border-top: 1px solid #f1f5f9; font-size: 15px; }
+  .item { display: flex; align-items: center; gap: 11px; padding: 11px 2px; border-top: 1px solid var(--line); font-size: 15px; }
   .item:first-of-type { border-top: 0; }
-  .thumb { width: 34px; height: 44px; border-radius: 5px; background: #e9eef4; border: 1px solid #d3dce6; flex: none; }
+  .thumb { width: 34px; height: 44px; border-radius: 5px; background: var(--primary-soft); border: 1px solid var(--line); flex: none; }
   .item .txt { flex: 1; min-width: 0; }
   .item .st { font-size: 12.5px; margin-top: 2px; }
-  .item.reading .txt { color: #94a3b8; }
-  .item.reading .st { color: #94a3b8; }
+  .item.reading .txt { color: var(--ink-dim); }
+  .item.reading .st { color: var(--ink-dim); }
   .item.reading .thumb { animation: pulse 1.5s ease-in-out infinite; }
   @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .45; } }
   .item.ready { cursor: pointer; }
-  .item.ready .st { color: #b45309; font-weight: 600; }
-  .item.failed .st { color: #b42318; font-weight: 600; }
-  .item .go { font-size: 13px; font-weight: 700; color: #1b74c5; flex: none; }
-  .item .retake { font-size: 12.5px; font-weight: 700; color: #b42318; flex: none; cursor: pointer; }
+  /* "ready to check" is not an alarm. It means the machine is unsure and
+     would like a look, so it gets bark brown rather than a warning colour:
+     a pencil note in the margin, not a parking ticket. */
+  .item.ready .st { color: var(--warn-ink); font-weight: 600; }
+  .item.failed .st { color: var(--danger); font-weight: 600; }
+  .item .go { font-size: 13px; font-weight: 700; color: var(--primary); flex: none; }
+  .item .retake { font-size: 12.5px; font-weight: 700; color: var(--danger); flex: none; cursor: pointer; }
 
   /* scan */
-  .cam { border: 2px dashed #aecbe5; background: #f2f8fd; border-radius: 16px; padding: 34px 16px; text-align: center; color: #1b74c5; margin-bottom: 14px; cursor: pointer; }
+  .cam { border: 2px dashed var(--line); background: var(--primary-soft); border-radius: var(--radius-card); padding: 34px 16px; text-align: center; color: var(--primary); margin-bottom: 14px; cursor: pointer; }
   .cam .ico { font-size: 32px; margin-bottom: 6px; }
   .cam .t { font-size: 17px; font-weight: 700; }
-  .cam .d { font-size: 13.5px; color: #64748b; margin-top: 4px; }
+  .cam .d { font-size: 13.5px; color: var(--ink-dim); margin-top: 4px; }
   .pages { display: flex; gap: 10px; flex-wrap: wrap; }
-  .pg { width: 74px; height: 100px; background: #e9eef4; border: 1px solid #d3dce6; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 12.5px; }
-  .pg.add { border: 2px dashed #aecbe5; background: #f2f8fd; color: #1b74c5; font-weight: 600; cursor: pointer; }
-  .btn { display: block; width: 100%; background: #1b74c5; color: #fff; border: none; padding: 15px; border-radius: 13px; font-size: 16.5px; font-weight: 700; cursor: pointer; margin-top: 4px; }
-  .btn.off { opacity: .4; cursor: default; }
-  .btn.ghost { background: none; color: #64748b; font-weight: 500; font-size: 14.5px; padding: 10px; }
-  .tiny { font-size: 13px; color: #94a3b8; margin-top: 10px; line-height: 1.45; }
+  .pg { width: 74px; height: 100px; background: var(--primary-soft); border: 1px solid var(--line); border-radius: var(--radius-btn); display: flex; align-items: center; justify-content: center; color: var(--ink-dim); font-size: 12.5px; }
+  .pg.add { border: 2px dashed var(--line); background: var(--bg-card); color: var(--primary); font-weight: 600; cursor: pointer; }
+  .btn { display: flex; align-items: center; justify-content: center; width: 100%; min-height: var(--btn-h); background: var(--primary); color: var(--primary-ink); border: none; padding: 15px; border-radius: var(--radius-btn); font-size: 16.5px; font-weight: 700; cursor: pointer; margin-top: 4px; font-family: inherit; }
+  .btn.off { opacity: .45; cursor: default; }
+  .btn.ghost { background: none; color: var(--ink-dim); font-weight: 500; font-size: 14.5px; padding: 10px; min-height: 0; }
+  .tiny { font-size: 13px; color: var(--ink-dim); margin-top: 10px; line-height: 1.45; }
 
   /* review */
-  .fact { display: flex; align-items: baseline; gap: 10px; padding: 11px 2px; border-top: 1px solid #f1f5f9; }
+  .fact { display: flex; align-items: baseline; gap: 10px; padding: 11px 2px; border-top: 1px solid var(--line); }
   .fact:first-of-type { border-top: 0; }
-  .fact .k { color: #94a3b8; font-size: 13px; width: 84px; flex: none; }
+  .fact .k { color: var(--ink-dim); font-size: 13px; width: 84px; flex: none; }
   .fact .v { font-size: 16.5px; font-weight: 600; }
-  .fact.warn { background: #fff8e8; border-radius: 10px; padding: 11px 10px; border-top: 0; margin: 4px -4px; }
-  .fact.warn input { font-size: 17px; font-weight: 700; border: 2px solid #f0b429; border-radius: 9px; padding: 7px 10px; width: 150px; background: #fff; }
-  .warn-hint { font-size: 13px; color: #9a6b00; margin-top: 6px; }
-  .plan-row { display: flex; align-items: center; gap: 11px; padding: 11px 2px; border-top: 1px solid #f1f5f9; font-size: 15.5px; }
+  .fact.warn { background: var(--warn-bg); border-radius: var(--radius-card); padding: 11px 10px; border-top: 0; margin: 4px -4px; }
+  .fact.warn input { font-size: 17px; font-weight: 700; border: var(--border-w) solid var(--warn-ink); border-radius: var(--radius-btn); padding: 7px 10px; width: 150px; background: var(--bg-card); color: var(--ink); font-family: inherit; }
+  .warn-hint { font-size: 13px; color: var(--warn-ink); margin-top: 6px; }
+  .plan-row { display: flex; align-items: center; gap: 11px; padding: 11px 2px; border-top: 1px solid var(--line); font-size: 15.5px; }
   .plan-row:first-of-type { border-top: 0; }
   .plan-row .ico { flex: none; font-size: 17px; }
-  .plan-hold { background: #fff8e8; border-radius: 10px; padding: 11px 12px; font-size: 13.5px; color: #9a6b00; margin-top: 10px; line-height: 1.45; }
+  .plan-hold { background: var(--warn-bg); border-radius: var(--radius-card); padding: 11px 12px; font-size: 13.5px; color: var(--warn-ink); margin-top: 10px; line-height: 1.45; }
 
   /* calendar */
   .cal-screen-head { display: flex; align-items: center; justify-content: space-between; }
-  .today-btn { border: 1px solid #cbd5e1; background: #fff; color: #1b74c5; font-weight: 600; font-size: 13px; padding: 6px 12px; border-radius: 999px; cursor: pointer; }
-  .today-btn.home { opacity: .35; }
+  .today-btn { border: var(--border-w) solid var(--line); background: var(--bg-card); color: var(--ink); font-weight: 600; font-size: 13px; padding: 6px 12px; border-radius: 999px; cursor: pointer; font-family: inherit; }
+  .today-btn.home { opacity: .4; }
   .cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-  .cal-nav { border: none; background: #eef2f7; color: #1b74c5; width: 36px; height: 36px; border-radius: 10px; font-size: 20px; cursor: pointer; line-height: 1; }
+  .cal-nav { border: none; background: var(--primary-soft); color: var(--ink); width: 36px; height: 36px; border-radius: var(--radius-btn); font-size: 20px; cursor: pointer; line-height: 1; font-family: inherit; }
   .cal-title { font-size: 16px; font-weight: 700; }
   .cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
-  .cal .dow { text-align: center; color: #94a3b8; font-size: 11px; padding: 4px 0; }
-  .cal .d { text-align: center; padding: 7px 0 4px; font-size: 14px; color: #475569; border-radius: 10px; min-height: 34px; }
+  .cal .dow { text-align: center; color: var(--ink-dim); font-size: 11px; padding: 4px 0; }
+  .cal .d { text-align: center; padding: 7px 0 4px; font-size: 14px; color: var(--ink); border-radius: var(--radius-btn); min-height: 34px; }
   .cal .d .dots { display: flex; gap: 3px; justify-content: center; align-items: center; height: 6px; margin-top: 2px; }
   .cdot { width: 5px; height: 5px; border-radius: 50%; }
-  .cdot.due { background: #b45309; }
-  .cdot.rem { background: #b6c2d1; }
+  .cdot.due { background: var(--dot-due); }
+  .cdot.rem { background: var(--dot-rem); }
   .cal .d.has { cursor: pointer; }
-  .cal .d.sel { background: #1b74c5; color: #fff; }
-  .cal .d.sel .cdot { background: #fff; }
+  .cal .d.sel { background: var(--primary); color: var(--primary-ink); font-weight: 700; }
+  .cal .d.sel .cdot { background: var(--primary-ink); }
 
   /* day sheet: tap a marked day, only that day's details come forward */
-  .sheet-mask { position: absolute; inset: 0; background: rgba(15,23,42,.35); opacity: 0; visibility: hidden; transition: opacity .25s; z-index: 8; }
+  .sheet-mask { position: absolute; inset: 0; background: rgba(12,12,16,.42); opacity: 0; visibility: hidden; transition: opacity .25s; z-index: 8; }
   .sheet-mask.show { opacity: 1; visibility: visible; }
-  .sheet { position: absolute; left: 0; right: 0; bottom: 0; background: #fff; border-radius: 22px 22px 0 0; padding: 18px 18px 24px; box-shadow: 0 -12px 34px rgba(15,23,42,.18); transform: translateY(105%); transition: transform .3s; z-index: 9; max-height: 76%; overflow-y: auto; }
+  .sheet { position: absolute; left: 0; right: 0; bottom: 0; background: var(--bg-card); border-radius: 14px 14px 0 0; padding: 18px 18px 24px; box-shadow: 0 -12px 34px rgba(28,26,21,.20); transform: translateY(105%); transition: transform .3s; z-index: 9; max-height: 76%; overflow-y: auto; }
   .sheet.show { transform: translateY(0); }
-  .dd-day { font-size: 13px; color: #94a3b8; font-weight: 600; margin-bottom: 8px; }
-  .sheet .ent + .ent { border-top: 1px solid #f1f5f9; padding-top: 12px; margin-top: 12px; }
+  .dd-day { font-size: 13px; color: var(--ink-dim); font-weight: 600; margin-bottom: 8px; }
+  .sheet .ent + .ent { border-top: 1px solid var(--line); padding-top: 12px; margin-top: 12px; }
   .sheet .t { font-size: 16.5px; font-weight: 700; }
-  .sheet .remind { font-size: 14.5px; color: #64748b; margin-bottom: 3px; }
+  .sheet .remind { font-size: 14.5px; color: var(--ink-dim); margin-bottom: 3px; }
   .photo-row { display: flex; align-items: center; gap: 11px; margin-top: 10px; cursor: pointer; }
-  .photo-row .cap { font-size: 13.5px; color: #1b74c5; font-weight: 600; }
-  .cap2 { font-size: 12.5px; color: #94a3b8; }
+  .photo-row .cap { font-size: 13.5px; color: var(--primary); font-weight: 600; }
+  .cap2 { font-size: 12.5px; color: var(--ink-dim); }
 
   /* toast (batched notification) */
-  .toast { position: absolute; left: 14px; right: 14px; top: 14px; background: #1f2937; color: #fff; border-radius: 12px; padding: 12px 14px; font-size: 13.5px; box-shadow: 0 8px 24px rgba(0,0,0,.3); opacity: 0; visibility: hidden; pointer-events: none; transform: translateY(-14px); transition: all .35s; cursor: pointer; z-index: 5; }
+  .toast { position: absolute; left: 14px; right: 14px; top: 14px; background: var(--focus); color: var(--primary-ink); border-radius: var(--radius-card); padding: 12px 14px; font-size: 13.5px; box-shadow: 0 8px 24px rgba(0,0,0,.3); opacity: 0; visibility: hidden; pointer-events: none; transform: translateY(-14px); transition: all .35s; cursor: pointer; z-index: 5; }
   .toast.show { opacity: 1; visibility: visible; pointer-events: auto; transform: translateY(0); }
   .toast b { display: block; font-size: 14.5px; margin-bottom: 2px; }
   .toast .env { font-size: 11px; opacity: .6; text-transform: uppercase; letter-spacing: .6px; margin-bottom: 5px; }
 
   /* bottom nav */
-  .nav { position: absolute; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid #e5eaf0; display: flex; justify-content: space-around; align-items: center; padding: 8px 10px 14px; }
-  .nav button { background: none; border: none; font-size: 12px; color: #94a3b8; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 3px; width: 76px; position: relative; }
+  .nav { position: absolute; bottom: 0; left: 0; right: 0; background: var(--bg-card); border-top: var(--border-w) solid var(--line); display: flex; justify-content: space-around; align-items: center; padding: 8px 10px 14px; }
+  .nav button { background: none; border: none; font-size: 12px; color: var(--ink-dim); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 3px; width: 76px; position: relative; font-family: inherit; }
   .nav button .i { font-size: 21px; }
-  .nav button.on { color: #1b74c5; font-weight: 700; }
-  .nav .scanbtn { background: #1b74c5; color: #fff; width: 58px; height: 58px; border-radius: 50%; font-size: 25px; display: flex; align-items: center; justify-content: center; margin-top: -26px; box-shadow: 0 6px 14px rgba(27,116,197,.4); border: 4px solid #f7f9fb; }
-  .badge { position: absolute; top: -4px; right: 14px; background: #b45309; color: #fff; font-size: 11px; font-weight: 700; border-radius: 999px; padding: 1px 6px; }
+  /* The selected tab is marked by weight and a bar, not by colour alone:
+     roughly half of this product's readers are over 70, and colour vision
+     deficiency is common enough that colour can never be the only signal. */
+  .nav button.on { color: var(--ink); font-weight: 700; }
+  .nav button.on::after { content: ""; display: block; width: 28px; height: 4px; border-radius: 2px; background: var(--primary); }
+  .nav .scanbtn { background: var(--primary); color: var(--primary-ink); width: 58px; height: 58px; border-radius: 50%; font-size: 25px; display: flex; align-items: center; justify-content: center; margin-top: -26px; box-shadow: 0 6px 14px rgba(23,69,44,.35); border: 4px solid var(--bg); }
+  .badge { position: absolute; top: -4px; right: 14px; background: var(--primary); color: var(--primary-ink); font-size: 11px; font-weight: 700; border-radius: 999px; padding: 1px 6px; }
 
   .screen { display: none; }
   .screen.active { display: block; }
 
-  .disclaimer { text-align: center; font-size: 12px; color: #94a3b8; padding-bottom: 26px; }
+  .disclaimer { text-align: center; font-size: 12px; color: var(--ink-dim); padding-bottom: 26px; }
 </style>
 </head>
 <body>
@@ -507,7 +581,7 @@
     b.textContent = ready;
 
     /* tasks on home + calendar */
-    const trows = tasks.map(taskRow).join('') || '<div class="row"><span class="txt" style="color:#94a3b8">Nothing yet</span></div>';
+    const trows = tasks.map(taskRow).join('') || '<div class="row"><span class="txt" style="color:var(--ink-dim)">Nothing yet</span></div>';
     document.getElementById('task-list-home').innerHTML = trows;
     document.getElementById('task-list-cal').innerHTML = trows;
 
