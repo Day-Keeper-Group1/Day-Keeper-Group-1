@@ -1,6 +1,6 @@
 # The theme: Eucalypt & Wattle
 
-Adopted 9 August 2026. A deep eucalypt green carries the weight, and wattle
+Adopted 10 August 2026. A deep eucalypt green carries the weight, and wattle
 gold appears only where something has to be seen.
 
 The values are not decoration. This product is used by people who are mostly

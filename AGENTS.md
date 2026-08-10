@@ -30,7 +30,7 @@ DayKeeper (Group 1): an AI-powered life management system for people in vulnerab
 
 ## The look
 
-The theme is **Eucalypt & Wattle**, adopted 9 August 2026. **Read [`docs/theme.md`](docs/theme.md) before styling anything**: it has the palette, what each colour is for, the measured contrast of every pair, and the reasoning you would otherwise have to guess at.
+The theme is **Eucalypt & Wattle**, adopted 10 August 2026. **Read [`docs/theme.md`](docs/theme.md) before styling anything**: it has the palette, what each colour is for, the measured contrast of every pair, and the reasoning you would otherwise have to guess at.
 
 The short version, so you know when to go and read it:
 
