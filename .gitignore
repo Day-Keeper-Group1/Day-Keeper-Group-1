@@ -20,8 +20,11 @@ out/
 *.tsbuildinfo
 next-env.d.ts
 
-# third-party AI coding-agent skills (personal tooling, not project code)
-.agents/
+# Personal AI coding-agent tooling, which is nobody else's business.
+# The one exception is .agents/skills, the standard location for skills a team
+# checks in: those are project knowledge and belong in the repository.
+.agents/*
+!.agents/skills/
 .claude/
 skills-lock.json
 

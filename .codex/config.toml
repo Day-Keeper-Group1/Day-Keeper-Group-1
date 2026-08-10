@@ -1,0 +1,21 @@
+# Codex configuration for this project.
+#
+# Committed on purpose, and it holds no secret: `env_vars` names the variables
+# to forward from your own environment rather than carrying their values. Set
+# the three of them once on your machine and this file does the rest.
+#
+#   JIRA_URL=https://day-keeper-group-1.atlassian.net
+#   JIRA_USERNAME=<your RMIT student email>
+#   JIRA_API_TOKEN=<from id.atlassian.com, signed in as your RMIT account>
+#
+# Then restart Codex and run /mcp to confirm the server is connected. The
+# `$daykeeper-jira` skill in .agents/skills explains what to do with it.
+#
+# Optional. Nothing else in this repository needs it, and every command in the
+# README works without it.
+
+[mcp_servers.jira]
+command = "uvx"
+args = ["mcp-atlassian"]
+env_vars = ["JIRA_URL", "JIRA_USERNAME", "JIRA_API_TOKEN"]
+startup_timeout_sec = 30

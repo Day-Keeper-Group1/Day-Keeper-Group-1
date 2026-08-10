@@ -14,6 +14,7 @@ DayKeeper (Group 1): an AI-powered life management system for people in vulnerab
 - `docs/prototype/user/daykeeper-sketch-live.html`: clickable prototype of the user flow (phone). The live one; user-flow design work happens here, and its `:root` block is where the theme's palette lives. See "The look" below.
 - `docs/prototype/admin/daykeeper-admin-sketch.html`: wireframe of the admin dashboard (desktop). Static, no interaction. Keep the two prototypes separate: different device, different person, different module.
 - `docs/ai-prompts/`: AI usage records for the course GenAI declaration (create on first use). If AI helped with a change, log it there.
+- `.agents/skills/daykeeper-jira/`: how this team's Jira board actually works, as a skill. Codex loads it when a ticket, the board or a sprint comes up; it needs the Atlassian MCP server, which `.codex/config.toml` already defines and the README explains how to authenticate. Optional: nothing in the build depends on it.
 - `db/schema.sql`: the database, and its only definition. No migrations: edit it and run `npm run db:reset`.
 - `src/lib/contract/`: the six-field extraction contract in TypeScript, with a validator. Import these types; do not restate them.
 - `src/server/`: server-only code. `db.ts` for queries, `extraction/` for the reader interface and its mock. `src/lib` is safe anywhere; `src/server` never reaches the browser.
