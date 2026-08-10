@@ -25,38 +25,40 @@ const STATUS_LABEL: Record<Status, string> = {
   archived: "Archived",
 };
 
+/**
+ * Every badge is drawn from the theme, never from Tailwind's own palette.
+ * See docs/theme.md; the two rules this file has to keep are that nothing is
+ * blue (an ageing eye needs about 2400ms longer to tell blue from yellow, so
+ * blue cannot carry a status), and that colour is never the only signal,
+ * which is why each badge also spells its state out in words.
+ *
+ * "Please check" is deliberately not an alarm colour. It means the reader was
+ * unsure and would like a look, not that anything is wrong, and this product's
+ * reader tends to assume anything orange is her fault.
+ */
 const STATUS_CLASS: Record<Status, string> = {
-  confirmed:
-    "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20",
-  completed:
-    "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20",
-  "needs-review":
-    "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20",
-  uncertain:
-    "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20",
-  overdue:
-    "bg-red-50 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20",
-  failed:
-    "bg-red-50 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20",
-  unreadable:
-    "bg-red-50 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20",
-  processing:
-    "bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-500/10 dark:text-sky-400 dark:border-sky-500/20",
-  upcoming:
-    "bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-500/10 dark:text-sky-400 dark:border-sky-500/20",
+  confirmed: "bg-success-bg text-success border-success/25",
+  completed: "bg-success-bg text-success border-success/25",
+  "needs-review": "bg-warn-bg text-warn border-warn/25",
+  uncertain: "bg-warn-bg text-warn border-warn/25",
+  overdue: "bg-danger-bg text-danger border-danger/25",
+  failed: "bg-danger-bg text-danger border-danger/25",
+  unreadable: "bg-danger-bg text-danger border-danger/25",
+  processing: "bg-primary-soft text-primary border-primary/25",
+  upcoming: "bg-primary-soft text-primary border-primary/25",
   archived: "bg-muted text-muted-foreground border-border",
 };
 
 const STATUS_DOT: Record<Status, string> = {
-  confirmed: "bg-emerald-500",
-  completed: "bg-emerald-500",
-  "needs-review": "bg-amber-500",
-  uncertain: "bg-amber-500",
-  overdue: "bg-red-500",
-  failed: "bg-red-500",
-  unreadable: "bg-red-500",
-  processing: "bg-sky-500",
-  upcoming: "bg-sky-500",
+  confirmed: "bg-success",
+  completed: "bg-success",
+  "needs-review": "bg-dot-rem",
+  uncertain: "bg-dot-rem",
+  overdue: "bg-dot-due",
+  failed: "bg-dot-due",
+  unreadable: "bg-dot-due",
+  processing: "bg-primary",
+  upcoming: "bg-primary",
   archived: "bg-muted-foreground",
 };
 

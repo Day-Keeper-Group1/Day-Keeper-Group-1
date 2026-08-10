@@ -46,76 +46,116 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* DayKeeper's own colours, the ones shadcn has no name for. These
+     exist so a status can be written `bg-warn-bg text-warn` rather
+     than with a hex typed into a component, which is how a palette
+     quietly stops being one. See docs/theme.md. */
+  --color-ink: var(--ink);
+  --color-ink-dim: var(--ink-dim);
+  --color-line: var(--line);
+  --color-primary-soft: var(--primary-soft);
+  --color-primary-ink: var(--primary-ink);
+  --color-focus: var(--focus);
+  --color-focus-ink: var(--focus-ink);
+  --color-danger: var(--danger);
+  --color-danger-bg: var(--danger-bg);
+  --color-success: var(--success);
+  --color-success-bg: var(--success-bg);
+  --color-warn: var(--warn-ink);
+  --color-warn-bg: var(--warn-bg);
+  --color-dot-due: var(--dot-due);
+  --color-dot-rem: var(--dot-rem);
 }
 
+/* ============================================================
+   Eucalypt & Wattle.
+
+   THIS BLOCK IS THE PALETTE'S CANONICAL HOME. Every hex value below
+   is the theme; `docs/theme.md` explains what each one is for and
+   what it was measured against, and the user prototype carries the
+   same values inline because it has to open as a standalone file.
+   `tests/theme.test.ts` fails if those three ever disagree, so a
+   value changed here without the others is caught, not discovered.
+
+   Read docs/theme.md before changing anything below. The values are
+   not decoration: several of them are the reason this product is
+   usable by the people it is for.
+   ============================================================ */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  /* -- the palette ------------------------------------------ */
+  --bg: #f4f0e4;
+  --bg-card: #fbf8f0;
+  --ink: #1c1a15;
+  --ink-dim: #454b41;
+  --line: #8a8265;
+  --primary: #17452c;
+  --primary-ink: #f7f4ea;
+  --primary-soft: #d9e5d5;
+  --focus: #191a12;
+  --focus-ink: #ffd21f;
+  --danger: #8c0d07;
+  --danger-bg: #fbe6e2;
+  --success: #0f5130;
+  --success-bg: #d3e7d9;
+  --warn-ink: #4a3b20;
+  --warn-bg: #f0e6cd;
+  --dot-due: #8c0d07;
+  --dot-rem: #b87500;
+
+  /* -- sizes that travel with the palette -------------------- */
+  --fs-body: 19px;
+  --radius-card: 10px;
+  --radius-btn: 8px;
+  --btn-h: 56px;
+  --border-w: 2px;
+  --shadow-card: 0 1px 2px rgba(23, 69, 44, 0.1);
+
+  /* -- shadcn's own names, pointed at the palette ------------
+     shadcn components read these, so mapping them is what makes
+     an ordinary <Button> come out eucalypt green instead of the
+     stock near-black. Nothing here introduces a new colour. */
+  --background: var(--bg);
+  --foreground: var(--ink);
+  --card: var(--bg-card);
+  --card-foreground: var(--ink);
+  --popover: var(--bg-card);
+  --popover-foreground: var(--ink);
+  --primary-foreground: var(--primary-ink);
+  --secondary: var(--primary-soft);
+  --secondary-foreground: var(--ink);
+  --muted: var(--bg);
+  --muted-foreground: var(--ink-dim);
+  --accent: var(--primary-soft);
+  --accent-foreground: var(--ink);
+  --destructive: var(--danger);
+  --border: var(--line);
+  --input: var(--line);
+  --ring: var(--focus);
+  --radius: 0.625rem; /* 10px, the same corner as --radius-card */
+  --chart-1: var(--primary);
+  --chart-2: var(--success);
+  --chart-3: var(--warn-ink);
+  --chart-4: var(--dot-rem);
+  --chart-5: var(--danger);
+  --sidebar: var(--bg-card);
+  --sidebar-foreground: var(--ink);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-ink);
+  --sidebar-accent: var(--primary-soft);
+  --sidebar-accent-foreground: var(--ink);
+  --sidebar-border: var(--line);
+  --sidebar-ring: var(--focus);
 }
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
-}
+/* No dark mode yet, deliberately.
+
+   The stock shadcn dark palette used to sit here: pure greyscale, and
+   never designed for these readers. Leaving it meant one class on <html>
+   could drop the whole product into a theme that clears none of the
+   contrast rules in docs/theme.md, silently. A dark variant is a real
+   piece of design work; when someone does it, it goes here and gets its
+   own contrast audit. Until then this product is light only. */
 
 @layer base {
   * {

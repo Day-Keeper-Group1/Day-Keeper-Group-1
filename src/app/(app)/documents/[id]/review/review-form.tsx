@@ -95,7 +95,7 @@ export function ReviewForm({
                   }
                   className={
                     field.status !== "confirmed"
-                      ? "border-amber-300 focus-visible:ring-amber-300/50 aria-[invalid=true]:border-red-300"
+                      ? "border-warn focus-visible:ring-warn/50 aria-[invalid=true]:border-danger"
                       : undefined
                   }
                   aria-invalid={field.status === "unreadable"}
@@ -106,9 +106,7 @@ export function ReviewForm({
                   </p>
                 ) : null}
                 {hint ? (
-                  <p className="text-xs font-medium text-amber-700 dark:text-amber-400">
-                    {hint}
-                  </p>
+                  <p className="text-warn text-xs font-medium">{hint}</p>
                 ) : null}
               </div>
             );
