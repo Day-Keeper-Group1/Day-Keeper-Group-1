@@ -49,8 +49,18 @@ CREATE TYPE document_status AS ENUM ('processing', 'needs-review', 'confirmed', 
 --   unreadable  the model could not read it at all; the person must type it
 CREATE TYPE field_status AS ENUM ('confirmed', 'uncertain', 'unreadable');
 
--- One attempt at reading a document.
-CREATE TYPE extraction_status AS ENUM ('queued', 'processing', 'succeeded', 'failed');
+-- One attempt at any of the three jobs a model does here: dividing a batch into
+-- letters, reading a letter's fields, and placing a letter against the archive.
+-- All three are recorded the same way, because all three have an accuracy story
+-- and none of them can be reported on without the failures.
+CREATE TYPE run_status AS ENUM ('queued', 'processing', 'succeeded', 'failed');
+
+-- Where a batch of photographs is in its life.
+--   uploaded   the files are stored, nothing has looked at them
+--   grouping   a reading is dividing them into letters
+--   grouped    every page belongs to a document
+--   failed     the reading could not divide them; the pages are still here
+CREATE TYPE batch_status AS ENUM ('uploaded', 'grouping', 'grouped', 'failed');
 
 -- Why an attempt failed. This distinction drives what the interface offers:
 -- a transient failure is retried automatically, a quality failure asks the
@@ -147,6 +157,19 @@ CREATE TABLE documents (
   -- Untyped on purpose: the contract is a floor, and this is where the ceiling
   -- goes until we decide a field is worth promoting.
   open_payload   jsonb NOT NULL DEFAULT '{}'::jsonb,
+  -- One to three sentences saying what this letter is about, in ordinary words.
+  --
+  -- This is an index, not a screen. It is the only part of a document written
+  -- in the vocabulary a person would search with: every official letter says
+  -- "amount due" and "please retain this for your records", so searching those
+  -- words matches everything, which is the same as matching nothing. See
+  -- docs/architecture/adr-006-matching-and-the-projection.md.
+  --
+  -- Deliberately a column and NOT a seventh contract field, so it cannot reach
+  -- the review screen by accident. ADR 004 deferred `summary` because a
+  -- generated sentence is a hallucination surface shown to readers least able
+  -- to spot one; both halves of that reason are about showing it to somebody.
+  summary        text,
   uploaded_at    timestamptz NOT NULL DEFAULT now(),
   confirmed_at   timestamptz,
   archived_at    timestamptz,
@@ -167,9 +190,94 @@ CREATE INDEX documents_user_uploaded_idx ON documents (user_id, uploaded_at DESC
 CREATE INDEX documents_user_status_idx ON documents (user_id, status);
 CREATE INDEX documents_user_due_idx ON documents (user_id, due_date) WHERE due_date IS NOT NULL;
 
--- One photographed sheet. The bytes live in object storage; this table holds
--- the path and enough metadata to show a thumbnail and to tell the person which
--- page they are looking at.
+-- ---------------------------------------------------------------------------
+-- Uploads
+--
+-- Every photograph enters here, and only here. A person clearing a week of post
+-- takes ten pictures without pausing to say where one letter ends, so a batch
+-- is what actually arrives and the letters are worked out afterwards. That is
+-- why pages cannot be attached to a document at the moment they are stored:
+-- nothing knows yet which document they belong to. See
+-- docs/architecture/adr-005-ingestion-and-grouping.md.
+-- ---------------------------------------------------------------------------
+
+CREATE TABLE upload_batches (
+  id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id        uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  status         batch_status NOT NULL DEFAULT 'uploaded',
+  -- Set when the person is deliberately re-photographing a letter they already
+  -- have, so the reading does not have to work out what it already knows. Null
+  -- for an ordinary upload, which is the case that has to be divided.
+  target_document_id uuid REFERENCES documents(id) ON DELETE CASCADE,
+  failure_detail text,
+  created_at     timestamptz NOT NULL DEFAULT now(),
+  grouped_at     timestamptz
+);
+
+CREATE INDEX upload_batches_user_idx ON upload_batches (user_id, created_at DESC);
+CREATE INDEX upload_batches_pending_idx ON upload_batches (status) WHERE status IN ('uploaded', 'grouping');
+
+-- One photograph, as it arrived. `position` is where it fell in the batch, in
+-- the order the person took them, which is the strongest ordering signal there
+-- is and the only one that survives if the reading fails entirely.
+CREATE TABLE upload_pages (
+  id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  batch_id      uuid NOT NULL REFERENCES upload_batches(id) ON DELETE CASCADE,
+  position      integer NOT NULL,
+  storage_path  text NOT NULL,
+  mime_type     text NOT NULL,
+  byte_size     integer NOT NULL,
+  width_px      integer,
+  height_px     integer,
+  created_at    timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT upload_pages_position_positive CHECK (position >= 1),
+  CONSTRAINT upload_pages_byte_size_positive CHECK (byte_size > 0),
+  CONSTRAINT upload_pages_unique_position UNIQUE (batch_id, position)
+);
+
+CREATE INDEX upload_pages_batch_idx ON upload_pages (batch_id, position);
+
+-- One attempt at dividing a batch into letters.
+--
+-- The pass that looks at the images is the pass that divides them, so this run
+-- also produces the page text the per-letter readings work from: a letterhead
+-- is visual evidence that does not survive being flattened into text, and the
+-- reading is the only thing that ever sees a page.
+--
+-- `raw_response` holds the per-page answers, boundaries included. It is the
+-- only record of how the division was decided, and no person is asked to
+-- confirm that division, so it is also the only thing a miss rate can be
+-- measured against.
+CREATE TABLE grouping_runs (
+  id               uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  batch_id         uuid NOT NULL REFERENCES upload_batches(id) ON DELETE CASCADE,
+  attempt          integer NOT NULL,
+  status           run_status NOT NULL DEFAULT 'queued',
+  provider         text NOT NULL,
+  model            text,
+  contract_version text,
+  -- How many documents this run says the batch holds. Denormalised from
+  -- raw_response so that "did it split it into three?" is a column and not a
+  -- json path, because that question is the whole accuracy story.
+  document_count   integer,
+  failure_kind     extraction_failure,
+  failure_detail   text,
+  raw_response     jsonb,
+  started_at       timestamptz NOT NULL DEFAULT now(),
+  finished_at      timestamptz,
+  duration_ms      integer,
+  CONSTRAINT grouping_runs_attempt_positive CHECK (attempt >= 1),
+  CONSTRAINT grouping_runs_unique_attempt UNIQUE (batch_id, attempt),
+  CONSTRAINT grouping_runs_failed_has_kind
+    CHECK ((status = 'failed') = (failure_kind IS NOT NULL))
+);
+
+CREATE INDEX grouping_runs_batch_idx ON grouping_runs (batch_id, attempt DESC);
+CREATE INDEX grouping_runs_status_idx ON grouping_runs (status) WHERE status IN ('queued', 'processing');
+
+-- One photographed sheet, once it is known which letter it belongs to. The
+-- bytes live in object storage; this table holds the path and enough metadata
+-- to show a thumbnail and to tell the person which page they are looking at.
 --
 -- `attempt` exists because a retake uploads a fresh set of pages for the same
 -- document, and the API promises that previous attempts stay in the history.
@@ -188,6 +296,11 @@ CREATE INDEX documents_user_due_idx ON documents (user_id, due_date) WHERE due_d
 CREATE TABLE document_pages (
   id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   document_id   uuid NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+  -- Which photograph this is, back in the batch it arrived in. Keeping the link
+  -- rather than only the path is what lets anyone ask "which upload did this
+  -- come from, and what else came with it" three months later, which is the
+  -- question a wrong division raises.
+  upload_page_id uuid REFERENCES upload_pages(id) ON DELETE SET NULL,
   attempt       integer NOT NULL DEFAULT 1,
   page_number   integer NOT NULL,
   storage_path  text NOT NULL,
@@ -219,7 +332,7 @@ CREATE TABLE extraction_runs (
   -- The canonical attempt counter for a document. document_pages.attempt
   -- points at this number; it does not run in parallel with it.
   attempt        integer NOT NULL,
-  status         extraction_status NOT NULL DEFAULT 'queued',
+  status         run_status NOT NULL DEFAULT 'queued',
   provider       text NOT NULL,      -- 'mock', 'openai', 'bedrock', ...
   model          text,               -- the exact model id, for reproducible accuracy claims
   -- The shape the payload was written in (CONTRACT_VERSION in
@@ -282,6 +395,37 @@ CREATE TABLE extracted_fields (
 );
 
 CREATE INDEX extracted_fields_run_idx ON extracted_fields (extraction_run_id);
+
+-- One attempt at placing a letter against everything the person already has.
+--
+-- The question is whether these pages are the rest of a letter that is already
+-- here. It cannot be a query written in advance: a party invitation has no
+-- issuer worth matching and no reference number, and the save-the-date it
+-- belongs with names a suburb where the invitation names a street. So the
+-- reading searches for itself, and this table records how.
+--
+-- `tool_calls` is the search it actually performed, pattern by pattern, with
+-- how many documents each one matched. Unlike a similarity score, that is
+-- something a person can read and disagree with, which is the whole reason for
+-- keeping it.
+CREATE TABLE matching_runs (
+  id               uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  document_id      uuid NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+  status           run_status NOT NULL DEFAULT 'queued',
+  provider         text NOT NULL,
+  model            text,
+  -- What it concluded. Null means "this is a letter we have not seen before",
+  -- which is an answer, not a failure to answer.
+  matched_document_id uuid REFERENCES documents(id) ON DELETE SET NULL,
+  tool_calls       jsonb NOT NULL DEFAULT '[]'::jsonb,
+  failure_detail   text,
+  started_at       timestamptz NOT NULL DEFAULT now(),
+  finished_at      timestamptz,
+  duration_ms      integer,
+  CONSTRAINT matching_runs_not_itself CHECK (matched_document_id <> document_id)
+);
+
+CREATE INDEX matching_runs_document_idx ON matching_runs (document_id, started_at DESC);
 
 -- ---------------------------------------------------------------------------
 -- Tasks and reminders
@@ -383,5 +527,125 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER users_touch     BEFORE UPDATE ON users     FOR EACH ROW EXECUTE FUNCTION touch_updated_at();
 CREATE TRIGGER documents_touch BEFORE UPDATE ON documents FOR EACH ROW EXECUTE FUNCTION touch_updated_at();
 CREATE TRIGGER tasks_touch     BEFORE UPDATE ON tasks     FOR EACH ROW EXECUTE FUNCTION touch_updated_at();
+
+-- ---------------------------------------------------------------------------
+-- The searchable projection
+--
+-- A letter being placed against the archive is searched for by the reading
+-- itself, with glob, grep and read, so the archive has to look like something
+-- those three operate on. This is that shape.
+--
+-- It is a VIEW and not a table, and that is the entire point. A copy written
+-- alongside the source drifts, and a drifted search index does not fail loudly:
+-- it answers "nothing matches", confidently, about a world that has moved on.
+-- A view cannot drift because it is not a copy, it is the query. When a
+-- sequential scan over a few hundred documents stops being immaterial, this
+-- becomes a materialised view refreshed inside the confirm transaction, and
+-- nothing that reads it changes.
+--
+-- See docs/architecture/adr-006-matching-and-the-projection.md.
+-- ---------------------------------------------------------------------------
+
+-- Words to a path segment: lower case, one hyphen between runs of anything else.
+CREATE OR REPLACE FUNCTION slugify(value text) RETURNS text AS $$
+  SELECT btrim(regexp_replace(lower(coalesce(value, '')), '[^a-z0-9]+', '-', 'g'), '-');
+$$ LANGUAGE sql IMMUTABLE;
+
+-- The same, after dropping a company suffix.
+--
+-- This is load-bearing rather than tidy. The first search anybody writes is by
+-- who sent it, `glob('**/*agl-energy*')`, and the seed already contains the
+-- problem: the same letter yields "AGL Energy" as its value and "AGL Energy
+-- Limited" as the text it was read from. Slugged apart those are two folders,
+-- that search finds half of them, and nothing announces the half it missed.
+CREATE OR REPLACE FUNCTION normalise_issuer(value text) RETURNS text AS $$
+  SELECT slugify(
+    regexp_replace(
+      coalesce(value, ''),
+      '[[:space:],.]+(pty\.?[[:space:]]*)?(ltd|limited|inc|incorporated|llc|plc|pty)\.?[[:space:]]*$',
+      '',
+      'gi'
+    )
+  );
+$$ LANGUAGE sql IMMUTABLE;
+
+CREATE VIEW document_search AS
+SELECT
+  d.id,
+  d.user_id,
+  d.status,
+
+  -- The path is the index. Two levels of directory mean a month can be
+  -- filtered without reading a byte, and the file name carries the two things
+  -- anybody actually searches by. The date is the DUE date: the calendar is
+  -- how a person holds their own archive, and a second date axis would mean
+  -- the searcher has to hold two. The upload timestamp is in the front matter
+  -- below, so it stays findable by content.
+  CASE WHEN d.due_date IS NULL THEN 'no-date/'
+       ELSE to_char(d.due_date, 'YYYY/MM/DD-') END
+    || coalesce(nullif(normalise_issuer(d.issuer), ''), 'unknown-sender')
+    || '-' || coalesce(nullif(slugify(d.document_type), ''), 'unread')
+    || '-' || left(d.id::text, 4) || '.md' AS path,
+
+  -- Front matter is what gets matched exactly. The fields read as lines because
+  -- that is both legible and greppable, and they use the contract's own keys
+  -- rather than the screen's labels: nobody reads this, so presentation names
+  -- would only be a fourth copy of FIELD_LABELS waiting to drift. Their order
+  -- is alphabetical for the same reason.
+  concat_ws(E'\n',
+    '---',
+    'id: ' || d.id::text,
+    'status: ' || d.status::text,
+    'uploaded: ' || to_char(d.uploaded_at AT TIME ZONE u.timezone, 'YYYY-MM-DD"T"HH24:MI'),
+    'pages: ' || coalesce(pg.n, 0)::text,
+    '---',
+    '',
+    '# ' || coalesce(d.document_type, 'Unread document')
+          || coalesce(' from ' || d.issuer, ''),
+    '',
+    fields.lines,
+    -- A heading with nothing under it is noise a search has to wade through,
+    -- so each section exists only when it has content.
+    CASE WHEN d.summary   IS NOT NULL THEN E'\n## What this is about\n'   || d.summary   END,
+    CASE WHEN extra.lines IS NOT NULL THEN E'\n## Also on the page\n'     || extra.lines END,
+    CASE WHEN fields.raw  IS NOT NULL THEN E'\n## As read from the page\n' || fields.raw END
+  ) AS body
+
+FROM documents d
+JOIN users u ON u.id = d.user_id
+
+-- The most recent reading that worked. A document that has never been read
+-- successfully still appears here, with nothing under the front matter, which
+-- is correct: it exists, and it matches nothing.
+LEFT JOIN LATERAL (
+  SELECT r.id
+  FROM extraction_runs r
+  WHERE r.document_id = d.id AND r.status = 'succeeded'
+  ORDER BY r.attempt DESC
+  LIMIT 1
+) latest ON true
+
+LEFT JOIN LATERAL (
+  SELECT
+    string_agg(f.field_key || ': ' ||
+               coalesce(f.corrected_value, f.extracted_value, '(unreadable)'),
+               E'\n' ORDER BY f.field_key) AS lines,
+    string_agg(f.raw_text, E'\n' ORDER BY f.field_key)
+      FILTER (WHERE f.raw_text IS NOT NULL) AS raw
+  FROM extracted_fields f
+  WHERE f.extraction_run_id = latest.id
+) fields ON true
+
+LEFT JOIN LATERAL (
+  SELECT string_agg(k || ': ' || v, E'\n' ORDER BY k) AS lines
+  FROM jsonb_each_text(d.open_payload) AS t(k, v)
+) extra ON true
+
+LEFT JOIN LATERAL (
+  SELECT count(*)::int AS n
+  FROM document_pages p
+  WHERE p.document_id = d.id
+    AND p.attempt = (SELECT max(attempt) FROM document_pages WHERE document_id = d.id)
+) pg ON true;
 
 COMMIT;

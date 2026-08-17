@@ -113,14 +113,26 @@ async function main() {
     // for, and the one to open first when looking at the app.
     const agl = randomUUID();
     await db.query(
-      `INSERT INTO documents (id, user_id, status, uploaded_at)
-       VALUES ($1, $2, 'needs-review', now() - interval '2 hours')`,
-      [agl, margaretId],
+      // The denormalised columns are filled the moment a reading succeeds, not
+      // at confirm: the "to check" list names who a letter is from before
+      // anybody has checked it. Everything except the reference, which came
+      // out unreadable and therefore has nothing to denormalise.
+      `INSERT INTO documents
+         (id, user_id, status, uploaded_at, issuer, document_type, due_date, amount_text)
+       VALUES ($1, $2, 'needs-review', now() - interval '2 hours',
+               'AGL Energy', 'Utility bill', $3, '$347.60')`,
+      [agl, margaretId, isoDaysFromNow(6)],
     );
+    const [aglPage] = await uploadBatch(db, margaretId, {
+      pages: 1,
+      daysAgo: 0,
+      documentCount: 1,
+    });
     await db.query(
-      `INSERT INTO document_pages (document_id, page_number, storage_path, mime_type, byte_size)
-       VALUES ($1, 1, $2, 'image/jpeg', 1843200)`,
-      [agl, `documents/${margaretId}/${agl}/page-1.jpg`],
+      `INSERT INTO document_pages
+         (document_id, upload_page_id, page_number, storage_path, mime_type, byte_size)
+       VALUES ($1, $2, 1, $3, 'image/jpeg', 1843200)`,
+      [agl, aglPage.id, aglPage.storagePath],
     );
     const aglRun = randomUUID();
     await db.query(
@@ -160,10 +172,16 @@ async function main() {
        VALUES ($1, $2, 'processing', now() - interval '20 seconds')`,
       [metro, margaretId],
     );
+    const [metroPage] = await uploadBatch(db, margaretId, {
+      pages: 1,
+      daysAgo: 0,
+      documentCount: 1,
+    });
     await db.query(
-      `INSERT INTO document_pages (document_id, page_number, storage_path, mime_type, byte_size)
-       VALUES ($1, 1, $2, 'image/jpeg', 2201984)`,
-      [metro, `documents/${margaretId}/${metro}/page-1.jpg`],
+      `INSERT INTO document_pages
+         (document_id, upload_page_id, page_number, storage_path, mime_type, byte_size)
+       VALUES ($1, $2, 1, $3, 'image/jpeg', 2201984)`,
+      [metro, metroPage.id, metroPage.storagePath],
     );
     await db.query(
       `INSERT INTO extraction_runs (document_id, attempt, status, provider, model)
@@ -180,10 +198,16 @@ async function main() {
        VALUES ($1, $2, 'failed', now() - interval '1 day')`,
       [bupa, margaretId],
     );
+    const [bupaPage] = await uploadBatch(db, margaretId, {
+      pages: 1,
+      daysAgo: 1,
+      documentCount: 1,
+    });
     await db.query(
-      `INSERT INTO document_pages (document_id, page_number, storage_path, mime_type, byte_size)
-       VALUES ($1, 1, $2, 'image/jpeg', 987654)`,
-      [bupa, `documents/${margaretId}/${bupa}/page-1.jpg`],
+      `INSERT INTO document_pages
+         (document_id, upload_page_id, page_number, storage_path, mime_type, byte_size)
+       VALUES ($1, $2, 1, $3, 'image/jpeg', 987654)`,
+      [bupa, bupaPage.id, bupaPage.storagePath],
     );
     for (const attempt of [1, 2]) {
       await db.query(
@@ -264,14 +288,56 @@ async function main() {
       [telstra],
     );
 
+    // ---- One upload, two letters -------------------------------------------
+    // Four photographs taken in one go: two sheets of a rates notice, then two
+    // of an insurance renewal. Nothing about the act of photographing them says
+    // where the first ends, so the reading is what divides them, and no screen
+    // asks Margaret to check that it divided them correctly. This is the
+    // ordinary case rather than an edge case, and it is the only place in this
+    // seed you can see it.
+    //
+    // The insurer is "RACV Insurance Pty Ltd" on purpose: the projection strips
+    // company suffixes before slugging, so that a search by sender finds this
+    // letter whether the reading called it "RACV Insurance" or gave it the
+    // whole legal name. That rule is invisible until some data exercises it.
+    const pile = await uploadBatch(db, margaretId, {
+      pages: 4,
+      daysAgo: 2,
+      documentCount: 2,
+    });
+
+    const rates = await confirmedDocument(db, margaretId, {
+      issuer: "City of Yarra",
+      documentType: "Rates notice",
+      action: "Pay the rates instalment",
+      dueDate: isoDaysFromNow(14),
+      amount: "$612.40",
+      reference: "88 3120 7",
+      usePages: pile.slice(0, 2),
+      uploadedDaysAgo: 2,
+    });
+
+    const insurance = await confirmedDocument(db, margaretId, {
+      issuer: "RACV Insurance Pty Ltd",
+      documentType: "Insurance renewal",
+      action: "Renew the policy",
+      dueDate: isoDaysFromNow(21),
+      amount: "$1,043.00",
+      reference: "POL 55219",
+      usePages: pile.slice(2, 4),
+      uploadedDaysAgo: 2,
+    });
+
     await db.query(
       `INSERT INTO audit_logs (actor_id, action, target_type, target_id) VALUES
          ($1, 'user.register', 'user', $1),
          ($1, 'document.confirm', 'document', $2),
          ($1, 'document.confirm', 'document', $3),
          ($1, 'document.confirm', 'document', $4),
-         ($1, 'document.confirm', 'document', $5)`,
-      [margaretId, centrelink, water, gp, telstra],
+         ($1, 'document.confirm', 'document', $5),
+         ($1, 'document.confirm', 'document', $6),
+         ($1, 'document.confirm', 'document', $7)`,
+      [margaretId, centrelink, water, gp, telstra, rates, insurance],
     );
 
     await db.query("COMMIT");
@@ -289,8 +355,9 @@ Seeded.
   1 letter waiting to be checked (an uncertain date and an unreadable reference)
   1 letter still being read
   1 letter that came out too blurry, twice
-  4 letters confirmed: one overdue, one upcoming, one appointment with a
-    time of day, one done with its remaining reminders cancelled
+  6 letters confirmed: one overdue, one upcoming, one appointment with a
+    time of day, one done with its remaining reminders cancelled, and two
+    that arrived as a single batch of four photographs
 
 The page images are not on disk: these rows describe photographs that were
 never taken. Upload something through the app to see a real one.
@@ -318,6 +385,52 @@ async function insertFields(
   }
 }
 
+/**
+ * A batch of photographs, as they arrived.
+ *
+ * Every photograph enters through one of these, because a person clearing a
+ * week of post takes ten pictures without pausing to say where one letter
+ * ends. The letters are worked out afterwards, by the reading, which is why
+ * `grouping_runs` records how many it decided there were: nobody is asked to
+ * confirm that division, so this row is the only thing a miss rate could ever
+ * be measured against.
+ */
+async function uploadBatch(
+  db: Client,
+  userId: string,
+  spec: { pages: number; daysAgo: number; documentCount: number },
+): Promise<Array<{ id: string; storagePath: string }>> {
+  const batchId = randomUUID();
+  const ago = `now() - ('${spec.daysAgo}' || ' days')::interval`;
+  await db.query(
+    `INSERT INTO upload_batches (id, user_id, status, created_at, grouped_at)
+     VALUES ($1, $2, 'grouped', ${ago}, ${ago} + interval '40 seconds')`,
+    [batchId, userId],
+  );
+
+  const pages: Array<{ id: string; storagePath: string }> = [];
+  for (let position = 1; position <= spec.pages; position++) {
+    const storagePath = `uploads/${userId}/${batchId}/page-${position}.jpg`;
+    const { rows } = await db.query<{ id: string }>(
+      `INSERT INTO upload_pages (batch_id, position, storage_path, mime_type, byte_size)
+       VALUES ($1, $2, $3, 'image/jpeg', 1500000) RETURNING id`,
+      [batchId, position, storagePath],
+    );
+    pages.push({ id: rows[0].id, storagePath });
+  }
+
+  await db.query(
+    `INSERT INTO grouping_runs
+       (batch_id, attempt, status, provider, model, contract_version,
+        document_count, finished_at, duration_ms)
+     VALUES ($1, 1, 'succeeded', 'mock', 'mock-specimen-v1', '1.0', $2,
+             ${ago} + interval '40 seconds', 4200)`,
+    [batchId, spec.documentCount],
+  );
+
+  return pages;
+}
+
 async function confirmedDocument(
   db: Client,
   userId: string,
@@ -330,7 +443,10 @@ async function confirmedDocument(
     dueTime?: string;
     amount: string;
     reference: string;
-    pages: number;
+    /** Ignored when `usePages` is given, which brings its own count. */
+    pages?: number;
+    /** Photographs from a batch that held more than this one letter. */
+    usePages?: Array<{ id: string; storagePath: string }>;
     uploadedDaysAgo: number;
   },
 ): Promise<string> {
@@ -355,11 +471,23 @@ async function confirmedDocument(
     ],
   );
 
-  for (let page = 1; page <= spec.pages; page++) {
+  // Its own batch unless it came out of a shared one. Either way the pages
+  // point back at the photographs they arrived as, so "which upload did this
+  // come from, and what else came with it" stays answerable months later.
+  const uploaded =
+    spec.usePages ??
+    (await uploadBatch(db, userId, {
+      pages: spec.pages ?? 1,
+      daysAgo: spec.uploadedDaysAgo,
+      documentCount: 1,
+    }));
+
+  for (const [index, page] of uploaded.entries()) {
     await db.query(
-      `INSERT INTO document_pages (document_id, page_number, storage_path, mime_type, byte_size)
-       VALUES ($1, $2, $3, 'image/jpeg', 1500000)`,
-      [documentId, page, `documents/${userId}/${documentId}/page-${page}.jpg`],
+      `INSERT INTO document_pages
+         (document_id, upload_page_id, page_number, storage_path, mime_type, byte_size)
+       VALUES ($1, $2, $3, $4, 'image/jpeg', 1500000)`,
+      [documentId, page.id, index + 1, page.storagePath],
     );
   }
 
