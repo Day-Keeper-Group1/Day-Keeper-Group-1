@@ -92,6 +92,14 @@ that is still processing, or that failed, has not told anyone who it is from.
 A failed document carries `failure`, so a list can draw the right affordance
 without fetching the detail of every failed row.
 
+**No screen asks whether the dividing was right.** A merge shows itself as one
+letter whose fields contradict each other, and a split as two letters, one with
+half its fields unreadable. Both surface on the review screen the person is
+already looking at, so a step in front of it would catch nothing and would hand
+the sorting back to somebody this product exists to sort for. She is never told
+that pages one to three became one letter; she is told there is an electricity
+bill for $347.60 due on the fifteenth, and asked whether that is right.
+
 **A row with no issuer still needs a name**, and the server writes it, not the
 client: `DocumentSummary.label` is always present and is `` `${issuer} · ${documentType}` ``
 once a reading has succeeded, and `` `Photo taken ${time} · ${n} page(s)` ``
@@ -104,8 +112,17 @@ that has already finished standing in for one that has not.
 
 ### `POST /api/documents`
 `multipart/form-data`, one or more files under **`pages`**, in the order they
-were photographed. → `201 DocumentSummary` (status `processing`), so the row
-can draw itself, label and page count included, without a second request.
+were photographed. → `201 BatchSummary`, status `uploaded`, `documents` empty.
+
+**An upload is a batch, and a batch may hold any number of letters.** Somebody
+clearing a week of post photographs whatever is in front of them; ten pictures
+are as likely to be three letters plus the missing pages of a fourth. Nothing
+about the act of photographing says where one ends, so the reading works it out
+and the documents appear as it does. `POST` cannot answer with a document
+because at the moment the files are stored, nothing knows how many there are.
+
+The screen shows one row for the batch while it is being divided, and that row
+becomes several. See `docs/architecture/adr-005-ingestion-and-grouping.md`.
 
 Images and PDF, up to `MAX_PAGE_BYTES` each, at most `MAX_PAGES` pages: import
 both limits from `src/lib/contract/api.ts` so the capture screen can stop the
@@ -113,15 +130,27 @@ person at page ten rather than rejecting ten deliberate photographs at the end.
 The upload is all-or-nothing; an over-limit request answers `invalid_request`
 with `fields.pages` saying which page and why.
 
-Returns as soon as the files are stored; the reading happens afterwards.
+Returns as soon as the files are stored; the dividing and the reading happen
+afterwards.
 
 **Polling is one request, not one per document.** While anything of this
-person's is still being read, the interface polls `GET /api/home` every five
-seconds and stops when `counts.processing` reaches zero. The capture screen's
-"Posted just now" card and the home screen's "To check" card are the same list
-(`HomePayload.inbox`) drawn twice, which is why one poll refreshes both, and
-why neither can show a different answer from the other. A `failed` row never
-changes on its own, so it is not a reason to keep polling.
+person's is still being divided or read, the interface polls `GET /api/home`
+every five seconds and stops when `counts.processing` reaches zero and
+`dividing` is empty. The capture screen's "Posted just now" card and the home
+screen's "To check" card are the same lists (`HomePayload.dividing` then
+`inbox`) drawn twice, which is why one poll refreshes both, and why neither can
+show a different answer from the other. A `failed` row never changes on its
+own, so it is not a reason to keep polling.
+
+### `GET /api/batches/:id`
+→ `BatchSummary`. What the capture screen watches when it has just posted and
+does not yet want the whole home payload. `documents` is empty until the
+dividing finishes and then holds every letter the batch turned out to be, each
+one a `DocumentSummary` at whatever stage of reading it has reached.
+
+A batch that could not be divided answers `status: "failed"` with `failure`.
+The photographs are not lost: they stay in the batch, and retrying re-reads
+them.
 
 Validate on the server, not only in the file input: the `accept` attribute is a
 hint to the person choosing a file, not a constraint on what arrives.
@@ -237,6 +266,31 @@ Default decisions, open to review:
   reminder rows, rather than showing an empty card under the heading "What
   DayKeeper will do".
 
+**Pages that arrive later, for a letter she has already confirmed.** A person
+who finds the fourth page of a form five minutes after uploading the first
+three photographs it, and the reading places it against what she already has.
+The letter is re-read whole, as a new attempt, and then four values decide what
+happens next: `action_required`, `due_date`, `due_time`, `amount`. If any of
+them changed, the document returns to `needs-review` and she is asked again. If
+none did, it is updated and she is not told.
+
+That comparison is code, not a judgement. Whether these pages belong to that
+letter, and what the letter now says, are the reading's answers; whether that
+changes what she has to do is `!=` on four values, which can be demonstrated
+and tested rather than being a second thing to trust. `amount` is in the list
+because paying the wrong number is a harm she carries, even though she is still
+doing the same thing on the same day.
+
+Which turns the review screen's promise into something stronger and checkable:
+
+> **You will be asked whenever what you have to do changes, and never
+> otherwise.**
+
+That covers the silent update rather than leaving it outside the promise, and
+it is the same rule that already batches the notification into one message
+instead of one per letter. Every silent update is recorded, because it is the
+only decision this system makes on her behalf that nothing else would surface.
+
 Confirming is the moment a document becomes a task with reminders, all in one
 transaction. The scheduling rule lives in `src/lib/contract/reminders.ts` and
 nowhere else: a deadline gets reminders 7 days and 1 day before at 9 am local,
@@ -259,13 +313,14 @@ silently does nothing because a counter ran out is worse than one that fails
 again visibly.
 
 ### `POST /api/documents/:id/retake`
-`multipart/form-data`, same shape as upload. → `202 { id, status: "processing" }`.
+`multipart/form-data`, same shape as upload. → `202 BatchSummary`.
 
-A fresh set of photographs for the same document. The new pages are stored
-carrying the number of the run they are about to trigger, and read again. The
-document keeps its id, and previous attempts, including their images, stay in
-the history: "replace" never means "destroy the evidence a failed reading was
-judged against".
+A fresh set of photographs for the same document. This is a batch like any
+other, with one difference: it already knows which letter it belongs to, so it
+is not divided. The new pages are stored carrying the number of the run they
+are about to trigger, and read again. The document keeps its id, and previous
+attempts, including their images, stay in the history: "replace" never means
+"destroy the evidence a failed reading was judged against".
 
 The capture screen reaches this by being handed a document id, which puts it in
 a second mode: it says which letter is being re-photographed, and backing out
@@ -371,20 +426,24 @@ the moment anything starts dispatching them.
 cannot disagree with each other on screen.
 
 - `counts`: `{ needsReview, processing, failed }`. The call to action is an
-  ordered test on the first two, in this order: `needsReview > 0` says "N things
-  need your OK", otherwise `processing > 0` says "Reading your letters…",
-  otherwise the panel goes inert and says "Nothing to check right now".
-  `failed` does not enter it. Order matters and the obvious paraphrase gets it
-  wrong: "a queue that is *all* still reading" would say "Nothing to check"
-  while a letter is visibly being read in the card below it. The nav badge
-  shows `needsReview` alone.
+  ordered test, in this order: `needsReview > 0` says "N things need your OK",
+  otherwise `processing > 0` **or a batch is still being divided** says
+  "Reading your letters…", otherwise the panel goes inert and says "Nothing to
+  check right now". `failed` does not enter it. Order matters and the obvious
+  paraphrase gets it wrong: "a queue that is *all* still reading" would say
+  "Nothing to check" while a letter is visibly being read in the card below it.
+  The nav badge shows `needsReview` alone.
+- `dividing`: batches that have been posted and not yet turned into letters,
+  status `uploaded` or `grouping`, newest first. Each is one row saying how many
+  photographs are in it, and it is replaced by its letters when the dividing
+  finishes. Usually empty, and never for long.
 - `inbox`: every document not yet dealt with, status `processing`,
   `needs-review` or `failed`, one merged list, newest upload first, not capped.
   The prototype renders these interleaved in a single card, so the server
   sends the one list they are rather than three lists the client must weave.
-  The card is shown when `inbox` is non-empty, which is not the same test as
-  the counts: a queue holding only failures still shows the card. The capture
-  screen's "Posted just now" card is this same list.
+  The card is shown when `dividing` or `inbox` is non-empty, which is not the
+  same test as the counts: a queue holding only failures still shows the card.
+  The capture screen's "Posted just now" card is these same two lists.
 - `tasks`: **open tasks due today or later, by due date ascending, plus
   anything completed in the last seven days**, capped at 20. The cap is a
   default decision; which twenty is not a free choice. Plain "the first twenty
@@ -440,8 +499,14 @@ read from.** Three documents in this repository say it does and the prototype
 does not draw it, which makes it the one open question that touches what this
 product claims to be for rather than how a screen behaves.
 
-Four more belong to the capture screen and to failures, and they are listed
+Five more belong to the capture screen and to failures, and they are listed
 first because they are the ones a person meets soonest:
+
+- **how one row becomes several.** A batch is one row while it is being
+  divided, and then it is three letters. Whether the row splits in place, or
+  fades and is replaced, or the letters slide in beneath it, is a piece of
+  motion nobody has designed, and it is the first thing a person sees after
+  they press the button
 
 - **how the camera is actually held open.** The screen says "the camera stays
   open, keep going", and shots accumulate without leaving it. An

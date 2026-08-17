@@ -288,6 +288,12 @@ export type HomeCounts = {
  */
 export type HomePayload = {
   counts: HomeCounts;
+  /**
+   * Batches posted and not yet turned into letters. One row each, saying how
+   * many photographs are in it, replaced by its letters when the dividing
+   * finishes. Usually empty, and never for long.
+   */
+  dividing: BatchSummary[];
   inbox: DocumentSummary[];
   tasks: TaskSummary[];
 };
