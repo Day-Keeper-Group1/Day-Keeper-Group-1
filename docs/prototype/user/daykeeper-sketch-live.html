@@ -129,6 +129,12 @@
   .item.failed .st { color: var(--danger); font-weight: 600; }
   .item .go { font-size: 13px; font-weight: 700; color: var(--primary); flex: none; }
   .item .retake { font-size: 12.5px; font-weight: 700; color: var(--danger); flex: none; cursor: pointer; }
+  /* A photo that wasn't a letter. Quiet on purpose: the letters went through
+     untouched, nothing is being asked of her, this line only accounts for a
+     photo so a wrongly rejected letter never vanishes in silence. */
+  .item.notice .txt, .item.notice .st { color: var(--ink-dim); }
+  .item.notice .thumb { opacity: .5; }
+  .item .ok { font-size: 13px; font-weight: 700; color: var(--ink-dim); flex: none; cursor: pointer; }
 
   /* scan */
   .cam { border: 2px dashed var(--line); background: var(--primary-soft); border-radius: var(--radius-card); padding: 34px 16px; text-align: center; color: var(--primary); margin-bottom: 14px; cursor: pointer; }
@@ -442,9 +448,9 @@
      itself on the review screen as one letter whose facts disagree, and a
      split as two letters with half their facts missing, and that screen is
      one tap away either way. */
-  let queue = [];        // {kind:'batch', photos} | {kind:'letter', idx, pages, state}
+  let queue = [];        // {kind:'batch'|'batch-failed'|'letter'|'notice', ...}
   let tasks = [];        // confirmed tasks: {id, title, when, done, marks, agenda}
-  let nextPost = 0, photos = 0, uid = 0, current = null, selDay = null, calMo = 8, calYr = 2026;
+  let nextPost = 0, photos = 0, uid = 0, posted = 0, current = null, selDay = null, calMo = 8, calYr = 2026;
   let timers = [], toastTimer = null;
 
   const INITIAL_TASKS = [
@@ -494,7 +500,7 @@
 
   function postPile() {
     if (!photos || nextPost >= LETTERS.length) return;
-    const batch = { id: ++uid, kind: 'batch', photos: photos };
+    const batch = { id: ++uid, kind: 'batch', photos: photos, post: ++posted };
     queue.unshift(batch);
     const taken = photos;
     photos = 0;
@@ -502,15 +508,37 @@
     timers.push(setTimeout(() => divide(batch, taken), DIVIDE_MS));
   }
 
-  /* One row becomes several, in place. The pile is walked against the letters
-     still to be found: each takes as many photographs as it has sheets, until
-     the pile runs out. */
+  /* One row becomes several, in place. The sketch scripts what the reading
+     finds so both outcomes can be demonstrated:
+
+     Pile 1 succeeds. With three or more photos, one of them turns out to be
+     no letter at all (a photo of her grandson): the letters go through
+     untouched and one quiet line accounts for the photo. The line exists
+     because a real letter wrongly judged "not a letter" is the one mistake
+     nothing else would ever surface; saying the rejection out loud is the
+     only pair of eyes that path has. With one or two photos, a clean success.
+
+     Pile 2 has no letters in it at all: holiday photos, a banana. Nothing can
+     proceed, so the only honest interface is a plain card and the camera
+     again. The photos are not kept. Later piles succeed as normal. */
   function divide(batch, photoCount) {
     const at = queue.indexOf(batch);
     if (at === -1) return;
 
-    const found = [];
+    if (batch.post === 2) {
+      batch.kind = 'batch-failed';
+      renderAll();
+      return;
+    }
+
     let left = photoCount;
+    const extras = [];
+    if (batch.post === 1 && photoCount >= 3) {
+      left -= 1;
+      extras.push({ id: ++uid, kind: 'notice' });
+    }
+
+    const found = [];
     while (left > 0 && nextPost < LETTERS.length) {
       const L = LETTERS[nextPost];
       found.push({ id: ++uid, kind: 'letter', idx: nextPost, pages: Math.min(L.sheets, left), state: 'reading' });
@@ -518,7 +546,7 @@
       nextPost++;
     }
 
-    queue.splice(at, 1, ...found);
+    queue.splice(at, 1, ...found, ...extras);
     renderAll();
 
     found.forEach(it => {
@@ -529,6 +557,20 @@
         if (it.state === 'ready') scheduleToast();
       }, L.delay));
     });
+  }
+
+  /* The failed pile is void: the photos were not kept, so there is nothing to
+     re-read. "Take again" just puts her back at the camera. */
+  function retakePile(id) {
+    queue = queue.filter(q => q.id !== id);
+    document.getElementById('cam-d').textContent = 'no letters in those, photograph the letters themselves';
+    renderAll();
+    go('scan');
+  }
+
+  function dismissNotice(id) {
+    queue = queue.filter(q => q.id !== id);
+    renderAll();
   }
 
   function retake(id) {
@@ -585,6 +627,16 @@
     if (q.kind === 'batch')
       return '<div class="item reading"><span class="thumb"></span><span class="txt">' + q.photos +
         ' photos<div class="st">sorting them into letters…</div></span></div>';
+
+    if (q.kind === 'batch-failed')
+      return '<div class="item failed"><span class="thumb"></span><span class="txt">' + q.photos +
+        ' photos<div class="st">couldn\'t find any letters in these</div></span>' +
+        '<span class="retake" onclick="retakePile(' + q.id + ')">take again</span></div>';
+
+    if (q.kind === 'notice')
+      return '<div class="item notice"><span class="thumb"></span><span class="txt">1 photo wasn\'t a letter' +
+        '<div class="st">a photo of a person · we didn\'t keep it</div></span>' +
+        '<span class="ok" onclick="dismissNotice(' + q.id + ')">OK</span></div>';
 
     const L = LETTERS[q.idx];
     const label = L.who + ' · ' + L.what;
@@ -745,7 +797,7 @@
     if (toastTimer) clearTimeout(toastTimer);
     document.getElementById('toast').classList.remove('show');
     queue = []; tasks = INITIAL_TASKS.map(t => Object.assign({}, t));
-    nextPost = 0; photos = 0; current = null; selDay = null; calMo = 8; calYr = 2026;
+    nextPost = 0; photos = 0; posted = 0; current = null; selDay = null; calMo = 8; calYr = 2026;
     document.getElementById('cam-d').textContent = 'the camera stays open, keep going';
     renderPages(); renderAll(); go('home');
   }
