@@ -329,33 +329,29 @@ automatic retries; a person who wants to try again gets to, and a button that
 silently does nothing because a counter ran out is worse than one that fails
 again visibly.
 
-### `POST /api/documents/:id/retake`
-`multipart/form-data`, same shape as upload. → `202 BatchSummary`.
+**There is no retake endpoint, on purpose.** A letter too blurry to read can
+only be fixed by a new photograph, and a new photograph arrives the way every
+photograph arrives: as an ordinary pile through `POST /api/documents`. A
+dedicated "new photos for document X" channel would assume the person's next
+photos are that letter, only that letter, and all of that letter, which is a
+rule imposed on input whose defining property is that it obeys none; the
+moment she catches anything else in the shot, a targeted channel attaches the
+wrong pages to the wrong letter. If a re-photographed letter should be
+reconnected to anything already here, recognising it is the matching step's
+judgement, not a hard-wired link.
 
-A fresh set of photographs for the same document. This is a batch like any
-other, with one difference: it already knows which letter it belongs to, so it
-is not divided. The new pages are stored carrying the number of the run they
-are about to trigger, and read again. The document keeps its id, and previous
-attempts, including their images, stay in the history: "replace" never means
-"destroy the evidence a failed reading was judged against".
+**Which control a failed row shows.** The kind decides the wording; the
+follow-up is one thing everywhere: the row is put away (the archive endpoint
+below), and where photographing again could change the answer, the camera
+opens.
 
-The capture screen reaches this by being handed a document id, which puts it in
-a second mode: it says which letter is being re-photographed, and backing out
-returns to the failed row without changing anything. That mode is not drawn in
-the prototype. **Open**, and small.
-
-**Which control a failed row shows.** The kind decides, and the three cases are
-different actions, not three labels for one:
-
-| kind | control | why |
+| kind | control | what happens |
 |---|---|---|
-| `unreadable_image` | **Take it again** → `/retake` | a new photograph is the only thing that can change the answer |
-| `transient` | **Try again** → `/retry` | the pages are fine; the automatic attempts are spent |
-| `unsupported_document` | **Put it away** → `DELETE /api/documents/:id` | DayKeeper will never read this, and a row with no control at all sits in the person's queue forever |
+| `unreadable_image` | **Take it again** | the row is put away and the camera opens; what she posts next is an ordinary pile |
+| `transient` | **Try again** → `/retry` | the pages are fine and stay; the automatic attempts are spent, this spends a deliberate one |
+| `unsupported_document` | **Put it away** | the row is put away; a better photograph would not help |
 
 `FAILURE_MESSAGES` in the contract has the person-facing wording for all three.
-The prototype draws one control on a failed row, labelled `retake`, because its
-mock only ever fails one way; the other two rows are states it does not depict.
 
 ### `DELETE /api/documents/:id`
 Archives it. Nothing is destroyed; it stays readable, and `confirmed_at`
@@ -539,10 +535,10 @@ first because they are the ones a person meets soonest:
   describes the fallback path, not this one, and somebody has to choose and
   then say so on the screen
 - **which page was the bad one.** A five-page letter that fails says only "The
-  photo was too blurry to read. Please take it again." Which one, and retake
-  takes all five back. A page number on the failure and a per-page retake would
-  fix both halves. This is not the blur-check question below: it stays broken
-  even once the blur check exists
+  photo was too blurry to read. Please take it again." Which one? A page
+  number on the failure would let the message say "page three", and she would
+  re-photograph one sheet instead of five. This is not the blur-check question
+  below: it stays broken even once the blur check exists
 - **what the capture screen does at the limits.** `MAX_PAGES` is 10 and
   `MAX_PAGE_BYTES` is 10 MB, and a current phone camera clears that per frame
   routinely. Whether the client downscales to fit or refuses the photograph,

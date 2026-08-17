@@ -215,14 +215,16 @@ CREATE INDEX documents_user_due_idx ON documents (user_id, due_date) WHERE due_d
 -- docs/architecture/adr-005-ingestion-and-grouping.md.
 -- ---------------------------------------------------------------------------
 
+-- There is deliberately no "which letter is this batch for" column. Every
+-- upload is an ordinary pile, including the one a person posts after being
+-- asked to photograph a blurry letter again: assuming the next photos are
+-- that letter, or only that letter, or any letter at all, would be a rule
+-- imposed on someone who obeys none. If a re-photographed letter should be
+-- reconnected to anything, that is the matching step's judgement.
 CREATE TABLE upload_batches (
   id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id        uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   status         batch_status NOT NULL DEFAULT 'uploaded',
-  -- Set when the person is deliberately re-photographing a letter they already
-  -- have, so the reading does not have to work out what it already knows. Null
-  -- for an ordinary upload, which is the case that has to be divided.
-  target_document_id uuid REFERENCES documents(id) ON DELETE CASCADE,
   failure_detail text,
   created_at     timestamptz NOT NULL DEFAULT now(),
   grouped_at     timestamptz

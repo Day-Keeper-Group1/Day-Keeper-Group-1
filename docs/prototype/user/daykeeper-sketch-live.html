@@ -275,7 +275,6 @@
         </div>
 
         <button class="btn off" id="read-btn" onclick="postPile()">Read it</button>
-        <button class="btn ghost" id="retake-cancel" style="display:none" onclick="cancelRetake()">Never mind, keep it as it was</button>
         <div class="tiny" id="scan-tiny">Photograph the whole pile. We work out where one letter ends and the next begins, so you don't have to sort them first.</div>
 
         <div class="card" id="posted-card" style="display:none">
@@ -452,7 +451,7 @@
   let queue = [];        // {kind:'batch'|'batch-failed'|'letter'|'notice', ...}
   let tasks = [];        // confirmed tasks: {id, title, when, done, marks, agenda}
   let nextPost = 0, photos = 0, uid = 0, posted = 0, current = null, selDay = null, calMo = 8, calYr = 2026;
-  let retakeMode = null; // queue id of the letter being re-photographed
+  let retakePool = [];   // sketch bookkeeping: letters put away to reappear in the next pile
   let timers = [], toastTimer = null;
 
   const INITIAL_TASKS = [
@@ -479,7 +478,7 @@
   /* ---------- scan: photographing a pile, and posting it ---------- */
   function addPhoto() {
     const hint = document.getElementById('cam-d');
-    if (!retakeMode && nextPost >= LETTERS.length) { hint.textContent = 'sketch limit: five letters'; return; }
+    if (!retakePool.length && nextPost >= LETTERS.length) { hint.textContent = 'sketch limit: five letters'; return; }
     if (photos >= MAX_PHOTOS) { hint.textContent = "that's ten, the most in one go"; return; }
     photos++;
     hint.textContent = 'the camera stays open, keep going';
@@ -490,74 +489,38 @@
     const card = document.getElementById('pages-card');
     card.style.display = photos ? 'block' : 'none';
     document.getElementById('pages-title').textContent =
-      (retakeMode ? 'This letter · ' : 'Your pile · ') + photos + (photos === 1 ? ' photo' : ' photos');
+      'Your pile · ' + photos + (photos === 1 ? ' photo' : ' photos');
     let h = '';
     for (let i = 1; i <= photos; i++) h += '<div class="pg">photo ' + i + '</div>';
     if (photos < MAX_PHOTOS) h += '<div class="pg add" onclick="addPhoto()">+ photo</div>';
     document.getElementById('pages-list').innerHTML = h;
     const btn = document.getElementById('read-btn');
     btn.className = photos ? 'btn' : 'btn off';
-    btn.textContent = !retakeMode && photos > 1 ? 'Read them' : 'Read it';
+    btn.textContent = photos > 1 ? 'Read them' : 'Read it';
   }
 
-  /* ---------- retaking one letter ----------
-     A letter that failed because the photo was too blurry is NOT the same as
-     a photo that was no letter. The letter exists, it has a name, and its
-     photographs are kept: the failed reading is the evidence they were judged
-     against. The only thing that can change the answer is a new photograph,
-     so "retake" brings the camera back in a mode that knows which letter it
-     is re-photographing. Re-reading the same blurry photos would be the
-     remedy for OUR failures, not for this one. */
+  /* ---------- "take it again" ----------
+     No special channel, no mode. The error's WORDING differs by kind (a photo
+     that was no letter, a letter too blurry to read, a pile with no letters
+     in it), but the follow-up is one thing everywhere: the row is put away,
+     and where photographing again makes sense, the camera opens. What she
+     posts next is an ordinary pile: nothing assumes it is that letter, or
+     only that letter, or any letter at all. If the same letter comes back in
+     better light, recognising it is the reading's judgement, not a hard-wired
+     link. (The sketch's retakePool is stagecraft so the demo letter can
+     reappear and succeed; the product has no such pool.) */
   function retake(id) {
     const it = queue.find(q => q.id === id);
-    if (!it) return;
-    retakeMode = id;
-    const L = LETTERS[it.idx];
-    document.getElementById('scan-h1').textContent = 'Take it again';
-    document.getElementById('scan-sub').textContent = L.who + ' · ' + L.what + ': the photo was too blurry to read.';
-    document.getElementById('scan-tiny').textContent = 'Just this letter, a page at a time, in good light. Your earlier photos are kept.';
-    document.getElementById('retake-cancel').style.display = 'flex';
-    renderPages();
+    queue = queue.filter(q => q.id !== id);
+    if (it) retakePool.push(it.idx);
+    document.getElementById('cam-d').textContent = 'photograph it again, in good light';
+    renderAll();
     go('scan');
-  }
-
-  function cancelRetake() {
-    exitRetakeMode();
-    renderPages();
-    go('home');
-  }
-
-  function exitRetakeMode() {
-    retakeMode = null;
-    photos = 0;
-    document.getElementById('scan-h1').textContent = 'Take photos';
-    document.getElementById('scan-sub').textContent = 'A letter, a bill, a doctor\'s note: anything with a date in it. They don\'t have to be the same letter.';
-    document.getElementById('scan-tiny').textContent = 'Photograph the whole pile. We work out where one letter ends and the next begins, so you don\'t have to sort them first.';
-    document.getElementById('retake-cancel').style.display = 'none';
   }
 
   function postPile() {
     if (!photos) return;
-
-    /* Re-photographing one letter: no pile, no dividing. The new photos go
-       straight to the letter they were taken for, and it reads again. */
-    if (retakeMode) {
-      const it = queue.find(q => q.id === retakeMode);
-      exitRetakeMode();
-      renderPages();
-      if (!it) { renderAll(); return; }
-      it.state = 'reading';
-      renderAll();
-      go('home');
-      timers.push(setTimeout(() => {
-        it.state = 'ready';
-        renderAll();
-        scheduleToast();
-      }, LETTERS[it.idx].retryDelay || 4200));
-      return;
-    }
-
-    if (nextPost >= LETTERS.length) return;
+    if (!retakePool.length && nextPost >= LETTERS.length) return;
     const batch = { id: ++uid, kind: 'batch', photos: photos, post: ++posted };
     queue.unshift(batch);
     const taken = photos;
@@ -602,6 +565,14 @@
     }
 
     const found = [];
+    /* A letter she put away and photographed again comes back through the
+       ordinary pipeline like anything else; `retaken` only tells the sketch
+       to let it succeed this time, standing in for the better photograph. */
+    while (left > 0 && retakePool.length) {
+      const idx = retakePool.shift();
+      found.push({ id: ++uid, kind: 'letter', idx: idx, pages: Math.min(LETTERS[idx].sheets, left), state: 'reading', retaken: true });
+      left -= LETTERS[idx].sheets;
+    }
     while (left > 0 && nextPost < LETTERS.length) {
       const L = LETTERS[nextPost];
       found.push({ id: ++uid, kind: 'letter', idx: nextPost, pages: Math.min(L.sheets, left), state: 'reading' });
@@ -615,10 +586,10 @@
     found.forEach(it => {
       const L = LETTERS[it.idx];
       timers.push(setTimeout(() => {
-        it.state = L.fails ? 'failed' : 'ready';
+        it.state = L.fails && !it.retaken ? 'failed' : 'ready';
         renderAll();
         if (it.state === 'ready') scheduleToast();
-      }, L.delay));
+      }, it.retaken ? (L.retryDelay || 4200) : L.delay));
     });
   }
 
@@ -855,7 +826,7 @@
     if (toastTimer) clearTimeout(toastTimer);
     document.getElementById('toast').classList.remove('show');
     queue = []; tasks = INITIAL_TASKS.map(t => Object.assign({}, t));
-    exitRetakeMode();
+    retakePool = [];
     nextPost = 0; photos = 0; posted = 0; current = null; selDay = null; calMo = 8; calYr = 2026;
     document.getElementById('cam-d').textContent = 'the camera stays open, keep going';
     renderPages(); renderAll(); go('home');
