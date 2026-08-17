@@ -58,7 +58,8 @@ CREATE TYPE run_status AS ENUM ('queued', 'processing', 'succeeded', 'failed');
 -- Where a batch of photographs is in its life.
 --   uploaded   the files are stored, nothing has looked at them
 --   grouping   a reading is dividing them into letters
---   grouped    every page belongs to a document
+--   grouped    the reading has said what every photograph is. Some may be no
+--              letter at all; that is an answer, not a leftover
 --   failed     the reading could not divide them; the pages are still here
 CREATE TYPE batch_status AS ENUM ('uploaded', 'grouping', 'grouped', 'failed');
 
@@ -204,10 +205,13 @@ CREATE INDEX documents_user_due_idx ON documents (user_id, due_date) WHERE due_d
 -- Uploads
 --
 -- Every photograph enters here, and only here. A person clearing a week of post
--- takes ten pictures without pausing to say where one letter ends, so a batch
--- is what actually arrives and the letters are worked out afterwards. That is
--- why pages cannot be attached to a document at the moment they are stored:
--- nothing knows yet which document they belong to. See
+-- takes ten pictures without pausing to say where one letter ends, or picks
+-- them out of an album in whatever order they were found: one letter's pages
+-- shuffled between another's, a photograph of a grandchild in the middle. A
+-- batch is what actually arrives, the letters are the reading's answer, and
+-- nothing between the two is assumed. That is why pages cannot be attached to
+-- a document at the moment they are stored: nothing knows yet which document,
+-- if any, they belong to. See
 -- docs/architecture/adr-005-ingestion-and-grouping.md.
 -- ---------------------------------------------------------------------------
 
@@ -227,9 +231,14 @@ CREATE TABLE upload_batches (
 CREATE INDEX upload_batches_user_idx ON upload_batches (user_id, created_at DESC);
 CREATE INDEX upload_batches_pending_idx ON upload_batches (status) WHERE status IN ('uploaded', 'grouping');
 
--- One photograph, as it arrived. `position` is where it fell in the batch, in
--- the order the person took them, which is the strongest ordering signal there
--- is and the only one that survives if the reading fails entirely.
+-- One photograph, as it arrived. `position` is where it fell in the batch: the
+-- name the manifest points at ("photograph 3"), and the only thing left to
+-- show a person if the reading fails entirely. It carries NO meaning beyond
+-- that. It does not say which letter a photograph belongs to, and it does not
+-- say what order a letter's pages read in: a person picking photos from an
+-- album destroys any convention before it exists. Which letter is the
+-- reading's answer (document_pages rows), and reading order is the reading's
+-- answer too (document_pages.page_number).
 CREATE TABLE upload_pages (
   id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   batch_id      uuid NOT NULL REFERENCES upload_batches(id) ON DELETE CASCADE,
@@ -254,10 +263,11 @@ CREATE INDEX upload_pages_batch_idx ON upload_pages (batch_id, position);
 -- is visual evidence that does not survive being flattened into text, and the
 -- reading is the only thing that ever sees a page.
 --
--- `raw_response` holds the per-page answers, boundaries included. It is the
--- only record of how the division was decided, and no person is asked to
--- confirm that division, so it is also the only thing a miss rate can be
--- measured against.
+-- `raw_response` holds the manifest: which photographs form each letter, in
+-- reading order, and which photographs are no letter at all. It is the only
+-- record of how the division was decided, and no person is asked to confirm
+-- that division, so it is also the only thing a miss rate can be measured
+-- against.
 CREATE TABLE grouping_runs (
   id               uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   batch_id         uuid NOT NULL REFERENCES upload_batches(id) ON DELETE CASCADE,
@@ -270,6 +280,10 @@ CREATE TABLE grouping_runs (
   -- raw_response so that "did it split it into three?" is a column and not a
   -- json path, because that question is the whole accuracy story.
   document_count   integer,
+  -- And its other half: how many photographs it said were not letters at all.
+  -- Whether it can tell a rates notice from a photograph of a grandchild is
+  -- as much the miss rate as where it draws the boundaries.
+  not_letter_count integer,
   failure_kind     extraction_failure,
   failure_detail   text,
   raw_response     jsonb,
@@ -312,6 +326,10 @@ CREATE TABLE document_pages (
   -- question a wrong division raises.
   upload_page_id uuid REFERENCES upload_pages(id) ON DELETE SET NULL,
   attempt       integer NOT NULL DEFAULT 1,
+  -- Where this page falls when the letter is READ: page one first. This is
+  -- the manifest's answer, not the camera's. The reading can see "Page 2 of
+  -- 3" printed on a sheet; the order the photographs happened to arrive in is
+  -- upload_pages.position and means nothing here.
   page_number   integer NOT NULL,
   storage_path  text NOT NULL,
   mime_type     text NOT NULL,

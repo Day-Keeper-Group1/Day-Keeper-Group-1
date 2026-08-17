@@ -97,8 +97,11 @@ letter whose fields contradict each other, and a split as two letters, one with
 half its fields unreadable. Both surface on the review screen the person is
 already looking at, so a step in front of it would catch nothing and would hand
 the sorting back to somebody this product exists to sort for. She is never told
-that pages one to three became one letter; she is told there is an electricity
-bill for $347.60 due on the fifteenth, and asked whether that is right.
+that photographs one and three became one letter; she is told there is an
+electricity bill for $347.60 due on the fifteenth, and asked whether that is
+right. The one error that surfaces nowhere is a real letter judged to be no
+letter at all; that is the sharpest part of the miss-rate bet, and ADR 005
+names it.
 
 **Every row has a name from the moment it exists**, and the server writes it,
 not the client: `DocumentSummary.label` is always present and is
@@ -117,15 +120,20 @@ Resolving the label in one place is the same rule as `FIELD_LABELS` and
 differently.
 
 ### `POST /api/documents`
-`multipart/form-data`, one or more files under **`pages`**, in the order they
-were photographed. → `201 BatchSummary`, status `uploaded`, `documents` empty.
+`multipart/form-data`, one or more files under **`pages`**. Their order is
+recorded and nothing depends on it. → `201 BatchSummary`, status `uploaded`,
+`documents` empty.
 
-**An upload is a batch, and a batch may hold any number of letters.** Somebody
-clearing a week of post photographs whatever is in front of them; ten pictures
-are as likely to be three letters plus the missing pages of a fourth. Nothing
-about the act of photographing says where one ends, so the reading works it out
-and the documents appear as it does. `POST` cannot answer with a document
-because at the moment the files are stored, nothing knows how many there are.
+**An upload is a pile, and a pile obeys no rules.** Somebody photographs a
+week of post in whatever order their hands fall, or picks photos out of their
+album in whatever order they find them: one letter's pages shuffled between
+another's, a photograph of a grandchild in the middle. The reading looks at
+all of them and answers with the letters it found; the pages of each letter
+come back in reading order because the reading can see "Page 2 of 3" printed
+on a sheet, which the upload order never could. A photograph that is part of
+no letter becomes nothing, which is an answer, not a leftover. `POST` cannot
+answer with a document because at the moment the files are stored, nothing
+knows what is in them.
 
 The screen shows one row for the batch while it is being divided, and that row
 becomes several. See `docs/architecture/adr-005-ingestion-and-grouping.md`.
@@ -151,8 +159,11 @@ own, so it is not a reason to keep polling.
 ### `GET /api/batches/:id`
 → `BatchSummary`. What the capture screen watches when it has just posted and
 does not yet want the whole home payload. `documents` is empty until the
-dividing finishes and then holds every letter the batch turned out to be, each
-one a `DocumentSummary` at whatever stage of reading it has reached.
+dividing finishes and then holds every letter the batch turned out to contain,
+each one a `DocumentSummary` at whatever stage of reading it has reached.
+Photographs the reading said were not letters appear in no document and
+nothing shows them; whether the batch should say a word about them is open
+(see the list at the end).
 
 A batch that could not be divided answers `status: "failed"` with `failure`.
 The photographs are not lost: they stay in the batch, and retrying re-reads
@@ -505,7 +516,7 @@ read from.** Three documents in this repository say it does and the prototype
 does not draw it, which makes it the one open question that touches what this
 product claims to be for rather than how a screen behaves.
 
-Five more belong to the capture screen and to failures, and they are listed
+Six more belong to the capture screen and to failures, and they are listed
 first because they are the ones a person meets soonest:
 
 - **how one row becomes several.** A batch is one row while it is being
@@ -513,6 +524,12 @@ first because they are the ones a person meets soonest:
   fades and is replaced, or the letters slide in beneath it, is a piece of
   motion nobody has designed, and it is the first thing a person sees after
   they press the button
+- **whether she is told that some photographs were not letters.** "I posted
+  ten and got two letters" is a real confusion; but a photograph that is not
+  a letter changes nothing she has to do, and the rule everywhere else is to
+  spend her attention only on that. One line on the batch row would answer
+  the confusion and cost a little noise; silence costs the confusion.
+  Somebody has to pick
 
 - **how the camera is actually held open.** The screen says "the camera stays
   open, keep going", and shots accumulate without leaving it. An

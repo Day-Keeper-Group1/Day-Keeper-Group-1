@@ -17,7 +17,7 @@ DayKeeper (Group 1): an AI-powered life management system for people in vulnerab
 - `.agents/skills/daykeeper-jira/`: how this team's Jira board actually works, as a skill. Codex loads it when a ticket, the board or a sprint comes up; it needs the Atlassian MCP server, which `.codex/config.toml` already defines and the README explains how to authenticate. Optional: nothing in the build depends on it.
 - `db/schema.sql`: the database, and its only definition. No migrations: edit it and run `npm run db:reset`.
 - `docs/schema-map.html`: the same ten tables as a picture, with a letter's five steps along the top and a badge on each table saying which step writes it. Open it in a browser when you want to see the shape; read `db/schema.sql` when you need the truth.
-- `src/lib/contract/`: the six-field extraction contract in TypeScript, with a validator. Import these types; do not restate them.
+- `src/lib/contract/`: the six-field extraction contract and the grouping manifest (how a pile of photographs becomes letters), in TypeScript, with validators. Import these types; do not restate them.
 - `src/server/`: server-only code. `db.ts` for queries, `extraction/` for the reader interface and its mock. `src/lib` is safe anywhere; `src/server` never reaches the browser.
 - `src/app/`: the interface. The pages still read from `src/lib/mock-data.ts`; wiring them to real endpoints is the work.
 

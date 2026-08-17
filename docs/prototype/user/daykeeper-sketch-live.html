@@ -338,13 +338,16 @@
 <div class="disclaimer">Wireframe sketch, for discussion. Nothing here is final; every screen is a question.</div>
 
 <script>
-  /* ---------- sample letters, found in the pile in this order ----------
+  /* ---------- sample letters found in the pile ----------
 
-     `sheets` is how many photographs this letter turns out to be. A pile is
-     divided by walking these in order until the photographs run out, which is
-     the sketch's stand-in for the reading looking at the pictures and saying
-     where each letter starts. Tap the camera four times and you get three
-     letters back, which is the whole point of this screen. */
+     `sheets` is how many photographs this letter turns out to be. The sketch
+     hands out letters by walking this list until the photographs run out,
+     but that tidiness is the sketch's convenience, not the product's rule:
+     in the real thing the reading returns a manifest, one letter's pages can
+     arrive shuffled between another's, and a photograph can turn out to be
+     no letter at all. The sketch keeps its pile tidy only because it has no
+     real photographs to be untidy with. Tap the camera four times and you
+     get three letters back, which is the whole point of this screen. */
   const MAX_PHOTOS = 10;   /* MAX_PAGES in src/lib/contract/api.ts */
   const DIVIDE_MS = 2600;  /* how long the pile sits as one row before it splits */
 

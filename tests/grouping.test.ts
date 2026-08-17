@@ -1,166 +1,157 @@
 /**
- * Dividing a batch of photographs into letters.
+ * Dividing a pile of photographs into letters.
  *
- * No person is ever asked to confirm that the division was right, so these
- * tests are the only place the rules are looked in the eye: every photograph
- * comes back, the first page cannot continue something that does not exist,
- * and the groups are assembled by us rather than taken on the provider's word.
+ * The pile obeys no rules and the tests honour that: the sample pile here is
+ * deliberately shuffled, with the pages of two letters interleaved and a
+ * photograph in the middle that is no letter at all. No person is ever asked
+ * to confirm the division, so these tests are the only place its rules are
+ * looked in the eye, and the rules are few on purpose: the judgement is the
+ * model's, and the only thing refused is a manifest that contradicts itself.
  */
 
 import { describe, expect, it } from "vitest";
 import {
   GROUPING_CONTRACT_VERSION,
-  assembleGroups,
   parseGroupingResult,
   safeParseGroupingResult,
 } from "@/lib/contract/grouping";
 
-/** Four photographs: a two-page rates notice, then a two-page renewal. */
+/**
+ * Five photographs, picked from an album in no useful order:
+ *   1  rates notice, page 1
+ *   2  insurance renewal, page 1
+ *   3  rates notice, page 2
+ *   4  a grandchild, not a letter
+ *   5  insurance renewal, page 2
+ */
 const pile = {
   contract_version: GROUPING_CONTRACT_VERSION,
   provider: "mock",
   model: "mock-specimen-v1",
-  pages: [
+  letters: [
     {
-      position: 1,
-      text: "City of Yarra rates notice",
-      starts_new_document: true,
-      reason: "letterhead at the top of the page",
+      photos: [1, 3],
       label: "City of Yarra, rates notice",
+      reason: "same letterhead and the instalment table continues across them",
     },
     {
-      position: 2,
-      text: "instalment table continued",
-      starts_new_document: false,
-      reason: "continues the instalment table from the previous page",
-      label: null,
-    },
-    {
-      position: 3,
-      text: "RACV Insurance renewal",
-      starts_new_document: true,
-      reason: "a different letterhead and a new reference number",
+      photos: [2, 5],
       label: "RACV Insurance, policy renewal",
+      reason:
+        "same policy number on both sheets, marked page 1 of 2 and 2 of 2",
     },
-    {
-      position: 4,
-      text: "policy schedule",
-      starts_new_document: false,
-      reason: "page 2 of 2, same policy number",
-      label: null,
-    },
+  ],
+  not_letters: [
+    { photo: 4, reason: "a photograph of a person, not a document" },
   ],
 };
 
-describe("a pile of post", () => {
-  it("becomes as many letters as there are first pages", () => {
-    const groups = assembleGroups(parseGroupingResult(pile));
-    expect(groups).toHaveLength(2);
-    expect(groups.map((g) => g.positions)).toEqual([
-      [1, 2],
-      [3, 4],
+describe("a chaotic pile", () => {
+  it("becomes the letters the reading found, however they were shuffled", () => {
+    const result = parseGroupingResult(pile, 5);
+    expect(result.letters).toHaveLength(2);
+    expect(result.letters.map((l) => l.photos)).toEqual([
+      [1, 3],
+      [2, 5],
     ]);
   });
 
-  it("carries the reading's account of why each letter started", () => {
-    const groups = assembleGroups(parseGroupingResult(pile));
-    expect(groups[1].reason).toBe(
-      "a different letterhead and a new reference number",
-    );
+  it("keeps the reading's page order, never the camera's", () => {
+    // The model says photo 3 is page one because the page says so. Nothing is
+    // allowed to "helpfully" sort it back into capture order.
+    const shuffledLetter = {
+      ...pile,
+      letters: [{ ...pile.letters[0], photos: [3, 1] }, pile.letters[1]],
+    };
+    const result = parseGroupingResult(shuffledLetter, 5);
+    expect(result.letters[0].photos).toEqual([3, 1]);
   });
 
-  it("gives every letter a name before its fields exist", () => {
-    // Three rows saying "reading…" with nothing to tell them apart is a queue
-    // a person cannot make sense of, and the fields are seconds away.
-    const groups = assembleGroups(parseGroupingResult(pile));
-    expect(groups.map((g) => g.label)).toEqual([
+  it("lets a photograph be no letter at all, with an account of what it is", () => {
+    const result = parseGroupingResult(pile, 5);
+    expect(result.not_letters).toEqual([
+      { photo: 4, reason: "a photograph of a person, not a document" },
+    ]);
+  });
+
+  it("accepts a pile with no letters in it, which is an answer, not a failure", () => {
+    const noLetters = {
+      ...pile,
+      letters: [],
+      not_letters: [1, 2, 3, 4, 5].map((photo) => ({
+        photo,
+        reason: "holiday photographs",
+      })),
+    };
+    expect(safeParseGroupingResult(noLetters, 5).success).toBe(true);
+  });
+
+  it("allows one photograph to sit in two letters", () => {
+    // Two letters lying side by side, caught in one frame. Chaos is honoured,
+    // not corrected.
+    const shared = {
+      ...pile,
+      letters: [pile.letters[0], { ...pile.letters[1], photos: [2, 5, 1] }],
+    };
+    expect(safeParseGroupingResult(shared, 5).success).toBe(true);
+  });
+
+  it("carries every letter's name and account", () => {
+    const result = parseGroupingResult(pile, 5);
+    expect(result.letters.map((l) => l.label)).toEqual([
       "City of Yarra, rates notice",
       "RACV Insurance, policy renewal",
     ]);
-  });
-
-  it("puts the pages back in order when they come back shuffled", () => {
-    const shuffled = { ...pile, pages: [...pile.pages].reverse() };
-    const groups = assembleGroups(parseGroupingResult(shuffled));
-    expect(groups.map((g) => g.positions)).toEqual([
-      [1, 2],
-      [3, 4],
-    ]);
-  });
-
-  it("is one letter when nothing starts anything new after the first", () => {
-    const oneLetter = {
-      ...pile,
-      pages: pile.pages.map((p, i) => ({ ...p, starts_new_document: i === 0 })),
-    };
-    expect(assembleGroups(parseGroupingResult(oneLetter))).toHaveLength(1);
-  });
-
-  it("is four letters when every page starts one", () => {
-    // Four single-sheet letters photographed in one go. Each one needs its own
-    // name, which is what a page that starts a letter is required to give.
-    const allSeparate = {
-      ...pile,
-      pages: pile.pages.map((p) => ({
-        ...p,
-        starts_new_document: true,
-        label: p.label ?? `letter from page ${p.position}`,
-      })),
-    };
-    expect(assembleGroups(parseGroupingResult(allSeparate))).toHaveLength(4);
+    expect(result.letters[1].reason).toContain("policy number");
   });
 });
 
-describe("what the reading is not allowed to say", () => {
-  it("refuses a batch with a page missing", () => {
-    // The failure this catches is silent: the letter is simply short, and
-    // nothing downstream can tell that a page of it was dropped.
-    const missing = {
-      ...pile,
-      pages: pile.pages.filter((p) => p.position !== 3),
-    };
-    const result = safeParseGroupingResult(missing);
+describe("what a manifest is not allowed to do: contradict itself", () => {
+  it("may not cite a photograph that does not exist", () => {
+    const result = safeParseGroupingResult(pile, 4); // photo 5 is cited
     expect(result.success).toBe(false);
+    expect(result.issues.join(" ")).toContain("does not exist");
   });
 
-  it("refuses the same page twice", () => {
-    const duplicated = { ...pile, pages: [...pile.pages, pile.pages[0]] };
-    expect(safeParseGroupingResult(duplicated).success).toBe(false);
+  it("may not pass over a photograph in silence", () => {
+    // The silent failure: a page vanishes into the gap and the letter is
+    // simply short, with nothing downstream able to tell.
+    const silent = { ...pile, not_letters: [] };
+    const result = safeParseGroupingResult(silent, 5);
+    expect(result.success).toBe(false);
+    expect(result.issues.join(" ")).toContain("unaccounted");
   });
 
-  it("refuses a first page that continues something", () => {
-    const headless = {
+  it("may not use the same photograph twice in one letter", () => {
+    const doubled = {
       ...pile,
-      pages: pile.pages.map((p) =>
-        p.position === 1 ? { ...p, starts_new_document: false } : p,
-      ),
+      letters: [{ ...pile.letters[0], photos: [1, 3, 1] }, pile.letters[1]],
     };
-    expect(safeParseGroupingResult(headless).success).toBe(false);
+    expect(safeParseGroupingResult(doubled, 5).success).toBe(false);
   });
 
-  it("refuses a letter with no name", () => {
+  it("may not call a photograph a letter's page and also not a letter", () => {
+    const bothWays = {
+      ...pile,
+      not_letters: [
+        ...pile.not_letters,
+        { photo: 1, reason: "just a receipt" },
+      ],
+    };
+    expect(safeParseGroupingResult(bothWays, 5).success).toBe(false);
+  });
+
+  it("may not leave a letter nameless or unexplained", () => {
     const nameless = {
       ...pile,
-      pages: pile.pages.map((p) =>
-        p.starts_new_document ? { ...p, label: "  " } : p,
-      ),
+      letters: [{ ...pile.letters[0], label: "  " }, pile.letters[1]],
     };
-    expect(safeParseGroupingResult(nameless).success).toBe(false);
-  });
+    expect(safeParseGroupingResult(nameless, 5).success).toBe(false);
 
-  it("refuses a boundary with no account of itself", () => {
     const unexplained = {
       ...pile,
-      pages: pile.pages.map((p) => ({ ...p, reason: "" })),
+      letters: [{ ...pile.letters[0], reason: "" }, pile.letters[1]],
     };
-    expect(safeParseGroupingResult(unexplained).success).toBe(false);
-  });
-
-  it("allows a blank page, because a blank sheet happens", () => {
-    const blank = {
-      ...pile,
-      pages: pile.pages.map((p) => (p.position === 2 ? { ...p, text: "" } : p)),
-    };
-    expect(safeParseGroupingResult(blank).success).toBe(true);
+    expect(safeParseGroupingResult(unexplained, 5).success).toBe(false);
   });
 });

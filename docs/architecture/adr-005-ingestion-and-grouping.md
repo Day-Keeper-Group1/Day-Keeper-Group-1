@@ -11,15 +11,23 @@ into the shape of an endpoint, and the product prototype shares it, because its
 sketch posts one letter at a time.
 
 Real input is not like that. A person clearing a week of post photographs
-whatever is in front of them. Ten photographs might be three pages of a rates
-notice, four pages of a claim form, and then three more that belong to a letter
-they uploaded last week and only just found the rest of. Nothing about the act
-of photographing tells us where one letter ends and the next begins, and asking
-the person to tell us is asking them to do the sorting this product exists to
-do for them.
+whatever is in front of them, or picks photographs out of their album in
+whatever order they find them. Ten photographs might be three pages of a rates
+notice, four pages of a claim form, and three more that belong to a letter
+uploaded last week; the pages of one letter can arrive shuffled between the
+pages of another, and one of the ten might be a photograph of a grandchild
+that is no letter at all. Nothing about the act of photographing says which is
+which, and asking the person to say is asking them to do the sorting this
+product exists to do for them.
 
-So the question the system has to answer before it can answer anything else is:
-**how many letters are in this pile, and which pages belong to which?**
+There is no rule to write about input like this. A rule encodes an
+expectation, and chaos is precisely the absence of one. **The more chaotic the
+input, the more completely the answer has to be the model's judgement**,
+because a model can look at the pile and judgement is the only instrument that
+works where expectations do not.
+
+So the question the system has to answer before it can answer anything else
+is: **what letters are in this pile, and which photographs make up each one?**
 
 ## Decision
 
@@ -33,19 +41,31 @@ Ten remains the limit. It is not a claim about how many pages a model can
 segment correctly; it is a bound on how much there is to untangle when the
 model gets it wrong.
 
-### The pass that looks at the pictures is the pass that divides them.
+### The pass that looks at the pictures divides them, and its answer is a manifest.
 
-The reader returns, per page, the text it read, whether that page starts a new
-letter or continues the previous one, and, on a page that starts one, what that
-letter appears to be. Deterministic code walks those answers and assembles the
-groups.
+The reader looks at every photograph and hands back the letters it found:
+each letter as the photographs that make it, **in reading order**, with what
+the letter appears to be and why those photographs are one letter; and every
+photograph that is not part of any letter, with what it is instead. Code
+stores that answer. There is no code that walks the photographs in sequence,
+sorts them, or second-guesses the division.
 
-That third answer is what stops a divided pile becoming three identical rows
-saying "reading…". It costs nothing, because the letterhead is already on the
-page being read, and it means a letter has a name from the moment it has an id
-rather than seconds later when its fields arrive. It is a first impression and
-not a field: `issuer` and `document_type` replace it on screen as soon as they
-exist.
+Three things ride on the manifest's shape:
+
+- **Reading order is the model's answer, not the camera's.** The reading can
+  see "Page 2 of 3" printed on a sheet; the order the photographs happened to
+  arrive in cannot, and means nothing. `upload_pages.position` survives only
+  as the name a manifest points at ("photograph 3") and as the one thing left
+  to show a person if the reading fails outright.
+- **A photograph that is no letter becomes nothing**, and that is an answer,
+  not a leftover. The grandchild and the shopping receipt stay in the batch,
+  are named in the manifest as not letters, and no document is invented to
+  hold them.
+- **Every letter is named at birth.** The label costs nothing, because the
+  letterhead is already on the page being read, and it means a letter has a
+  name from the moment it has an id rather than seconds later when its fields
+  arrive. It is a first impression, not a field: `issuer` and `document_type`
+  replace it on screen as soon as they exist.
 
 Two things this rules out, both of which look reasonable and are not:
 
@@ -134,6 +154,15 @@ This design is staked on one number: **how often the reader divides a batch
 wrongly.** No confirmation screen means no human check on that step, so if the
 miss rate is bad, this decision has to be revisited rather than defended.
 
+The number has three parts, and they are not equally dangerous. A merge shows
+itself as one letter whose fields contradict each other, and a split as two
+letters with half their fields unreadable: both land on the review screen the
+person is already reading. **A real letter wrongly judged to be no letter
+lands nowhere.** It quietly never becomes a document, and nothing downstream
+can notice what was never created. That false negative is the part of the
+miss rate that matters most, precisely because it is the only one with no
+second pair of eyes anywhere behind it.
+
 It is cheap to measure and it does not need a real letter. Batches of known
 composition can be assembled and the reader's grouping compared to the truth,
 which is a binary judgement per page. That measurement should happen early,
@@ -142,6 +171,20 @@ holds.
 
 ## Consequences
 
+- **The one thing still refused is self-contradiction**, and it is not a
+  judgement being second-guessed. A manifest that cites photograph eleven of
+  ten, uses one photograph twice in the same letter, calls a photograph a
+  letter's page and also not a letter, or passes over a photograph in silence
+  has not decided something we distrust; it has failed to say one thing. That
+  is malformed output, rejected and retried the way any bad tool call is, and
+  a batch that keeps contradicting itself fails with every response in the
+  log for a person to read. (One photograph in two letters is deliberately
+  not on that list: two letters lying side by side can be caught in one
+  frame.)
+- **Dividing a pile is boring visual bookkeeping, not deep reasoning.** The
+  miss-rate experiment should include the small fast models alongside the
+  large ones; there is a fair chance they do this particular job better, and
+  they are what the job would cost at scale.
 - Pages arrive before anyone knows which document they belong to, so
   `document_pages.document_id` can no longer be assigned at the moment of
   upload. Pages belong to a batch first (see `db/schema.sql`).
@@ -154,3 +197,18 @@ holds.
 - Every silent update is recorded. It is the one class of decision this system
   makes on a person's behalf that is invisible by construction, so if it is
   ever wrong, nothing else will surface it.
+
+## Revisions
+
+**18 August 2026 — the manifest replaces per-page boundary flags.** The first
+version of this decision asked the reader, per page, whether that page started
+a new letter, and deterministic code walked the answers in order to assemble
+the groups. That shape smuggled in an assumption nobody had agreed to: that
+the pages of one letter arrive next to each other. They do not. A person
+picking photographs out of an album picks them in whatever order they were
+found, and the assumption was written down nowhere; it was the free
+consequence of choosing a boolean. The reader now returns the letters
+themselves. **If you find code or prose that walks `starts_new_document`
+flags in sequence, it is dead; do not revive it.** The same revision made
+"this photograph is no letter at all" expressible, which the old shape could
+not say without inventing a letter to hold it.

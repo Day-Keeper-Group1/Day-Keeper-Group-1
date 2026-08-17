@@ -288,22 +288,25 @@ async function main() {
       [telstra],
     );
 
-    // ---- One upload, two letters -------------------------------------------
-    // Four photographs taken in one go: two sheets of a rates notice, then two
-    // of an insurance renewal. Nothing about the act of photographing them says
-    // where the first ends, so the reading is what divides them, and no screen
-    // asks Margaret to check that it divided them correctly. This is the
-    // ordinary case rather than an edge case, and it is the only place in this
-    // seed you can see it.
+    // ---- One pile, two letters, and a photograph of a grandchild -----------
+    // Five photographs picked out of an album in no useful order: rates notice
+    // page 1, insurance renewal page 1, rates notice page 2, a photo of her
+    // grandson, insurance renewal page 2. Nobody sorts before uploading, and
+    // nothing asks them to: the reading's manifest is what says photographs
+    // 1 and 3 are one letter, 2 and 5 are another, and 4 is no letter at all.
+    // Photograph 4 stays in the batch and becomes nothing, which is an answer.
+    // This is the ordinary case rather than an edge case, and it is the only
+    // place in this seed you can see it.
     //
     // The insurer is "RACV Insurance Pty Ltd" on purpose: the projection strips
     // company suffixes before slugging, so that a search by sender finds this
     // letter whether the reading called it "RACV Insurance" or gave it the
     // whole legal name. That rule is invisible until some data exercises it.
     const pile = await uploadBatch(db, margaretId, {
-      pages: 4,
+      pages: 5,
       daysAgo: 2,
       documentCount: 2,
+      notLetterCount: 1,
     });
 
     const rates = await confirmedDocument(db, margaretId, {
@@ -313,7 +316,7 @@ async function main() {
       dueDate: isoDaysFromNow(14),
       amount: "$612.40",
       reference: "88 3120 7",
-      usePages: pile.slice(0, 2),
+      usePages: [pile[0], pile[2]], // photographs 1 and 3, interleaved
       uploadedDaysAgo: 2,
     });
 
@@ -324,7 +327,7 @@ async function main() {
       dueDate: isoDaysFromNow(21),
       amount: "$1,043.00",
       reference: "POL 55219",
-      usePages: pile.slice(2, 4),
+      usePages: [pile[1], pile[4]], // photographs 2 and 5
       uploadedDaysAgo: 2,
     });
 
@@ -357,7 +360,8 @@ Seeded.
   1 letter that came out too blurry, twice
   6 letters confirmed: one overdue, one upcoming, one appointment with a
     time of day, one done with its remaining reminders cancelled, and two
-    that arrived as a single batch of four photographs
+    that arrived interleaved in one pile of five photographs, one of which
+    was a photo of her grandson and became nothing
 
 The page images are not on disk: these rows describe photographs that were
 never taken. Upload something through the app to see a real one.
@@ -398,7 +402,13 @@ async function insertFields(
 async function uploadBatch(
   db: Client,
   userId: string,
-  spec: { pages: number; daysAgo: number; documentCount: number },
+  spec: {
+    pages: number;
+    daysAgo: number;
+    documentCount: number;
+    /** Photographs the reading said were no letter at all. Default none. */
+    notLetterCount?: number;
+  },
 ): Promise<Array<{ id: string; storagePath: string }>> {
   const batchId = randomUUID();
   const ago = `now() - ('${spec.daysAgo}' || ' days')::interval`;
@@ -422,10 +432,10 @@ async function uploadBatch(
   await db.query(
     `INSERT INTO grouping_runs
        (batch_id, attempt, status, provider, model, contract_version,
-        document_count, finished_at, duration_ms)
-     VALUES ($1, 1, 'succeeded', 'mock', 'mock-specimen-v1', '1.0', $2,
+        document_count, not_letter_count, finished_at, duration_ms)
+     VALUES ($1, 1, 'succeeded', 'mock', 'mock-specimen-v1', '2.0', $2, $3,
              ${ago} + interval '40 seconds', 4200)`,
-    [batchId, spec.documentCount],
+    [batchId, spec.documentCount, spec.notLetterCount ?? 0],
   );
 
   return pages;
