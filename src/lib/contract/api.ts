@@ -220,9 +220,37 @@ export type DocumentPageView = {
 /**
  * Upload limits, shared with the capture screen so it can stop the person at
  * page ten rather than rejecting ten deliberate photographs at the end.
+ *
+ * Ten is not a claim about how many pages a reading can divide correctly. It is
+ * a bound on how much there is to untangle when it divides them wrongly.
  */
 export const MAX_PAGES = 10;
 export const MAX_PAGE_BYTES = 10 * 1024 * 1024;
+
+/** Where a batch of photographs is in its life. Mirrors the batch_status enum. */
+export type BatchStatus = "uploaded" | "grouping" | "grouped" | "failed";
+
+/**
+ * What an upload becomes.
+ *
+ * A batch, not a document, because nothing about photographing a pile of post
+ * says where one letter ends. `documents` fills in as the reading works out how
+ * many there are: empty while `status` is `uploaded` or `grouping`, and then
+ * however many letters were in the pile.
+ *
+ * The interface draws one row for the batch while it is being divided, and that
+ * row becomes several. See docs/architecture/adr-005-ingestion-and-grouping.md.
+ */
+export type BatchSummary = {
+  id: string;
+  status: BatchStatus;
+  /** How many photographs arrived. Known immediately, unlike the letter count. */
+  pageCount: number;
+  uploadedAt: string;
+  documents: DocumentSummary[];
+  /** Present exactly when status is 'failed': the pages are still here. */
+  failure?: DocumentFailureView;
+};
 
 /**
  * What the review screen sends back when a person accepts a document.
