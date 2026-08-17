@@ -531,11 +531,16 @@
       return;
     }
 
+    /* The rejects are one line however many there are: "one message, not one
+       per letter" governs rejection too. Demo control: 3 or 4 photos gives
+       one reject, 5 or more gives two, 1 or 2 gives a clean success. */
+    const REJECT_REASONS = ['a photo of a person', 'a shopping receipt'];
     let left = photoCount;
     const extras = [];
     if (batch.post === 1 && photoCount >= 3) {
-      left -= 1;
-      extras.push({ id: ++uid, kind: 'notice' });
+      const rejects = photoCount >= 5 ? 2 : 1;
+      left -= rejects;
+      extras.push({ id: ++uid, kind: 'notice', count: rejects, reasons: REJECT_REASONS.slice(0, rejects) });
     }
 
     const found = [];
@@ -633,10 +638,13 @@
         ' photos<div class="st">couldn\'t find any letters in these</div></span>' +
         '<span class="retake" onclick="retakePile(' + q.id + ')">take again</span></div>';
 
-    if (q.kind === 'notice')
-      return '<div class="item notice"><span class="thumb"></span><span class="txt">1 photo wasn\'t a letter' +
-        '<div class="st">a photo of a person · we didn\'t keep it</div></span>' +
+    if (q.kind === 'notice') {
+      const head = q.count === 1 ? '1 photo wasn\'t a letter' : q.count + ' photos weren\'t letters';
+      const kept = q.count === 1 ? 'we didn\'t keep it' : 'we didn\'t keep them';
+      return '<div class="item notice"><span class="thumb"></span><span class="txt">' + head +
+        '<div class="st">' + q.reasons.join(' · ') + ' · ' + kept + '</div></span>' +
         '<span class="ok" onclick="dismissNotice(' + q.id + ')">OK</span></div>';
+    }
 
     const L = LETTERS[q.idx];
     const label = L.who + ' · ' + L.what;
