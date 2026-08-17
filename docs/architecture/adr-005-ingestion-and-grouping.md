@@ -35,9 +35,17 @@ model gets it wrong.
 
 ### The pass that looks at the pictures is the pass that divides them.
 
-The reader returns, per page, the text it read **and** whether that page starts
-a new letter or continues the previous one. Deterministic code walks those
-answers and assembles the groups.
+The reader returns, per page, the text it read, whether that page starts a new
+letter or continues the previous one, and, on a page that starts one, what that
+letter appears to be. Deterministic code walks those answers and assembles the
+groups.
+
+That third answer is what stops a divided pile becoming three identical rows
+saying "reading…". It costs nothing, because the letterhead is already on the
+page being read, and it means a letter has a name from the moment it has an id
+rather than seconds later when its fields arrive. It is a first impression and
+not a field: `issuer` and `document_type` replace it on screen as soon as they
+exist.
 
 Two things this rules out, both of which look reasonable and are not:
 

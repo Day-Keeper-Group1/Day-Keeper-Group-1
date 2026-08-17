@@ -26,24 +26,28 @@ const pile = {
       text: "City of Yarra rates notice",
       starts_new_document: true,
       reason: "letterhead at the top of the page",
+      label: "City of Yarra, rates notice",
     },
     {
       position: 2,
       text: "instalment table continued",
       starts_new_document: false,
       reason: "continues the instalment table from the previous page",
+      label: null,
     },
     {
       position: 3,
       text: "RACV Insurance renewal",
       starts_new_document: true,
       reason: "a different letterhead and a new reference number",
+      label: "RACV Insurance, policy renewal",
     },
     {
       position: 4,
       text: "policy schedule",
       starts_new_document: false,
       reason: "page 2 of 2, same policy number",
+      label: null,
     },
   ],
 };
@@ -65,6 +69,16 @@ describe("a pile of post", () => {
     );
   });
 
+  it("gives every letter a name before its fields exist", () => {
+    // Three rows saying "reading…" with nothing to tell them apart is a queue
+    // a person cannot make sense of, and the fields are seconds away.
+    const groups = assembleGroups(parseGroupingResult(pile));
+    expect(groups.map((g) => g.label)).toEqual([
+      "City of Yarra, rates notice",
+      "RACV Insurance, policy renewal",
+    ]);
+  });
+
   it("puts the pages back in order when they come back shuffled", () => {
     const shuffled = { ...pile, pages: [...pile.pages].reverse() };
     const groups = assembleGroups(parseGroupingResult(shuffled));
@@ -83,9 +97,15 @@ describe("a pile of post", () => {
   });
 
   it("is four letters when every page starts one", () => {
+    // Four single-sheet letters photographed in one go. Each one needs its own
+    // name, which is what a page that starts a letter is required to give.
     const allSeparate = {
       ...pile,
-      pages: pile.pages.map((p) => ({ ...p, starts_new_document: true })),
+      pages: pile.pages.map((p) => ({
+        ...p,
+        starts_new_document: true,
+        label: p.label ?? `letter from page ${p.position}`,
+      })),
     };
     expect(assembleGroups(parseGroupingResult(allSeparate))).toHaveLength(4);
   });
@@ -116,6 +136,16 @@ describe("what the reading is not allowed to say", () => {
       ),
     };
     expect(safeParseGroupingResult(headless).success).toBe(false);
+  });
+
+  it("refuses a letter with no name", () => {
+    const nameless = {
+      ...pile,
+      pages: pile.pages.map((p) =>
+        p.starts_new_document ? { ...p, label: "  " } : p,
+      ),
+    };
+    expect(safeParseGroupingResult(nameless).success).toBe(false);
   });
 
   it("refuses a boundary with no account of itself", () => {

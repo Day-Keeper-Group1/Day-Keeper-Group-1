@@ -93,12 +93,14 @@ export type DocumentSummary = {
   /**
    * What to call this row, always present, resolved on the server.
    *
-   * `${issuer} · ${documentType}` once a reading has succeeded, and something
-   * built from `uploadedAt` and `pageCount` before then, because a document
-   * that has not been read has not told anyone who it is from. Resolved in one
-   * place for the same reason FIELD_LABELS and FAILURE_MESSAGES are: two
-   * screens draw this row and they must not word it differently. See
-   * docs/api.md on GET /api/documents.
+   * `${issuer} · ${documentType}` once the six fields have been read, and the
+   * provisional label the division gave it before then. A letter therefore has
+   * a name from the moment it exists, which it can, because the pass that
+   * divided the pile had already read the letterhead.
+   *
+   * Resolved in one place for the same reason FIELD_LABELS and
+   * FAILURE_MESSAGES are: two screens draw this row and they must not word it
+   * differently. See docs/api.md on GET /api/documents.
    */
   label: string;
   status: DocumentStatus;

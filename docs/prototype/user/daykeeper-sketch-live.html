@@ -254,22 +254,22 @@
 
       <!-- SCAN -->
       <section class="screen" id="s-scan">
-        <h1>Take a photo</h1>
-        <div class="sub">A letter, a bill, a doctor's note: anything with a date in it.</div>
+        <h1>Take photos</h1>
+        <div class="sub">A letter, a bill, a doctor's note: anything with a date in it. They don't have to be the same letter.</div>
 
-        <div class="cam" onclick="addPage()">
+        <div class="cam" onclick="addPhoto()">
           <div class="ico">📷</div>
           <div class="t">Tap to photograph</div>
           <div class="d" id="cam-d">the camera stays open, keep going</div>
         </div>
 
         <div class="card" id="pages-card" style="display:none">
-          <h2 id="pages-title">This one</h2>
+          <h2 id="pages-title">Your pile</h2>
           <div class="pages" id="pages-list"></div>
         </div>
 
-        <button class="btn off" id="read-btn" onclick="postLetter()">Read it</button>
-        <div class="tiny">If a photo is too blurry to read, DayKeeper asks you to retake it straight away, and tells you why.</div>
+        <button class="btn off" id="read-btn" onclick="postPile()">Read it</button>
+        <div class="tiny">Photograph the whole pile. We work out where one letter ends and the next begins, so you don't have to sort them first.</div>
 
         <div class="card" id="posted-card" style="display:none">
           <h2>Posted just now</h2>
@@ -338,9 +338,18 @@
 <div class="disclaimer">Wireframe sketch, for discussion. Nothing here is final; every screen is a question.</div>
 
 <script>
-  /* ---------- sample letters, posted in this order ---------- */
+  /* ---------- sample letters, found in the pile in this order ----------
+
+     `sheets` is how many photographs this letter turns out to be. A pile is
+     divided by walking these in order until the photographs run out, which is
+     the sketch's stand-in for the reading looking at the pictures and saying
+     where each letter starts. Tap the camera four times and you get three
+     letters back, which is the whole point of this screen. */
+  const MAX_PHOTOS = 10;   /* MAX_PAGES in src/lib/contract/api.ts */
+  const DIVIDE_MS = 2600;  /* how long the pile sits as one row before it splits */
+
   const LETTERS = [
-    { who: 'AGL Energy', what: 'Electricity bill', delay: 5200,
+    { who: 'AGL Energy', what: 'Electricity bill', sheets: 2, delay: 5200,
       facts: [
         { k: 'From', v: 'AGL Energy' },
         { k: 'What to do', v: 'Pay the amount due' },
@@ -357,7 +366,7 @@
       marks: [ { mo: 8, d: 8, l: 'reminder' }, { mo: 8, d: 14, l: 'reminder' }, { mo: 8, d: 15, l: 'AGL due' } ],
       agenda: { day: 'Saturday 15 August', line: 'Pay AGL electricity bill', sub: '$347.60 · ref 9201 4471 88' } },
 
-    { who: 'Medicare', what: 'Claim form', delay: 7000,
+    { who: 'Medicare', what: 'Claim form', sheets: 1, delay: 7000,
       facts: [
         { k: 'From', v: 'Services Australia' },
         { k: 'What to do', v: 'Return the completed form' },
@@ -373,7 +382,7 @@
       marks: [ { mo: 8, d: 21, l: 'reminder' }, { mo: 8, d: 22, l: 'Medicare' } ],
       agenda: { day: 'Saturday 22 August', line: 'Return Medicare form', sub: 'ref CLM 30991 442' } },
 
-    { who: 'VicRoads', what: 'Registration renewal', delay: 6200,
+    { who: 'VicRoads', what: 'Registration renewal', sheets: 2, delay: 6200,
       facts: [
         { k: 'From', v: 'VicRoads' },
         { k: 'What to do', v: 'Renew the registration' },
@@ -390,7 +399,7 @@
       marks: [ { mo: 8, d: 25, l: 'reminder' }, { mo: 8, d: 31, l: 'reminder' }, { mo: 9, d: 1, l: 'Rego due' } ],
       agenda: { day: 'Tuesday 1 September', line: 'Renew car registration', sub: '$852.10 · rego 1AB 2CD' } },
 
-    { who: 'Dr Patel', what: 'Appointment letter', delay: 6800, fails: true, retryDelay: 4200,
+    { who: 'Dr Patel', what: 'Appointment letter', sheets: 1, delay: 6800, fails: true, retryDelay: 4200,
       facts: [
         { k: 'From', v: 'Dr A. Patel, GP clinic' },
         { k: 'What to do', v: 'Attend follow-up appointment' },
@@ -404,7 +413,7 @@
       marks: [ { mo: 9, d: 3, l: 'reminder' }, { mo: 9, d: 4, l: 'Dr Patel' } ],
       agenda: { day: 'Friday 4 September', line: 'Appointment with Dr Patel', sub: '10:30 am · GP clinic' } },
 
-    { who: 'Yarra Council', what: 'Rates notice', delay: 7500,
+    { who: 'Yarra Council', what: 'Rates notice', sheets: 2, delay: 7500,
       facts: [
         { k: 'From', v: 'City of Yarra' },
         { k: 'What to do', v: 'Pay the rates instalment' },
@@ -422,10 +431,17 @@
       agenda: { day: 'Monday 31 August', line: 'Pay council rates', sub: '$612.40 · ref 88 3120 7' } }
   ];
 
-  /* ---------- state ---------- */
-  let queue = [];        // posted letters: {idx, pages, state: reading|ready|failed}
+  /* ---------- state ----------
+     The queue holds two kinds of row. A pile that has been posted and not yet
+     divided is one row (kind 'batch', state 'dividing'); it is replaced in
+     place by one row per letter (kind 'letter') the moment the division
+     lands. Nothing ever asks whether that division was right: a merge shows
+     itself on the review screen as one letter whose facts disagree, and a
+     split as two letters with half their facts missing, and that screen is
+     one tap away either way. */
+  let queue = [];        // {kind:'batch', photos} | {kind:'letter', idx, pages, state}
   let tasks = [];        // confirmed tasks: {id, title, when, done, marks, agenda}
-  let nextPost = 0, pages = 0, uid = 0, current = null, selDay = null, calMo = 8, calYr = 2026;
+  let nextPost = 0, photos = 0, uid = 0, current = null, selDay = null, calMo = 8, calYr = 2026;
   let timers = [], toastTimer = null;
 
   const INITIAL_TASKS = [
@@ -449,36 +465,67 @@
       ] }
   ];
 
-  /* ---------- scan: pages and posting ---------- */
-  function addPage() {
-    if (nextPost >= LETTERS.length) { document.getElementById('cam-d').textContent = 'sketch limit: five letters'; return; }
-    pages++;
+  /* ---------- scan: photographing a pile, and posting it ---------- */
+  function addPhoto() {
+    const hint = document.getElementById('cam-d');
+    if (nextPost >= LETTERS.length) { hint.textContent = 'sketch limit: five letters'; return; }
+    if (photos >= MAX_PHOTOS) { hint.textContent = "that's ten, the most in one go"; return; }
+    photos++;
+    hint.textContent = 'the camera stays open, keep going';
     renderPages();
   }
 
   function renderPages() {
     const card = document.getElementById('pages-card');
-    card.style.display = pages ? 'block' : 'none';
-    document.getElementById('pages-title').textContent = 'This one · ' + pages + (pages === 1 ? ' page' : ' pages');
+    card.style.display = photos ? 'block' : 'none';
+    document.getElementById('pages-title').textContent =
+      'Your pile · ' + photos + (photos === 1 ? ' photo' : ' photos');
     let h = '';
-    for (let i = 1; i <= pages; i++) h += '<div class="pg">page ' + i + '</div>';
-    h += '<div class="pg add" onclick="addPage()">+ page</div>';
+    for (let i = 1; i <= photos; i++) h += '<div class="pg">photo ' + i + '</div>';
+    if (photos < MAX_PHOTOS) h += '<div class="pg add" onclick="addPhoto()">+ photo</div>';
     document.getElementById('pages-list').innerHTML = h;
-    document.getElementById('read-btn').className = pages ? 'btn' : 'btn off';
+    const btn = document.getElementById('read-btn');
+    btn.className = photos ? 'btn' : 'btn off';
+    btn.textContent = photos > 1 ? 'Read them' : 'Read it';
   }
 
-  function postLetter() {
-    if (!pages || nextPost >= LETTERS.length) return;
-    const it = { id: ++uid, idx: nextPost, pages: pages, state: 'reading' };
-    queue.unshift(it);
-    nextPost++; pages = 0;
+  function postPile() {
+    if (!photos || nextPost >= LETTERS.length) return;
+    const batch = { id: ++uid, kind: 'batch', photos: photos };
+    queue.unshift(batch);
+    const taken = photos;
+    photos = 0;
     renderPages(); renderAll();
-    const L = LETTERS[it.idx];
-    timers.push(setTimeout(() => {
-      it.state = L.fails ? 'failed' : 'ready';
-      renderAll();
-      if (it.state === 'ready') scheduleToast();
-    }, L.delay));
+    timers.push(setTimeout(() => divide(batch, taken), DIVIDE_MS));
+  }
+
+  /* One row becomes several, in place. The pile is walked against the letters
+     still to be found: each takes as many photographs as it has sheets, until
+     the pile runs out. */
+  function divide(batch, photoCount) {
+    const at = queue.indexOf(batch);
+    if (at === -1) return;
+
+    const found = [];
+    let left = photoCount;
+    while (left > 0 && nextPost < LETTERS.length) {
+      const L = LETTERS[nextPost];
+      found.push({ id: ++uid, kind: 'letter', idx: nextPost, pages: Math.min(L.sheets, left), state: 'reading' });
+      left -= L.sheets;
+      nextPost++;
+    }
+
+    queue.splice(at, 1, ...found);
+    renderAll();
+
+    found.forEach(it => {
+      const L = LETTERS[it.idx];
+      timers.push(setTimeout(() => {
+        it.state = L.fails ? 'failed' : 'ready';
+        renderAll();
+        if (it.state === 'ready') scheduleToast();
+      }, L.delay));
+    });
   }
 
   function retake(id) {
@@ -529,6 +576,13 @@
 
   /* ---------- rendering ---------- */
   function itemRow(q) {
+    /* A pile that has not been divided yet cannot say who any of it is from,
+       because nothing has looked at it. It says what it honestly knows: how
+       many photographs it holds. */
+    if (q.kind === 'batch')
+      return '<div class="item reading"><span class="thumb"></span><span class="txt">' + q.photos +
+        ' photos<div class="st">sorting them into letters…</div></span></div>';
+
     const L = LETTERS[q.idx];
     const label = L.who + ' · ' + L.what;
     const pg = q.pages > 1 ? ' · ' + q.pages + ' pages' : '';
@@ -563,8 +617,13 @@
     document.getElementById('check-card').style.display = queue.length ? 'block' : 'none';
     document.getElementById('check-list').innerHTML = rows;
 
-    /* CTA + badge */
+    /* CTA + badge. An ordered test, not a count of what the queue is made of:
+       something ready wins, otherwise anything still being worked on wins, and
+       only an empty queue reaches the inert panel. A pile still being divided
+       counts as being worked on, and it cannot say how many letters it will
+       turn out to be, so it does not try. */
     const ready = queue.filter(q => q.state === 'ready').length;
+    const dividing = queue.filter(q => q.kind === 'batch').length;
     const reading = queue.filter(q => q.state === 'reading').length;
     const cta = document.getElementById('home-cta');
     if (ready) {
@@ -573,8 +632,11 @@
       document.getElementById('cta-small').textContent = 'From your photos we\'ve prepared tasks and reminders. Check them before they go on your calendar.';
     } else {
       cta.className = 'review-cta dim';
-      document.getElementById('cta-big').textContent = reading ? 'Reading ' + (reading === 1 ? 'your letter…' : reading + ' letters…') : 'Nothing to check right now';
-      document.getElementById('cta-small').textContent = reading ? 'You can close the app. We\'ll tell you when it\'s ready.' : 'We\'ll tell you when something\'s ready.';
+      const busy = dividing ? 'Reading your post…'
+                 : reading ? 'Reading ' + (reading === 1 ? 'your letter…' : reading + ' letters…')
+                 : null;
+      document.getElementById('cta-big').textContent = busy || 'Nothing to check right now';
+      document.getElementById('cta-small').textContent = busy ? 'You can close the app. We\'ll tell you when it\'s ready.' : 'We\'ll tell you when something\'s ready.';
     }
     const b = document.getElementById('nav-badge');
     b.style.display = ready ? 'inline-block' : 'none';
@@ -680,7 +742,7 @@
     if (toastTimer) clearTimeout(toastTimer);
     document.getElementById('toast').classList.remove('show');
     queue = []; tasks = INITIAL_TASKS.map(t => Object.assign({}, t));
-    nextPost = 0; pages = 0; current = null; selDay = null; calMo = 8; calYr = 2026;
+    nextPost = 0; photos = 0; current = null; selDay = null; calMo = 8; calYr = 2026;
     document.getElementById('cam-d').textContent = 'the camera stays open, keep going';
     renderPages(); renderAll(); go('home');
   }

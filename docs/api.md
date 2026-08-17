@@ -100,15 +100,21 @@ the sorting back to somebody this product exists to sort for. She is never told
 that pages one to three became one letter; she is told there is an electricity
 bill for $347.60 due on the fifteenth, and asked whether that is right.
 
-**A row with no issuer still needs a name**, and the server writes it, not the
-client: `DocumentSummary.label` is always present and is `` `${issuer} · ${documentType}` ``
-once a reading has succeeded, and `` `Photo taken ${time} · ${n} page(s)` ``
-before then, built from `uploadedAt` in the user's zone. Resolving it in one
-place is the same rule as `FIELD_LABELS` and `FAILURE_MESSAGES`: two screens
-show this string and they must not word it differently. The prototype's queue
-rows read "AGL Energy · Electricity bill" in every state including
-`reading…`, which no real document can do, because its fixture is a reading
-that has already finished standing in for one that has not.
+**Every row has a name from the moment it exists**, and the server writes it,
+not the client: `DocumentSummary.label` is always present and is
+`` `${issuer} · ${documentType}` `` once the six fields have been read, and the
+provisional label the division gave it before then.
+
+A letter can be named that early because the pass that divided the pile had
+already read the letterhead; naming each one costs nothing extra and is the
+difference between a queue and three identical rows saying "reading…". The
+thing that genuinely cannot be named is a batch that has not been divided yet,
+and `BatchSummary` does not pretend otherwise: it says how many photographs it
+holds, which is all anybody knows about it.
+
+Resolving the label in one place is the same rule as `FIELD_LABELS` and
+`FAILURE_MESSAGES`: two screens show this string and they must not word it
+differently.
 
 ### `POST /api/documents`
 `multipart/form-data`, one or more files under **`pages`**, in the order they

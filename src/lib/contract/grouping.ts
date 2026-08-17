@@ -47,6 +47,18 @@ export const pageReadingSchema = z.object({
   /** False means it continues the page before it. */
   starts_new_document: z.boolean(),
   reason: z.string().min(1),
+  /**
+   * What this letter appears to be, from its first page: "AGL Energy,
+   * electricity bill". Required on a page that starts one, null on a page that
+   * continues one, because a continuation page has no letterhead to read.
+   *
+   * It exists so a letter has a name from the moment it exists. The six fields
+   * are extracted afterwards and take a few seconds, and three rows sitting
+   * there saying "reading…" with nothing to distinguish them is a queue a
+   * person cannot make sense of. This is a first impression, not a field:
+   * `issuer` and `document_type` replace it as soon as they are read.
+   */
+  label: z.string().nullable(),
 });
 
 export type PageReading = z.infer<typeof pageReadingSchema>;
@@ -95,6 +107,17 @@ export const groupingResultSchema = z
         path: ["pages", "0", "starts_new_document"],
       });
     }
+
+    // Every letter gets a name, and only the page that starts one can give it.
+    for (const page of result.pages) {
+      if (page.starts_new_document && !page.label?.trim()) {
+        ctx.addIssue({
+          code: "custom",
+          message: `page ${page.position} starts a letter, so it must say what that letter appears to be`,
+          path: ["pages"],
+        });
+      }
+    }
   });
 
 export type GroupingResult = z.infer<typeof groupingResultSchema>;
@@ -118,6 +141,8 @@ export type PageGroup = {
   positions: number[];
   /** Why the reading said this one started. Carried through for the record. */
   reason: string;
+  /** What it appears to be, so the row has a name before the fields exist. */
+  label: string;
 };
 
 /**
@@ -136,7 +161,11 @@ export function assembleGroups(result: GroupingResult): PageGroup[] {
 
   for (const page of ordered) {
     if (page.starts_new_document || groups.length === 0) {
-      groups.push({ positions: [page.position], reason: page.reason });
+      groups.push({
+        positions: [page.position],
+        reason: page.reason,
+        label: page.label ?? "Unread letter",
+      });
     } else {
       groups[groups.length - 1].positions.push(page.position);
     }

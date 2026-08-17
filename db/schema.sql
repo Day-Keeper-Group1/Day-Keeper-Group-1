@@ -153,6 +153,16 @@ CREATE TABLE documents (
   due_time       time,
   amount_text    text,          -- kept as written on the page: "$347.60", "347.60 AUD"
   reference      text,
+  -- What the reading called this letter when it first divided the pile, from
+  -- the letterhead alone: "AGL Energy, electricity bill". Written before the
+  -- six fields exist and never overwritten, because the fields replace it on
+  -- screen rather than in the row.
+  --
+  -- It is here so a letter has a name from the moment it has an id. Extraction
+  -- takes a few seconds after the division lands, and three rows sitting in a
+  -- queue saying "reading…" with nothing to tell them apart is a screen a
+  -- person cannot use.
+  provisional_label text,
   -- Anything the model returned that is not one of the six contract fields.
   -- Untyped on purpose: the contract is a floor, and this is where the ceiling
   -- goes until we decide a field is worth promoting.
