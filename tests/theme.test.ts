@@ -135,6 +135,15 @@ describe("the copies of the palette", () => {
     }
   });
 
+  it("the schema map names no colour outside its own token block", () => {
+    // The check above only sees declarations. Without this one, a hex written
+    // straight onto an SVG stroke is invisible to the whole theme, which is
+    // exactly where the first three of them were.
+    const html = read(SCHEMA_MAP);
+    const afterTokens = html.slice(html.indexOf("}", html.indexOf(":root")));
+    expect(afterTokens.match(/#[0-9a-fA-F]{3,8}\b/g) ?? []).toEqual([]);
+  });
+
   it("the prototype names no colour outside its own token block", () => {
     // Every colour in that file has to come from the tokens, or changing the
     // theme means hunting through 700 lines of markup for stragglers.

@@ -434,7 +434,13 @@ that has not stopped being true.
 Not oversights. Each needs a decision nobody has made yet, and guessing now
 would mean building the wrong thing twice.
 
-Four of these belong to the capture screen and to failures, and they are listed
+**The largest is stated in full up in `GET /api/documents/:id`, not repeated
+here: whether the review screen shows the person the snippet each value was
+read from.** Three documents in this repository say it does and the prototype
+does not draw it, which makes it the one open question that touches what this
+product claims to be for rather than how a screen behaves.
+
+Four more belong to the capture screen and to failures, and they are listed
 first because they are the ones a person meets soonest:
 
 - **how the camera is actually held open.** The screen says "the camera stays
