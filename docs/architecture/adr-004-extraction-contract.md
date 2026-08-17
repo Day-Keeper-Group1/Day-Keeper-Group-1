@@ -6,9 +6,10 @@ Decision by: Jason (technical lead)
 ## Context
 
 Module 1 reads a photograph. Module 4 turns what was read into tasks and
-reminders. They are written by different people, and neither can start until
-they agree on what passes between them. That agreement is the single most
-load-bearing artefact in this project.
+reminders. They are to be written by different people, and neither can start
+until there is an agreement about what passes between them. That agreement is
+the single most load-bearing artefact in this project, which is why it is being
+settled before either module has an author.
 
 Separately: we have no model access. RACE was introduced on 5 August and nothing
 has been granted. Development cannot wait for it.

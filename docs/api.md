@@ -2,9 +2,9 @@
 
 **None of this is built yet. This is the shape to build.**
 
-It is written down first because the interface, the reader and the database were
-being designed by different people at the same time, and the only way that ends
-in something that fits together is to settle the seams before the parts.
+It is written down first because the interface, the reader and the database are
+going to be built by different people, and the only way that ends in something
+that fits together is to settle the seams before the parts.
 
 Every endpoint answers JSON except the one that serves an image.
 

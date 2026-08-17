@@ -192,7 +192,6 @@ src/
   types/
 docs/
   architecture/
-  ai-prompts/
   meeting-minutes/
 supabase/
   migrations/
@@ -693,24 +692,6 @@ Use these principles even if Taste Skill is installed:
 - Do not overload vulnerable users with dense screens.
 - Make the next action obvious.
 - Every generated task must link back to the source document.
-
-### Team rule for AI-assisted UI work
-
-When Taste Skill helps generate or review UI, record the prompt in:
-
-```text
-docs/ai-prompts/
-```
-
-Record:
-
-- Prompt/tool used
-- Screen or component affected
-- What AI generated
-- What the developer changed or verified
-- Whether Taste Skill was used as a design rule
-
-This supports the final GenAI declaration and supervisor expectations.
 
 ## 7. Recommended First Technical Research Tasks
 

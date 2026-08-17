@@ -172,7 +172,7 @@ audit_logs
 extraction_logs
 ```
 
-Naming note: extraction_logs was ai_prompt_logs in the first draft. Renamed to avoid confusion with docs/ai-prompts, which is a different thing: the table stores runtime prompts and outputs sent to providers, written by the adapter on every call and read by the evaluation workspace and during debugging; the folder stores the team's AI usage records for the course GenAI declaration.
+Naming note: extraction_logs was ai_prompt_logs in the first draft; renamed for clarity. The table stores runtime prompts and outputs sent to providers, written by the adapter on every call and read by the evaluation workspace and during debugging.
 
 Migration note: organizations and organization_memberships stay in this list as design headroom but are not created in the initial migrations. Organization features are future scope; keying everything through profiles keeps that door open without carrying empty tables. audit_logs joins them: it is not created until a milestone builds its reader (the admin dashboard is the natural one).
 
@@ -573,7 +573,6 @@ day-keeper-group-1/
     unit/
   docs/
     architecture/
-    ai-prompts/
     meeting-minutes/
 ```
 
@@ -585,7 +584,6 @@ Use GitHub with:
 - pull requests
 - code review before merge
 - GitHub Issues or Jira ticket link in PR description
-- AI prompt logs saved in `docs/ai-prompts/`
 
 Recommended branch naming:
 
@@ -605,11 +603,6 @@ Recommended PR checklist:
 ## What changed
 
 ## How to test
-
-## AI usage
-- Prompt/tool used:
-- What AI generated:
-- What I changed/verified:
 
 ## Jira ticket
 ```

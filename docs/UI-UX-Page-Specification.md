@@ -865,9 +865,9 @@ UserStatusTable
 AuditLogTable
 ```
 
-## 10. Prompt Template for AI-Assisted UI Work
+## 10. Prompt Template for UI Work
 
-Use this prompt when asking an AI agent to build or redesign DayKeeper UI:
+Use this prompt when asking an agent to build or redesign DayKeeper UI:
 
 ```text
 Use Taste Skill as a UI quality checklist, but keep DayKeeper as a restrained operational dashboard, not a marketing website.
