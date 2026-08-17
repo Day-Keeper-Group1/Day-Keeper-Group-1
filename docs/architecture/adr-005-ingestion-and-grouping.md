@@ -66,6 +66,13 @@ Three things ride on the manifest's shape:
   name from the moment it has an id rather than seconds later when its fields
   arrive. It is a first impression, not a field: `issuer` and `document_type`
   replace it on screen as soon as they exist.
+- **The words are transcribed per letter, not per page.** The per-letter field
+  readings work from this text, so the photographs are looked at once and once
+  only. And it is what makes one photograph holding two letters unremarkable:
+  each letter's entry carries its own words, and how the shared photograph's
+  words are apportioned between them is the reading's judgement, like the
+  division itself. Per-page text would hand one letter's reader the other
+  letter's words mixed in.
 
 Two things this rules out, both of which look reasonable and are not:
 

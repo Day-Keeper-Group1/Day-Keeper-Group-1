@@ -261,9 +261,9 @@ CREATE INDEX upload_pages_batch_idx ON upload_pages (batch_id, position);
 -- One attempt at dividing a batch into letters.
 --
 -- The pass that looks at the images is the pass that divides them, so this run
--- also produces the page text the per-letter readings work from: a letterhead
--- is visual evidence that does not survive being flattened into text, and the
--- reading is the only thing that ever sees a page.
+-- also transcribes each letter's text for the per-letter readings to work
+-- from: a letterhead is visual evidence that does not survive being flattened
+-- into text, and the reading is the only thing that ever sees a page.
 --
 -- `raw_response` holds the manifest: which photographs form each letter, in
 -- reading order, and which photographs are no letter at all. It is the only

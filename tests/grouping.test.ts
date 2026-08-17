@@ -33,12 +33,14 @@ const pile = {
       photos: [1, 3],
       label: "City of Yarra, rates notice",
       reason: "same letterhead and the instalment table continues across them",
+      text: "City of Yarra rates notice. Instalment of $612.40 due.",
     },
     {
       photos: [2, 5],
       label: "RACV Insurance, policy renewal",
       reason:
         "same policy number on both sheets, marked page 1 of 2 and 2 of 2",
+      text: "RACV Insurance renewal, policy POL 55219.",
     },
   ],
   not_letters: [
@@ -88,12 +90,25 @@ describe("a chaotic pile", () => {
 
   it("allows one photograph to sit in two letters", () => {
     // Two letters lying side by side, caught in one frame. Chaos is honoured,
-    // not corrected.
+    // not corrected: each letter keeps its own transcription, and how the
+    // shared photograph's words were apportioned is the reading's judgement.
     const shared = {
       ...pile,
       letters: [pile.letters[0], { ...pile.letters[1], photos: [2, 5, 1] }],
     };
-    expect(safeParseGroupingResult(shared, 5).success).toBe(true);
+    const result = safeParseGroupingResult(shared, 5);
+    expect(result.success).toBe(true);
+    expect(result.data!.letters.map((l) => l.text)).toHaveLength(2);
+  });
+
+  it("allows a letter it can recognise but not read", () => {
+    // Blurry: the manifest still names it, its text is empty, and the field
+    // extraction downstream will fail it as unreadable. That path's honest end.
+    const blurry = {
+      ...pile,
+      letters: [{ ...pile.letters[0], text: "" }, pile.letters[1]],
+    };
+    expect(safeParseGroupingResult(blurry, 5).success).toBe(true);
   });
 
   it("carries every letter's name and account", () => {

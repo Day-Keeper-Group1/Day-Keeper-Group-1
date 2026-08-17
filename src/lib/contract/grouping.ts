@@ -71,6 +71,23 @@ export const letterManifestSchema = z.object({
    * is, and the only thing anyone can read when it turns out wrong.
    */
   reason: nonBlank,
+  /**
+   * The letter's words, transcribed by the reading, in reading order. This is
+   * what the per-letter field extraction works from, so the photographs are
+   * looked at once and once only.
+   *
+   * Per LETTER, not per page, and the difference carries the shared-photo
+   * case: when one photograph catches two letters lying side by side, each
+   * letter's entry gets its own words, and how that photograph's words are
+   * apportioned between them is the reading's judgement, like the division
+   * itself. Per-page text would hand one letter's reader the other letter's
+   * words mixed in.
+   *
+   * May be empty: a letter the reading can recognise but not make out. The
+   * field extraction then fails it as unreadable, which is that path's
+   * honest end.
+   */
+  text: z.string(),
 });
 
 export type LetterManifest = z.infer<typeof letterManifestSchema>;
