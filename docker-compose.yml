@@ -1,7 +1,7 @@
-# Local development database.
+# Local development database and file storage.
 #
-#   docker compose up -d      start Postgres (and Adminer on :8080)
-#   npm run db:reset          build the schema and seed it
+#   docker compose up -d      start Postgres and MinIO (plus their two viewers)
+#   npm run db:reset          build the schema, seed it, empty the bucket
 #   docker compose down       stop
 #   docker compose down -v    stop and throw the data away
 #
@@ -37,8 +37,44 @@ services:
       timeout: 5s
       retries: 20
 
+  # Where the photographs live.
+  #
+  # The database holds a path; the bytes are objects in here. MinIO speaks the
+  # S3 protocol, so the code written against it is the same code that runs
+  # against AWS S3, Cloudflare R2 or Supabase Storage later: only the endpoint
+  # and the credentials move, and both are environment variables. Reading and
+  # writing files on the server's own disk instead would be a second way of
+  # doing storage that has to be unwritten before anything is deployed, and it
+  # would be unwritten by whoever is deploying, which is the worst moment.
+  #
+  # See docs/architecture/adr-003-data-storage.md.
+  storage:
+    image: minio/minio:latest
+    container_name: daykeeper-storage
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: daykeeper
+      MINIO_ROOT_PASSWORD: daykeeper_local_dev
+    ports:
+      # 59000 and 59001 rather than 9000 and 9001, for the same reason the
+      # database is not on 5432: those two are popular and a collision on the
+      # first morning reads like the project is broken.
+      - "59000:9000"
+      - "59001:9001"
+    volumes:
+      - daykeeper_storage:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
   # A database viewer on http://localhost:8080, so nobody has to install a
   # client to look at the tables. Server: db, user/password/database: daykeeper.
+  #
+  # MinIO brings its own viewer on http://localhost:59001, same credentials,
+  # which is where to look when a photograph is meant to have been stored.
   adminer:
     image: adminer:5
     container_name: daykeeper-adminer
@@ -51,3 +87,4 @@ services:
 
 volumes:
   daykeeper_pgdata:
+  daykeeper_storage:

@@ -22,9 +22,10 @@ it. The schema will change several times a week for the next fortnight.
 3. **Local development runs Postgres in Docker**, started by
    `docker compose up -d`. Nothing about the schema is specific to any host: the
    same file runs on Supabase, on RDS, or on a laptop.
-4. **Uploaded photographs never go in the database.** The tables hold a path;
-   the bytes live behind a storage interface, which is local disk today and an
-   object store later.
+4. **Uploaded photographs never go in the database.** The tables hold a key; the
+   bytes are objects in a bucket, reached only through `src/server/storage.ts`.
+5. **That bucket is S3-protocol from the first day**, which locally means the
+   MinIO in `docker-compose.yml` and later means whatever the host provides.
 
 ## Why
 
@@ -41,7 +42,7 @@ this stops being safe**, and the first migration tool arrives before the first
 real user does. `db/reset.ts` refuses to run against a non-local database
 without an explicit override, so nobody discovers this the hard way.
 
-**No ORM.** The schema is ten tables. The interesting part of this backend is
+**No ORM.** The schema is fourteen tables. The interesting part of this backend is
 the queries, and a teammate reading one should see exactly what reaches the
 database. An ORM would add a second schema definition to keep in step with the
 first, and a layer of generated SQL to debug through. `pg` with bound parameters
@@ -51,6 +52,23 @@ is enough, and nothing here is a string built by concatenation.
 no credentials to hand out, works offline, and no risk of a teammate running
 `db:reset` against something shared. The port is 55432 rather than 5432 so it
 cannot collide with a Postgres somebody already runs for another unit.
+
+**A bucket from the start rather than the server's disk.** Writing files to
+disk during development and swapping in a bucket before deployment sounds like
+the smaller step, and it is not. It is two implementations of storage, and the
+second one gets written at the worst possible moment: during deployment, by
+whoever is deploying, against code that by then has grown its own file-handling
+habits in several places. Most hosts that run a Next.js app also throw the disk
+away between deployments, so the disk version cannot even survive to be
+migrated.
+
+MinIO speaks the S3 protocol, so the code written against it today is the code
+that runs against AWS S3, Cloudflare R2 or Supabase Storage later; the endpoint
+and the credentials are environment variables, and nothing else moves. It is
+one more service in a compose file that a teammate already runs, with its own
+web viewer on 59001 next to the database viewer on 8080. The cost is a docker
+service; what it buys is that the migration everybody worries about has already
+been rehearsed.
 
 ## Shape decisions worth naming
 
@@ -80,9 +98,26 @@ cannot collide with a Postgres somebody already runs for another unit.
 ## Consequences
 
 - `npm run db:reset` destroys local data. That is the point, and the seed puts
-  a complete world back in one second.
+  a complete world back in one second. It empties the bucket in the same breath,
+  because rows and objects going out of step is how "it works on my machine"
+  starts.
 - Deployment still has to choose a host. Nothing here forecloses that: it is
-  ordinary Postgres.
-- Object storage is not wired up. It belongs behind an interface at
-  `src/server/storage.ts`, handing out URLs through a route that checks
-  ownership, so that swapping local disk for a bucket changes no caller.
+  ordinary Postgres and an ordinary S3 bucket.
+- Every teammate now runs one more container. `docker compose up -d` starts it
+  with the rest, and `npm run db:reset` says plainly when it is not there.
+- A signed link is signed for one address. While everything runs on a laptop
+  there is only one; the day the app itself runs in a container there are two,
+  and `STORAGE_PUBLIC_ENDPOINT` is the seam that already exists for it.
+- Reading and writing bytes belongs in `src/server/storage.ts` and nowhere else.
+  A route that hands out a link is still where ownership gets checked: a signed
+  URL expires, but it does not ask who is holding it.
+
+## Revisions
+
+**18 August 2026.** Points 4 and 5 replace an earlier plan to write uploads to
+the server's local disk and move to object storage "later". The reasoning is
+under "A bucket from the start" above. The short version is that the later
+migration would have landed in the middle of deployment week on whoever was
+deploying, and that a rehearsed migration is worth more than a deferred one.
+Local disk is not a smaller version of this; it is a different implementation
+that would have to be removed.

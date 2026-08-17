@@ -215,7 +215,12 @@ export type DocumentDetail = DocumentSummary & {
 export type DocumentPageView = {
   id: string;
   pageNumber: number;
-  /** Time-limited URL for the image. Absent until storage is wired up. */
+  /**
+   * Where to load the image from: `/api/documents/{id}/pages/{n}`, which checks
+   * who is asking and then redirects to a link storage has signed. It is this
+   * path rather than the signed link itself so that a payload sitting in a
+   * cache cannot go stale.
+   */
   url?: string;
 };
 

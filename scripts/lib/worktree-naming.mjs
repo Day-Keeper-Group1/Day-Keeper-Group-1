@@ -1,5 +1,6 @@
 // @ts-check
-// Derive a worktree's database name and dev port from its branch name.
+// Derive a worktree's database name, storage bucket and dev port from its
+// branch name.
 //
 // Deterministic on purpose: the same branch always maps to the same database
 // and the same port, so nothing needs a registry and two runs cannot disagree.
@@ -43,11 +44,19 @@ export function deriveWorktreeNames(branch) {
   // genuinely free one from here.
   const preferredPort = 3001 + (parseInt(hash.slice(0, 4), 16) % 99);
 
+  // A bucket per worktree, for the reason there is a database per worktree:
+  // `db:reset` empties storage too, and one shared bucket would mean one agent
+  // deleting another's uploads. Bucket names cannot hold underscores, so the
+  // same slug is spelled with hyphens; the 63-character limit is the same as
+  // Postgres's, so the cap above already covers it.
+  const bucketName = `daykeeper-wt-${slug.replace(/_/g, "-")}-${hash}`;
+
   return {
     branch: trimmed,
     slug,
     hash,
     dbName: `daykeeper_wt_${slug}_${hash}`,
+    bucketName,
     preferredPort,
   };
 }

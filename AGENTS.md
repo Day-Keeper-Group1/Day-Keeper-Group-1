@@ -15,9 +15,9 @@ DayKeeper (Group 1): an AI-powered life management system for people in vulnerab
 - `docs/prototype/admin/daykeeper-admin-sketch.html`: wireframe of the admin dashboard (desktop). Static, no interaction. Keep the two prototypes separate: different device, different person, different module.
 - `.agents/skills/daykeeper-jira/`: how this team's Jira board actually works, as a skill. Codex loads it when a ticket, the board or a sprint comes up; it needs the Atlassian MCP server, which `.codex/config.toml` already defines and the README explains how to authenticate. Optional: nothing in the build depends on it.
 - `db/schema.sql`: the database, and its only definition. No migrations: edit it and run `npm run db:reset`.
-- `docs/schema-map.html`: the same ten tables as a picture, with a letter's five steps along the top and a badge on each table saying which step writes it. Open it in a browser when you want to see the shape; read `db/schema.sql` when you need the truth.
+- `docs/schema-map.html`: the same fourteen tables as a picture, with a letter's five steps along the top and a badge on each table saying which step writes it. Open it in a browser when you want to see the shape; read `db/schema.sql` when you need the truth.
 - `src/lib/contract/`: the six-field extraction contract and the grouping manifest (how a pile of photographs becomes letters), in TypeScript, with validators. Import these types; do not restate them.
-- `src/server/`: server-only code. `db.ts` for queries, `extraction/` for the reader interface and its mock. `src/lib` is safe anywhere; `src/server` never reaches the browser.
+- `src/server/`: server-only code. `db.ts` for queries, `storage.ts` for the photographs themselves (an S3 bucket, MinIO locally), `extraction/` for the reader interface and its mock. `src/lib` is safe anywhere; `src/server` never reaches the browser.
 - `src/app/`: the interface. The pages still read from `src/lib/mock-data.ts`; wiring them to real endpoints is the work.
 
 ## Conventions
@@ -47,8 +47,8 @@ The short version, so you know when to go and read it:
 ```bash
 npm ci                    # installs exactly what package-lock.json says; never rewrites it
 cp .env.example .env.local
-docker compose up -d      # Postgres on 55432; a database viewer on 8080
-npm run db:reset          # rebuild the schema from db/schema.sql, then seed
+docker compose up -d      # Postgres on 55432, MinIO on 59000; viewers on 8080 and 59001
+npm run db:reset          # rebuild the schema from db/schema.sql, seed it, empty the bucket
 npm run dev               # http://localhost:3000
 npm test                  # the contract tests
 npm run typecheck
@@ -73,7 +73,7 @@ Two rules that are easy to break by accident:
 
 ## Worktrees: parallel agents without collisions
 
-One shared docker stack serves every checkout. Each worktree owns its own **database** (inside the one Postgres) and its own **dev port**, both derived deterministically from its branch name, so any number of agents can build, seed, reset and serve side by side without touching each other. `db:reset` in a worktree nukes only that worktree's database.
+One shared docker stack serves every checkout. Each worktree owns its own **database** (inside the one Postgres), its own **bucket** (inside the one MinIO) and its own **dev port**, all derived deterministically from its branch name, so any number of agents can build, seed, reset and serve side by side without touching each other. `db:reset` in a worktree nukes only that worktree's database and bucket.
 
 ### Dispatching parallel worktrees (you are in the main checkout)
 
@@ -87,9 +87,9 @@ When asked to parallelise work across worktrees:
 ### Working in a worktree (you woke up inside one)
 
 ```bash
-npm run worktree:setup   # derives this worktree's database + port, writes .env.local, creates the DB
+npm run worktree:setup   # derives this worktree's database + bucket + port, writes .env.local, creates the DB
 npm ci                   # once per worktree
-npm run db:reset         # schema + seed, into THIS worktree's database
+npm run db:reset         # schema + seed + bucket, all THIS worktree's own
 npm run dev              # serves on the port setup printed (it is in .env.local)
 ```
 
@@ -99,7 +99,7 @@ The main checkout keeps the shared defaults (database `daykeeper`, port 3000); `
 
 | what you see | what it usually is | the fix |
 |---|---|---|
-| `ECONNREFUSED` / timeout at the database | docker is down, or `.env.local` was never written | `docker compose up -d`, then `npm run worktree:setup` |
+| `ECONNREFUSED` / timeout at the database or at storage | docker is down, or `.env.local` was never written | `docker compose up -d`, then `npm run worktree:setup` |
 | `EADDRINUSE` | a stale process on this worktree's own port | `npm run dev` clears its own port first; just rerun it |
 | `Cannot find module ...` | dependencies not installed here | `npm ci` |
 

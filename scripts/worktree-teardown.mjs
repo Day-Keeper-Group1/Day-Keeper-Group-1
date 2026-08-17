@@ -1,10 +1,11 @@
 // @ts-check
 // worktree-teardown: retire this worktree's isolated resources.
 //
-// Drops this worktree's OWN database and clears its OWN port, and nothing
-// else. The safety valve is structural: it refuses any database whose name
-// does not start with `daykeeper_wt_`, so it is incapable of touching the
-// shared main database no matter how it is invoked.
+// Drops this worktree's OWN database and bucket and clears its OWN port, and
+// nothing else. The safety valve is structural: it refuses any database whose
+// name does not start with `daykeeper_wt_` and any bucket that is not
+// `daykeeper-wt-*`, so it is incapable of touching the shared main database or
+// the shared main bucket no matter how it is invoked.
 //
 // Removing the worktree directory itself has to happen from another checkout
 // (git will not remove the tree you are standing in); the closing message
@@ -66,6 +67,7 @@ function main() {
   const envLocalPath = join(worktreeRoot, ".env.local");
   const url = readEnvField(envLocalPath, "DATABASE_URL") ?? "";
   const dbName = url.split("/").pop() ?? "";
+  const bucket = readEnvField(envLocalPath, "STORAGE_BUCKET") ?? "";
   const port = Number(readEnvField(envLocalPath, "PORT"));
 
   // The safety valve. Everything below it may only ever see a wt_ database.
@@ -107,6 +109,46 @@ function main() {
       `could not drop ${dbName} (is the daykeeper-db container running?)`,
       "docker compose up -d, then rerun; or drop it in Adminer",
     );
+  }
+
+  // 3. The bucket. Uses the storage container's own client, so this script
+  //    keeps its zero-dependency property and works before `npm ci`. A missing
+  //    bucket is the normal case for a worktree that never ran db:reset, and
+  //    losing storage is not a reason to leave the database behind, so this
+  //    reports rather than dies.
+  if (!bucket.startsWith("daykeeper-wt-")) {
+    console.log(
+      `  bucket: skipped (STORAGE_BUCKET is "${bucket || "(unset)"}", not a daykeeper-wt-* bucket)`,
+    );
+  } else {
+    try {
+      execFileSync(
+        "docker",
+        [
+          "exec",
+          "daykeeper-storage",
+          "mc",
+          "alias",
+          "set",
+          "dk",
+          "http://localhost:9000",
+          "daykeeper",
+          "daykeeper_local_dev",
+        ],
+        { stdio: "ignore", timeout: 15_000 },
+      );
+      execFileSync(
+        "docker",
+        ["exec", "daykeeper-storage", "mc", "rb", "--force", `dk/${bucket}`],
+        { stdio: "ignore", timeout: 15_000 },
+      );
+      console.log(`  bucket ${bucket}: removed`);
+    } catch {
+      console.log(
+        `  bucket ${bucket}: could not remove it (storage container not running, or it never existed).` +
+          `\n    if it is still there later: http://localhost:59001`,
+      );
+    }
   }
 
   console.log(`

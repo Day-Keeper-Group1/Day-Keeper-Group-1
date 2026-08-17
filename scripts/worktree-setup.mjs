@@ -179,8 +179,13 @@ function main() {
     `postgres://daykeeper:daykeeper_local_dev@localhost:55432/${names.dbName}`,
   );
   setField("PORT", String(port));
+  // Its own bucket as well as its own database: `db:reset` empties storage, and
+  // a shared bucket would make one worktree's reset delete another's uploads.
+  // Nothing needs to create it here; `npm run db:reset` does that.
+  setField("STORAGE_BUCKET", names.bucketName);
   writeFileSync(envLocalPath, content);
   console.log(`  database  ${names.dbName}`);
+  console.log(`  bucket    ${names.bucketName}`);
   console.log(`  port      ${port}`);
 
   // 5. Create the database if it does not exist yet.
@@ -196,10 +201,11 @@ function main() {
   }
 
   console.log(`
-Ready. This worktree is fully isolated: its own database, its own port.
+Ready. This worktree is fully isolated: its own database, its own bucket, its
+own port.
 
   npm ci             # once per worktree
-  npm run db:reset   # schema + seed, into THIS worktree's database
+  npm run db:reset   # schema + seed + bucket, all THIS worktree's own
   npm run dev        # http://localhost:${port}
 
 When the work here is merged or abandoned: npm run worktree:teardown

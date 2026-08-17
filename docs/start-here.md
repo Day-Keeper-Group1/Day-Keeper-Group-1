@@ -6,8 +6,10 @@ What this branch gives you, and what is yours to build.
 
 Three things, and deliberately only three:
 
-1. **A database** everyone can run in one command, with a schema that is already
-   settled and seed data covering every state the interface has to draw.
+1. **A database and a bucket** everyone can run in one command: a schema that is
+   already settled, seed data covering every state the interface has to draw,
+   and somewhere for the photographs themselves to live that behaves like the
+   real thing because it speaks the same protocol.
 2. **The contract**: the six fields, in TypeScript, with a validator. This is the
    agreement between whoever reads a document and whoever turns it into a task,
    and it is the one thing that has to be settled before two people can work in
@@ -26,9 +28,9 @@ You need Node 20.17 or newer, npm 11 or newer, and Docker Desktop.
 ```bash
 npm ci                    # exactly what package-lock.json says
 cp .env.example .env.local
-docker compose up -d      # Postgres on 55432, a database viewer on 8080
+docker compose up -d      # Postgres on 55432, MinIO on 59000, viewers on 8080 and 59001
 docker compose ps         # wait until db says "healthy", usually a few seconds
-npm run db:reset          # build the schema, then seed it
+npm run db:reset          # build the schema, seed it, make the bucket
 npm test                  # the contract tests
 ```
 
@@ -38,6 +40,11 @@ use `copy .env.example .env.local`.
 The database viewer is at http://localhost:8080. Server `db`, user, password and
 database are all `daykeeper`. That is the quickest way to see what the seed put
 in the tables.
+
+The storage viewer is at http://localhost:59001, user and password `daykeeper`
+and `daykeeper_local_dev`. Photographs land in the `daykeeper` bucket, and this
+is where to look when you want to know whether an upload really stored
+anything.
 
 ### If something goes wrong
 
@@ -52,7 +59,12 @@ passes. Wait for `docker compose ps` to show `healthy` and run it again.
 **Port 8080 is already in use.** Something else on your machine has it; it is a
 popular port. Change the left-hand number under `adminer` in
 `docker-compose.yml` to something free, for example `8081:8080`. Postgres is on
-55432 rather than 5432 for the same reason, so that one rarely collides.
+55432 rather than 5432 for the same reason, and storage on 59000 and 59001
+rather than 9000 and 9001, so those rarely collide.
+
+**`npm run db:reset` says it cannot reach storage.** The MinIO container is not
+running. `docker compose up -d` starts it along with everything else; it is the
+service called `storage`.
 
 ### What the seed gives you
 
@@ -77,21 +89,22 @@ also plants a **development session** for Margaret and prints its cookie
 browser and `requireUser()` knows who you are. It only ever exists in a local
 database; the seed refuses to run anywhere else.
 
-The seeded pages have no image bytes on disk: those rows describe photographs
-that were never taken.
+The seeded pages have no image bytes behind them: those rows describe
+photographs that were never taken, so the bucket starts empty.
 
 ## Commands
 
 | | |
 |---|---|
-| `npm run db:reset` | rebuild the schema from `db/schema.sql`, then seed |
+| `npm run db:reset` | rebuild the schema from `db/schema.sql`, seed it, empty the bucket |
 | `npm run db:seed` | reseed without touching the schema |
+| `npm run storage:reset` | make the bucket exist and empty it, without touching the database |
 | `npm test` | the contract tests |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run dev` | the application |
 | `npm run lint` | eslint |
 | `npm run format` | prettier over the whole repository |
-| `npm run worktree:setup` | give a fresh git worktree its own database and port |
+| `npm run worktree:setup` | give a fresh git worktree its own database, bucket and port |
 | `npm run worktree:teardown` | retire them again (safe: refuses to touch the main DB) |
 | `docker compose down` | stop the database |
 | `docker compose down -v` | stop it and throw the data away |
@@ -147,6 +160,7 @@ src/lib/contract/         the agreement. Import from here, do not restate it.
 src/server/               server only (password.ts and token.ts excepted: the
                           seed and the tests need them, and they are pure)
   db.ts                     query, queryOne, transaction
+  storage.ts                the photographs themselves: put, signed link, delete
   env.ts                    environment variables, checked once
   auth/password.ts          hashing and verifying passwords
   auth/token.ts             making and hashing session tokens
@@ -175,6 +189,13 @@ declaring a type that looks like one of those, import it instead.
 `transaction`, and it already fixes a trap: by default the driver turns a `date`
 column into a timestamp in the local zone, which can move a due date to the day
 before. For a product about deadlines that is the worst available bug.
+
+**Photographs go through `src/server/storage.ts`, never through the file
+system.** It stores an object, hands out a time-limited link and deletes. The
+bytes are in a bucket, which is MinIO on your machine and a real bucket
+wherever this ends up deployed, and both speak the same protocol so nothing has
+to change. A handler that writes a file to disk works locally and loses every
+photograph the first time the app is redeployed.
 
 **Start every protected handler with `requireUser()`.** It answers who is
 asking from the session cookie, in one place, or throws an

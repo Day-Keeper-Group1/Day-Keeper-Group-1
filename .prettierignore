@@ -5,6 +5,11 @@
 # files whose whole value is that a person shaped them deliberately.
 docs/prototype/
 
+# The schema map is the same kind of artefact: one hand-built HTML file whose
+# layout carries meaning. Prettier reflows it into six hundred changed lines
+# and breaks the shapes tests/schema-map.test.ts reads it by.
+docs/schema-map.html
+
 # Documentation is hand-wrapped prose; a reflow is churn, not a fix.
 *.md
 

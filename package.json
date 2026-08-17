@@ -14,9 +14,10 @@
     "worktree:setup": "node scripts/worktree-setup.mjs",
     "worktree:teardown": "node scripts/worktree-teardown.mjs",
     "typecheck": "next typegen && tsc --noEmit",
-    "db:reset": "tsx db/reset.ts && tsx db/seed.ts",
+    "db:reset": "tsx db/reset.ts && tsx db/seed.ts && tsx scripts/storage-reset.ts",
     "db:schema": "tsx db/reset.ts",
     "db:seed": "tsx db/seed.ts",
+    "storage:reset": "tsx scripts/storage-reset.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "format": "prettier --write . --log-level warn",
@@ -33,6 +34,8 @@
     ]
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1111.0",
+    "@aws-sdk/s3-request-presigner": "^3.1111.0",
     "@base-ui/react": "^1.7.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

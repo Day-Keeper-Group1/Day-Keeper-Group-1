@@ -364,9 +364,15 @@ and its photograph exactly where they are. "Nothing is destroyed" would be an
 odd promise to make while quietly removing things from someone's calendar.
 
 ### `GET /api/documents/:id/pages/:page`
-The image itself. `:page` is the page number as the person counts it, from 1,
-within the current attempt. Ownership is checked here because local storage
-cannot sign URLs. Answers `404` for someone else's page.
+The image. `:page` is the page number as the person counts it, from 1, within
+the current attempt. Answers `404` for someone else's page.
+
+This is where ownership is checked, and then it redirects to a time-limited
+link that storage signs, so the bytes go straight from the bucket to the
+browser and never through the application. The check lives here rather than in
+the link because a signed link expires but never asks who is holding it. Pages
+travel in a payload as this path and not as a signed link, so that nothing in a
+response goes stale while it sits in a cache.
 
 `pageCount`, everywhere it appears, counts the current attempt only. Counting
 every row in `document_pages` reports "4 pages" for a two-page letter that was
@@ -561,9 +567,6 @@ And the rest:
 - **settings**: profile, notifications, password change, delete account, and
   exposing the timezone the schema already stores
 - **rate limiting on sign-in**, before anything is public
-- **object storage**, and therefore signed URLs. The tech-stack note proposes
-  the layout `documents/{user_id}/{document_id}/page-{n}.{ext}`; with attempts
-  in the schema it grows an attempt segment
 - **the extraction runner.** Upload answers before the reading happens, and
   *something* has to perform it: in-process after responding, a sweep over the
   `extraction_runs_status_idx` index, or a real queue. The schema supports all

@@ -25,6 +25,43 @@ const envSchema = z.object({
     ),
 
   /**
+   * Where the photographs live: an S3-compatible endpoint. Locally that is the
+   * MinIO in docker-compose.yml; deployed it is whatever bucket the host
+   * provides. The protocol is the same either way, which is the whole point of
+   * choosing one now rather than writing to the server's disk and rewriting it
+   * later. See docs/architecture/adr-003-data-storage.md.
+   */
+  STORAGE_ENDPOINT: z
+    .string()
+    .min(
+      1,
+      "STORAGE_ENDPOINT is not set. Copy .env.example to .env.local, then run: docker compose up -d",
+    )
+    .refine((v) => /^https?:\/\//.test(v), "STORAGE_ENDPOINT must be a URL"),
+
+  /**
+   * The address the BROWSER uses to reach the same storage.
+   *
+   * A signed URL is signed for one host, so the host the browser calls has to
+   * be the host we signed. On a laptop both are localhost and this can be left
+   * alone. They part company the moment the app itself runs in a container,
+   * where the server says `http://storage:9000` and the browser must still say
+   * `http://localhost:59000`; a signed URL made with the wrong one comes back
+   * as an access error that looks like a permissions bug and is not.
+   */
+  STORAGE_PUBLIC_ENDPOINT: z.string().optional(),
+
+  /** The bucket. One bucket holds everything; the key prefix separates people. */
+  STORAGE_BUCKET: z.string().min(1).default("daykeeper"),
+
+  STORAGE_ACCESS_KEY: z
+    .string()
+    .min(1, "STORAGE_ACCESS_KEY is not set. See .env.example."),
+  STORAGE_SECRET_KEY: z
+    .string()
+    .min(1, "STORAGE_SECRET_KEY is not set. See .env.example."),
+
+  /**
    * Which extraction provider to use.
    *
    * 'mock' is the default and needs no credentials, so the whole product runs
@@ -68,4 +105,9 @@ export function env(): Env {
 /** True when running against the local Docker database rather than anything shared. */
 export function isLocalDatabase(): boolean {
   return /localhost|127\.0\.0\.1/.test(env().DATABASE_URL);
+}
+
+/** The endpoint to sign browser-facing URLs with. See STORAGE_PUBLIC_ENDPOINT. */
+export function publicStorageEndpoint(): string {
+  return env().STORAGE_PUBLIC_ENDPOINT || env().STORAGE_ENDPOINT;
 }
