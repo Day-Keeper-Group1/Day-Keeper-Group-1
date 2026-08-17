@@ -26,6 +26,36 @@ import { APP_TIME_ZONE, addDays, zonedTimeToInstant } from "./dates";
 /** The local wall-clock hour reminders go out. "9 am" is product copy. */
 export const REMINDER_HOUR_LOCAL = 9;
 
+/**
+ * That hour as the product says it out loud: "9 am".
+ *
+ * Derived rather than typed, because the review screen's plan card repeats this
+ * string on every row and the day sheet repeats it again. `formatDueTime()`
+ * would give "9:00 am", which is right for an appointment printed on a letter
+ * and wrong for a phrase a person reads five times a week.
+ */
+export const REMINDER_TIME_SPOKEN = `${REMINDER_HOUR_LOCAL % 12 || 12} ${
+  REMINDER_HOUR_LOCAL < 12 ? "am" : "pm"
+}`;
+
+/**
+ * The three lines the review screen's "What DayKeeper will do" card shows.
+ *
+ * They live here, beside the rule they describe, for the same reason the rule
+ * itself does: the card is a promise, and a promise written in one file and
+ * kept in another drifts. The first is one row per planned reminder; exactly
+ * one of the other two closes the card, chosen by whether the document names a
+ * time of day.
+ *
+ * The wording is the product prototype's, verbatim.
+ */
+export const PLAN_LINES = {
+  reminder: (date: string) => `Remind you: ${date}, ${REMINDER_TIME_SPOKEN}`,
+  deadline: (date: string) => `On your calendar: due ${date}`,
+  appointment: (date: string, time: string) =>
+    `On your calendar: ${date}, ${time}`,
+} as const;
+
 /** Days before the due date, for something you act on by a date. */
 export const DEADLINE_REMINDER_OFFSET_DAYS = [7, 1] as const;
 
@@ -46,32 +76,44 @@ export type PlannedReminder = {
 /**
  * Plan the reminders for a due date.
  *
- * Pure: same input, same answer, no clock. Reminders whose date has already
- * passed are still returned; whether to create them as 'sent', skip them, or
- * schedule them anyway is the caller's business (the seed marks them sent, a
- * confirm handler should simply not create them).
+ * Pure: same input, same answer, no clock of its own. `today` is passed in
+ * rather than read, so the same call can be replayed and tested.
+ *
+ * **Both product callers must pass the same `today`.** The review screen shows
+ * this list to a person as a promise and the confirm handler turns it into
+ * rows, and a bill photographed three days before it is due plans a reminder
+ * for last week. If the screen kept that row and the handler dropped it, the
+ * card would promise a reminder that never arrives, which is the exact failure
+ * this module exists to prevent. Passing the day makes both answers the same
+ * list rather than the same function.
+ *
+ * Omitting `today` returns every offset, past ones included. That is for the
+ * seed, which is building a world that already happened and marks those rows
+ * `sent`.
  */
 export function planReminders(
   dueDate: string,
-  options: { hasTime: boolean; timeZone?: string },
+  options: { hasTime: boolean; timeZone?: string; today?: string },
 ): PlannedReminder[] {
   const timeZone = options.timeZone ?? APP_TIME_ZONE;
   const offsets = options.hasTime
     ? APPOINTMENT_REMINDER_OFFSET_DAYS
     : DEADLINE_REMINDER_OFFSET_DAYS;
 
-  return offsets.map((offsetDays) => {
-    const localDate = addDays(dueDate, -offsetDays);
-    return {
-      offsetDays,
-      localDate,
-      localTime: `${String(REMINDER_HOUR_LOCAL).padStart(2, "0")}:00`,
-      scheduledFor: zonedTimeToInstant(
+  return offsets
+    .map((offsetDays) => {
+      const localDate = addDays(dueDate, -offsetDays);
+      return {
+        offsetDays,
         localDate,
-        REMINDER_HOUR_LOCAL,
-        0,
-        timeZone,
-      ),
-    };
-  });
+        localTime: `${String(REMINDER_HOUR_LOCAL).padStart(2, "0")}:00`,
+        scheduledFor: zonedTimeToInstant(
+          localDate,
+          REMINDER_HOUR_LOCAL,
+          0,
+          timeZone,
+        ),
+      };
+    })
+    .filter((r) => options.today === undefined || r.localDate >= options.today);
 }

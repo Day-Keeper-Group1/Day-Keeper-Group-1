@@ -111,6 +111,22 @@ export const KNOWN_FIELD_KEYS = [
 export const NO_PAYMENT_REQUIRED = "No payment required";
 
 /**
+ * The one value that means "this document does not have such a thing".
+ *
+ * Six fields are a floor, so an appointment letter that prints no reference
+ * number still has to report `reference`. Without this it would have to say
+ * `unreadable`, which flags the field, draws the amber box, and asks a person
+ * to type in a number that does not exist, before refusing to confirm until
+ * they acknowledge it. "There is nothing to read" and "I could not read it"
+ * are different answers and only one of them is this letter's.
+ *
+ * A field carrying this value has status `confirmed`, not `unreadable`, and a
+ * screen may hide its row the same way it may hide a NO_PAYMENT_REQUIRED
+ * amount. Hiding a row never means dropping the data.
+ */
+export const NOT_APPLICABLE = "Not applicable";
+
+/**
  * The sentence shown under a flagged field, resolved from status the way
  * FIELD_LABELS is resolved from key, so every surface says it identically.
  * The `uncertain` wording is the prototype's, verbatim.

@@ -17,9 +17,13 @@ returns one of these needs no translation on the way to the screen.
 This specification was written after building the whole thing once as a spike
 and throwing it away, then checked line by line against the product prototype
 (`docs/prototype/user/daykeeper-sketch-live.html`), which is the UX authority.
+Where the two disagree, the prototype is right and this document changes.
+
 Where this document says "default decision", the rule was chosen to unblock
 building and is explicitly open to challenge in review; the default stands
-until someone argues it down.
+until someone argues it down. Where it says **open**, nobody has decided and
+guessing would mean building the wrong thing twice; those are collected at the
+end so they can be worked through rather than discovered one at a time.
 
 ## How to talk to it
 
@@ -85,13 +89,23 @@ signed in: that is a normal state, not an error.
 
 `issuer` and `documentType` are null until a reading has succeeded: a document
 that is still processing, or that failed, has not told anyone who it is from.
-The interface labels those rows from `uploadedAt` and `pageCount`. A failed
-document carries `failure`, so a list can draw the right affordance without
-fetching the detail of every failed row.
+A failed document carries `failure`, so a list can draw the right affordance
+without fetching the detail of every failed row.
+
+**A row with no issuer still needs a name**, and the server writes it, not the
+client: `DocumentSummary.label` is always present and is `` `${issuer} · ${documentType}` ``
+once a reading has succeeded, and `` `Photo taken ${time} · ${n} page(s)` ``
+before then, built from `uploadedAt` in the user's zone. Resolving it in one
+place is the same rule as `FIELD_LABELS` and `FAILURE_MESSAGES`: two screens
+show this string and they must not word it differently. The prototype's queue
+rows read "AGL Energy · Electricity bill" in every state including
+`reading…`, which no real document can do, because its fixture is a reading
+that has already finished standing in for one that has not.
 
 ### `POST /api/documents`
 `multipart/form-data`, one or more files under **`pages`**, in the order they
-were photographed. → `201 { id, status: "processing" }`.
+were photographed. → `201 DocumentSummary` (status `processing`), so the row
+can draw itself, label and page count included, without a second request.
 
 Images and PDF, up to `MAX_PAGE_BYTES` each, at most `MAX_PAGES` pages: import
 both limits from `src/lib/contract/api.ts` so the capture screen can stop the
@@ -99,9 +113,15 @@ person at page ten rather than rejecting ten deliberate photographs at the end.
 The upload is all-or-nothing; an over-limit request answers `invalid_request`
 with `fields.pages` saying which page and why.
 
-Returns as soon as the files are stored; the reading happens afterwards. The
-interface polls `GET /api/documents/:id` until `status` is no longer
-`processing`.
+Returns as soon as the files are stored; the reading happens afterwards.
+
+**Polling is one request, not one per document.** While anything of this
+person's is still being read, the interface polls `GET /api/home` every five
+seconds and stops when `counts.processing` reaches zero. The capture screen's
+"Posted just now" card and the home screen's "To check" card are the same list
+(`HomePayload.inbox`) drawn twice, which is why one poll refreshes both, and
+why neither can show a different answer from the other. A `failed` row never
+changes on its own, so it is not a reason to keep polling.
 
 Validate on the server, not only in the file input: the `accept` attribute is a
 hint to the person choosing a file, not a constraint on what arrives.
@@ -112,15 +132,51 @@ hint to the person choosing a file, not a constraint on what arrives.
 `fields` is empty while status is `processing`, and for a document that has
 never been read successfully. Otherwise it holds the most recent successful
 reading, in reading order, with a person's correction taking precedence over
-what the model said. Each carries `rawText`: the snippet on the page the value
-came from.
+what the model said.
+
+`value` and `rawText` are null for exactly one case, a field the reader could
+not read at all; `""` would mean the model read an empty string, which is a
+different fact. `value` is display text, already formatted server-side, so
+`due_date` arrives as `15 Aug 2026` rather than ISO. The screen shows what it
+is given. The one place ISO travels is the confirm request coming back.
+
+**`rawText` is carried and stored, and the prototype does not display it.**
+Saying this plainly matters more than tidying it away, because three documents
+in this repository assert the opposite: `AGENTS.md` says never drop it from the
+review screen and that without it confirming is a rubber stamp, ADR 004 shows
+a row reading "Found on document: 15/08/26", and the sentence above hands it to
+a screen that has nowhere to put it. The prototype's flagged row asks "This was
+hard to read. Is it right?" and shows the person nothing to check the value
+against, which is a weaker promise than the one the other documents make.
+
+The prototype is the authority, so the resolution is not a quiet edit here.
+**Open, and it is the largest one in this document**: whether the review screen
+grows a source snippet under each value, or the page image beside it, or
+neither, is a product decision. The data is kept either way, so deciding late
+costs nothing but deciding by accident costs the product's central claim.
+
+The screen's header is `` `${issuer} · ${documentType}` ``, from those two
+fields verbatim. The prototype's shorter headings ("Medicare" over a letter
+whose From is "Services Australia") are sketch labels with no field behind
+them, the same honest limitation as its hand-written task titles below.
 
 All six fields are always present in `fields`; how many become rows on screen
-is presentation. Two defaults, open to review: `document_type` belongs in the
-screen's header rather than the field list (the prototype titles the review
-screen with it), and an `amount` whose value is `NO_PAYMENT_REQUIRED` (import
-the constant from `src/lib/contract/fields.ts`, never retype the string) may be
-hidden rather than shown as a row. Hiding a row never means dropping the data.
+is presentation. Three defaults, open to review:
+
+- **`document_type` belongs in the header, not the field list.** The prototype
+  titles the review screen with it.
+- **A field carrying a "nothing to report" constant may be hidden** rather than
+  shown as a row: `NO_PAYMENT_REQUIRED` for an `amount`, `NOT_APPLICABLE` for
+  anything else. Import both from `src/lib/contract/fields.ts` and never retype
+  the strings. Hiding a row never means dropping the data.
+- **`due_date` and `due_time` collapse into one row when both are present**,
+  labelled `When` and written in the `short` style with the time appended:
+  `Fri 4 Sep, 10:30 am`. An appointment happens at a moment, and splitting that
+  moment across two rows makes a person assemble it themselves. A deadline,
+  which has no time, keeps the plain `Due date` row in the `fact` style
+  (`15 Aug 2026`). This is the one row on the screen that is two fields, so if
+  it is ever flagged it is edited as two boxes, one per key, and each key
+  travels separately in the confirm request.
 
 ### `POST /api/documents/:id/confirm`
 Body: `ConfirmDocumentRequest`. → `200 { documentId, task: TaskSummary }`.
@@ -135,15 +191,31 @@ use to measure how often the reader is wrong are quietly destroyed from day
 one, with no error anywhere. Corrections are the accuracy data.
 
 `acknowledged` lists the keys of every flagged field (status `uncertain` or
-`unreadable`) the person saw and accepted without editing. A flagged field that
-appears in neither `fields` nor `acknowledged` answers `409`: the screen
-promises "never from a date you haven't checked", and this is what makes that
-promise checkable rather than decorative.
+`unreadable`) the person accepted without editing. It lands in
+`extracted_fields.acknowledged_at`, beside the correction column and without
+touching `status`: flipping `uncertain` to `confirmed` would erase the fact
+that the model was ever unsure, which is the same evidence corrections exist to
+preserve. A flagged field in neither `fields` nor `acknowledged` answers `409`.
+
+**Be honest about what that proves.** The review screen has one button for the
+whole letter, so the client computes this array as "flagged, minus edited" and
+the server could have worked that out alone. It is a record of what the person
+was shown and accepted, not proof that they read it, and the `409` catches a
+malformed client rather than an inattentive person. Whether a flagged row needs
+its own control, which would turn the record into evidence, is a product
+question for the prototype and not something this document can decide.
+**Open.**
 
 A `due_date` value must be `'YYYY-MM-DD'`. The review screen's date box is free
 text, so parse what the person typed with `parseHumanDate()` (day-first,
 Australian) before sending; a value the server cannot read answers
 `invalid_request` with `fields.due_date`.
+
+**Where the three errors this endpoint can return appear on screen**, since the
+prototype's confirm button navigates unconditionally and has nowhere to put
+one: `invalid_request` with `fields.due_date` renders under that field's box,
+where the wrong value still is. Both `409`s render as a line above the button.
+A `message` is written to be shown as-is, so no screen needs to invent wording.
 
 Default decisions, open to review:
 
@@ -154,53 +226,94 @@ Default decisions, open to review:
 - **The task's title is `` `${action_required} (${issuer})` ``**, mechanical
   and predictable. The prototype's hand-written titles ("Pay AGL electricity
   bill") cannot be derived from the six fields; a nicer rule is a product
-  conversation, not an implementation detail.
+  conversation, not an implementation detail. Because the rule above lets both
+  halves be empty, and `tasks.title` is NOT NULL, it falls back in order:
+  `action_required (issuer)`, then `action_required`, then
+  `Letter from ${issuer}`, then `documentType`, then `Letter`. Nobody should
+  ever meet a task called `()`.
+- **A letter that names no date becomes a task with no due date**, no
+  reminders, and no calendar mark. `planReminders()` is not called at all: it
+  takes a date and throws without one. The plan card says so in place of the
+  reminder rows, rather than showing an empty card under the heading "What
+  DayKeeper will do".
 
 Confirming is the moment a document becomes a task with reminders, all in one
 transaction. The scheduling rule lives in `src/lib/contract/reminders.ts` and
 nowhere else: a deadline gets reminders 7 days and 1 day before at 9 am local,
-an appointment (anything with a `due_time`) gets one, the day before. The
-confirm handler must call `planReminders()` rather than restating those
-numbers, because the review screen shows the same plan to the person before
-they agree, computed by the same function. Confirming twice answers `409`.
+an appointment (anything with a `due_time`) gets one, the day before. Both the
+review screen and this handler call `planReminders()`, **and both pass the same
+`today`**, so a bill photographed three days before it is due shows one
+reminder on the card and creates one row. Passing the day is what makes them
+the same answer; sharing the function alone would not. The card's wording comes
+from `PLAN_LINES` in that same file for the same reason. Confirming twice
+answers `409`.
 
 ### `POST /api/documents/:id/retry`
 Empty body. → `202 { id, status: "processing" }`.
 
-Re-reads the pages already on file as a new attempt. Answers `409` unless the
-document's status is `failed`. This is the action behind the failed row's
-button when the failure does not need a new photograph: the prototype's retake
-control does exactly this, and a transient failure that exhausted its automatic
-retries lands here too.
+Re-reads the pages already on file as a new attempt: a new `extraction_runs`
+row, no new `document_pages` rows. Answers `409` unless the document's status
+is `failed`. Manual attempts do not spend `MAX_ATTEMPTS`, which bounds only the
+automatic retries; a person who wants to try again gets to, and a button that
+silently does nothing because a counter ran out is worse than one that fails
+again visibly.
 
 ### `POST /api/documents/:id/retake`
 `multipart/form-data`, same shape as upload. → `202 { id, status: "processing" }`.
 
-A fresh set of photographs for the same document: the new pages are stored as a
-new attempt and read again. The document keeps its id, and previous attempts,
-including their images, stay in the history (`document_pages` is keyed by
-attempt for exactly this reason; "replace" never means "destroy the evidence").
-This is the way out when `failure.canRetake` is true, which means the
-photograph was the problem.
+A fresh set of photographs for the same document. The new pages are stored
+carrying the number of the run they are about to trigger, and read again. The
+document keeps its id, and previous attempts, including their images, stay in
+the history: "replace" never means "destroy the evidence a failed reading was
+judged against".
 
-Which button a failed row shows: `canRetake` true → retake (a new photo can
-fix it); `canRetake` false and kind `transient` → retry; kind
-`unsupported_document` → neither, say plainly that DayKeeper cannot read this
-kind of document. `FAILURE_MESSAGES` in the contract has the person-facing
-wording for all three.
+The capture screen reaches this by being handed a document id, which puts it in
+a second mode: it says which letter is being re-photographed, and backing out
+returns to the failed row without changing anything. That mode is not drawn in
+the prototype. **Open**, and small.
+
+**Which control a failed row shows.** The kind decides, and the three cases are
+different actions, not three labels for one:
+
+| kind | control | why |
+|---|---|---|
+| `unreadable_image` | **Take it again** → `/retake` | a new photograph is the only thing that can change the answer |
+| `transient` | **Try again** → `/retry` | the pages are fine; the automatic attempts are spent |
+| `unsupported_document` | **Put it away** → `DELETE /api/documents/:id` | DayKeeper will never read this, and a row with no control at all sits in the person's queue forever |
+
+`FAILURE_MESSAGES` in the contract has the person-facing wording for all three.
+The prototype draws one control on a failed row, labelled `retake`, because its
+mock only ever fails one way; the other two rows are states it does not depict.
 
 ### `DELETE /api/documents/:id`
-Archives it. Nothing is destroyed; it stays readable.
+Archives it. Nothing is destroyed; it stays readable, and `confirmed_at`
+survives, so the record that a person once checked this letter is not erased by
+putting it away. An archived document leaves `inbox`, which is how a dead-end
+failure finally clears the queue.
+
+Archiving a confirmed letter leaves its task, its reminders, its calendar dots
+and its photograph exactly where they are. "Nothing is destroyed" would be an
+odd promise to make while quietly removing things from someone's calendar.
 
 ### `GET /api/documents/:id/pages/:page`
-The image itself, from the current (highest) attempt. Ownership is checked here
-because local storage cannot sign URLs. Answers `404` for someone else's page.
+The image itself. `:page` is the page number as the person counts it, from 1,
+within the current attempt. Ownership is checked here because local storage
+cannot sign URLs. Answers `404` for someone else's page.
+
+`pageCount`, everywhere it appears, counts the current attempt only. Counting
+every row in `document_pages` reports "4 pages" for a two-page letter that was
+retaken once, and then offers two images that do not exist.
 
 ## Tasks
 
 ### `GET /api/tasks`
 → `TaskSummary[]`, excluding dismissed ones, by due date ascending with dateless
-tasks last.
+tasks last. **Uncapped, and it has to stay uncapped**, because the calendar is
+drawn from it and a capped list draws a month whose dots stop partway through
+with no error anywhere. Do not serve the calendar from `HomePayload.tasks`,
+which is capped; the two would then disagree on screen, which is the exact
+failure `GET /api/home` exists to prevent. A date-range parameter is the
+obvious answer once an archive is large enough for this to hurt. **Open.**
 
 `status` is `upcoming`, `overdue` or `completed`, computed from the due date at
 read time rather than stored, **in the user's timezone**: something due today
@@ -208,14 +321,34 @@ is not overdue until today, where the person lives, is over. Use
 `deriveTaskStatus()`; the UTC comparison it replaced kept a Melbourne task
 "upcoming" until ten the next morning.
 
+A task with no `dueDate` shows `No date` where the date goes. It draws no
+calendar mark and has no reminders.
+
+`dismissed` is set by nothing this semester. The state exists because a person
+will eventually want a task off their list without ticking it off as done, and
+adding an enum value later is not free; the filter here is what makes adding
+the action later a one-line change. No endpoint produces it today.
+
 Every summary carries its `reminders`, cancelled ones included with their
 status saying so. This is what the calendar draws.
+
+**Order.** The prototype puts a just-confirmed task at the top of the list,
+above things due sooner, because its sketch appends to the front. Due date
+ascending is the decision: a list about deadlines that is not ordered by
+deadline is a list you have to read all of.
 
 ### `GET /api/tasks/:id`
 → `TaskDetail`: the summary plus the extracted fields of the letter it came
 from, and `pageCount`. This is the calendar day-sheet's endpoint: tapping an
 entry shows the letter's fields and offers the photograph, three weeks after
-confirming. The same `rawText` rule as documents applies to `fields`.
+confirming.
+
+`fields` follows the same rules as `GET /api/documents/:id`, with one
+difference: the day sheet has no header, so `document_type` is simply omitted
+rather than moved into one. Rows carrying `NO_PAYMENT_REQUIRED` or
+`NOT_APPLICABLE` are hidden here too. This screen is read by someone checking
+what a letter said, and a row reading "Amount: No payment required" is noise
+for exactly the readers least able to absorb it.
 
 ### `POST /api/tasks/:id/complete`
 → `200 TaskSummary`. Cancels any reminders still waiting, in the same
@@ -223,7 +356,13 @@ transaction: being nagged about something already done is the anxiety this
 product exists to remove.
 
 ### `DELETE /api/tasks/:id/complete`
-Undo. Ticking something off by accident should not need an apology.
+→ `200 TaskSummary`. Undo. Ticking something off by accident should not need an
+apology.
+
+Reminders cancelled by completing return to `scheduled`, **except those whose
+`scheduledFor` has already passed**, which stay `cancelled`. Reviving a
+reminder into the past would fire a nag about a deadline that has been and gone
+the moment anything starts dispatching them.
 
 ## The home screen
 
@@ -231,27 +370,54 @@ Undo. Ticking something off by accident should not need an apology.
 → `HomePayload`. One request rather than three so the counts and the lists
 cannot disagree with each other on screen.
 
-- `counts`: `{ needsReview, processing, failed }`. The call-to-action needs the
-  first two separately (a queue that is all still reading says "Reading your
-  letters…", an empty one says "Nothing to check"); the nav badge shows
-  `needsReview` alone.
+- `counts`: `{ needsReview, processing, failed }`. The call to action is an
+  ordered test on the first two, in this order: `needsReview > 0` says "N things
+  need your OK", otherwise `processing > 0` says "Reading your letters…",
+  otherwise the panel goes inert and says "Nothing to check right now".
+  `failed` does not enter it. Order matters and the obvious paraphrase gets it
+  wrong: "a queue that is *all* still reading" would say "Nothing to check"
+  while a letter is visibly being read in the card below it. The nav badge
+  shows `needsReview` alone.
 - `inbox`: every document not yet dealt with, status `processing`,
   `needs-review` or `failed`, one merged list, newest upload first, not capped.
   The prototype renders these interleaved in a single card, so the server
   sends the one list they are rather than three lists the client must weave.
   The card is shown when `inbox` is non-empty, which is not the same test as
-  the counts: a queue holding only failures still shows the card.
-- `tasks`: the same content and order as `GET /api/tasks`, capped at 20
-  (default decision; the prototype's list is uncapped, which does not survive
-  contact with a real archive).
+  the counts: a queue holding only failures still shows the card. The capture
+  screen's "Posted just now" card is this same list.
+- `tasks`: **open tasks due today or later, by due date ascending, plus
+  anything completed in the last seven days**, capped at 20. The cap is a
+  default decision; which twenty is not a free choice. Plain "the first twenty
+  of `GET /api/tasks`" means the twenty earliest due dates the account has ever
+  had, so after a few months a card headed "Coming up" is twenty struck-through
+  rows from last March. The seven-day tail is why a row does not vanish from
+  under the finger that just ticked it.
 
 ## The calendar
 
 There is no calendar endpoint, on purpose. The calendar is drawn from
-`GET /api/tasks`: an amber dot on each task's `dueDate`, a grey dot on each
-reminder's `localDate`. `ReminderView.localDate` is the server-computed
-calendar day in the user's zone precisely so the client never turns an instant
-back into a day and gets it wrong by one.
+`GET /api/tasks`: a red dot (`--dot-due`) on each task's `dueDate`, a gold dot
+(`--dot-rem`) on each reminder's `localDate`. Gold appears in exactly two
+places in this product and this is one of them; see `docs/theme.md`.
+`ReminderView.localDate` is the server-computed calendar day in the user's zone
+precisely so the client never turns an instant back into a day and gets it
+wrong by one, and `localTime` is computed there with it so the day sheet's
+"a reminder goes out this morning, 9 am" is data rather than copy.
+
+**Every reminder that exists gets a dot, whatever its status**, including ones
+already sent and ones cancelled when the task was ticked off. A dot is a record
+of what this day held, not a forecast. The day sheet says which: the prototype's
+present-tense sentence when the reminder is still `scheduled`, and a past or
+cancelled wording otherwise, so that a completed task's day sheet does not
+announce a reminder the system has already called off.
+
+A reminder whose day has already gone by is never planned and never created, so
+it has no dot. That is why the plan card and the calendar always agree: the
+person is shown the reminders that will happen, agrees to those, and sees dots
+for exactly those. Seeded data is the one exception, and deliberately so: it is
+building a world that already happened, so it plants past reminders already
+marked `sent`, and those do get dots. A dot for a reminder that has been sent is
+correct. A dot for one that was never going to arrive would not be.
 
 **The invariant that makes the calendar trustworthy: only confirmed documents
 contribute.** A document in `processing`, `needs-review` or `failed` produces
@@ -259,10 +425,44 @@ no task, no reminder and no mark. Nothing reaches the calendar without a
 person having seen it. This is the product's central safety promise, not an
 implementation detail.
 
+`archived` is not a fourth unconfirmed state: a letter that was confirmed and
+later put away keeps its task and its marks, because a person confirmed it and
+that has not stopped being true.
+
 ## Deliberately not specified
 
 Not oversights. Each needs a decision nobody has made yet, and guessing now
-would mean building the wrong thing twice:
+would mean building the wrong thing twice.
+
+Four of these belong to the capture screen and to failures, and they are listed
+first because they are the ones a person meets soonest:
+
+- **how the camera is actually held open.** The screen says "the camera stays
+  open, keep going", and shots accumulate without leaving it. An
+  `<input type="file" capture>` cannot do that: on both iOS and Android it
+  closes the camera and returns to the page after every single shot. A live
+  stream captured to blobs can. The caution about the `accept` attribute below
+  describes the fallback path, not this one, and somebody has to choose and
+  then say so on the screen
+- **which page was the bad one.** A five-page letter that fails says only "The
+  photo was too blurry to read. Please take it again." Which one, and retake
+  takes all five back. A page number on the failure and a per-page retake would
+  fix both halves. This is not the blur-check question below: it stays broken
+  even once the blur check exists
+- **what the capture screen does at the limits.** `MAX_PAGES` is 10 and
+  `MAX_PAGE_BYTES` is 10 MB, and a current phone camera clears that per frame
+  routinely. Whether the client downscales to fit or refuses the photograph,
+  and what the screen says at page ten, is undecided. Refusing silently loses a
+  photograph the person deliberately took, which is the failure the limits are
+  exported to prevent
+- **what an overdue task looks like.** `deriveTaskStatus()` returns `overdue`
+  and no screen in the prototype draws it, while the prototype's own seed
+  contains one. Red is the obvious guess and the wrong one: `--danger` already
+  means a failed reading here, and colour is never the only signal in this
+  product. Wording in the date column ("was due Wed 5 Aug") is the cheaper
+  answer
+
+And the rest:
 
 - **password reset** needs an email sender, and no service has been chosen
 - **the admin endpoints** need the operator's permissions settled first; the

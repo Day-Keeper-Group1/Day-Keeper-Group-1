@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DayKeeper &middot; what the database holds</title>
+<style>
+  /* ============================================================
+     Eucalypt & Wattle, the team's theme.
+
+     These values are a COPY. They live in src/app/globals.css.
+     This file repeats the few it needs because it has to open
+     standalone with no build step, the same reason the product
+     prototype repeats them. tests/theme.test.ts checks that every
+     token named here still matches globals.css, so this copy
+     cannot drift in silence.
+     ============================================================ */
+  :root {
+    --bg: #f4f0e4;
+    --bg-card: #fbf8f0;
+    --ink: #1c1a15;
+    --ink-dim: #454b41;
+    --line: #8a8265;
+    --primary: #17452c;
+    --primary-ink: #f7f4ea;
+    --primary-soft: #d9e5d5;
+    --warn-ink: #4a3b20;
+    --warn-bg: #f0e6cd;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    padding: 28px 20px 40px;
+  }
+
+  header { max-width: 1360px; margin: 0 auto 8px; }
+  h1 { font-size: 24px; letter-spacing: -0.2px; margin-bottom: 6px; }
+  .lede { font-size: 15px; color: var(--ink-dim); max-width: 900px; line-height: 1.5; }
+
+  /* The canvas. Fixed pixel geometry, because the arrows are drawn
+     against these exact coordinates. */
+  .canvas {
+    position: relative;
+    width: 1360px;
+    height: 1040px;
+    margin: 22px auto 0;
+  }
+
+  svg.wires { position: absolute; inset: 0; width: 1360px; height: 1040px; }
+  svg.wires text { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
+
+  /* ---------- the journey strip ---------- */
+  .journey {
+    position: absolute; left: 0; top: 36px; width: 1360px; height: 74px;
+    display: flex; gap: 10px;
+  }
+  .step {
+    flex: 1; background: var(--primary); color: var(--primary-ink);
+    border-radius: 8px; padding: 9px 12px;
+  }
+  .step.reads { background: var(--bg-card); color: var(--ink); border: 2px solid var(--line); }
+  .step .n { font-size: 12px; font-weight: 700; opacity: .8; }
+  .step .t { font-size: 14.5px; font-weight: 700; margin-top: 1px; }
+  .step .e { font-size: 11.5px; margin-top: 3px; font-family: ui-monospace, 'Cascadia Code', Consolas, monospace; opacity: .9; }
+
+  /* ---------- a table ---------- */
+  .tbl {
+    position: absolute; width: 260px;
+    background: var(--bg-card);
+    border: 2px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .tbl > h2 {
+    height: 36px; background: var(--primary); color: var(--primary-ink);
+    font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+    font-size: 14px; font-weight: 700;
+    display: flex; align-items: center; gap: 6px; padding: 0 10px;
+  }
+  .tbl > h2 .badges { margin-left: auto; display: flex; gap: 3px; }
+  .tbl > h2 b {
+    background: var(--primary-ink); color: var(--primary);
+    width: 17px; height: 17px; border-radius: 50%;
+    font-size: 11px; display: flex; align-items: center; justify-content: center;
+  }
+  .tbl ul { list-style: none; padding: 8px 0; }
+  .tbl li {
+    height: 22px; line-height: 22px; padding: 0 10px;
+    font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+    font-size: 12px; white-space: nowrap;
+  }
+  .tbl li .fk { color: var(--ink-dim); font-size: 11px; }
+  .tbl li.key { font-weight: 700; }
+  .tbl li.star { background: var(--warn-bg); color: var(--warn-ink); font-weight: 700; }
+
+  /* Supporting cast: present, but not on the path a letter travels. */
+  .tbl.aside { opacity: .58; }
+  .tbl.aside > h2 { background: var(--line); }
+  .tbl.aside > h2 b { color: var(--line); }
+
+  .note {
+    position: absolute; width: 260px; font-size: 12px; line-height: 1.4;
+    color: var(--ink-dim); padding: 6px 2px 0;
+  }
+
+  footer { max-width: 1360px; margin: 26px auto 0; font-size: 13px; color: var(--ink-dim); line-height: 1.6; }
+  footer code { font-family: ui-monospace, 'Cascadia Code', Consolas, monospace; font-size: 12px; }
+  .legend { display: flex; gap: 22px; flex-wrap: wrap; margin-bottom: 10px; align-items: center; }
+  .legend span { display: flex; align-items: center; gap: 7px; }
+  .swatch { display: inline-block; width: 15px; height: 15px; border-radius: 3px; border: 2px solid var(--line); }
+  .swatch.hi { background: var(--warn-bg); }
+  .swatch.dim { background: var(--line); border-color: var(--line); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>DayKeeper: what the database holds, and when each part of it is written</h1>
+  <p class="lede">
+    Ten tables. The five steps along the top are one letter's whole life, from the photograph
+    to the reminder being switched off. Each table's badge says which of those steps writes it.
+    Step four writes nothing at all: the calendar is drawn entirely from rows that are already there.
+    The definition this drawing follows is <code>db/schema.sql</code>, which is the only definition there is.
+  </p>
+</header>
+
+<div class="canvas">
+
+  <svg class="wires" viewBox="0 0 1360 1010" aria-hidden="true">
+    <defs>
+      <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#8a8265"/>
+      </marker>
+    </defs>
+    <g fill="none" stroke="#8a8265" stroke-width="2" marker-end="url(#a)">
+      <path d="M 310 280 L 372 280"/>
+      <path d="M 180 396 L 180 512"/>
+      <path d="M 640 300 L 702 300"/>
+      <path d="M 510 462 L 510 512"/>
+      <path d="M 840 418 L 840 512"/>
+      <path d="M 1170 440 L 1170 512"/>
+      <path d="M 640 214 L 660 214 Q 672 214 672 202 L 672 168 Q 672 156 684 156 L 1158 156 Q 1170 156 1170 168 L 1170 182"/>
+    </g>
+    <text x="915" y="148" font-size="12.5" fill="#454b41" text-anchor="middle">a task remembers the letter it came from</text>
+  </svg>
+
+  <!-- ---------- the journey ---------- -->
+  <div class="journey">
+    <div class="step">
+      <div class="n">STEP 1</div>
+      <div class="t">Photograph and upload</div>
+      <div class="e">POST /api/documents</div>
+    </div>
+    <div class="step">
+      <div class="n">STEP 2</div>
+      <div class="t">The reading</div>
+      <div class="e">GET /api/documents/:id &nbsp;(polled)</div>
+    </div>
+    <div class="step">
+      <div class="n">STEP 3</div>
+      <div class="t">Check and confirm</div>
+      <div class="e">POST /api/documents/:id/confirm</div>
+    </div>
+    <div class="step reads">
+      <div class="n">STEP 4 &nbsp;&middot;&nbsp; READS ONLY</div>
+      <div class="t">The calendar</div>
+      <div class="e">GET /api/tasks</div>
+    </div>
+    <div class="step">
+      <div class="n">STEP 5</div>
+      <div class="t">Ticking it off</div>
+      <div class="e">POST /api/tasks/:id/complete</div>
+    </div>
+  </div>
+
+  <!-- ---------- column A ---------- -->
+  <div class="tbl" style="left:50px; top:190px; height:206px">
+    <h2>users</h2>
+    <ul>
+      <li class="key">id</li>
+      <li>email</li>
+      <li>display_name</li>
+      <li>password_hash</li>
+      <li>role</li>
+      <li class="star">timezone</li>
+      <li>deactivated_at</li>
+    </ul>
+  </div>
+  <div class="note" style="left:50px; top:400px">
+    The timezone is why &ldquo;9 am&rdquo; means anything. Every date in this
+    system is a calendar day in somebody's zone, never a bare timestamp.
+  </div>
+
+  <div class="tbl aside" style="left:50px; top:520px; height:140px">
+    <h2>sessions</h2>
+    <ul>
+      <li class="key">id</li>
+      <li>user_id <span class="fk">&rarr; users</span></li>
+      <li>token_hash</li>
+      <li>expires_at</li>
+    </ul>
+  </div>
+  <div class="note" style="left:50px; top:664px">
+    A session is a row, not a signed cookie, so signing out ends it
+    everywhere and a leaked database hands over no live sessions.
+  </div>
+
+  <!-- ---------- column B ---------- -->
+  <div class="tbl" style="left:380px; top:190px; height:272px">
+    <h2>documents<span class="badges"><b>1</b><b>3</b></span></h2>
+    <ul>
+      <li class="key">id</li>
+      <li>user_id <span class="fk">&rarr; users</span></li>
+      <li class="star">status</li>
+      <li>issuer</li>
+      <li>document_type</li>
+      <li>due_date</li>
+      <li>due_time</li>
+      <li>amount_text</li>
+      <li>reference</li>
+      <li>confirmed_at</li>
+    </ul>
+  </div>
+  <div class="note" style="left:380px; top:466px; width:220px">
+    One letter, whatever its page count.
+  </div>
+
+  <div class="tbl" style="left:380px; top:520px; height:162px">
+    <h2>document_pages<span class="badges"><b>1</b></span></h2>
+    <ul>
+      <li class="key">id</li>
+      <li>document_id <span class="fk">&rarr; documents</span></li>
+      <li class="star">attempt</li>
+      <li>page_number</li>
+      <li>storage_path</li>
+    </ul>
+  </div>
+  <div class="note" style="left:380px; top:686px">
+    One photographed sheet. Retaking a letter adds a new attempt rather than
+    overwriting the old photographs, because the failed reading was judged
+    against those.
+  </div>
+
+  <!-- ---------- column C ---------- -->
+  <div class="tbl" style="left:710px; top:190px; height:228px">
+    <h2>extraction_runs<span class="badges"><b>2</b></span></h2>
+    <ul>
+      <li class="key">id</li>
+      <li>document_id <span class="fk">&rarr; documents</span></li>
+      <li class="star">attempt</li>
+      <li>status</li>
+      <li>provider</li>
+      <li>model</li>
+      <li>failure_kind</li>
+      <li>raw_response</li>
+    </ul>
+  </div>
+  <div class="note" style="left:710px; top:422px; width:240px">
+    One attempt at reading, failures included.
+  </div>
+
+  <div class="tbl" style="left:710px; top:520px; height:228px">
+    <h2>extracted_fields<span class="badges"><b>2</b><b>3</b></span></h2>
+    <ul>
+      <li class="key">id</li>
+      <li>extraction_run_id</li>
+      <li>field_key</li>
+      <li class="star">extracted_value</li>
+      <li>raw_text</li>
+      <li>status</li>
+      <li>confidence</li>
+      <li class="star">corrected_value</li>
+    </ul>
+  </div>
+  <div class="note" style="left:710px; top:752px">
+    Two columns, not one. What the model read stays; what the person typed
+    instead sits beside it. Overwriting would destroy the only evidence of how
+    often the reader is wrong.
+  </div>
+
+  <!-- ---------- column D ---------- -->
+  <div class="tbl" style="left:1040px; top:190px; height:250px">
+    <h2>tasks<span class="badges"><b>3</b><b>5</b></span></h2>
+    <ul>
+      <li class="key">id</li>
+      <li>user_id <span class="fk">&rarr; users</span></li>
+      <li class="star">document_id <span class="fk">&rarr; documents</span></li>
+      <li>title</li>
+      <li>issuer</li>
+      <li>due_date</li>
+      <li>due_time</li>
+      <li>state</li>
+      <li>completed_at</li>
+    </ul>
+  </div>
+  <div class="note" style="left:1040px; top:444px; width:250px">
+    Three weeks later, this link answers &ldquo;what said so?&rdquo;
+  </div>
+
+  <div class="tbl" style="left:1040px; top:520px; height:184px">
+    <h2>reminders<span class="badges"><b>3</b><b>5</b></span></h2>
+    <ul>
+      <li class="key">id</li>
+      <li>task_id <span class="fk">&rarr; tasks</span></li>
+      <li class="star">scheduled_for</li>
+      <li>channel</li>
+      <li>status</li>
+      <li>sent_at</li>
+    </ul>
+  </div>
+  <div class="note" style="left:1040px; top:708px">
+    Rows, not a rule evaluated when somebody looks. Each one can be sent,
+    cancelled the moment the task is ticked off, or fail to send, and a rule
+    cannot remember any of that.
+  </div>
+
+  <!-- ---------- the supporting cast ---------- -->
+  <div class="tbl aside" style="left:380px; top:850px; height:162px">
+    <h2>audit_logs</h2>
+    <ul>
+      <li>actor_id <span class="fk">&rarr; users</span></li>
+      <li>action</li>
+      <li>target_type</li>
+      <li>target_id</li>
+      <li>detail</li>
+    </ul>
+  </div>
+  <div class="note" style="left:650px; top:850px; width:250px">
+    The admin dashboard promises an operator never sees the contents of a
+    letter. This table is how that promise is kept and shown: it records who
+    did what to which record, and has nowhere to put the contents of anything.
+  </div>
+
+  <div class="tbl aside" style="left:940px; top:850px; height:162px">
+    <h2>ai_prompt_logs</h2>
+    <ul>
+      <li>extraction_run_id</li>
+      <li>provider</li>
+      <li>model</li>
+      <li>prompt</li>
+      <li>prompt_tokens</li>
+    </ul>
+  </div>
+  <div class="note" style="left:1210px; top:850px; width:150px">
+    Every prompt sent to a model, for the GenAI declaration and for repeating
+    an accuracy claim later.
+  </div>
+
+</div>
+
+<footer>
+  <div class="legend">
+    <span><i class="swatch hi"></i> the column the design turns on</span>
+    <span><i class="swatch dim"></i> supporting tables, off the path a letter travels</span>
+  </div>
+  Drawn from <code>db/schema.sql</code>. Endpoints are specified in <code>docs/api.md</code>; none of them
+  are built yet. The reasoning behind the shapes is in <code>docs/architecture/adr-003-data-storage.md</code>
+  and <code>docs/architecture/adr-004-extraction-contract.md</code>.
+</footer>
+
+</body>
+</html>

@@ -12,7 +12,9 @@ import { describe, expect, it } from "vitest";
 import {
   APPOINTMENT_REMINDER_OFFSET_DAYS,
   DEADLINE_REMINDER_OFFSET_DAYS,
+  PLAN_LINES,
   REMINDER_HOUR_LOCAL,
+  REMINDER_TIME_SPOKEN,
   planReminders,
 } from "@/lib/contract/reminders";
 
@@ -55,6 +57,58 @@ describe("the function itself", () => {
   it("refuses a date that is not a date", () => {
     expect(() => planReminders("15 Aug 2026", { hasTime: false })).toThrow(
       TypeError,
+    );
+  });
+});
+
+describe("a letter photographed close to its due date", () => {
+  // The failure this prevents: the review screen shows the person two
+  // reminders, they agree, and the handler creates one because the first was
+  // already in the past. Both callers pass the same `today`, so both get the
+  // same list and the card cannot promise what the calendar will not show.
+  it("plans only the reminders still ahead of the person", () => {
+    const plan = planReminders("2026-08-15", {
+      hasTime: false,
+      today: "2026-08-12",
+    });
+    expect(plan.map((p) => p.localDate)).toEqual(["2026-08-14"]);
+  });
+
+  it("keeps a reminder falling today", () => {
+    const plan = planReminders("2026-08-15", {
+      hasTime: false,
+      today: "2026-08-14",
+    });
+    expect(plan).toHaveLength(1);
+  });
+
+  it("plans nothing at all once every offset has gone by", () => {
+    expect(
+      planReminders("2026-08-15", { hasTime: false, today: "2026-08-15" }),
+    ).toEqual([]);
+  });
+
+  it("still returns the past ones when no day is given, for the seed", () => {
+    expect(planReminders("2026-08-15", { hasTime: false })).toHaveLength(2);
+  });
+});
+
+describe("what the plan card says", () => {
+  // These strings are the prototype's, verbatim, and they are the promise the
+  // person actually reads. Kept beside the rule so the two cannot drift.
+  it("speaks the hour the way a person does", () => {
+    expect(REMINDER_TIME_SPOKEN).toBe("9 am");
+  });
+
+  it("writes the three lines the prototype writes", () => {
+    expect(PLAN_LINES.reminder("Sat 8 Aug")).toBe(
+      "Remind you: Sat 8 Aug, 9 am",
+    );
+    expect(PLAN_LINES.deadline("Sat 15 Aug")).toBe(
+      "On your calendar: due Sat 15 Aug",
+    );
+    expect(PLAN_LINES.appointment("Fri 4 Sep", "10:30 am")).toBe(
+      "On your calendar: Fri 4 Sep, 10:30 am",
     );
   });
 });

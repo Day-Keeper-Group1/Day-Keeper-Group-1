@@ -151,8 +151,14 @@ CREATE TABLE documents (
   confirmed_at   timestamptz,
   archived_at    timestamptz,
   updated_at     timestamptz NOT NULL DEFAULT now(),
+  -- One-way implications, not equalities. A person can archive a letter they
+  -- already confirmed, and when they do, the status becomes 'archived' while
+  -- confirmed_at must survive: it is the record that a human checked this
+  -- letter, which is what the whole calendar's trustworthiness rests on.
+  -- Written as an equality these two constraints would make archiving a
+  -- confirmed document impossible without erasing that record.
   CONSTRAINT documents_confirmed_has_timestamp
-    CHECK ((status = 'confirmed') = (confirmed_at IS NOT NULL)),
+    CHECK (status <> 'confirmed' OR confirmed_at IS NOT NULL),
   CONSTRAINT documents_archived_has_timestamp
     CHECK ((status = 'archived') = (archived_at IS NOT NULL))
 );
@@ -170,6 +176,15 @@ CREATE INDEX documents_user_due_idx ON documents (user_id, due_date) WHERE due_d
 -- Without it, "replaces every page" would mean deleting the very image a
 -- failed reading was judged against. The current pages of a document are the
 -- rows with the highest attempt.
+--
+-- There is ONE attempt counter, and it belongs to extraction_runs. This column
+-- records which run these pages were photographed for, so a retry (which
+-- re-reads pages already on file) adds a run and no page rows, and a retake
+-- writes page rows carrying the number of the run it is about to trigger. The
+-- highest attempt in this table is therefore not always the highest run: after
+-- retry, retry, retake the pages jump from 1 to 4, and the gap is correct.
+-- Reading it the other way, as its own sequence, is how you end up unable to
+-- say which images a given reading actually saw.
 CREATE TABLE document_pages (
   id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   document_id   uuid NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
@@ -201,10 +216,17 @@ CREATE INDEX document_pages_document_idx ON document_pages (document_id, attempt
 CREATE TABLE extraction_runs (
   id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   document_id    uuid NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+  -- The canonical attempt counter for a document. document_pages.attempt
+  -- points at this number; it does not run in parallel with it.
   attempt        integer NOT NULL,
   status         extraction_status NOT NULL DEFAULT 'queued',
   provider       text NOT NULL,      -- 'mock', 'openai', 'bedrock', ...
   model          text,               -- the exact model id, for reproducible accuracy claims
+  -- The shape the payload was written in (CONTRACT_VERSION in
+  -- src/lib/contract/extraction.ts). Stored per run rather than assumed,
+  -- because the contract will change and a stored payload read back weeks
+  -- later has to say which set of rules it was written under.
+  contract_version text,
   failure_kind   extraction_failure,
   failure_detail text,
   -- Exactly what the provider returned, before we validated or reshaped it.
@@ -243,6 +265,15 @@ CREATE TABLE extracted_fields (
   confidence        numeric(4,3),  -- 0.000 to 1.000 when the provider reports one
   corrected_value   text,          -- what the person typed instead, if anything
   corrected_at      timestamptz,
+  -- When a person saw this field flagged and accepted it without changing it.
+  --
+  -- The review screen promises "never from a date you haven't checked", and
+  -- this column is where that promise stops being decorative: a flagged field
+  -- with neither a correction nor this timestamp was never looked at. The
+  -- obvious alternative, flipping `status` from 'uncertain' to 'confirmed',
+  -- would erase the fact that the model was ever unsure, which is the same
+  -- accuracy evidence corrected_value exists to protect.
+  acknowledged_at   timestamptz,
   CONSTRAINT extracted_fields_unique_key UNIQUE (extraction_run_id, field_key),
   CONSTRAINT extracted_fields_confidence_range
     CHECK (confidence IS NULL OR (confidence >= 0 AND confidence <= 1)),

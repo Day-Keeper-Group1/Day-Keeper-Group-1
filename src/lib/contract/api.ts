@@ -52,7 +52,11 @@ export type ExtractionFailureKind =
  * table is what `failure.message` is built from.
  */
 export const FAILURE_MESSAGES: Record<ExtractionFailureKind, string> = {
-  transient: "Something went wrong on our side. We're trying again.",
+  // A failure reaches a person only after the automatic attempts are spent, so
+  // this cannot say "we're trying again": at the one moment it is displayable,
+  // that sentence is already false and it sits beside a button asking the
+  // person to do the thing it claims is happening by itself.
+  transient: "Something went wrong on our side. Please try again.",
   unreadable_image: "The photo was too blurry to read. Please take it again.",
   unsupported_document: "DayKeeper can't read this kind of document yet.",
 };
@@ -86,6 +90,17 @@ export type DocumentSummary = {
   id: string;
   issuer: string | null;
   documentType: string | null;
+  /**
+   * What to call this row, always present, resolved on the server.
+   *
+   * `${issuer} · ${documentType}` once a reading has succeeded, and something
+   * built from `uploadedAt` and `pageCount` before then, because a document
+   * that has not been read has not told anyone who it is from. Resolved in one
+   * place for the same reason FIELD_LABELS and FAILURE_MESSAGES are: two
+   * screens draw this row and they must not word it differently. See
+   * docs/api.md on GET /api/documents.
+   */
+  label: string;
   status: DocumentStatus;
   /** 'YYYY-MM-DD'. Absent until a reading produced one. */
   dueDate?: string;
@@ -112,6 +127,16 @@ export type ReminderView = {
   scheduledFor: string;
   /** The day it lands on for calendar purposes, 'YYYY-MM-DD'. */
   localDate: string;
+  /**
+   * The wall clock it lands at in the user's zone, 'HH:mm'. Computed beside
+   * `localDate` for the same reason: the day sheet says "a reminder goes out
+   * this morning, 9 am", and the only other way to that string is turning
+   * `scheduledFor` back into a local time in the browser, which is the
+   * conversion `localDate` exists to keep out of the client. It is always
+   * 09:00 today; it is data rather than copy so that the day the hour becomes
+   * a setting, the sentence does not quietly start lying.
+   */
+  localTime: string;
   channel: "in_app" | "email";
   status: "scheduled" | "sent" | "cancelled" | "failed";
 };
@@ -141,9 +166,15 @@ export type TaskSummary = {
  * Served by GET /api/tasks/:id.
  */
 export type TaskDetail = TaskSummary & {
-  /** The task's letter. Required here: a day-sheet entry always has one. */
+  /**
+   * The task's letter. Required here, though `tasks.document_id` is nullable:
+   * confirming a document is the only thing that creates a task this semester,
+   * so every task has one. The column is nullable for the day someone adds a
+   * task by hand, and that day this type gains a second shape.
+   */
   documentId: string;
   fields: ExtractedFieldView[];
+  /** Pages in the current attempt only, not every page ever photographed. */
   pageCount: number;
 };
 
@@ -152,12 +183,20 @@ export type TaskDetail = TaskSummary & {
  *
  * `label` is presentation, resolved from the field key on the server so that
  * every surface spells "Reference" the same way.
+ *
+ * `value` and `rawText` are null for exactly one case: a field the reader could
+ * not read at all. The extraction contract enforces that pairing in the other
+ * direction too (status `unreadable` requires a null value), so these two types
+ * agree rather than needing a translation that invents `""`. An empty string
+ * would mean "the model read an empty string", which is a different fact from
+ * "the model could not read this", and the review screen draws a different row
+ * for each. The screen renders an empty input for a null.
  */
 export type ExtractedFieldView = {
   key: ContractFieldKey | string;
   label: string;
-  value: string;
-  rawText: string;
+  value: string | null;
+  rawText: string | null;
   status: FieldStatus;
 };
 

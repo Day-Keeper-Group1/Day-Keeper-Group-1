@@ -86,7 +86,16 @@ export interface DocumentExtractionProvider {
   extract(input: ExtractionInput): Promise<unknown>;
 }
 
-/** How many times a transient failure is retried before the document gives up. */
+/**
+ * How many attempts a document gets in total before it gives up, counting the
+ * first one. Three attempts is two automatic retries, not three.
+ *
+ * This budget is spent only by automatic retries. A person pressing "try again"
+ * or retaking the photograph starts the count over: they are deciding to spend
+ * their own patience, and a button that silently does nothing because a counter
+ * ran out is worse than one that fails again visibly. See docs/api.md on
+ * `/retry` and `/retake`.
+ */
 export const MAX_ATTEMPTS = 3;
 
 export type { ExtractionResult };
