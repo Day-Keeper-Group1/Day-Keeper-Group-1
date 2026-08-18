@@ -505,9 +505,11 @@ A batch that could not be divided answers `200` with `status: "failed"` and a
 the batch turned out to contain, each one a `DocumentSummary` at whatever stage
 of reading it has reached.
 
-Photographs the reading said were not letters appear in no document and nothing
-shows them; whether the batch should say a word about them is **open** (see the
-list at the end).
+Photographs the reading said were not letters appear in no document. The
+prototype answers what to say about them: one grey line on the queue, "1 photo
+wasn't a letter", with the reason and an OK to dismiss it, and the photographs
+themselves are not kept. One line however many there were: "one message, not
+one per letter" governs rejection too.
 
 A failed batch does not lose its photographs: they stay in the batch, and
 retrying re-reads them.
@@ -1303,7 +1305,7 @@ read from.** Three documents in this repository say it does and the prototype
 does not draw it, which makes it the one open question that touches what this
 product claims to be for rather than how a screen behaves.
 
-Five more belong to the capture screen and to failures, and they are listed
+Four more belong to the capture screen and to failures, and they are listed
 first because they are the ones a person meets soonest:
 
 - **how one row becomes several.** A batch is one row while it is being
@@ -1311,12 +1313,6 @@ first because they are the ones a person meets soonest:
   fades and is replaced, or the letters slide in beneath it, is a piece of
   motion nobody has designed, and it is the first thing a person sees after
   they press the button
-- **whether she is told that some photographs were not letters.** "I posted
-  ten and got two letters" is a real confusion; but a photograph that is not
-  a letter changes nothing she has to do, and the rule everywhere else is to
-  spend her attention only on that. One line on the batch row would answer
-  the confusion and cost a little noise; silence costs the confusion.
-  Somebody has to pick
 - **how the camera is actually held open.** The screen says "the camera stays
   open, keep going", and shots accumulate without leaving it. An
   `<input type="file" capture>` cannot do that: on both iOS and Android it
