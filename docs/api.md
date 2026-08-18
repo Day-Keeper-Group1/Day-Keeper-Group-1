@@ -336,6 +336,16 @@ Resolving the label in one place is the same rule as `FIELD_LABELS` and
 `FAILURE_MESSAGES`: two screens show this string and they must not word it
 differently.
 
+**This list is the door.** Archived letters are included, which is what makes
+"nothing is destroyed, it stays readable" a sentence with a screen behind it:
+the "Your letters" screen (a quiet line at the bottom of Home, not a fourth
+tab) draws this list grouped into month folders by due date, newest month
+first, dateless letters last, each row named by what the reading found. The
+folder view is the matching projection made visible; nothing is renamed in
+storage, the names are computed from the reading. Letters that never became a
+task (nothing actionable, or a document we apologised for) live here too,
+with their photographs. Grouping and order are default decisions.
+
 **No screen asks whether the dividing was right.** A merge shows itself as one
 letter whose fields contradict each other, and a split as two letters, one with
 half its fields unreadable. Both surface on the review screen the person is
@@ -830,6 +840,16 @@ retries; a person who wants to try again gets to, and a button that silently
 does nothing because a counter ran out is worse than one that fails again
 visibly.
 
+**The button is a compromise, and the record should say toward what.** By the
+time this face is on screen, three automatic retries have already failed
+silently, and the failure is ours, never hers (the wording leads with "it
+wasn't your photo" for exactly that reason). The ideal is that she never meets
+this button: the system keeps retrying in the background, or support retries
+from the operations console, or the provider is swapped over there when one is
+down, none of which she can be asked to know about. All of that is
+console-side work, deferred as beyond this semester's scope; the one tap is
+the honest floor until then.
+
 **There is no retake endpoint, on purpose.** A letter too blurry to read can
 only be fixed by a new photograph, and a new photograph arrives the way every
 photograph arrives: as an ordinary pile through `POST /api/documents`. A
@@ -1316,12 +1336,12 @@ And the rest:
   these documents have no task yet, so recording it needs a `notifications`
   table that arrives with the decision (batching window, channel, quiet hours).
   Under the no-migrations rule, adding it later is free
-- **a capture-time blur check.** The capture screen promises DayKeeper "asks
-  you to retake it straight away", which implies a synchronous quality gate
-  before the upload answers. The provider interface deliberately has one
-  method and no such gate. Either a second provider method arrives with a
-  model that can actually do it, or the on-screen promise softens to the
-  asynchronous reality; somebody has to pick
+- **a capture-time blur check.** The capture screen no longer promises one
+  (an earlier draft said DayKeeper "asks you to retake it straight away",
+  which implied a synchronous gate the architecture does not have; that
+  sentence is gone). What stays open is only whether a pre-check at capture
+  time is ever built: it would need a second provider method and a model that
+  can actually do it, and it arrives with that model or not at all
 - **the greeting.** "Good morning, Margaret" needs a preferred name
   (`display_name` holds "Margaret Whitfield") and a clock in her zone. The
   timezone column already exists; whether the greeting varies with the time of

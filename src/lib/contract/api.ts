@@ -55,9 +55,17 @@ export const FAILURE_MESSAGES: Record<ExtractionFailureKind, string> = {
   // this cannot say "we're trying again": at the one moment it is displayable,
   // that sentence is already false and it sits beside a button asking the
   // person to do the thing it claims is happening by itself.
-  transient: "Something went wrong on our side. Please try again.",
+  //
+  // The transient wording leads with "it wasn't your photo" because this
+  // product's reader tends to assume every error is her fault, and this is
+  // the one failure that genuinely is ours. The unsupported wording leads
+  // with an apology for the same reason: the honest content of that face is
+  // "we can't", and blame has no business anywhere near it.
+  transient:
+    "It wasn't your photo. Something went wrong on our side. Please try again.",
   unreadable_image: "The photo was too blurry to read. Please take it again.",
-  unsupported_document: "DayKeeper can't read this kind of document yet.",
+  unsupported_document:
+    "We're sorry. We can't read this kind of document. Your photos are kept safe.",
 };
 
 /**
