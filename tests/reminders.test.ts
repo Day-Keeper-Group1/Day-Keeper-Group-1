@@ -1,11 +1,11 @@
 /**
  * The reminder scheduling rule.
  *
- * The numbers asserted here are the product's promise as the prototype makes
- * it: a bill due Saturday 15 August promises reminders on Saturday the 8th and
- * Friday the 14th at 9 am, and an appointment promises exactly one, the day
- * before. If someone changes the rule deliberately, these tests are where the
- * old promise is looked in the eye first.
+ * The numbers asserted here are the product's promise: a bill due Saturday
+ * 15 August promises reminders on the 8th, the 12th and the 14th at 9 am
+ * (seven, three and one day before), and an appointment promises exactly one,
+ * the day before. If someone changes the rule deliberately, these tests are
+ * where the old promise is looked in the eye first.
  */
 
 import { describe, expect, it } from "vitest";
@@ -21,10 +21,14 @@ import {
 describe("a deadline", () => {
   const plan = planReminders("2026-08-15", { hasTime: false });
 
-  it("gets two reminders, seven days and one day before", () => {
-    expect(DEADLINE_REMINDER_OFFSET_DAYS).toEqual([7, 1]);
-    expect(plan.map((p) => p.offsetDays)).toEqual([7, 1]);
-    expect(plan.map((p) => p.localDate)).toEqual(["2026-08-08", "2026-08-14"]);
+  it("gets three reminders: seven, three and one day before", () => {
+    expect(DEADLINE_REMINDER_OFFSET_DAYS).toEqual([7, 3, 1]);
+    expect(plan.map((p) => p.offsetDays)).toEqual([7, 3, 1]);
+    expect(plan.map((p) => p.localDate)).toEqual([
+      "2026-08-08",
+      "2026-08-12",
+      "2026-08-14",
+    ]);
   });
 
   it("lands at 9 am on the person's clock", () => {
@@ -32,7 +36,8 @@ describe("a deadline", () => {
     expect(plan.every((p) => p.localTime === "09:00")).toBe(true);
     // 9 am AEST is 23:00 UTC the previous evening.
     expect(plan[0].scheduledFor.toISOString()).toBe("2026-08-07T23:00:00.000Z");
-    expect(plan[1].scheduledFor.toISOString()).toBe("2026-08-13T23:00:00.000Z");
+    expect(plan[1].scheduledFor.toISOString()).toBe("2026-08-11T23:00:00.000Z");
+    expect(plan[2].scheduledFor.toISOString()).toBe("2026-08-13T23:00:00.000Z");
   });
 });
 
@@ -69,7 +74,7 @@ describe("a letter photographed close to its due date", () => {
   it("plans only the reminders still ahead of the person", () => {
     const plan = planReminders("2026-08-15", {
       hasTime: false,
-      today: "2026-08-12",
+      today: "2026-08-13",
     });
     expect(plan.map((p) => p.localDate)).toEqual(["2026-08-14"]);
   });
@@ -89,7 +94,7 @@ describe("a letter photographed close to its due date", () => {
   });
 
   it("still returns the past ones when no day is given, for the seed", () => {
-    expect(planReminders("2026-08-15", { hasTime: false })).toHaveLength(2);
+    expect(planReminders("2026-08-15", { hasTime: false })).toHaveLength(3);
   });
 });
 

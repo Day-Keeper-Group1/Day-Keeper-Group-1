@@ -10,8 +10,10 @@
  *
  * The rule, read off the product prototype:
  *
- * - A deadline (a bill, a form, anything you act on BY a date) gets two
- *   reminders: seven days before and one day before, at 9 am.
+ * - A deadline (a bill, a form, anything you act on BY a date) gets three
+ *   reminders: seven days, three days and one day before, at 9 am.
+ *   (Decided 18 August 2026: for a bill due the 18th they land on the 11th,
+ *   the 15th and the 17th.)
  * - An appointment (anything you attend AT a time) gets one reminder, the day
  *   before, at 9 am. Nobody needs a nudge a week before the dentist, and the
  *   day itself is on the calendar.
@@ -57,7 +59,7 @@ export const PLAN_LINES = {
 } as const;
 
 /** Days before the due date, for something you act on by a date. */
-export const DEADLINE_REMINDER_OFFSET_DAYS = [7, 1] as const;
+export const DEADLINE_REMINDER_OFFSET_DAYS = [7, 3, 1] as const;
 
 /** Days before the appointment, for something you attend at a time. */
 export const APPOINTMENT_REMINDER_OFFSET_DAYS = [1] as const;

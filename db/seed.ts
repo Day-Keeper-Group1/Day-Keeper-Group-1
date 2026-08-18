@@ -284,11 +284,11 @@ async function main() {
         WHERE document_id = $1`,
       [telstra],
     );
-    // The bill was due 20 days ago, so its reminders rang 27 and 21 days ago.
-    // She ticked it off 24 days ago: the first reminder had already been sent
-    // by then; the second rang into a done task and became 'skipped'. The
-    // insert below marked every past reminder 'sent', so this corrects the one
-    // whose morning came after the tick.
+    // The bill was due 20 days ago, so its reminders rang 27, 23 and 21 days
+    // ago. She ticked it off 24 days ago: the first had already been sent by
+    // then; the later two rang into a done task and became 'skipped'. The
+    // insert below marked every past reminder 'sent', so this corrects the
+    // ones whose mornings came after the tick.
     await db.query(
       `UPDATE reminders SET status = 'skipped', sent_at = NULL
         WHERE task_id IN (SELECT id FROM tasks WHERE document_id = $1)

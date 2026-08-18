@@ -369,16 +369,18 @@
         { k: 'Amount', v: '$347.60' },
         { k: 'Reference', v: '9201 4471 88' }
       ],
-      /* One reminder, not two: the bill is due the 15th and "today" is the
-         10th, so the seven-days-before reminder would land in the past, and a
-         reminder in the past is never planned. The plan card and the calendar
-         marks agree on this, which is the promise they keep everywhere. */
+      /* Two reminders, not three: the rule is 7, 3 and 1 days before, the
+         bill is due the 15th and "today" is the 10th, so the seven-days one
+         would land on the 8th, in the past, and a reminder in the past is
+         never planned. The plan card and the calendar marks agree on this,
+         which is the promise they keep everywhere. */
       plan: [
+        { ico: '🔔', t: 'Remind you: Wed 12 Aug, 9 am' },
         { ico: '🔔', t: 'Remind you: Fri 14 Aug, 9 am' },
         { ico: '📅', t: 'On your calendar: due Sat 15 Aug' }
       ],
       task: { title: 'Pay AGL electricity bill', when: 'Sat 15 Aug', due: { mo: 8, d: 15 } },
-      marks: [ { mo: 8, d: 14, l: 'reminder' }, { mo: 8, d: 15, l: 'AGL due' } ],
+      marks: [ { mo: 8, d: 12, l: 'reminder' }, { mo: 8, d: 14, l: 'reminder' }, { mo: 8, d: 15, l: 'AGL due' } ],
       agenda: { day: 'Saturday 15 August', line: 'Pay AGL electricity bill', sub: '$347.60 · ref 9201 4471 88' } },
 
     { who: 'Medicare', what: 'Claim form', sheets: 1, delay: 7000,
@@ -390,11 +392,12 @@
       ],
       plan: [
         { ico: '🔔', t: 'Remind you: Sat 15 Aug, 9 am' },
+        { ico: '🔔', t: 'Remind you: Wed 19 Aug, 9 am' },
         { ico: '🔔', t: 'Remind you: Fri 21 Aug, 9 am' },
         { ico: '📅', t: 'On your calendar: due Sat 22 Aug' }
       ],
       task: { title: 'Return Medicare form', when: 'Sat 22 Aug', due: { mo: 8, d: 22 } },
-      marks: [ { mo: 8, d: 15, l: 'reminder' }, { mo: 8, d: 21, l: 'reminder' }, { mo: 8, d: 22, l: 'Medicare' } ],
+      marks: [ { mo: 8, d: 15, l: 'reminder' }, { mo: 8, d: 19, l: 'reminder' }, { mo: 8, d: 21, l: 'reminder' }, { mo: 8, d: 22, l: 'Medicare' } ],
       agenda: { day: 'Saturday 22 August', line: 'Return Medicare form', sub: 'ref CLM 30991 442' } },
 
     { who: 'VicRoads', what: 'Registration renewal', sheets: 2, delay: 6200,
@@ -407,11 +410,12 @@
       ],
       plan: [
         { ico: '🔔', t: 'Remind you: Tue 25 Aug, 9 am' },
+        { ico: '🔔', t: 'Remind you: Sat 29 Aug, 9 am' },
         { ico: '🔔', t: 'Remind you: Mon 31 Aug, 9 am' },
         { ico: '📅', t: 'On your calendar: due Tue 1 Sep' }
       ],
       task: { title: 'Renew car registration', when: 'Tue 1 Sep', due: { mo: 9, d: 1 } },
-      marks: [ { mo: 8, d: 25, l: 'reminder' }, { mo: 8, d: 31, l: 'reminder' }, { mo: 9, d: 1, l: 'Rego due' } ],
+      marks: [ { mo: 8, d: 25, l: 'reminder' }, { mo: 8, d: 29, l: 'reminder' }, { mo: 8, d: 31, l: 'reminder' }, { mo: 9, d: 1, l: 'Rego due' } ],
       agenda: { day: 'Tuesday 1 September', line: 'Renew car registration', sub: '$852.10 · rego 1AB 2CD' } },
 
     { who: 'Dr Patel', what: 'Appointment letter', sheets: 1, delay: 6800, fails: true, retryDelay: 4200,
@@ -438,11 +442,12 @@
       ],
       plan: [
         { ico: '🔔', t: 'Remind you: Mon 24 Aug, 9 am' },
+        { ico: '🔔', t: 'Remind you: Fri 28 Aug, 9 am' },
         { ico: '🔔', t: 'Remind you: Sun 30 Aug, 9 am' },
         { ico: '📅', t: 'On your calendar: due Mon 31 Aug' }
       ],
       task: { title: 'Pay council rates', when: 'Mon 31 Aug', due: { mo: 8, d: 31 } },
-      marks: [ { mo: 8, d: 24, l: 'reminder' }, { mo: 8, d: 30, l: 'reminder' }, { mo: 8, d: 31, l: 'Rates due' } ],
+      marks: [ { mo: 8, d: 24, l: 'reminder' }, { mo: 8, d: 28, l: 'reminder' }, { mo: 8, d: 30, l: 'reminder' }, { mo: 8, d: 31, l: 'Rates due' } ],
       agenda: { day: 'Monday 31 August', line: 'Pay council rates', sub: '$612.40 · ref 88 3120 7' } }
   ];
 

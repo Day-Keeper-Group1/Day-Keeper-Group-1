@@ -702,6 +702,14 @@ Australian) before sending.
     "status": "upcoming",
     "reminders": [
       {
+        "id": "4e7a2b90-1c55-4f08-8d21-7b3f9a0c6e42",
+        "scheduledFor": "2026-08-12T09:00:00+10:00",
+        "localDate": "2026-08-12",
+        "localTime": "09:00",
+        "channel": "in_app",
+        "status": "scheduled"
+      },
+      {
         "id": "9d1f4c02-3b6e-4a18-8f70-2c5d9e3a7b11",
         "scheduledFor": "2026-08-14T09:00:00+10:00",
         "localDate": "2026-08-14",
@@ -714,10 +722,10 @@ Australian) before sending.
 }
 ```
 
-One reminder, not two, and that is the example teaching the rule: the bill is
-due on the 15th and was confirmed on the 10th, so the seven-days-before
-reminder would land on the 8th, in the past, and a reminder in the past is
-never created. Only the day-before one exists.
+Two reminders, not three, and that is the example teaching the rule: the bill
+is due on the 15th and was confirmed on the 10th, so of the three planned days
+(7, 3 and 1 before), the seven-days one would land on the 8th, in the past,
+and a reminder in the past is never created. The 12th and the 14th survive.
 
 ### Error Responses
 
@@ -764,8 +772,9 @@ question for the prototype and not something this document can decide.
 
 Confirming is the moment a document becomes a task with reminders, all in one
 transaction. The scheduling rule lives in `src/lib/contract/reminders.ts` and
-nowhere else: a deadline gets reminders 7 days and 1 day before at 9 am local,
-an appointment (anything with a `due_time`) gets one, the day before. Both the
+nowhere else: a deadline gets reminders 7, 3 and 1 days before at 9 am local
+(due the 18th means the 11th, the 15th and the 17th), an appointment (anything
+with a `due_time`) gets one, the day before. Both the
 review screen and this handler call `planReminders()`, **and both pass the same
 `today`**, so a bill photographed three days before it is due shows one
 reminder on the card and creates one row. Passing the day is what makes them
@@ -975,6 +984,14 @@ from.
     "dueDate": "2026-08-15",
     "status": "upcoming",
     "reminders": [
+      {
+        "id": "4e7a2b90-1c55-4f08-8d21-7b3f9a0c6e42",
+        "scheduledFor": "2026-08-12T09:00:00+10:00",
+        "localDate": "2026-08-12",
+        "localTime": "09:00",
+        "channel": "in_app",
+        "status": "scheduled"
+      },
       {
         "id": "9d1f4c02-3b6e-4a18-8f70-2c5d9e3a7b11",
         "scheduledFor": "2026-08-14T09:00:00+10:00",

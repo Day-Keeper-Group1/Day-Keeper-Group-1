@@ -77,8 +77,8 @@ has to draw already present, so you never have to manufacture one:
 - a letter that **came out too blurry**, twice
 - six letters **confirmed**: one overdue, one upcoming, one **appointment with
   a time of day** (and therefore one reminder, not two), one already done
-  (ticked off before its last reminder's morning, so that reminder rang, found
-  it done, and was recorded `skipped`), and two that arrived interleaved in
+  (ticked off before its last reminders' mornings, so those rang, found it
+  done, and were recorded `skipped`), and two that arrived interleaved in
   one pile of five photographs, one of which was a photo of her grandson and
   became nothing
 
