@@ -74,9 +74,12 @@ CREATE TYPE extraction_failure AS ENUM ('transient', 'unreadable_image', 'unsupp
 -- passage of time and nothing in the system wakes up to write that down.
 CREATE TYPE task_state AS ENUM ('open', 'completed', 'dismissed');
 
--- What a reminder is for, and where it got to.
+-- What a reminder is for, and where it got to. There is no 'cancelled':
+-- completing a task cancels nothing, because the dispatcher looks at the task
+-- at the moment the clock rings and writes 'skipped' if it finds it already
+-- done. See docs/architecture/adr-007-the-tick-is-the-only-state.md.
 CREATE TYPE reminder_channel AS ENUM ('in_app', 'email');
-CREATE TYPE reminder_status AS ENUM ('scheduled', 'sent', 'cancelled', 'failed');
+CREATE TYPE reminder_status AS ENUM ('scheduled', 'sent', 'skipped', 'failed');
 
 -- ---------------------------------------------------------------------------
 -- People
@@ -489,9 +492,14 @@ CREATE INDEX tasks_document_idx ON tasks (document_id) WHERE document_id IS NOT 
 CREATE TABLE reminders (
   id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   task_id      uuid NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
-  -- Reminders are rows, not a rule evaluated at read time, because each one has
-  -- its own fate: it can be sent, cancelled when the task is completed early, or
-  -- fail to send. A rule cannot remember any of that.
+  -- Reminders are rows, not a rule evaluated at read time, because each one
+  -- has its own fate: sent, skipped, or failed. Nothing writes these rows when
+  -- a task is ticked or unticked. The dispatcher decides at the moment a row's
+  -- time arrives, by looking at the task's state right then: still open means
+  -- send, already done means write 'skipped' and stay silent. The person can
+  -- tick and untick as often as she likes and no bookkeeping happens here;
+  -- the one judgement lives at fire time, in one place.
+  -- See docs/architecture/adr-007-the-tick-is-the-only-state.md.
   scheduled_for timestamptz NOT NULL,
   channel      reminder_channel NOT NULL DEFAULT 'in_app',
   status       reminder_status NOT NULL DEFAULT 'scheduled',

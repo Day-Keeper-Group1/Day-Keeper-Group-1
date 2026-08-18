@@ -140,7 +140,11 @@ export type ReminderView = {
    */
   localTime: string;
   channel: "in_app" | "email";
-  status: "scheduled" | "sent" | "cancelled" | "failed";
+  /**
+   * 'skipped' is written by the dispatcher when the clock rang and the task
+   * was already done. Ticking a task changes no reminder row; see ADR 007.
+   */
+  status: "scheduled" | "sent" | "skipped" | "failed";
 };
 
 export type TaskSummary = {
@@ -154,10 +158,10 @@ export type TaskSummary = {
   dueTime?: string;
   status: TaskStatus;
   /**
-   * Every reminder for this task, including cancelled ones with their status
-   * saying so. The calendar's grey dots are these rows' `localDate`s; whether
-   * a cancelled reminder keeps its dot is the client's call, and returning the
-   * status keeps both answers possible.
+   * Every reminder for this task, whatever its status: still scheduled, sent,
+   * skipped because the task was already done when the clock rang, or failed.
+   * The calendar draws its dots from these rows' `localDate`s, and the day
+   * sheet words each one from its status.
    */
   reminders: ReminderView[];
 };

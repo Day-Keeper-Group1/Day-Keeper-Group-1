@@ -7,7 +7,7 @@ DayKeeper (Group 1): an AI-powered life management system for people in vulnerab
 - `docs/start-here.md`: how to run the whole thing, what the seed contains, and where everything lives. Read this first.
 - `docs/api.md`: the API specification. **Not built yet**: this is the shape to build against, with the reasoning for the parts that look arbitrary.
 - `docs/theme.md`: the theme. The palette, the contrast measurements, and the rules that make this product readable by the people it is for. Read it before styling a screen.
-- `docs/architecture/adr-00*.md`: the four decisions that shape the rest (one Next.js app, our own auth behind one function, plain Postgres with no migrations, the six-field extraction contract). When something looks odd, the reason is in one of these.
+- `docs/architecture/adr-00*.md`: the decisions that shape the rest (one Next.js app, our own auth behind one function, plain Postgres and an S3 bucket, the six-field extraction contract, the grouping manifest, model-driven matching, and the tick as a task's only state). When something looks odd, the reason is in one of these.
 - `docs/project-description.md`: the official project description, verbatim. Our requirements baseline; when wording conflicts, this file wins.
 - `docs/DayKeeper-Tech-Stack-Recommendation.md`: the tech stack recommendation (draft until the team adopts it).
 - `docs/Technical-Research-and-Implementation-Roadmap.md`: step-by-step research and build plan; check this before starting new feature work.

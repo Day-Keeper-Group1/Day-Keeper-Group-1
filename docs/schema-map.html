@@ -121,7 +121,7 @@
   <h1>DayKeeper: what the database holds, and when each part of it is written</h1>
   <p class="lede">
     Fourteen tables. The five steps along the top are one letter's whole life, from the photograph
-    to the reminder being switched off. The ten tables on that path carry a badge saying which steps
+    to the task being ticked off. The ten tables on that path carry a badge saying which steps
     write them; the four below sit off it. Step four has no badge anywhere, because the calendar
     writes nothing at all: it is drawn entirely from rows that are already there.
     The definition this drawing follows is <code>db/schema.sql</code>, which is the only definition there is.
@@ -350,7 +350,7 @@
   </div>
 
   <div class="tbl" style="left:1080px; top:558px; height:184px">
-    <h2>reminders<span class="badges"><b>3</b><b>5</b></span></h2>
+    <h2>reminders<span class="badges"><b>3</b></span></h2>
     <ul>
       <li class="key">id</li>
       <li>task_id <span class="fk">&rarr; tasks</span></li>
@@ -361,9 +361,9 @@
     </ul>
   </div>
   <div class="note" style="left:1080px; top:746px">
-    Rows, not a rule evaluated when somebody looks. Each one can be sent,
-    cancelled the moment the task is ticked off, or fail to send, and a rule
-    cannot remember any of that.
+    Rows, not a rule evaluated when somebody looks. Ticking the task writes
+    nothing here: when a row's moment arrives, the dispatcher reads the task,
+    sends if it is open, and writes <i>skipped</i> if it is already done.
   </div>
 
   <!-- ---------- off the path ---------- -->

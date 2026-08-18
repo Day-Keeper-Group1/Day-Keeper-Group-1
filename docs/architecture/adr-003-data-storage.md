@@ -81,8 +81,11 @@ been rehearsed.
 - **Corrections sit beside the model's answer, never on top of it.**
   `extracted_fields` holds both `extracted_value` and `corrected_value`.
   Overwriting would destroy the only evidence of how often the reader is wrong.
-- **Reminders are rows, not a rule.** Each one can be sent, cancelled, or fail
-  individually, and a rule evaluated at read time cannot remember any of that.
+- **Reminders are rows, not a rule.** Each one has its own fate to record
+  (sent, skipped because the task was already done when its moment came, or
+  failed), and a rule evaluated at read time cannot remember any of that.
+  What writes those fates is the dispatcher at fire time, never the tick:
+  see ADR 007.
 - **`upcoming` and `overdue` are derived, not stored.** A task becomes overdue
   because time passed, and nothing in the system wakes at midnight to write that
   down. Storing it would guarantee it goes stale.

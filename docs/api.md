@@ -589,6 +589,11 @@ The review screen's endpoint: the summary, its fields, and its pages.
       "id": "7c0e1b2a-55d4-4c31-9f2b-0a8e6d17c003",
       "pageNumber": 1,
       "url": "/api/documents/3a9f1e77-4c02-4f1a-9b3e-5d2c8a11f004/pages/1"
+    },
+    {
+      "id": "88d3a9c1-2e40-47bb-b1a4-5f6e0c92d114",
+      "pageNumber": 2,
+      "url": "/api/documents/3a9f1e77-4c02-4f1a-9b3e-5d2c8a11f004/pages/2"
     }
   ]
 }
@@ -698,8 +703,8 @@ Australian) before sending.
     "reminders": [
       {
         "id": "9d1f4c02-3b6e-4a18-8f70-2c5d9e3a7b11",
-        "scheduledFor": "2026-08-08T09:00:00+10:00",
-        "localDate": "2026-08-08",
+        "scheduledFor": "2026-08-14T09:00:00+10:00",
+        "localDate": "2026-08-14",
         "localTime": "09:00",
         "channel": "in_app",
         "status": "scheduled"
@@ -708,6 +713,11 @@ Australian) before sending.
   }
 }
 ```
+
+One reminder, not two, and that is the example teaching the rule: the bill is
+due on the 15th and was confirmed on the 10th, so the seven-days-before
+reminder would land on the 8th, in the past, and a reminder in the past is
+never created. Only the day-before one exists.
 
 ### Error Responses
 
@@ -996,6 +1006,19 @@ is not overdue until today, where the person lives, is over. Use
 `deriveTaskStatus()`; the UTC comparison it replaced kept a Melbourne task
 "upcoming" until ten the next morning.
 
+**The tick is the only state a task stores** (ADR 007). Everything a screen
+shows follows from the tick and today's date, worked out while drawing, and
+ticking in either direction is allowed on any task, forever, wherever the row
+is visible. Nothing writes "overdue" anywhere, so nothing has to notice
+midnight, and unticking a task whose date has passed makes it overdue by
+arithmetic, not by transition.
+
+**What overdue looks like** is words in the date column: `was due Wed 5 Aug`,
+set bolder than an ordinary date. Not red: `--danger` already means a failed
+reading in this product, and colour is never the only signal. No badge, no
+second list; the sort already surfaces it, because an overdue date is smaller
+than every upcoming one.
+
 A task with no `dueDate` shows `No date` where the date goes. It draws no
 calendar mark and has no reminders.
 
@@ -1004,8 +1027,10 @@ will eventually want a task off their list without ticking it off as done, and
 adding an enum value later is not free; the filter here is what makes adding
 the action later a one-line change. No endpoint produces it today.
 
-Every summary carries its `reminders`, cancelled ones included with their
-status saying so. This is what the calendar draws.
+Every summary carries its `reminders`, whatever their status: `scheduled`,
+`sent`, `skipped` (the clock rang, found the task already done, and stayed
+silent), or `failed`. This is what the calendar draws, and the day sheet words
+each one from its status.
 
 **Order.** The prototype puts a just-confirmed task at the top of the list,
 above things due sooner, because its sketch appends to the front. Due date
@@ -1049,7 +1074,7 @@ for exactly the readers least able to absorb it.
 
 ## Tick a task off
 
-Marks it done and calls off any reminder still waiting.
+Marks it done. That is the entire write.
 
 **URL** : `/api/tasks/:id/complete`
 
@@ -1061,8 +1086,8 @@ Marks it done and calls off any reminder still waiting.
 
 **Code** : `200 OK`
 
-**Content** : `TaskSummary`, with `status: "completed"` and its remaining
-reminders now `cancelled`.
+**Content** : `TaskSummary`, with `status: "completed"`. Its reminders come
+back untouched, still saying `scheduled`: they will simply not fire.
 
 ### Error Responses
 
@@ -1071,12 +1096,17 @@ reminders now `cancelled`.
 
 ### Notes
 
-The cancellation happens in the same transaction: being nagged about something
-already done is the anxiety this product exists to remove.
+**No reminder row is written.** The dispatcher checks the task at the moment a
+reminder's time arrives: still open means send, already done means write
+`skipped` and stay silent. "Reminders off" on screen is therefore derived
+truth, not a stored flag, and there is no bookkeeping for an untick to undo.
+Being nagged about something already done is the anxiety this product exists
+to remove, and under this shape a wrong nag has no path: the check happens at
+the only moment that matters, in the one place that sends. See ADR 007.
 
 ## Undo that
 
-Puts a task back on the list.
+Puts a task back on the list. Also the entire write.
 
 **URL** : `/api/tasks/:id/complete`
 
@@ -1088,16 +1118,20 @@ Puts a task back on the list.
 
 **Code** : `200 OK`
 
-**Content** : `TaskSummary`, open again.
+**Content** : `TaskSummary`, open again. If its due date has passed, `status`
+comes back `overdue`, because that is what the arithmetic now says.
 
 ### Notes
 
-Ticking something off by accident should not need an apology.
+Ticking something off by accident should not need an apology, however long ago
+the accident was: this works on any completed task, forever.
 
-Reminders cancelled by completing return to `scheduled`, **except those whose
-`scheduledFor` has already passed**, which stay `cancelled`. Reviving a
-reminder into the past would fire a nag about a deadline that has been and gone
-the moment anything starts dispatching them.
+Nothing happens to reminders, in either direction. A reminder whose time is
+still ahead will find the task open when its moment comes and fire; one whose
+time has passed is history and stays exactly what it became (`sent` or
+`skipped`). The clock only rings forward, so unticking an old task cannot set
+off a late nag, and there is no revival rule because there is nothing to
+revive.
 
 ---
 
@@ -1122,7 +1156,7 @@ each other on screen.
 
 ```json
 {
-  "counts": { "needsReview": 1, "processing": 2, "failed": 0 },
+  "counts": { "needsReview": 1, "processing": 1, "failed": 0 },
   "dividing": [
     {
       "id": "e2d41a90-77bc-4f0e-8a55-1cc4b9d33f21",
@@ -1132,10 +1166,36 @@ each other on screen.
       "documents": []
     }
   ],
-  "inbox": [],
+  "inbox": [
+    {
+      "id": "3a9f1e77-4c02-4f1a-9b3e-5d2c8a11f004",
+      "issuer": "AGL Energy",
+      "documentType": "Electricity bill",
+      "label": "AGL Energy · Electricity bill",
+      "status": "needs-review",
+      "dueDate": "2026-08-15",
+      "amount": "$347.60",
+      "uploadedAt": "2026-08-10T09:01:02+10:00",
+      "pageCount": 2
+    },
+    {
+      "id": "b71c0d54-8e33-4a77-8c19-90ab4e6f2213",
+      "issuer": null,
+      "documentType": null,
+      "label": "City of Yarra rates notice",
+      "status": "processing",
+      "uploadedAt": "2026-08-10T08:57:31+10:00",
+      "pageCount": 1
+    }
+  ],
   "tasks": []
 }
 ```
+
+The counts and the lists describe the same world: one letter needs review, one
+is still being read, both sit in `inbox`, and the batch still being divided is
+in `dividing` and in no count, because nobody knows how many letters it holds
+yet.
 
 ### Notes
 
@@ -1158,13 +1218,17 @@ each other on screen.
   The card is shown when `dividing` or `inbox` is non-empty, which is not the
   same test as the counts: a queue holding only failures still shows the card.
   The capture screen's "Posted just now" card is these same two lists.
-- `tasks`: **open tasks due today or later, by due date ascending, plus
-  anything completed in the last seven days**, capped at 20. The cap is a
-  default decision; which twenty is not a free choice. Plain "the first twenty
-  of `GET /api/tasks`" means the twenty earliest due dates the account has ever
-  had, so after a few months a card headed "Coming up" is twenty struck-through
-  rows from last March. The seven-day tail is why a row does not vanish from
-  under the finger that just ticked it.
+- `tasks`: **every open task, whatever its date, plus anything completed in
+  the last seven days**, by due date ascending with dateless tasks last,
+  capped at 20. Open tasks are never filtered by date: an unpaid bill from
+  three weeks ago is the loudest thing this person owns, and the ascending
+  sort already puts it first because an overdue date is smaller than every
+  upcoming one. (An earlier draft said "open tasks due today or later", which
+  reads sensibly and quietly removes exactly that bill from the screen; the
+  wording here is deliberate.) Completed rows are the only ones that age out:
+  seven days from the tick, so a row does not vanish from under the finger
+  that just ticked it, and a card headed "Coming up" does not become twenty
+  struck-through rows from last March. The cap of 20 is a default decision.
 
 ---
 
@@ -1183,11 +1247,13 @@ wrong by one, and `localTime` is computed there with it so the day sheet's "a
 reminder goes out this morning, 9 am" is data rather than copy.
 
 **Every reminder that exists gets a dot, whatever its status**, including ones
-already sent and ones cancelled when the task was ticked off. A dot is a record
-of what this day held, not a forecast. The day sheet says which: the prototype's
-present-tense sentence when the reminder is still `scheduled`, and a past or
-cancelled wording otherwise, so that a completed task's day sheet does not
-announce a reminder the system has already called off.
+already sent and ones skipped because the task was already done when the clock
+rang. A dot is a record of what this day held, not a forecast. The day sheet
+words each entry from the task and the day: a still-scheduled reminder for an
+open task gets the present-tense sentence ("A reminder goes out this morning,
+9 am"), a day already behind today gets the past tense ("went out"), and a
+ticked-off task gets "No reminder, this is already done", so the sheet never
+announces a nag the dispatcher will never send. The prototype draws all three.
 
 A reminder whose day has already gone by is never planned and never created, so
 it has no dot. That is why the plan card and the calendar always agree: the
@@ -1220,7 +1286,7 @@ read from.** Three documents in this repository say it does and the prototype
 does not draw it, which makes it the one open question that touches what this
 product claims to be for rather than how a screen behaves.
 
-Six more belong to the capture screen and to failures, and they are listed
+Five more belong to the capture screen and to failures, and they are listed
 first because they are the ones a person meets soonest:
 
 - **how one row becomes several.** A batch is one row while it is being
@@ -1252,12 +1318,6 @@ first because they are the ones a person meets soonest:
   and what the screen says at page ten, is undecided. Refusing silently loses a
   photograph the person deliberately took, which is the failure the limits are
   exported to prevent
-- **what an overdue task looks like.** `deriveTaskStatus()` returns `overdue`
-  and no screen in the prototype draws it, while the prototype's own seed
-  contains one. Red is the obvious guess and the wrong one: `--danger` already
-  means a failed reading here, and colour is never the only signal in this
-  product. Wording in the date column ("was due Wed 5 Aug") is the cheaper
-  answer
 
 And the rest:
 
@@ -1272,9 +1332,11 @@ And the rest:
   *something* has to perform it: in-process after responding, a sweep over the
   `extraction_runs_status_idx` index, or a real queue. The schema supports all
   three; nobody has chosen
-- **sending reminders.** They are rows with a `scheduled_for`; nothing
-  dispatches them yet, and what does is a real decision (a cron job, a platform
-  scheduler, in-app only)
+- **sending reminders, the transport half.** What the dispatcher decides is
+  settled (ADR 007): at a reminder's moment it reads the task, sends if open,
+  writes `skipped` if done, and that is the product's only judgement about
+  whether to nag. What is still open is what wakes it up: a cron job, a
+  platform scheduler, or in-app only
 - **the "your letters are ready" notification.** The prototype promises one
   batched email when readings finish ("One message, not one per letter", "You
   can close the app"). It is not modelled: `reminders.task_id` is NOT NULL and

@@ -264,9 +264,11 @@ async function main() {
       uploadedDaysAgo: 1,
     });
 
-    // Done, with its remaining reminders cancelled: being nagged about
+    // Done, ticked off BEFORE its second reminder's morning arrived. Nothing
+    // cancelled anything: the dispatcher rang on that morning, found the task
+    // already completed, sent nothing, and wrote 'skipped'. Being nagged about
     // something already handled is the anxiety this product exists to remove,
-    // so that path needs to be visible in the data.
+    // and this is the row that shows the mechanism working (ADR 007).
     const telstra = await confirmedDocument(db, margaretId, {
       issuer: "Telstra",
       documentType: "Utility bill",
@@ -278,13 +280,19 @@ async function main() {
       uploadedDaysAgo: 30,
     });
     await db.query(
-      `UPDATE tasks SET state = 'completed', completed_at = now() - interval '18 days'
+      `UPDATE tasks SET state = 'completed', completed_at = now() - interval '24 days'
         WHERE document_id = $1`,
       [telstra],
     );
+    // The bill was due 20 days ago, so its reminders rang 27 and 21 days ago.
+    // She ticked it off 24 days ago: the first reminder had already been sent
+    // by then; the second rang into a done task and became 'skipped'. The
+    // insert below marked every past reminder 'sent', so this corrects the one
+    // whose morning came after the tick.
     await db.query(
-      `UPDATE reminders SET status = 'cancelled'
-        WHERE task_id IN (SELECT id FROM tasks WHERE document_id = $1) AND status = 'scheduled'`,
+      `UPDATE reminders SET status = 'skipped', sent_at = NULL
+        WHERE task_id IN (SELECT id FROM tasks WHERE document_id = $1)
+          AND scheduled_for > now() - interval '24 days'`,
       [telstra],
     );
 
@@ -359,7 +367,8 @@ Seeded.
   1 letter still being read
   1 letter that came out too blurry, twice
   6 letters confirmed: one overdue, one upcoming, one appointment with a
-    time of day, one done with its remaining reminders cancelled, and two
+    time of day, one done early (its last reminder rang, found it done, and
+    was skipped), and two
     that arrived interleaved in one pile of five photographs, one of which
     was a photo of her grandson and became nothing
 

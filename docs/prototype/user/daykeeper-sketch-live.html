@@ -107,6 +107,8 @@
   .row.done .dot { background: var(--success); border-color: var(--success); color: var(--primary-ink); }
   .row.done .txt { text-decoration: line-through; color: var(--ink-dim); }
   .row.done .when { color: var(--success); font-weight: 600; }
+  .row.late .when { color: var(--ink); font-weight: 700; }
+  .ent .row { border-top: none; padding: 4px 0 10px; }
   .row .txt { flex: 1; min-width: 0; }
   .row .when { color: var(--ink-dim); font-size: 13.5px; }
   .doc-mark { font-size: 13px; color: var(--ink-dim); flex: none; }
@@ -253,7 +255,7 @@
         </div>
 
         <div class="card">
-          <h2>Coming up</h2>
+          <h2>Your tasks</h2>
           <div id="task-list-home"></div>
         </div>
       </section>
@@ -352,8 +354,9 @@
      in the real thing the reading returns a manifest, one letter's pages can
      arrive shuffled between another's, and a photograph can turn out to be
      no letter at all. The sketch keeps its pile tidy only because it has no
-     real photographs to be untidy with. Tap the camera four times and you
-     get three letters back, which is the whole point of this screen. */
+     real photographs to be untidy with. Tap the camera four times and the
+     pile comes back as two letters plus a note about the photograph that was
+     no letter at all, which is the whole point of this screen. */
   const MAX_PHOTOS = 10;   /* MAX_PAGES in src/lib/contract/api.ts */
   const DIVIDE_MS = 2600;  /* how long the pile sits as one row before it splits */
 
@@ -366,13 +369,16 @@
         { k: 'Amount', v: '$347.60' },
         { k: 'Reference', v: '9201 4471 88' }
       ],
+      /* One reminder, not two: the bill is due the 15th and "today" is the
+         10th, so the seven-days-before reminder would land in the past, and a
+         reminder in the past is never planned. The plan card and the calendar
+         marks agree on this, which is the promise they keep everywhere. */
       plan: [
-        { ico: '🔔', t: 'Remind you: Sat 8 Aug, 9 am' },
         { ico: '🔔', t: 'Remind you: Fri 14 Aug, 9 am' },
         { ico: '📅', t: 'On your calendar: due Sat 15 Aug' }
       ],
-      task: { title: 'Pay AGL electricity bill', when: 'Sat 15 Aug' },
-      marks: [ { mo: 8, d: 8, l: 'reminder' }, { mo: 8, d: 14, l: 'reminder' }, { mo: 8, d: 15, l: 'AGL due' } ],
+      task: { title: 'Pay AGL electricity bill', when: 'Sat 15 Aug', due: { mo: 8, d: 15 } },
+      marks: [ { mo: 8, d: 14, l: 'reminder' }, { mo: 8, d: 15, l: 'AGL due' } ],
       agenda: { day: 'Saturday 15 August', line: 'Pay AGL electricity bill', sub: '$347.60 · ref 9201 4471 88' } },
 
     { who: 'Medicare', what: 'Claim form', sheets: 1, delay: 7000,
@@ -387,8 +393,8 @@
         { ico: '🔔', t: 'Remind you: Fri 21 Aug, 9 am' },
         { ico: '📅', t: 'On your calendar: due Sat 22 Aug' }
       ],
-      task: { title: 'Return Medicare form', when: 'Sat 22 Aug' },
-      marks: [ { mo: 8, d: 21, l: 'reminder' }, { mo: 8, d: 22, l: 'Medicare' } ],
+      task: { title: 'Return Medicare form', when: 'Sat 22 Aug', due: { mo: 8, d: 22 } },
+      marks: [ { mo: 8, d: 15, l: 'reminder' }, { mo: 8, d: 21, l: 'reminder' }, { mo: 8, d: 22, l: 'Medicare' } ],
       agenda: { day: 'Saturday 22 August', line: 'Return Medicare form', sub: 'ref CLM 30991 442' } },
 
     { who: 'VicRoads', what: 'Registration renewal', sheets: 2, delay: 6200,
@@ -404,7 +410,7 @@
         { ico: '🔔', t: 'Remind you: Mon 31 Aug, 9 am' },
         { ico: '📅', t: 'On your calendar: due Tue 1 Sep' }
       ],
-      task: { title: 'Renew car registration', when: 'Tue 1 Sep' },
+      task: { title: 'Renew car registration', when: 'Tue 1 Sep', due: { mo: 9, d: 1 } },
       marks: [ { mo: 8, d: 25, l: 'reminder' }, { mo: 8, d: 31, l: 'reminder' }, { mo: 9, d: 1, l: 'Rego due' } ],
       agenda: { day: 'Tuesday 1 September', line: 'Renew car registration', sub: '$852.10 · rego 1AB 2CD' } },
 
@@ -418,7 +424,7 @@
         { ico: '🔔', t: 'Remind you: Thu 3 Sep, 9 am' },
         { ico: '📅', t: 'On your calendar: Fri 4 Sep, 10:30 am' }
       ],
-      task: { title: 'Appointment with Dr Patel', when: 'Fri 4 Sep' },
+      task: { title: 'Appointment with Dr Patel', when: 'Fri 4 Sep', due: { mo: 9, d: 4 } },
       marks: [ { mo: 9, d: 3, l: 'reminder' }, { mo: 9, d: 4, l: 'Dr Patel' } ],
       agenda: { day: 'Friday 4 September', line: 'Appointment with Dr Patel', sub: '10:30 am · GP clinic' } },
 
@@ -435,7 +441,7 @@
         { ico: '🔔', t: 'Remind you: Sun 30 Aug, 9 am' },
         { ico: '📅', t: 'On your calendar: due Mon 31 Aug' }
       ],
-      task: { title: 'Pay council rates', when: 'Mon 31 Aug' },
+      task: { title: 'Pay council rates', when: 'Mon 31 Aug', due: { mo: 8, d: 31 } },
       marks: [ { mo: 8, d: 24, l: 'reminder' }, { mo: 8, d: 30, l: 'reminder' }, { mo: 8, d: 31, l: 'Rates due' } ],
       agenda: { day: 'Monday 31 August', line: 'Pay council rates', sub: '$612.40 · ref 88 3120 7' } }
   ];
@@ -455,7 +461,7 @@
   let timers = [], toastTimer = null;
 
   const INITIAL_TASKS = [
-    { id: 'w', title: 'Pay water bill', when: 'Wed 5 Aug', done: false, marks: [ { mo: 8, d: 5, l: 'Water due' } ],
+    { id: 'w', title: 'Pay water bill', when: 'Wed 5 Aug', due: { mo: 8, d: 5 }, done: false, marks: [ { mo: 8, d: 5, l: 'Water due' } ],
       agenda: { day: 'Wednesday 5 August', line: 'Pay water bill', sub: '$89.20 · ref 5501 2280' },
       pages: 1,
       facts: [
@@ -465,7 +471,7 @@
         { k: 'Amount', v: '$89.20' },
         { k: 'Reference', v: '5501 2280' }
       ] },
-    { id: 'p', title: 'Return pension review form', when: 'Tue 11 Aug', done: false, marks: [ { mo: 8, d: 11, l: 'Form due' } ],
+    { id: 'p', title: 'Return pension review form', when: 'Tue 11 Aug', due: { mo: 8, d: 11 }, done: false, marks: [ { mo: 8, d: 11, l: 'Form due' } ],
       agenda: { day: 'Tuesday 11 August', line: 'Return pension review form', sub: 'Services Australia' },
       pages: 2,
       facts: [
@@ -639,7 +645,7 @@
     if (!current) { go('calendar'); return; }
     const L = LETTERS[current.idx];
     queue = queue.filter(q => q.id !== current.id);
-    tasks.unshift({ id: 't' + current.id, title: L.task.title, when: L.task.when, done: false, marks: L.marks, agenda: L.agenda, pages: current.pages, facts: L.facts });
+    tasks.unshift({ id: 't' + current.id, title: L.task.title, when: L.task.when, due: L.task.due, done: false, marks: L.marks, agenda: L.agenda, pages: current.pages, facts: L.facts });
     current = null;
     renderAll();
     go('calendar');
@@ -677,15 +683,41 @@
     return '<div class="item ready" onclick="openReview(' + q.id + ')"><span class="thumb"></span><span class="txt">' + label + '<div class="st">ready to check</div></span><span class="go">check →</span></div>';
   }
 
-  function taskRow(t) {
-    return '<div class="row' + (t.done ? ' done' : '') + '"><span class="dot" onclick="toggleDone(\'' + t.id + '\')">✓</span>' +
-      '<span class="txt">' + t.title + '</span><span class="doc-mark">📄</span>' +
-      '<span class="when">' + (t.done ? 'Done · reminders off' : t.when) + '</span></div>';
+  /* The tick is the only state a task stores. Everything else is worked out
+     while drawing: no tick and the date behind today means overdue, no tick
+     otherwise means upcoming. Nothing writes "overdue" anywhere, so nothing
+     can forget to unwrite it when she unticks. */
+  function isLate(t) {
+    return !t.done && t.due && (t.due.mo * 100 + t.due.d) < (TODAY_MO * 100 + TODAY_D);
   }
 
-  function toggleDone(id) {
+  function taskRow(t, inSheet) {
+    const late = isLate(t);
+    const stay = inSheet ? 'true' : 'false';
+    /* Overdue is told in words ("was due"), not in colour: red already means a
+       failed reading in this product, and colour is never the only signal. */
+    const when = t.done ? 'Done · reminders off' : late ? 'was due ' + t.when : t.when;
+    return '<div class="row' + (t.done ? ' done' : late ? ' late' : '') + '"><span class="dot" onclick="toggleDone(\'' + t.id + '\', ' + stay + ')">✓</span>' +
+      '<span class="txt">' + t.title + '</span><span class="doc-mark">📄</span>' +
+      '<span class="when">' + when + '</span></div>';
+  }
+
+  /* Due date ascending, dateless last. One sort gives the pinning for free:
+     an overdue date is smaller than every upcoming one, so late rows surface
+     to the top without a single line of pinning code. */
+  function tasksInOrder() {
+    return tasks.slice().sort((a, b) =>
+      (a.due ? a.due.mo * 100 + a.due.d : 9999) - (b.due ? b.due.mo * 100 + b.due.d : 9999));
+  }
+
+  function toggleDone(id, fromSheet) {
     const t = tasks.find(x => x.id === id);
-    if (t) { t.done = !t.done; renderAll(); }
+    if (!t) return;
+    t.done = !t.done;
+    renderAll();
+    /* Ticked from the day sheet: redraw the sheet in place, so the tick is
+       seen to land without throwing her back to the month grid. */
+    if (fromSheet && selDay) openDay(selDay);
   }
 
   function ctaTap() {
@@ -727,7 +759,7 @@
     b.textContent = ready;
 
     /* tasks on home + calendar */
-    const trows = tasks.map(taskRow).join('') || '<div class="row"><span class="txt" style="color:var(--ink-dim)">Nothing yet</span></div>';
+    const trows = tasksInOrder().map(t => taskRow(t)).join('') || '<div class="row"><span class="txt" style="color:var(--ink-dim)">Nothing yet</span></div>';
     document.getElementById('task-list-home').innerHTML = trows;
     document.getElementById('task-list-cal').innerHTML = trows;
 
@@ -735,7 +767,12 @@
   }
 
   const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  const TODAY_MO = 8, TODAY_YR = 2026;   /* the sketch's fictional "today" lives in August 2026 */
+  /* The sketch's fictional "today" is Monday 10 August 2026. A specific day,
+     because overdue is not a stored state: a row is overdue because its due
+     date is behind today, worked out at draw time, exactly as the real thing
+     derives it. The seed is arranged around this day on purpose: the water
+     bill (due the 5th) is already late, the pension form (the 11th) is not. */
+  const TODAY_MO = 8, TODAY_D = 10, TODAY_YR = 2026;
 
   function goToday() {
     if (calMo === TODAY_MO && calYr === TODAY_YR) return;
@@ -746,7 +783,10 @@
 
   function renderCalendar() {
     const tags = {};
-    tasks.forEach(t => (t.marks || []).forEach(m => { if (m.mo === calMo) (tags[m.d] = tags[m.d] || []).push(m.l); }));
+    /* Marks store month and day only, so gate on the sketch's one year:
+       without this, August 2027 would redraw 2026's dots and the day sheet
+       would talk about them in the wrong tense. */
+    tasks.forEach(t => (t.marks || []).forEach(m => { if (calYr === TODAY_YR && m.mo === calMo) (tags[m.d] = tags[m.d] || []).push(m.l); }));
     if (selDay && !tags[selDay]) selDay = null;
     document.getElementById('cal-title').textContent = MONTHS[calMo - 1] + ' ' + calYr;
     document.getElementById('today-btn').classList.toggle('home', calMo === TODAY_MO && calYr === TODAY_YR);
@@ -781,17 +821,27 @@
     renderCalendar();
     const DOW = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const entries = [];
-    tasks.forEach(t => (t.marks || []).forEach(m => { if (m.mo === calMo && m.d === d) entries.push({ t: t, l: m.l }); }));
+    tasks.forEach(t => (t.marks || []).forEach(m => { if (calYr === TODAY_YR && m.mo === calMo && m.d === d) entries.push({ t: t, l: m.l }); }));
     if (!entries.length) return;
     let h = '<div class="dd-day">' + DOW[new Date(calYr, calMo - 1, d).getDay()] + ' ' + d + ' ' + MONTHS[calMo - 1] + '</div>';
     entries.forEach(e => {
       const t = e.t;
+      const past = (calYr * 10000 + calMo * 100 + d) < (TODAY_YR * 10000 + TODAY_MO * 100 + TODAY_D);
       if (e.l === 'reminder') {
-        h += '<div class="ent"><div class="remind">🔔 A reminder goes out this morning, 9 am</div>' +
+        /* The clock checks the tick at the moment it rings; this line is that
+           check, drawn. A reminder for a ticked-off task has nothing to say,
+           and one whose morning has passed is history, not a plan. */
+        const line = t.done ? '🔕 No reminder, this is already done'
+                   : past   ? '🔔 A reminder went out this morning, 9 am'
+                   :          '🔔 A reminder goes out this morning, 9 am';
+        h += '<div class="ent"><div class="remind">' + line + '</div>' +
              '<div class="t">' + t.title + '</div><div class="cap2">due ' + t.when + '</div></div>';
         return;
       }
-      h += '<div class="ent"><div class="t">' + t.title + '</div>';
+      /* The same tick as the home list, in the same place she found the task.
+         Operations follow visibility: wherever the row is drawn, the tick
+         works, however long ago the day was. */
+      h += '<div class="ent">' + taskRow(t, true);
       (t.facts || []).forEach(f => { h += '<div class="fact"><span class="k">' + f.k + '</span><span class="v">' + f.v + '</span></div>'; });
       h += '<div class="photo-row"><span class="thumb"></span><span><span class="cap">See the photo you took</span>' +
            '<div class="cap2">' + (t.pages || 1) + (t.pages > 1 ? ' pages' : ' page') + ' · kept with this task</div></span></div>';

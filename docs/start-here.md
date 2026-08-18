@@ -75,9 +75,12 @@ has to draw already present, so you never have to manufacture one:
   that could not be read at all
 - a letter **still being read**
 - a letter that **came out too blurry**, twice
-- four letters **confirmed**: one overdue, one upcoming, one **appointment with
-  a time of day** (and therefore one reminder, not two), one already done with
-  its remaining reminders cancelled
+- six letters **confirmed**: one overdue, one upcoming, one **appointment with
+  a time of day** (and therefore one reminder, not two), one already done
+  (ticked off before its last reminder's morning, so that reminder rang, found
+  it done, and was recorded `skipped`), and two that arrived interleaved in
+  one pile of five photographs, one of which was a photo of her grandson and
+  became nothing
 
 Two accounts: **margaret@example.com** and **operator@example.com**, both with
 the password `daykeeper`, already hashed in the database. They will work as soon
