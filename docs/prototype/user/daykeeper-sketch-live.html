@@ -77,6 +77,11 @@
   .toolbar .name { font-weight: 700; color: var(--ink); }
   .toolbar button { border: 1px solid var(--line); background: var(--bg-card); padding: 6px 14px; border-radius: 999px; font-size: 13px; cursor: pointer; color: var(--ink); }
   .toolbar a { border: 1px solid var(--line); background: var(--bg-card); padding: 6px 14px; border-radius: 999px; font-size: 13px; color: var(--ink); text-decoration: none; }
+  /* The sketch's clock, worn on the outside. Overdue, "was due", reminder
+     tenses, everything date-shaped in here is computed against this fictional
+     day, and anyone reading the sketch needs to know it without opening the
+     source. Filled from TODAY_* by script, so it cannot drift from the code. */
+  .toolbar .today { border: 1px dashed var(--line); background: var(--warn-bg); color: var(--warn-ink); padding: 6px 14px; border-radius: 999px; }
 
   /* ---------- phone frame ---------- */
   .phone-wrap { display: flex; justify-content: center; padding-bottom: 30px; }
@@ -223,6 +228,7 @@
 
 <div class="toolbar">
   <span class="name">DayKeeper</span> <span>understanding sketch · G1 · live flow</span>
+  <span class="today" id="tb-today"></span>
   <button id="tb-reset" title="restart the demo">↺ Restart</button>
   <a href="../admin/daykeeper-admin-sketch.html">→ admin sketch</a>
 </div>
@@ -887,6 +893,13 @@
     renderPages(); renderAll(); go('home');
   }
   document.getElementById('tb-reset').addEventListener('click', reset);
+
+  /* The toolbar wears the sketch's fictional clock, derived from the same
+     TODAY_* constants everything else compares against. */
+  document.getElementById('tb-today').textContent =
+    'sketch "today": ' +
+    new Date(TODAY_YR, TODAY_MO - 1, TODAY_D).toLocaleDateString('en-AU',
+      { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
 
   reset();
 </script>
