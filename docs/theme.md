@@ -59,7 +59,7 @@ colour is a state some readers cannot see.
 | `--primary-soft` | `#d9e5d5` | quiet green fills: thumbnails, the capture panel, calendar arrows |
 | `--focus` | `#191a12` | the focus ring itself. Near-black, and thick |
 | `--focus-ink` | `#ffd21f` | the gold lining inside the focus ring. Never text |
-| `--danger` | `#8c0d07` | could not read it, overdue, destructive |
+| `--danger` | `#8c0d07` | could not read it, destructive. Never the overdue state: overdue is words in the date column (ADR 007) |
 | `--danger-bg` | `#fbe6e2` | the tint behind danger text |
 | `--success` | `#0f5130` | done, confirmed |
 | `--success-bg` | `#d3e7d9` | the tint behind success text |

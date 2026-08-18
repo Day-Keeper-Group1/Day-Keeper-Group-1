@@ -4,6 +4,8 @@ Date: 6 August 2026
 Status: Draft for UI planning before feature implementation  
 Audience: DayKeeper Group 1
 
+Revision: aligned to ADRs 001-008 on 18 August 2026. Where this document and an ADR disagree, the ADR wins.
+
 ## 1. Purpose
 
 This document defines the recommended DayKeeper page structure, navigation model, layout direction, responsive behaviour, and Taste Skill usage strategy.
@@ -24,7 +26,7 @@ DayKeeper should not feel like:
 - a dense enterprise admin system
 - a generic template dashboard
 
-The interface should make the next action obvious. Users should not need to understand the technology behind OCR, LLMs, or task generation.
+The interface should make the next action obvious. Users should not need to understand the technology behind the reading, the model, or task generation.
 
 ## 3. Design Principles
 
@@ -33,9 +35,10 @@ Use these principles across every page:
 - Clarity before decoration.
 - One primary action per screen.
 - Short, plain-language labels.
-- Strong visual distinction between `needs review`, `confirmed`, `overdue`, and `completed`.
+- Clear distinction between `needs review`, `confirmed`, `overdue`, and `completed`, always carried by a word and not by colour alone (ADR 007, `docs/theme.md`).
 - Every AI-generated task links back to its source document.
-- AI uncertainty must be visible, not hidden.
+- The product shows, it never asks (ADR 008). A value the model was not sure of never reaches a screen, so there is no uncertainty to display and nothing to interrogate the user about.
+- The product has two verbs, photograph and tick. Nothing on a screen is an editable copy of what was read.
 - Sensitive document content should not appear in admin views unless explicitly permitted.
 - Mobile users should be able to complete the upload and review flow comfortably.
 - Avoid heavy hero sections inside the authenticated app.
@@ -53,21 +56,25 @@ Recommended visual tone:
 - supportive
 - practical
 
-Recommended colour roles:
+The palette is **Eucalypt & Wattle**, and `docs/theme.md` is the authority: it carries the tokens, the measured contrast of every pair, and the reasons. Two of its rules override anything suggested here. **Nothing is blue**, because an ageing eye needs about 2400ms longer to tell blue from yellow. **Colour is never the only signal**, so every state below also carries a word.
 
-| Role | Suggested use |
-|---|---|
-| Primary blue/teal | Main actions, active navigation, trusted system state |
-| Amber | Needs review, uncertain fields, attention needed |
-| Soft red | Overdue tasks, failed processing, unreadable document fields |
-| Green | Confirmed fields, completed tasks |
-| Neutral grey | Background, dividers, secondary metadata |
+Colour roles, as the theme names them:
+
+| Role | Token | Use |
+|---|---|---|
+| Eucalypt green | `--primary` | Main actions, active navigation, trusted system state |
+| Bark brown on sand | `--warn-ink` on `--warn-bg` | "The letter did not give this up", the card sentence when a date or an action is missing |
+| Deep red | `--danger`, `--dot-due` | A reading that failed, destructive actions, and the calendar's due marks. **Not the overdue state on a task row**: that is told in words (ADR 007) |
+| Green | `--success` | Confirmed fields, completed tasks |
+| Warm paper and neutral | `--bg`, `--bg-card`, `--line` | Background, dividers, secondary metadata. Never pure white |
+
+Gold (`--focus-ink`, `--dot-rem`) is never text. It appears in exactly two places, the lining of the focus ring and the reminder dot on the calendar.
 
 Typography:
 
 - Use clear sans-serif typography.
 - Use compact dashboard headings, not oversized hero typography.
-- Keep body text readable on mobile.
+- Body text is at least 18px and a primary button at least 48px tall, on every device. The prototype's own type is still the older smaller scale; build to the sizes in `docs/theme.md` rather than matching the sketch.
 - Avoid negative letter spacing.
 - Avoid long text inside narrow controls.
 
@@ -86,9 +93,9 @@ Use a left sidebar for primary app navigation:
 | Nav item | Route | Purpose |
 |---|---|---|
 | Dashboard | `/dashboard` | Daily overview and next actions |
-| Upload | `/documents/new` | Start the document photo upload flow |
+| Upload | `/documents/new` | Photograph a pile of letters and post it |
 | Archive | `/documents` | Search and browse saved documents |
-| Tasks | `/tasks` | Manage upcoming, overdue, and completed obligations |
+| Tasks | `/tasks` | Manage open and completed obligations |
 | Admin | `/admin` | Platform operator dashboard; visible only to admin users |
 
 Use a topbar for contextual actions:
@@ -111,7 +118,7 @@ Use bottom navigation:
 | Tasks | `/tasks` |
 | More | `/settings` or mobile menu |
 
-Mobile `Upload` should be visually prominent because document photo upload is the primary entry point.
+Mobile `Upload` should be visually prominent because photographing a letter is the primary entry point, and it is also the only remedy the product offers when a reading is wrong or missing.
 
 ## 6. Recommended Page Count
 
@@ -123,12 +130,13 @@ MVP route count: **11 pages/routes**
 | User App | 6 | `/dashboard`, `/documents/new`, `/documents`, `/documents/[id]`, `/documents/[id]/review`, `/tasks` |
 | Settings/Admin | 2 | `/settings`, `/admin` |
 
-Total: **12 route entries** if `/forgot-password` is included. If password reset is deferred, the MVP becomes **11 routes**.
+Total: **12 route entries** if `/forgot-password` is included. Password reset is deferred, so the MVP is **11 routes**.
 
 Recommendation:
 
-- Build 11 pages first.
-- Keep `/forgot-password` as a simple route or placeholder if password recovery is marked Should-have.
+- Build the six user app pages first. The signed-in surface is where the product is, and it can be built ahead of sign-in: the seed plants accounts and a development session, and every handler asks `requireUser()` (ADR 002), so a page written today works unchanged the day sign-in lands.
+- `/login` and `/register` are deprioritised rather than skipped. The endpoints are specified; the screens are not on the critical path.
+- Keep `/forgot-password` as a placeholder route. Password reset needs an email sender and no service has been chosen, so the page exists and does nothing, which is honest about the state of it.
 
 ## 7. Page Specifications
 
@@ -188,9 +196,11 @@ Route:
 /login
 ```
 
+Status: deprioritised. Until it is built, the seeded accounts and the development session in the seed are how anyone reaches the signed-in pages.
+
 Purpose:
 
-- Let returning users securely access their account.
+- Let returning users securely access their account, against our own `users` and `sessions` tables (ADR 002), not a hosted auth provider.
 
 Primary users:
 
@@ -235,6 +245,8 @@ Route:
 ```text
 /register
 ```
+
+Status: deprioritised, same as Login.
 
 Purpose:
 
@@ -281,6 +293,8 @@ Route:
 /forgot-password
 ```
 
+Status: not implemented. It needs an email sender, which nobody has chosen; `docs/api.md` keeps it on the open list. The route exists as a placeholder.
+
 Purpose:
 
 - Let users recover account access.
@@ -323,7 +337,7 @@ Route:
 
 Purpose:
 
-- Give users a daily overview of documents needing review, upcoming tasks, overdue tasks, and recent activity.
+- Give users a daily overview of letters waiting to be checked and of everything still to do.
 
 Primary users:
 
@@ -331,29 +345,24 @@ Primary users:
 
 Primary actions:
 
-- Upload document photo
-- Review uncertain extraction
-- Open urgent task
+- Photograph a letter
+- Check a letter that is ready
+- Tick a task off
 
-Content:
+Content, and it all arrives in one request (`GET /api/home`) so the counts and the lists cannot disagree on screen:
 
-- Status summary
-- Upload document photo entry
-- Documents needing review
-- Upcoming tasks
-- Overdue tasks
-- Recent documents
-- Optional notification preview
+- Call to action panel, driven by `counts` in order: "N things need your OK", otherwise "Reading your letters…", otherwise "Nothing to check right now"
+- Primary photograph action
+- To check: batches still being divided, then every document in `processing`, `needs-review` or `failed`, drawn as one interleaved list
+- Coming up: **one** task list, every open task whatever its date plus anything completed in the last seven days, due date ascending with dateless tasks last, capped at 20
 
 Suggested layout:
 
 ```text
 Header summary
-Primary upload action
-Needs review panel
-Upcoming tasks panel
-Overdue tasks panel
-Recent documents list
+Primary photograph action
+To check panel (dividing batches, then inbox)
+Coming up panel (one task list)
 ```
 
 UX direction:
@@ -361,17 +370,18 @@ UX direction:
 - The user should immediately understand what needs attention today.
 - Do not show too many metrics.
 - Use plain labels such as "Needs review" instead of technical words like "low confidence".
+- **There is no separate overdue panel and no overdue badge** (ADR 007). Overdue is derived while drawing, told in words in the date column ("was due Wed 5 Aug") and set bolder, and the ascending sort already puts it at the top because an overdue date is smaller than every upcoming one.
+- A task with no due date shows "No date" where the date goes, and stays on the list until it is ticked.
+- Open tasks are never filtered by date. An unpaid bill from three weeks ago is the loudest thing the person owns, and a "due today or later" rule would quietly remove exactly that row.
 
 Responsive layout:
 
-- Desktop: two-column dashboard with priority items on the left and recent/archive items on the right.
+- Desktop: two-column dashboard with the to check panel on the left and the task list on the right.
 - Tablet: stacked two-column groups.
 - Mobile: single-column feed ordered by urgency:
-  1. Upload
-  2. Needs review
-  3. Overdue
-  4. Upcoming
-  5. Recent documents
+  1. Photograph
+  2. To check
+  3. Coming up
 
 Taste Skill usage:
 
@@ -389,7 +399,7 @@ Route:
 
 Purpose:
 
-- Let users upload a document photo or existing file for processing.
+- Let users post a pile of photographs, however many letters it turns out to hold.
 
 Primary users:
 
@@ -397,32 +407,36 @@ Primary users:
 
 Primary actions:
 
-- Choose file
-- Take photo on mobile
-- Preview
-- Submit for processing
+- Take photos, or choose them from the album
+- Review the pile before posting
+- Post the pile
 
 Content:
 
-- Upload dropzone or file picker
+- Upload dropzone or file picker, accepting several files at once
 - Mobile camera-compatible file input
 - Supported format note
-- File size note
-- Preview area
-- Retake/replace action
-- Submit button
+- Limits note: up to 10 photographs, up to 10 MB each, imported from `src/lib/contract/api.ts` rather than retyped
+- Thumbnails of the pile so far, with remove
+- Post button
+- "Posted just now" card, which is the same two lists the dashboard's to check panel draws
 
 UX direction:
 
-- Use "photo upload" wording.
+- Use "photo upload" wording, never "scan".
+- **An upload is a pile, and one pile may become any number of letters** (ADR 005). The pages of one letter can arrive shuffled between another's, and a photograph that is no letter at all is fine. Nothing on this screen asks the person to say which photograph belongs to which letter; that sorting is the job the product exists to do.
+- The person is never told that photographs one and three became one letter. She is told there is an electricity bill for $347.60 due on the fifteenth, and asked whether that is right, on the review screen.
+- A retake is not a special channel. Photographing a letter again is an ordinary new pile through this same screen, and the matching step recognises it.
 - Keep instructions short.
 - Make file validation errors clear and non-technical.
-- Do not expose AI/OCR terminology unless needed.
+- Do not expose model or extraction terminology unless needed.
+
+Still open, so do not design past them (`docs/api.md`, "Deliberately not specified"): how the camera is actually held open between shots, what the screen does when the person reaches ten photographs or a photograph is over 10 MB, whether a blur check can happen at capture time, and how one posted row becomes several letters on screen.
 
 Responsive layout:
 
-- Desktop: upload area beside preview/instructions.
-- Mobile: camera-first flow, preview below the file input.
+- Desktop: upload area beside the thumbnails and instructions.
+- Mobile: camera-first flow, thumbnails of the pile below the file input.
 
 Taste Skill usage:
 
@@ -472,9 +486,10 @@ archived
 
 UX direction:
 
-- Make "needs review" and "failed" easy to notice.
+- Make "needs review" and "failed" easy to notice, by wording as well as by colour.
 - Search and filters should not dominate the screen.
 - Show useful metadata: issuer, document type, due date, last updated.
+- Putting a letter away destroys nothing: it keeps its task, its reminders and its calendar dots, because a person confirmed it and that has not stopped being true. Where a person browses letters they have put away is not settled; this route is the proposal, not a decision.
 
 Responsive layout:
 
@@ -522,7 +537,8 @@ UX direction:
 
 - Every task should trace back to this document.
 - If a document still needs review, the primary action should be "Review extracted information".
-- Do not show raw AI output as the main content.
+- Do not show raw AI output as the main content. There is no transcription snippet to show at all: the contract carries no `raw_text` (ADR 004).
+- Nothing here is editable either. The fields are what the last successful reading said, shown, and the only way to change them is photographing the letter again.
 
 Responsive layout:
 
@@ -543,7 +559,7 @@ Route:
 
 Purpose:
 
-- Let users confirm or correct AI-extracted information before tasks/reminders are created.
+- Let users see what was read and accept it, before tasks and reminders are created.
 
 Primary users:
 
@@ -551,52 +567,55 @@ Primary users:
 
 Primary actions:
 
-- Confirm extracted fields
-- Correct uncertain fields
-- Mark unreadable fields
-- Create task/reminder after confirmation
+- Confirm
+- Photograph the letter again, when something is wrong or missing
+- Open the photograph
 
 Content:
 
 - Original document preview
-- Extracted field form
-- Field status badges
-- Evidence/reference text where available
-- Correction inputs
+- Extracted fields, read-only, in reading order
+- Card-level sentence when the date or the action is missing
+- Plan card saying what DayKeeper will do, worded by `planReminders()` and never by hand: a deadline gets reminders 7, 3 and 1 days before at 9 am local, an appointment (anything with a time on it) gets one the day before, and a reminder whose day has already gone is never shown and never created
 - Confirm button
-- Cancel/back action
+- Back action
 
-Field statuses:
+Field statuses that reach this screen:
 
 ```text
 confirmed
-uncertain
 unreadable
 ```
+
+`uncertain` is a third state in storage only. How often the model hedges, and what it guesses when it does, is evaluation data; the server collapses it to `unreadable` on the way out, so no screen, no API response and no projection ever carries a value the model was not sure of (ADR 008).
 
 UX direction:
 
 - This is one of the most important pages in DayKeeper.
-- The user must feel in control.
-- Uncertain fields should be clearly highlighted.
-- The page should never imply that unreviewed AI output is final.
-- Use supportive language: "Please check this date" instead of "Low confidence".
+- **The screen shows, it never asks** (ADR 008). Nothing is editable: no text inputs, no date box, no dropdowns, no "please check this" prompt, no acknowledgement toggle. Confirming is an empty `POST`, and its only error is that the letter was already confirmed.
+- **Rows without a confident value are not drawn.** An empty row invites an answer nobody is being asked for. When the date or the action is missing, the card says so once, in a plain sentence with a full stop: "This letter doesn't give a clear date. It's saved; nothing goes on your calendar."
+- That sentence is set in bark brown on sandy yellow, not orange and not red. This reader tends to blame herself, and an alarm colour reads as *I did something wrong* when what it means is *the letter did not give this up*.
+- **The one remedy is the camera.** Whatever is wrong or missing, whether the photograph was poor or the letter itself never said, the person's one move is photographing the letter again, through the same capture screen as everything else. The matching step recognising the new photographs as this letter is what corrects the record.
+- The user's job is recognition, not data entry: does this match the letter? Recognition is easy for this audience; typing a date into a box on a phone is not.
+- The promise the screen makes is checkable: **you will be asked whenever what you have to do changes, and never otherwise.** Pages that arrive later for a letter already confirmed are compared on four values (`action_required`, `due_date`, `due_time`, `amount`); if any changed the letter comes back here, and if none did it is updated silently.
+- A letter with a clear action and no clear date is still confirmed into a task. It shows "No date", never reminds, never touches the calendar, and stays on the list until it is ticked. A letter with no clear action becomes no task at all; it is kept as a letter.
+- An unreadable field never blocks confirming. Trapping the person on a screen that offers her nothing to fix is a worse failure than a missing reference number.
 
 Responsive layout:
 
 - Desktop: split view:
   - left: original document preview
-  - right: editable extracted fields
+  - right: the read-only field list and the confirm button
 - Mobile:
   - top: short document summary
-  - then: field-by-field review
+  - then: the field list, read top to bottom
   - document preview accessible through expand/collapse
 
 Taste Skill usage:
 
 - Use strongly here, but with strict constraints.
-- Prioritize clarity, accessible forms, status visibility, and user control.
-- Do not add decorative visuals that distract from verification.
+- Prioritize clarity, large legible values, and one obvious button.
+- Do not add decorative visuals that distract from recognition.
 
 ### Page 10: Tasks and Reminders
 
@@ -608,7 +627,7 @@ Route:
 
 Purpose:
 
-- Let users manage obligations generated from documents or manually created.
+- Let users manage the obligations that came out of their letters. There is no manual task creation: a task exists because a confirmed letter said so.
 
 Primary users:
 
@@ -616,36 +635,37 @@ Primary users:
 
 Primary actions:
 
-- View overdue tasks
-- View upcoming tasks
-- Mark task complete
-- Edit task
-- Open source document
+- Tick a task off
+- Untick it again
+- Open the source document
 
 Content:
 
-- Task filters
-- Overdue section
-- Upcoming section
-- Completed section
-- Task detail drawer or expandable row
+- One task list, due date ascending, dateless tasks last
+- Optional filters as views over that one list
+- Task detail drawer or expandable row, showing the letter's fields and its reminders
 - Link to source document
 
 Suggested filters:
 
 ```text
 All
-Overdue
-This week
-Needs action
+Open
 Completed
 ```
 
 UX direction:
 
-- The most urgent task should be visually obvious.
+- **The tick is the only state a task stores** (ADR 007). Completed, overdue and upcoming are worked out while drawing, from the tick and today's date in the person's timezone. Nothing writes "overdue" anywhere, so nothing has to notice midnight.
+- **Overdue is told in words, not colour**: `was due Wed 5 Aug` in the date column, set bolder. Not red, because red already means a failed reading here. No badge and no separate overdue section: due date ascending puts an overdue row above every upcoming one, so the pinning is the sort.
+- A task with no due date reads "No date", draws no calendar mark, has no reminders, and stays on the list until it is ticked. The list itself is its reminder.
+- **Ticking is never locked**, in either direction, forever, wherever the row is visible: this list, the dashboard, and the calendar's day sheet. Unticking a task whose date has passed makes it overdue by arithmetic, not by transition, and nobody should need an apology for ticking something off by accident three weeks ago.
+- The calendar is a view of this same data and has none of its own: due dates as red dots, reminders as gold ones, and a day sheet that words each reminder from the task and the day. Nothing on it is editable and there is no manual calendar entry. This specification has no route for it yet; the prototype does.
+- Ticking writes nothing to reminders and unticking writes nothing back. A reminder's own moment is when the product decides: still open means it is sent, already done means it is skipped silently. So "no more reminders for this" is derived truth on screen, never a stored flag.
+- Reminder statuses a row may show are `scheduled`, `sent`, `skipped` and `failed`. There is no cancelled.
 - Completed tasks should not distract from open tasks.
-- Every generated task should show why it exists.
+- Every generated task should show why it exists, by linking to the letter it came from.
+- The only thing this screen can change about a task is the tick. Editing a title, a date or an amount is not a missing feature; the remedy for a wrong reading is photographing the letter again.
 
 Responsive layout:
 
@@ -664,6 +684,8 @@ Route:
 ```text
 /settings
 ```
+
+Status: not specified yet. Profile, notifications, password change, delete account and exposing the timezone the schema already stores are all on the open list in `docs/api.md`. The route is planned; the endpoints behind it are not designed.
 
 Purpose:
 
@@ -736,8 +758,9 @@ Content:
 
 Important privacy rule:
 
-- Admin users should not see private document content by default.
+- Admin users should not see private document content. This is structural, not a setting: the operator role grants no access to letter content and the audit table has nowhere to put it (ADR 002).
 - Admin views should focus on system health and support, not user surveillance.
+- The operator's exact permissions are still open, and the endpoints behind this page wait on them.
 
 Suggested admin tabs:
 
@@ -836,25 +859,29 @@ ConfirmDialog
 Document components:
 
 ```text
-DocumentUploadPanel
+PilePanel
 DocumentPreview
 DocumentStatusBadge
 DocumentList
 DocumentSummary
-ExtractionFieldEditor
-ReviewStatusCallout
+ExtractionFieldList
+MissingValueNote
 ```
+
+`PilePanel` takes several photographs and posts them as one batch. `ExtractionFieldList` is read-only and draws no row for a value that is absent; `MissingValueNote` is the card-level sentence that says what the letter did not give up. There is no field editor and no correction component anywhere in this map.
 
 Task components:
 
 ```text
 TaskList
 TaskRow
-TaskStatusBadge
+TaskTick
 TaskDetailPanel
 DueDateIndicator
 SourceDocumentLink
 ```
+
+`DueDateIndicator` carries the whole overdue signal, in words: an ordinary date, `was due Wed 5 Aug` in bold, or `No date`. There is no overdue badge to build.
 
 Admin components:
 
@@ -873,18 +900,21 @@ Use this prompt when asking an agent to build or redesign DayKeeper UI:
 Use Taste Skill as a UI quality checklist, but keep DayKeeper as a restrained operational dashboard, not a marketing website.
 
 Project context:
-DayKeeper is a responsive web app for vulnerable users. Users upload document photos, review AI-extracted obligations, and manage tasks and reminders.
+DayKeeper is a responsive web app for vulnerable users. Users photograph a pile of letters, look at what was read, and manage the tasks and reminders that follow. The product has two verbs, photograph and tick.
 
 Design priorities:
 - clarity before decoration
 - low cognitive load
-- accessible contrast and readable text
+- accessible contrast and readable text: body 18px or larger, primary buttons 48px or taller
 - obvious next action
-- mobile-first upload and review flow
-- visible uncertainty for AI-extracted fields
+- mobile-first capture and review flow
+- read-only review: no field editing, no date box, no "please check this" prompt
+- a state is never carried by colour alone, and nothing is blue
 - no decorative hero sections inside the app
 - no generic feature-card layout
 - no flashy gradients or visual clutter
+
+Read docs/theme.md before styling anything, and use the palette tokens rather than typing a hex value.
 
 Implement the requested page using the existing Next.js, Tailwind, shadcn/ui, and lucide-react stack.
 ```
@@ -894,34 +924,34 @@ Implement the requested page using the existing Next.js, Tailwind, shadcn/ui, an
 Recommended page implementation order:
 
 1. App shell, sidebar, topbar, mobile bottom navigation
-2. Login and register pages
-3. Dashboard
-4. Upload document photo page
-5. Document archive page
-6. Document detail page
-7. Extraction review and confirmation page
-8. Tasks and reminders page
-9. Settings page
-10. Admin dashboard
+2. Dashboard
+3. Upload document photo page
+4. Extraction review and confirmation page
+5. Tasks and reminders page
+6. Document archive page
+7. Document detail page
+8. Login and register pages
+9. Admin dashboard
+10. Settings page
 11. Optional public entry page polish
 
 Reason:
 
 - The app shell creates navigation consistency.
-- Auth gates protect all later pages.
-- Dashboard, upload, review, and tasks represent the core DayKeeper loop.
-- Admin is required but should not drive the end-user experience.
+- Dashboard, upload, review, and tasks are the core DayKeeper loop, and they are built first because the loop is the product.
+- Sign-in does not gate that work. Every handler asks `requireUser()` and the seed plants an account and a session, so the pages are written against a real signed-in user from day one and the login screen slots in behind them later.
+- Admin is required but should not drive the end-user experience, and settings is not designed yet.
 
 ## 12. Final UI Summary
 
 DayKeeper should be designed around one product loop:
 
 ```text
-Upload document photo
--> AI extracts possible obligations
--> User reviews uncertain fields
+Photograph a pile of letters
+-> The reading says what letters are in it and what each one says
+-> User looks at what was read and nods
 -> Confirmed information creates tasks and reminders
--> User manages obligations from dashboard
+-> User ticks obligations off from the dashboard, the task list or the calendar
 ```
 
-Every page should support this loop. Taste Skill should improve visual quality, but DayKeeper's safety, clarity, and accessibility requirements should remain the design authority.
+Every page should support this loop. Taste Skill should improve visual quality, but DayKeeper's safety, clarity, and accessibility requirements should remain the design authority, and where this document and an ADR disagree, the ADR wins.

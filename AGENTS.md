@@ -9,8 +9,8 @@ DayKeeper (Group 1): an AI-powered life management system for people in vulnerab
 - `docs/theme.md`: the theme. The palette, the contrast measurements, and the rules that make this product readable by the people it is for. Read it before styling a screen.
 - `docs/architecture/adr-00*.md`: the decisions that shape the rest (one Next.js app, our own auth behind one function, plain Postgres and an S3 bucket, the six-field extraction contract, the grouping manifest, model-driven matching, and the tick as a task's only state). When something looks odd, the reason is in one of these.
 - `docs/project-description.md`: the official project description, verbatim. Our requirements baseline; when wording conflicts, this file wins.
-- `docs/DayKeeper-Tech-Stack-Recommendation.md`: the tech stack recommendation (draft until the team adopts it).
-- `docs/Technical-Research-and-Implementation-Roadmap.md`: step-by-step research and build plan; check this before starting new feature work.
+- `docs/DayKeeper-Tech-Stack-Recommendation.md`: the tech stack recommendation, corrected 18 August 2026 to match ADRs 001-008. Where it and an ADR disagree, the ADR wins.
+- `docs/Technical-Research-and-Implementation-Roadmap.md`: step-by-step research and build plan, corrected 18 August 2026 to match ADRs 001-008; check this before starting new feature work.
 - `docs/prototype/user/daykeeper-sketch-live.html`: clickable prototype of the user flow (phone). The live one; user-flow design work happens here, and its `:root` block is where the theme's palette lives. See "The look" below.
 - `docs/prototype/admin/daykeeper-admin-sketch.html`: wireframe of the admin dashboard (desktop). Static, no interaction. Keep the two prototypes separate: different device, different person, different module.
 - `.agents/skills/daykeeper-jira/`: how this team's Jira board actually works, as a skill. Codex loads it when a ticket, the board or a sprint comes up; it needs the Atlassian MCP server, which `.codex/config.toml` already defines and the README explains how to authenticate. Optional: nothing in the build depends on it.

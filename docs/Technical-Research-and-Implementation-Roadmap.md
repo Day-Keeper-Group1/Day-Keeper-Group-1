@@ -1,12 +1,13 @@
 # DayKeeper Technical Research and Implementation Roadmap
 
-> **Superseded in part.** This document predates the architecture decision
-> records in `docs/architecture/`. Where the two disagree, **the ADRs win**:
-> this project does not use Supabase Auth (ADR 002), has no migrations and runs
-> Postgres locally in Docker (ADR 003), and the extraction contract is six
-> fields, not seven (ADR 004). The rest of this document still stands.
+> **Aligned, not rewritten.** This document was written before the architecture
+> decision records in `docs/architecture/`. The steps below have been corrected
+> where they recommended something an ADR has since replaced; the plan, its
+> order and its reasoning are otherwise unchanged. Where this document and an
+> ADR still disagree, **the ADR wins**.
 
 Date: 6 August 2026  
+Revised: 18 August 2026, aligned to ADRs 001-008  
 Status: Planning document, before implementation  
 Audience: DayKeeper Group 1
 
@@ -24,7 +25,7 @@ Phase 1 should focus on:
 
 - Module 1: Physical Document Intelligence
 - Module 4: Unified Archive and Action Engine
-- User registration and secure access
+- Secure access, on the seeded accounts until registration and sign-in are built
 - Admin dashboard
 
 Future scope:
@@ -36,15 +37,15 @@ Future scope:
 
 The project can start **technical research and project foundation work now**.
 
-The project should not start full feature development until these are agreed:
+Full feature development had to wait for seven agreements. Six of them have since been made, and where each one landed:
 
-- MVP scope for Phase 1
-- Authentication and authorization approach
-- Whether original uploaded documents must be stored
-- Extraction Contract JSON
-- AI/OCR provider strategy
-- Database schema draft
-- User confirmation workflow
+- MVP scope for Phase 1: Modules 1 and 4, with Modules 2 and 3 out of scope in the charter
+- Authentication and authorization approach: our own users and sessions tables behind one function (ADR 002)
+- Whether original uploaded documents must be stored: yes, as objects in an S3 bucket, never on the server's disk and never in a table (ADR 003)
+- Extraction Contract JSON: six fields plus optional `due_time` (ADR 004)
+- AI/OCR provider strategy: **still open**, waiting on what RACE grants and on which platform
+- Database schema draft: `db/schema.sql`, which is not a draft but the only definition there is
+- User confirmation workflow: the review screen shows and never asks; confirming is an empty POST (ADR 008)
 
 Safe work to start now:
 
@@ -74,19 +75,21 @@ TypeScript
 Tailwind CSS
 shadcn/ui
 lucide-react
-Supabase Auth
-Supabase Postgres
-Supabase Storage
-Postgres Row Level Security
+Our own users and sessions tables, behind requireUser()
+PostgreSQL through pg, no ORM
+S3-protocol object storage, MinIO locally
+Ownership enforced in every query
 Zod
 React Hook Form
-OpenAI / Claude / RMIT Bedrock provider adapter
+Provider adapter with a mock default, real models through RMIT RACE
 Vitest
 Playwright
-Vercel or Docker deployment
+Docker Compose locally, deployment host undecided
 ```
 
-The main reason is speed plus safety. Supabase gives authentication, Postgres, private storage, and Row Level Security in one system. Next.js gives the responsive web app, dashboard UI, and server-side API surface.
+The main reason is speed plus safety. One Next.js application gives the responsive web app, the dashboard UI and the server-side API surface with no second service to keep in step (ADR 001). Everything underneath it is something a teammate can run today with `docker compose up -d`: a Postgres nobody has to be given an account for, and an S3 bucket that is the same code against MinIO now and against whatever the host provides later (ADR 003).
+
+A managed provider is not ruled out. Authentication reaches the rest of the application through exactly one function, so adopting one later replaces a file rather than the schema (ADR 002).
 
 ## 5. Step-by-Step Plan
 
@@ -121,7 +124,7 @@ Key decisions:
 
 - Phase 1 only includes Module 1 and Module 4.
 - Module 2 and Module 3 stay as Future Scope.
-- Confirm whether original uploaded documents must be saved.
+- Uploaded photographs are saved, as objects in the bucket rather than rows in a table or files on a server's disk (ADR 003).
 
 ### Step 1: Architecture Decision Records
 
@@ -130,12 +133,16 @@ Goal:
 - Make explicit decisions about framework, auth, database, file storage, AI provider strategy, and deployment.
 - Record the reasons so the final report can explain the team's engineering choices.
 
-Outputs:
+Outputs (all written, `docs/architecture/`):
 
-- `docs/architecture/adr-001-web-framework.md`
-- `docs/architecture/adr-002-auth-and-permissions.md`
-- `docs/architecture/adr-003-data-storage.md`
-- `docs/architecture/adr-004-extraction-contract.md`
+- `adr-001-web-framework.md`
+- `adr-002-auth-and-permissions.md`
+- `adr-003-data-storage.md`
+- `adr-004-extraction-contract.md`
+- `adr-005-ingestion-and-grouping.md`
+- `adr-006-matching-and-the-projection.md`
+- `adr-007-the-tick-is-the-only-state.md`
+- `adr-008-show-dont-ask.md`
 
 Possible technology stack:
 
@@ -145,8 +152,8 @@ Possible technology stack:
 
 Code readiness:
 
-- No feature code yet.
-- This prepares the team to scaffold safely.
+- Done. The eight above are the decisions the rest of this roadmap is now written against.
+- Deployment is still undecided and is deliberately not an ADR yet.
 
 ### Step 2: Project Foundation
 
@@ -169,7 +176,7 @@ Possible technology stack:
 
 - Next.js App Router
 - TypeScript
-- pnpm
+- npm (the lockfile is `package-lock.json`, installs are `npm ci`)
 - Tailwind CSS
 - ESLint
 - Prettier
@@ -178,27 +185,27 @@ Possible technology stack:
 
 Code readiness:
 
-- This is the first safe coding step.
-- It should not include business logic yet.
+- Done. The scaffold, the linting, the hooks and `.env.example` are on `main`; `docs/start-here.md` is the README this step asked for.
 
-Suggested folder structure:
+Actual folder structure:
 
 ```text
 src/
   app/
   components/
   lib/
+    contract/
   server/
-  types/
+    auth/
+    extraction/
 docs/
   architecture/
-  meeting-minutes/
-supabase/
-  migrations/
+db/
+  schema.sql
 tests/
-  unit/
-  e2e/
 ```
+
+`db/schema.sql` is the whole database. There is no `migrations/` directory and there is not going to be one this semester; see Step 4.
 
 ### Step 3: Authentication and Authorization Research
 
@@ -211,20 +218,19 @@ Outputs:
 
 - Auth flow diagram
 - Role model
-- RLS policy draft
+- Ownership rule for every query
 - Auth implementation ticket list
 
-Recommended option:
+Decided option (ADR 002):
 
-- Supabase Auth
-- Supabase SSR helpers for Next.js
-- Postgres Row Level Security
+- Our own `users` table, passwords hashed with scrypt from Node's crypto module
+- Sessions as rows in `sessions`, keyed by the SHA-256 of a token held in an httpOnly cookie
+- Exactly one function, `requireUser()` in `src/server/auth/session.ts`, and nothing else in the application knows how somebody is authenticated
 
-Alternative option:
+Not chosen, and why it is still reachable:
 
-- Auth.js
-- Prisma
-- Self-hosted PostgreSQL
+- A managed provider (Supabase Auth, Auth.js) would have to be provisioned by somebody with an account, which the project's ban on shared and personally paid cloud accounts makes slow, and its own `auth.users` schema would end up underneath every table we own. Because the interface is one function either way, adopting one later replaces that file and nothing else.
+- Row level security is not used. Ownership is enforced in the queries, every one of which is scoped by user id, and a test proves one person's document is invisible to another.
 
 Recommended roles:
 
@@ -247,7 +253,9 @@ Future scope can include:
 
 Code readiness:
 
-- Start with Supabase Auth proof of concept only after the team accepts the auth direction.
+- The schema and the password hashing are on `main`; the session handling is to be built against the one-function rule.
+- Registration and sign-in exist as endpoints in `docs/api.md` but are deliberately low priority. The seeded accounts (`margaret@example.com`, `operator@example.com`, password `daykeeper`) and the seeded development session are what everyone builds against until somebody writes the real thing.
+- Password reset needs an email sender nobody has chosen, so the page exists and does nothing.
 
 ### Step 4: Database and Storage Design
 
@@ -257,42 +265,54 @@ Goal:
 
 Outputs:
 
-- Entity relationship diagram
-- Database schema draft
-- Migration plan
-- Storage bucket policy draft
+- Entity relationship diagram (`docs/schema-map.html`)
+- `db/schema.sql`, the only definition there is
+- `npm run db:reset` and a seed that puts a complete world back
+- Storage module, `src/server/storage.ts`
 
 Possible technology stack:
 
-- Supabase Postgres
-- SQL migrations
-- JSONB for extraction payloads
-- Supabase Storage private bucket
-- Postgres Row Level Security
+- PostgreSQL in Docker, spoken as plain SQL through `pg`, no ORM
+- One schema file and no migrations, per ADR 003
+- JSONB for extraction payloads (`open_payload`)
+- An S3-protocol bucket, MinIO in `docker-compose.yml` locally
+- Ownership scoped into every query, not row level security
 
-Core tables:
+Core tables (fourteen, plus one view):
 
 ```text
-profiles
+users
+sessions
 documents
+upload_batches
+upload_pages
+grouping_runs
+document_pages
 extraction_runs
 extracted_fields
+matching_runs
 tasks
 reminders
 audit_logs
 ai_prompt_logs
+document_search   (a view, not a table)
 ```
 
 Storage rule:
 
-- Store uploaded files in private object storage.
-- Store file metadata and storage paths in Postgres.
-- Do not store raw file binaries in database tables.
+- Store uploaded photographs in the bucket, never on the server's disk and never in a table.
+- Store the key and the metadata in Postgres.
+- Reach the bytes only through `src/server/storage.ts`. A route that hands out a signed link is still the place ownership gets checked: a signed URL expires, but it does not ask who is holding it.
+
+Migration rule:
+
+- There are no migration files. To change the shape of the database you edit `db/schema.sql` and run `npm run db:reset`, which drops everything, rebuilds it, reseeds and empties the bucket in the same breath.
+- This is safe because there is no data anybody would mind losing, and it means every teammate's database is identical to every other's. It has an expiry date: the first migration tool arrives before the first real user does.
 
 Code readiness:
 
-- Schema draft can be written before UI work.
-- Real migrations should wait until auth and storage choice is confirmed.
+- Done. The schema, the seed and the reset script are on `main`, and `document_search` is the projection ADR 006 matches against.
+- Adding a table later is free under the no-migrations rule, which is why the open items in `docs/api.md` (a `notifications` table, for one) are not blocking anything.
 
 ### Step 5: Extraction Contract
 
@@ -317,7 +337,7 @@ Possible technology stack:
 - Mock provider
 - Vitest
 
-Recommended field status values:
+Field status values:
 
 ```text
 confirmed
@@ -325,7 +345,9 @@ uncertain
 unreadable
 ```
 
-Core fields:
+`uncertain` is storage only. It is kept because how often the model hedges, and what it guesses when it does, is evaluation data. Every outward surface collapses it to `unreadable`, server-side, in one place: no screen, no API response and no projection ever carries a value the model was not sure of (ADR 008).
+
+Core fields, six of them:
 
 ```text
 document_type
@@ -334,50 +356,64 @@ action_required
 due_date
 amount
 reference
-summary
 ```
+
+Plus `due_time` (`HH:mm`), optional, present only when the page prints one. It is what marks a document as an appointment rather than a deadline, which changes how its reminders are planned.
+
+Six is a floor, not a ceiling: a provider that returns more is not punished, the extra lands in `open_payload`. A payload missing one of the six is rejected, and a field the reader could not read must say `unreadable` rather than be omitted.
+
+Two fields this step used to list and the contract does not have:
+
+- `summary` is not a seventh contract field. As prose on a screen it is a hallucination surface aimed at the readers least able to spot an invented sentence (ADR 004). It comes back in ADR 006 as a column on `documents` and a section of the search projection, where it is read by the matching model and never by a person, so that it cannot reach a screen by accident.
+- `raw_text` is gone with contract 2.0. It was designed as independent evidence beside the model's answer, produced by an OCR stage that is not happening this semester. Without that stage it is the same model testifying twice.
 
 Code readiness:
 
-- This is safe to start early because it does not depend on real AI keys.
-- The team can build UI and tests using mock extraction data.
+- Done. `src/lib/contract/` holds the six fields, the grouping manifest, the reminder planner and their validators, with tests that need no database and no network.
+- Import those types rather than restating them.
 
 ### Step 6: Document Photo Upload Flow
 
 Goal:
 
-- Let users upload a photo or existing document file through the responsive website.
+- Let users post a pile of photographs through the responsive website.
 - Keep the flow clear for mobile users.
 
 Outputs:
 
-- Upload page
+- Capture page
 - File validation
-- Preview before processing
-- Document status display
+- Batch status display, and the letters that come out of a batch
 
 Possible technology stack:
 
 - Next.js client components
 - Browser file input with camera capture support
-- Supabase Storage
+- `src/server/storage.ts` for the bytes
 - Zod file metadata validation
 - shadcn/ui form components
 
+An upload is a batch, not a letter (ADR 005):
+
+- `POST /api/documents` takes up to ten photographs, ten megabytes each, and answers with the **batch**, because at the moment the files are stored nothing knows what is in them.
+- A vision pass then divides the pile and answers with a manifest: each letter as the photographs that make it, in reading order, and every photograph that is no letter at all. A photograph of a grandchild becomes nothing, which is an answer rather than a leftover.
+- There is no screen that asks a person to confirm the grouping. A merge shows up as one letter whose fields contradict each other and a split as two letters half unreadable, both on the review screen she is already reading, so a confirmation step would catch nothing and hand the sorting back to her.
+- One batch row therefore becomes several letters on screen. Exactly how that motion looks is on the open list in `docs/api.md`.
+
 Important wording:
 
-- Use "photo upload" instead of "scan" in the UI and docs unless the client later confirms scanner support.
+- Use "photo upload" instead of "scan" in the UI and docs. The input is a phone photo of a document, which is what the project description's responsive web app framing describes.
 
 Code readiness:
 
-- Start after project foundation and storage design.
+- Start after project foundation and storage design. The contract types for the manifest already exist in `src/lib/contract/grouping.ts`.
 
 ### Step 7: AI/OCR Provider Research
 
 Goal:
 
 - Compare realistic AI/OCR options without locking the app to one provider too early.
-- Confirm what RMIT RACE, AWS Bedrock, OpenAI, or Claude access is available.
+- Confirm what model access RMIT RACE can grant, and on which platform.
 
 Outputs:
 
@@ -389,58 +425,63 @@ Outputs:
 
 Possible technology stack:
 
-- OpenAI vision model through Responses API
-- Anthropic Claude vision through Bedrock or direct API
-- AWS Textract if document OCR is prioritized
-- Tesseract only for local baseline experiments
+- A vision model called over HTTP with an image and a prompt, whichever platform RACE ends up providing
+- OCR only as an experiment-line baseline (Tesseract, or a hosted OCR service), not as a stage the contract depends on
 - Provider adapter pattern
 
 Recommended design:
 
 ```text
 DocumentExtractionProvider
-  mock provider
-  openai provider
-  bedrock provider
-  optional ocr baseline provider
+  mock provider (the default, needs no credentials)
+  one real provider, once RACE grants access
+  optional ocr baseline provider, experiment line only
 ```
+
+Three jobs, not one, and all three are model calls behind an interface: dividing a batch into letters (ADR 005), reading a letter's fields (ADR 004), and placing a letter against the archive (ADR 006). Dividing a pile is visual bookkeeping rather than deep reasoning, so the miss-rate experiment should put the small fast models next to the large ones.
 
 Code readiness:
 
-- Start with mock provider.
-- Do not use personal paid API keys.
-- Real integration waits for RMIT/client resource confirmation.
+- Start with the mock provider. It is deliberate about misbehaving: it takes two to seven seconds, hedges on the due date about half the time, and fails outright about one document in eight, because a mock that always succeeds instantly produces an interface with no waiting state and no failure path.
+- Do not use personal paid API keys, and do not put a personal cloud account behind this.
+- Real integration waits for RACE. `AI_EXTRACTION_PROVIDER=openai` throws rather than silently falling back to the mock, because silently fabricating readings of real letters is the worst thing this system could do.
 
 ### Step 8: Review and Confirmation UI
 
 Goal:
 
-- Let the user verify AI-extracted information before tasks are created.
-- Make uncertainty visible and non-threatening.
+- Let the user recognise what was read before tasks are created.
+- Ask nothing. The product shows, it never asks (ADR 008).
 
 Outputs:
 
-- Confirm box page
-- Editable extracted fields
-- Uncertain/unreadable highlighting
-- Save corrections
+- Confirm box page, read-only
+- Rows for the values the model read confidently, and no row at all for the rest
+- A card-level sentence naming what is missing
 - Generate task only after confirmation
 
 Possible technology stack:
 
-- React Hook Form
-- Zod resolver
-- shadcn/ui forms
+- shadcn/ui cards, not forms
 - Tailwind CSS
-- Supabase database updates
+- An empty `POST /api/documents/:id/confirm`, whose only error is that the document was already confirmed
 
 Core principle:
 
-- A confidently wrong value is worse than asking the user to check.
+- Trusting the model includes trusting its "I am not sure". A hedged value is never shown, so a person is never asked to overrule a hesitation she is the least equipped in the world to adjudicate.
+
+What this step must not build:
+
+- No editing of any field, no date box, no manual calendar entry. The one remedy for anything wrong or missing is photographing the letter again, through the same capture screen as everything else, and the matching step placing the new reading against this letter is what corrects the record.
+- No amber "this was hard to read, is it right?" box, no acknowledge step, no `acknowledged_at`. A row without a confident value is not drawn at all, because an empty row invites an answer nobody is being asked for. The card says it in one sentence instead: "This letter doesn't give a clear date. It's saved; nothing goes on your calendar."
+- No page-text snippet beside the value. It would be the same model testifying twice.
+- Date filling is deferred, not rejected. If it comes back it comes back as a designed feature, not as a text box that happened to be lying around.
+
+The product has two verbs, photograph and tick, and a person never needs to learn a third.
 
 Code readiness:
 
-- Start after Contract JSON and mock extraction provider exist.
+- Start after Contract JSON and mock extraction provider exist. Both do.
 
 ### Step 9: Task and Reminder Engine
 
@@ -453,27 +494,38 @@ Outputs:
 
 - Task list
 - Task detail page
-- Reminder records
-- Overdue state
-- Complete/edit/dismiss actions
+- Reminder rows, planned at confirm time
+- Derived overdue state
+- Tick and untick
 
 Possible technology stack:
 
-- Next.js server actions or route handlers
-- Supabase Postgres
-- Date utilities
-- In-app notification table
+- Next.js route handlers
+- Postgres through `pg`
+- Date utilities from `src/lib/contract/dates.ts`, and `users.timezone` for whose morning "9 am" means
 - Optional scheduled jobs later
+
+The tick is the only stored state (ADR 007):
+
+- A task stores one fact a person controls: whether it is ticked. Completed, overdue and upcoming are worked out while drawing, from the tick and today's date in her zone. Nothing writes "overdue" anywhere, so nothing has to wake up at midnight and nothing can forget to un-write it.
+- Ticking is never locked, in either direction, forever, from the home list and from the calendar's day sheet.
+- Overdue is told in words and never in colour: "was due Wed 5 Aug", set bolder. Red already means a failed reading here, and colour is never the only signal. Due date ascending puts overdue rows first, so the sort is the pinning.
 
 MVP reminder approach:
 
-- Store reminder times in database.
-- Show reminders in-app.
-- Email reminders can be Should/Could unless confirmed as Must.
+- Reminder rows are planned at confirm time by `planReminders()` and nowhere else: a deadline gets 7, 3 and 1 days before at 9 am local, an appointment (anything with a `due_time`) gets one, the day before. A reminder whose day has already gone by is never created.
+- **Ticking writes nothing to reminders, and unticking writes nothing back.** When a reminder's moment arrives the dispatcher reads the task at that moment: still open means send and write `sent`, already done means send nothing and write `skipped`. There is no `cancelled` status, because nothing writes it, and there is no revival rule, because there is nothing to revive.
+- `reminder_status` is `scheduled | sent | skipped | failed`.
+- Show reminders in-app. Email reminders can be Should/Could unless confirmed as Must.
+- What wakes the dispatcher up is still open: a cron job, a platform scheduler, or in-app only. What it decides is settled.
+
+Home list rule:
+
+- Every open task whatever its date, plus anything completed within seven days of the tick, by due date ascending with dateless tasks last, capped at twenty. Open tasks are never filtered by date: an unpaid bill from three weeks ago is the loudest thing this person owns.
 
 Code readiness:
 
-- Start after user confirmation flow works.
+- Start after user confirmation flow works. `src/lib/contract/reminders.ts` is already the one place the scheduling rule lives, and both the review card and the confirm handler call it with the same `today` so they cannot disagree.
 
 ### Step 10: Admin Dashboard
 
@@ -492,8 +544,8 @@ Outputs:
 Possible technology stack:
 
 - Next.js protected routes
-- Supabase Auth roles
-- RLS policies
+- `requireUser()` and the `user_role` enum
+- Ownership and role checks written into the queries
 - SQL aggregate queries
 - shadcn/ui tables/charts
 
@@ -504,6 +556,8 @@ Phase 1 admin scope:
 - Usage counts
 - Processing errors
 
+The operator role deliberately grants no access to letter content. That is the promise the admin prototype makes on screen, and `audit_logs` has nowhere to put the contents of a letter, so the schema is built such that it cannot quietly be broken.
+
 Future admin scope:
 
 - Organization admin
@@ -512,7 +566,7 @@ Future admin scope:
 
 Code readiness:
 
-- Start only after role model is agreed.
+- The role model is agreed; the operator's exact permissions are not, and the admin endpoints are on the open list in `docs/api.md` until they are.
 
 ### Step 11: Testing and Quality Gates
 
@@ -532,27 +586,29 @@ Possible technology stack:
 - Vitest
 - React Testing Library
 - Playwright
-- Supabase local or test project
+- The Docker Postgres and MinIO everyone already runs, rebuilt by `npm run db:reset`
 
 Minimum tests:
 
-- User can register and log in.
-- User can upload a photo.
-- Mock extraction returns Contract JSON.
-- Uncertain fields require review.
-- User correction creates a confirmed task.
-- Another user cannot read the document.
-- Admin cannot see private document content unless explicitly allowed.
+- A person can sign in with a seeded account.
+- A person can post a pile of photographs, and the batch answers before anything has been read.
+- The mock reader returns a conformant payload, and one missing a required field is rejected.
+- A field the model was unsure of leaves the server as `unreadable`, on every surface.
+- Confirming an already confirmed document answers `409`.
+- Confirming creates the task and exactly the reminder rows `planReminders()` planned.
+- Ticking a task writes no reminder row, and a reminder firing against a done task writes `skipped`.
+- Another person cannot read the document.
+- An operator cannot see letter content anywhere.
 
 Code readiness:
 
-- Tests should start as soon as contracts and routes exist.
+- Tests should start as soon as contracts and routes exist. `tests/contract.test.ts` runs today with no database and no network, and `tests/theme.test.ts` fails the build if a palette colour drifts.
 
 ### Step 12: Deployment Research
 
 Goal:
 
-- Decide whether the prototype is deployed through Vercel/Supabase or a more controlled RMIT/client environment.
+- Decide where the prototype runs, given that the risk register records that hosting may not satisfy RMIT or client constraints.
 
 Outputs:
 
@@ -563,21 +619,20 @@ Outputs:
 
 Possible technology stack:
 
-- Vercel
-- Supabase hosted project
-- Docker Compose
-- Self-hosted Postgres
-- MinIO or S3-compatible storage
+- Any host that runs a Next.js application
+- Ordinary managed Postgres
+- Any S3-protocol bucket
 
 Recommendation:
 
-- Use Vercel + Supabase for fastest MVP if allowed.
-- Keep Docker Compose as fallback if the client/RMIT requires self-hosting.
+- Nothing in the build forecloses the choice, and that is deliberate. The schema depends on no vendor extension and runs anywhere Postgres does; the storage code written against MinIO is the same code that runs against S3, R2 or a managed bucket, with the endpoint and the credentials as environment variables.
+- The host is on the open list until somebody decides. Do not adopt a platform's auth or storage on the way to picking one: that is the decision that would be hard to reverse.
+- Locally everything is `docker compose up -d`: Postgres on 55432, MinIO on 59000, viewers on 8080 and 59001.
 
 Code readiness:
 
-- Can prepare `.env.example` early.
-- Do not deploy with real private documents during early tests.
+- `.env.example` exists and is the list.
+- Do not deploy with real private documents at any point. Development and testing run on the synthetic dataset; real letters are the legal problem the synthetic line exists to avoid.
 
 ## 6. Taste Skill Usage in DayKeeper
 
@@ -599,9 +654,9 @@ It is not the core DayKeeper technology stack.
 It does not replace:
 
 - Next.js
-- Supabase
+- The database and storage design
 - Auth
-- Database design
+- `docs/theme.md`, which is this product's actual visual authority
 - OCR/AI provider design
 - Contract JSON
 - Accessibility requirements
@@ -632,7 +687,7 @@ Use Taste Skill during these moments:
 Do not use it during:
 
 - Database schema work
-- Auth and RLS design
+- Auth and permissions design
 - API contract work
 - AI/OCR provider integration
 - Backend testing
@@ -685,10 +740,10 @@ Use these principles even if Taste Skill is installed:
 
 - Product UI first, landing page second.
 - Calm dashboard, not flashy marketing.
-- Clear status labels: `needs review`, `confirmed`, `overdue`, `completed`.
-- Large enough tap targets on mobile.
-- Strong contrast for important actions.
-- Do not hide uncertainty.
+- Clear status labels, spelled the way the database spells them so nothing is translated on the way to the screen: `needs-review`, `confirmed`, `overdue`, `completed`.
+- Tap targets sized for the audience: body text at least 18px, primary buttons at least 48px tall.
+- Strong contrast for important actions: body text clears 7:1, and colour is never the only signal.
+- Say plainly what could not be read, in a sentence, and show nothing hedged. That is not the same as hiding uncertainty: the missing value is named, it is just never dressed up as an answer or as a question.
 - Do not overload vulnerable users with dense screens.
 - Make the next action obvious.
 - Every generated task must link back to the source document.
@@ -697,15 +752,16 @@ Use these principles even if Taste Skill is installed:
 
 These tasks can start before full coding:
 
-| Task | Owner suggestion | Output |
-|---|---|---|
-| Compare Supabase Auth vs Auth.js | Sai / XC | ADR draft |
-| Draft database schema | Jason / Sai | ERD and table list |
-| Draft Contract JSON with Zod shape | Sai / Jason | Schema document |
-| Research AI/OCR provider options | Sai / Jason | Provider comparison |
-| Review UI prototype with accessibility focus | XC / Hiruni | UI notes |
-| Define admin dashboard MVP | Gerry / Hiruni | Admin scope note |
-| Clean backlog contradictions | Gerry / team | Jira-ready backlog |
+| Task | Owner suggestion | Output | State |
+|---|---|---|---|
+| Decide the auth approach | Sai / XC | ADR draft | Done, ADR 002 |
+| Draft database schema | Jason / Sai | ERD and table list | Done, `db/schema.sql` and `docs/schema-map.html` |
+| Draft Contract JSON with Zod shape | Sai / Jason | Schema document | Done, `src/lib/contract/` |
+| Research AI/OCR provider options | Sai / Jason | Provider comparison | Open, waiting on RACE access |
+| Measure how often the reader divides a batch wrongly | Jason / Sai | Miss rate, per model | Open, and it validates or kills ADR 005 |
+| Review UI prototype with accessibility focus | XC / Hiruni | UI notes | Open, `docs/theme.md` is the standard to review against |
+| Define admin dashboard MVP | Gerry / Hiruni | Admin scope note | Open, blocks the admin endpoints |
+| Clean backlog contradictions | Gerry / team | Jira-ready backlog | Done |
 
 ## 8. Recommended Coding Order
 
@@ -713,33 +769,38 @@ Once the team is ready to start implementation, use this order:
 
 1. Scaffold Next.js project.
 2. Add Tailwind and base UI components.
-3. Add Supabase client and `.env.example`.
-4. Implement auth pages.
-5. Draft database migrations.
+3. Add `.env.example`, the Docker Compose stack, and the two server modules everything else goes through: `src/server/db.ts` and `src/server/storage.ts`.
+4. Put `requireUser()` in front of the pages and build on the seeded accounts. Registration and sign-in pages come later.
+5. Write `db/schema.sql` and its seed, and change the database from then on by editing that file and running `npm run db:reset`.
 6. Add protected dashboard shell.
-7. Add mock document upload flow.
+7. Add the batch upload flow: a pile of photographs in, the batch back straight away, letters appearing as the reading divides them.
 8. Add Contract JSON and mock extraction.
-9. Add review/confirm UI.
+9. Add review/confirm UI, read-only, confirmed by an empty POST.
 10. Generate tasks from confirmed fields.
-11. Add in-app reminders.
+11. Add in-app reminders, planned at confirm time and judged at fire time.
 12. Add basic admin dashboard.
 13. Add tests.
-14. Add real AI/OCR provider after resources are confirmed.
+14. Add the real provider after RACE access is confirmed.
+
+Steps 1, 2, 3, 5 and 8 are on `main` already, and step 4 has its schema and its password hashing but not its session handling. The work in front of the team starts at wiring the pages to real endpoints.
 
 ## 9. Final Recommendation
 
-The team should begin with technical research and foundation work, not feature-heavy implementation.
+The team should begin with technical research and foundation work, not feature-heavy implementation. That research has since been done and the foundation is on `main`, so both recommendations below have moved on with it.
 
-Best immediate next step:
+Immediate next step, as it was written:
 
 ```text
-Write ADRs for auth, data storage, AI extraction contract, and deployment.
+Write ADRs for auth, data storage, and the AI extraction contract.
 ```
 
-Best first code step after ADRs:
+Done, and five more with them: ADRs 001 to 008. Deployment is deliberately still not one of them, because nobody has picked a host.
+
+First code step, now that the scaffold exists:
 
 ```text
-Scaffold Next.js + TypeScript + Tailwind, then implement authentication and the dashboard shell.
+Wire the pages to real endpoints: the batch upload, the reading that
+divides it into letters, and the read-only card that confirms one.
 ```
 
 Taste Skill should be used later as a frontend polish assistant, not as the main technical decision-maker for DayKeeper.
@@ -749,12 +810,18 @@ Taste Skill should be used later as a frontend polish assistant, not as the main
 - Taste Skill docs: https://www.tasteskill.dev/docs
 - Taste Skill GitHub repository: https://github.com/Leonxlnx/taste-skill
 - Next.js docs: https://nextjs.org/docs
-- Supabase Auth docs: https://supabase.com/docs/guides/auth
-- Supabase Row Level Security docs: https://supabase.com/docs/guides/database/postgres/row-level-security
-- Supabase Storage access control docs: https://supabase.com/docs/guides/storage/security/access-control
+- node-postgres docs: https://node-postgres.com/
+- Node.js crypto docs, for `scrypt`: https://nodejs.org/api/crypto.html
+- MinIO docs, for the S3 protocol locally: https://min.io/docs/minio/linux/index.html
 - PostgreSQL JSON types docs: https://www.postgresql.org/docs/current/datatype-json.html
 - OpenAI image and vision docs: https://developers.openai.com/api/docs/guides/images-vision
 - OpenAI Structured Outputs docs: https://developers.openai.com/api/docs/guides/structured-outputs
-- Auth.js Prisma Adapter docs: https://authjs.dev/getting-started/adapters/prisma
 - Zod docs: https://zod.dev/
 - Playwright docs: https://playwright.dev/docs/intro
+
+Read for the managed-provider direction that ADRs 002 and 003 did not take, and kept here so the report can show it was considered rather than missed:
+
+- Supabase Auth docs: https://supabase.com/docs/guides/auth
+- Supabase Row Level Security docs: https://supabase.com/docs/guides/database/postgres/row-level-security
+- Supabase Storage access control docs: https://supabase.com/docs/guides/storage/security/access-control
+- Auth.js Prisma Adapter docs: https://authjs.dev/getting-started/adapters/prisma

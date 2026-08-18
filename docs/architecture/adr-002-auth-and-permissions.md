@@ -26,10 +26,11 @@ A `users` table of our own, passwords hashed with scrypt from Node's crypto
 module, and sessions as rows in a `sessions` table keyed by the SHA-256 of a
 random token held in an httpOnly cookie.
 
-Every caller must reach authentication through exactly one function,
-`getCurrentUser()`, to live at `src/server/auth/session.ts`. Nothing else in the
-application may know how someone is authenticated. This branch ships the schema
-and the password hashing; the session handling is to be built against that rule.
+Every caller must reach authentication through exactly one seam,
+`src/server/auth/session.ts`: `getCurrentUser()` answers who is asking (null
+when nobody is), and `requireUser()` is the same answer for handlers that
+cannot proceed without one (it throws, and the handler maps that to a 401).
+Nothing else in the application may know how someone is authenticated.
 
 ## Why
 
