@@ -6,19 +6,23 @@ import {
   LayoutDashboard,
   FolderOpen,
   ListChecks,
-  Settings,
+  CalendarDays,
   Upload,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+// Settings stays reachable from the topbar's account menu on every screen
+// size, so the bottom row keeps to what a phone screen has room for: the
+// three tabs the product prototype itself uses (Home, Scan, Calendar) plus
+// the desktop app's archive and task list either side of them.
 const SIDE_ITEMS = [
   { label: "Home", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Archive", href: "/documents", icon: FolderOpen },
+  { label: "Calendar", href: "/calendar", icon: CalendarDays },
 ] as const;
 
 const TRAILING_ITEMS = [
+  { label: "Archive", href: "/documents", icon: FolderOpen },
   { label: "Tasks", href: "/tasks", icon: ListChecks },
-  { label: "More", href: "/settings", icon: Settings },
 ] as const;
 
 export function MobileBottomNav() {

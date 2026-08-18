@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ListChecks } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/layout/page-header";
-import { StatusBadge, type Status } from "@/components/status-badge";
+import { TaskRow } from "@/components/task-row";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -16,24 +16,50 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MOCK_TASKS, type MockTask } from "@/lib/mock-data";
+import {
+  formatTaskWhen,
+  MOCK_TASKS,
+  taskStatus,
+  tasksInOrder,
+  TODAY,
+  type MockTask,
+  type TaskStatus,
+} from "@/lib/mock-data";
 
-const FILTERS: { label: string; value: "all" | Status }[] = [
+const FILTERS: { label: string; value: "all" | TaskStatus }[] = [
   { label: "All", value: "all" },
   { label: "Overdue", value: "overdue" },
   { label: "Upcoming", value: "upcoming" },
+  { label: "No date", value: "no-date" },
   { label: "Completed", value: "completed" },
 ];
 
-const SECTIONS: { title: string; status: Status }[] = [
+const SECTIONS: { title: string; status: TaskStatus }[] = [
   { title: "Overdue", status: "overdue" },
   { title: "Upcoming", status: "upcoming" },
+  { title: "No date", status: "no-date" },
   { title: "Completed", status: "completed" },
 ];
 
 export default function TasksPage() {
-  const [filter, setFilter] = useState<"all" | Status>("all");
-  const [selectedTask, setSelectedTask] = useState<MockTask | null>(null);
+  // Mock-only state, local to this page: there is no backend yet (KAN board
+  // tickets for the real API haven't landed), so ticking here does not
+  // travel to the dashboard or the calendar. What it does demonstrate is
+  // ADR 007 itself: the tick is the only thing that changes, and everything
+  // else on the row is worked out fresh from it.
+  const [tasks, setTasks] = useState<MockTask[]>(MOCK_TASKS);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [filter, setFilter] = useState<"all" | TaskStatus>("all");
+
+  function toggleDone(id: string) {
+    setTasks((prev) =>
+      prev.map((task) =>
+        task.id === id ? { ...task, done: !task.done } : task,
+      ),
+    );
+  }
+
+  const ordered = useMemo(() => tasksInOrder(tasks), [tasks]);
 
   const sections = useMemo(
     () =>
@@ -41,12 +67,15 @@ export default function TasksPage() {
         (section) => filter === "all" || filter === section.status,
       ).map((section) => ({
         ...section,
-        tasks: MOCK_TASKS.filter((task) => task.status === section.status),
+        tasks: ordered.filter(
+          (task) => taskStatus(task, TODAY) === section.status,
+        ),
       })),
-    [filter],
+    [ordered, filter],
   );
 
   const hasAnyTask = sections.some((section) => section.tasks.length > 0);
+  const selectedTask = tasks.find((task) => task.id === selectedId) ?? null;
 
   return (
     <div className="space-y-6">
@@ -57,9 +86,9 @@ export default function TasksPage() {
 
       <Tabs
         value={filter}
-        onValueChange={(value) => setFilter(value as "all" | Status)}
+        onValueChange={(value) => setFilter(value as "all" | TaskStatus)}
       >
-        <TabsList>
+        <TabsList className="flex-wrap">
           {FILTERS.map((item) => (
             <TabsTrigger key={item.value} value={item.value}>
               {item.label}
@@ -87,21 +116,11 @@ export default function TasksPage() {
                 >
                   {section.tasks.map((task) => (
                     <li key={task.id}>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedTask(task)}
-                        className="flex w-full items-center justify-between rounded-lg border border-border px-4 py-3 text-left transition-colors hover:bg-muted/60"
-                      >
-                        <span>
-                          <span className="block text-sm font-medium text-foreground">
-                            {task.title}
-                          </span>
-                          <span className="block text-xs text-muted-foreground">
-                            {task.issuer} &middot; due {task.dueDate}
-                          </span>
-                        </span>
-                        <StatusBadge status={task.status} />
-                      </button>
+                      <TaskRow
+                        task={task}
+                        onToggle={toggleDone}
+                        onOpen={() => setSelectedId(task.id)}
+                      />
                     </li>
                   ))}
                 </ul>
@@ -113,7 +132,7 @@ export default function TasksPage() {
 
       <Sheet
         open={Boolean(selectedTask)}
-        onOpenChange={(open) => !open && setSelectedTask(null)}
+        onOpenChange={(open) => !open && setSelectedId(null)}
       >
         <SheetContent>
           {selectedTask ? (
@@ -124,13 +143,9 @@ export default function TasksPage() {
               </SheetHeader>
               <div className="space-y-4 px-4">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Status</span>
-                  <StatusBadge status={selectedTask.status} />
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Due date</span>
+                  <span className="text-muted-foreground">When</span>
                   <span className="text-foreground">
-                    {selectedTask.dueDate}
+                    {formatTaskWhen(selectedTask, TODAY)}
                   </span>
                 </div>
                 {selectedTask.documentId ? (
@@ -143,11 +158,9 @@ export default function TasksPage() {
                 ) : null}
               </div>
               <SheetFooter>
-                {selectedTask.status !== "completed" ? (
-                  <Button onClick={() => setSelectedTask(null)}>
-                    Mark as complete
-                  </Button>
-                ) : null}
+                <Button onClick={() => toggleDone(selectedTask.id)}>
+                  {selectedTask.done ? "Mark as not done" : "Mark as complete"}
+                </Button>
               </SheetFooter>
             </>
           ) : null}

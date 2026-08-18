@@ -4,7 +4,12 @@ import { FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/layout/page-header";
 import { StatusBadge } from "@/components/status-badge";
-import { getDocumentById, MOCK_TASKS } from "@/lib/mock-data";
+import {
+  formatTaskWhen,
+  getDocumentById,
+  MOCK_TASKS,
+  taskStatus,
+} from "@/lib/mock-data";
 
 export default async function DocumentDetailPage({
   params,
@@ -110,10 +115,10 @@ export default async function DocumentDetailPage({
                           {task.title}
                         </span>
                         <span className="block text-xs text-muted-foreground">
-                          Due {task.dueDate}
+                          {formatTaskWhen(task)}
                         </span>
                       </span>
-                      <StatusBadge status={task.status} />
+                      <StatusBadge status={taskStatus(task)} />
                     </Link>
                   </li>
                 ))}

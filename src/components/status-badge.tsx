@@ -9,7 +9,8 @@ export type Status =
   | "unreadable"
   | "processing"
   | "upcoming"
-  | "archived";
+  | "archived"
+  | "no-date";
 
 const STATUS_LABEL: Record<Status, string> = {
   confirmed: "Confirmed",
@@ -21,6 +22,7 @@ const STATUS_LABEL: Record<Status, string> = {
   processing: "Processing",
   upcoming: "Upcoming",
   archived: "Archived",
+  "no-date": "No date",
 };
 
 /**
@@ -34,6 +36,11 @@ const STATUS_LABEL: Record<Status, string> = {
  * not sure of never reaches a screen at all (ADR 008), so there is nothing to
  * badge. "Needs review" keeps its unalarmed colour because this product's
  * reader tends to assume anything orange is her fault.
+ *
+ * "No date" (ADR 008: a letter with a clear action and no clear date still
+ * becomes a task) shares "archived"'s quiet, neutral styling on purpose:
+ * ADR 007 gives an overdue row no severity beyond bold text, and a dateless
+ * task is not even overdue, so it earns no colour at all.
  */
 const STATUS_CLASS: Record<Status, string> = {
   confirmed: "bg-success-bg text-success border-success/25",
@@ -45,6 +52,7 @@ const STATUS_CLASS: Record<Status, string> = {
   processing: "bg-primary-soft text-primary border-primary/25",
   upcoming: "bg-primary-soft text-primary border-primary/25",
   archived: "bg-muted text-muted-foreground border-border",
+  "no-date": "bg-muted text-muted-foreground border-border",
 };
 
 const STATUS_DOT: Record<Status, string> = {
@@ -57,6 +65,7 @@ const STATUS_DOT: Record<Status, string> = {
   processing: "bg-primary",
   upcoming: "bg-primary",
   archived: "bg-muted-foreground",
+  "no-date": "bg-muted-foreground",
 };
 
 export function StatusBadge({

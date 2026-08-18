@@ -2,36 +2,71 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Camera, FileText, RotateCcw, Upload } from "lucide-react";
+import { Camera, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/layout/page-header";
+import { MAX_PAGES } from "@/lib/contract/api";
 
+type Photo = {
+  id: string;
+  file: File;
+  previewUrl: string | null;
+};
+
+/**
+ * An upload is a batch, not a single letter (ADR 005). A person clears a
+ * week of post however it comes to hand: several letters, shuffled,
+ * sometimes more than one page each. So the camera stays open across taps,
+ * the pile grows as a grid rather than replacing itself, and the one thing
+ * this screen asks is "read it" or "read them" — never how many letters
+ * that pile will turn out to be. That answer is the reading's judgement,
+ * not this screen's.
+ */
 export default function UploadDocumentPage() {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
-  const [file, setFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [photos, setPhotos] = useState<Photo[]>([]);
+  const [submitting, setSubmitting] = useState(false);
 
-  function handleFile(selected: File | null) {
-    if (previewUrl) URL.revokeObjectURL(previewUrl);
-    setFile(selected);
-    setPreviewUrl(
-      selected && selected.type.startsWith("image/")
-        ? URL.createObjectURL(selected)
-        : null,
-    );
+  const atLimit = photos.length >= MAX_PAGES;
+
+  function addFile(selected: File | null) {
+    if (!selected || atLimit) return;
+    setPhotos((prev) => [
+      ...prev,
+      {
+        id: `${Date.now()}-${prev.length}`,
+        file: selected,
+        previewUrl: selected.type.startsWith("image/")
+          ? URL.createObjectURL(selected)
+          : null,
+      },
+    ]);
+  }
+
+  function removePhoto(id: string) {
+    setPhotos((prev) => {
+      const target = prev.find((p) => p.id === id);
+      if (target?.previewUrl) URL.revokeObjectURL(target.previewUrl);
+      return prev.filter((p) => p.id !== id);
+    });
   }
 
   function handleSubmit() {
-    if (!file) return;
+    if (photos.length === 0) return;
+    setSubmitting(true);
+    // No backend yet (see AGENTS.md: the API and the pages are the work
+    // still to build), so this is where a real POST /api/documents would
+    // go. The mock flow moves straight to the archive, where the batch
+    // would appear as it divides into letters.
     router.push("/documents");
   }
 
   return (
     <div className="mx-auto max-w-2xl space-y-8">
       <PageHeader
-        title="Upload a document photo"
-        description="Take a photo or choose a file of the letter, bill, or form."
+        title="Take photos"
+        description="A letter, a bill, a doctor's note: anything with a date in it. They don't have to be the same letter."
       />
 
       <input
@@ -40,72 +75,94 @@ export default function UploadDocumentPage() {
         accept="image/*,.pdf"
         capture="environment"
         className="sr-only"
-        onChange={(event) => handleFile(event.target.files?.[0] ?? null)}
+        onChange={(event) => {
+          addFile(event.target.files?.[0] ?? null);
+          if (inputRef.current) inputRef.current.value = "";
+        }}
       />
 
-      {!file ? (
-        <button
-          type="button"
-          onClick={() => inputRef.current?.click()}
-          className="flex w-full flex-col items-center gap-3 rounded-xl border-2 border-dashed border-border px-6 py-16 text-center transition-colors hover:border-primary/50 hover:bg-muted/40"
-        >
-          <span className="flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-            <Camera className="size-6" strokeWidth={1.75} />
-          </span>
-          <span className="text-sm font-medium text-foreground">
-            Tap to take a photo or choose a file
-          </span>
-          <span className="text-xs text-muted-foreground">
-            JPG, PNG, or PDF, up to 10 MB
-          </span>
-        </button>
-      ) : (
-        <div className="space-y-4">
-          <div className="overflow-hidden rounded-xl border border-border">
-            {previewUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={previewUrl}
-                alt="Preview of the uploaded document"
-                className="max-h-80 w-full object-contain bg-muted"
-              />
-            ) : (
-              <div className="flex items-center gap-3 px-4 py-6">
-                <FileText
-                  className="size-6 shrink-0 text-muted-foreground"
-                  strokeWidth={1.75}
-                />
-                <span className="truncate text-sm font-medium text-foreground">
-                  {file.name}
-                </span>
-              </div>
-            )}
-          </div>
-
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => {
-              handleFile(null);
-              if (inputRef.current) inputRef.current.value = "";
-            }}
-          >
-            <RotateCcw className="size-4" strokeWidth={1.75} />
-            Retake or replace
-          </Button>
-        </div>
-      )}
-
-      <Button
+      <button
         type="button"
-        size="lg"
-        className="w-full"
-        disabled={!file}
-        onClick={handleSubmit}
+        disabled={atLimit}
+        onClick={() => inputRef.current?.click()}
+        className="flex w-full flex-col items-center gap-2 rounded-xl border-2 border-dashed border-primary/40 bg-primary/5 px-6 py-10 text-center transition-colors hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        <Upload className="size-4" strokeWidth={1.75} />
-        Submit for processing
-      </Button>
+        <span className="flex size-12 items-center justify-center rounded-full bg-primary text-primary-foreground">
+          <Camera className="size-6" strokeWidth={1.75} />
+        </span>
+        <span className="text-sm font-medium text-foreground">
+          {atLimit ? "That's ten, the most in one go" : "Tap to photograph"}
+        </span>
+        <span className="text-xs text-muted-foreground">
+          the camera stays open, keep going
+        </span>
+      </button>
+
+      {photos.length > 0 ? (
+        <div className="space-y-3">
+          <p className="text-sm font-medium text-foreground">
+            Your pile &middot; {photos.length}{" "}
+            {photos.length === 1 ? "photo" : "photos"}
+          </p>
+          <div className="grid grid-cols-4 gap-3 sm:grid-cols-5">
+            {photos.map((photo, index) => (
+              <div
+                key={photo.id}
+                className="relative aspect-[3/4] overflow-hidden rounded-lg border border-border bg-primary-soft"
+              >
+                {photo.previewUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={photo.previewUrl}
+                    alt={`Photo ${index + 1} of the pile`}
+                    className="size-full object-cover"
+                  />
+                ) : (
+                  <span className="flex size-full items-center justify-center text-xs text-muted-foreground">
+                    photo {index + 1}
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => removePhoto(photo.id)}
+                  aria-label={`Remove photo ${index + 1}`}
+                  className="absolute top-1 right-1 flex size-6 items-center justify-center rounded-full bg-background/90 text-foreground shadow"
+                >
+                  <X className="size-3.5" strokeWidth={2} />
+                </button>
+              </div>
+            ))}
+            {!atLimit ? (
+              <button
+                type="button"
+                onClick={() => inputRef.current?.click()}
+                className="flex aspect-[3/4] flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-border text-xs font-medium text-primary hover:bg-muted/40"
+              >
+                <Camera className="size-4" strokeWidth={1.75} />
+                + photo
+              </button>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+
+      <div className="space-y-3">
+        <Button
+          type="button"
+          size="lg"
+          className="w-full"
+          disabled={photos.length === 0 || submitting}
+          onClick={handleSubmit}
+        >
+          <Upload className="size-4" strokeWidth={1.75} />
+          {photos.length > 1 ? "Read them" : "Read it"}
+        </Button>
+        <p className="text-center text-xs text-muted-foreground">
+          Photograph the whole pile. We work out where one letter ends and
+          the next begins, so you don&apos;t have to sort them first. Up to{" "}
+          {MAX_PAGES} photos in one go.
+        </p>
+      </div>
     </div>
   );
 }

@@ -3,6 +3,7 @@ import {
   Upload,
   FolderOpen,
   ListChecks,
+  CalendarDays,
   ShieldCheck,
   type LucideIcon,
 } from "lucide-react";
@@ -16,6 +17,7 @@ export type NavItem = {
 export const PRIMARY_NAV: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Upload", href: "/documents/new", icon: Upload },
+  { label: "Calendar", href: "/calendar", icon: CalendarDays },
   { label: "Archive", href: "/documents", icon: FolderOpen },
   { label: "Tasks", href: "/tasks", icon: ListChecks },
 ];
@@ -28,6 +30,7 @@ export const ADMIN_NAV: NavItem = {
 
 export const MOBILE_NAV: NavItem[] = [
   { label: "Home", href: "/dashboard", icon: LayoutDashboard },
+  { label: "Calendar", href: "/calendar", icon: CalendarDays },
   { label: "Upload", href: "/documents/new", icon: Upload },
   { label: "Archive", href: "/documents", icon: FolderOpen },
   { label: "Tasks", href: "/tasks", icon: ListChecks },

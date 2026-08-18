@@ -1,4 +1,6 @@
 import type { Status } from "@/components/status-badge";
+import { formatDueDate, formatDueTime } from "@/lib/contract/dates";
+import { planReminders } from "@/lib/contract/reminders";
 
 export type MockDocument = {
   id: string;
@@ -12,15 +14,6 @@ export type MockDocument = {
   amount?: string;
   reference?: string;
   uploadedAt: string;
-};
-
-export type MockTask = {
-  id: string;
-  title: string;
-  documentId?: string;
-  issuer: string;
-  dueDate: string;
-  status: Extract<Status, "overdue" | "upcoming" | "completed">;
 };
 
 export const MOCK_DOCUMENTS: MockDocument[] = [
@@ -66,27 +59,6 @@ export const MOCK_DOCUMENTS: MockDocument[] = [
     dueDate: "2026-07-18",
     amount: "$79.00",
     uploadedAt: "2026-07-10",
-  },
-];
-
-export const MOCK_TASKS: MockTask[] = [
-  // Tasks exist only for confirmed letters, so every documentId below points
-  // at one; the needs-review water bill has no task yet.
-  {
-    id: "task_2",
-    title: "Respond to Centrelink review",
-    documentId: "doc_2",
-    issuer: "Centrelink",
-    dueDate: "2026-08-05",
-    status: "overdue",
-  },
-  {
-    id: "task_3",
-    title: "Pay Telstra bill",
-    documentId: "doc_5",
-    issuer: "Telstra",
-    dueDate: "2026-07-18",
-    status: "completed",
   },
 ];
 
@@ -196,4 +168,160 @@ export function getExtractionFields(documentId: string): ExtractedField[] {
     });
   }
   return fields;
+}
+
+/**
+ * Tasks, and the one fact that describes them (ADR 007).
+ *
+ * `done` is the only thing a task stores about itself. Everything else this
+ * file exports for a task — whether it reads as overdue, upcoming or
+ * completed, what its row says on the right — is worked out from `done`,
+ * `dueDate` and a reference date, exactly the way the real product derives it
+ * at draw time rather than writing "overdue" anywhere. See
+ * docs/architecture/adr-007-the-tick-is-the-only-state.md.
+ *
+ * `dueDate: null` is the dateless task ADR 008 describes: a letter with a
+ * clear action and no clear date still becomes a task, sits on the list
+ * saying "No date", never reminds, never touches the calendar, and stays
+ * until ticked.
+ */
+export type MockTask = {
+  id: string;
+  title: string;
+  documentId?: string;
+  issuer: string;
+  dueDate: string | null;
+  /** Only present for an appointment (something you attend AT a time). */
+  dueTime?: string;
+  done: boolean;
+};
+
+/**
+ * The mock's fictional "today". Every derived status (overdue, upcoming, the
+ * calendar's month on first render) is computed against this fixed date so
+ * the screenshots this frontend produces do not quietly change meaning
+ * tomorrow. Chosen to match the product prototype's own fictional today, so
+ * the two stay easy to compare side by side.
+ */
+export const TODAY = "2026-08-10";
+
+export const MOCK_TASKS: MockTask[] = [
+  // Overdue: due before TODAY, not done. Linked to doc_2, the one confirmed
+  // government letter in MOCK_DOCUMENTS.
+  {
+    id: "task_centrelink",
+    title: "Respond to Centrelink review",
+    documentId: "doc_2",
+    issuer: "Centrelink",
+    dueDate: "2026-08-05",
+    done: false,
+  },
+  // Completed: ticked off, so it reads "Done" however far in the past its
+  // date is. Linked to doc_5, the one archived document.
+  {
+    id: "task_telstra",
+    title: "Pay Telstra bill",
+    documentId: "doc_5",
+    issuer: "Telstra",
+    dueDate: "2026-07-18",
+    done: true,
+  },
+  // Upcoming deadline: due after TODAY. Three reminders (7, 3, 1 days
+  // before) via planReminders(); the 7-day one lands before TODAY, so the
+  // calendar and day sheet show it as already sent rather than planned.
+  {
+    id: "task_agl",
+    title: "Pay AGL electricity bill",
+    issuer: "AGL Energy",
+    dueDate: "2026-08-15",
+    done: false,
+  },
+  // Upcoming appointment: has a dueTime, so it gets one reminder the day
+  // before rather than the three-reminder deadline schedule. See
+  // src/lib/contract/reminders.ts.
+  {
+    id: "task_patel",
+    title: "Appointment with Dr Patel",
+    issuer: "Dr A. Patel, GP clinic",
+    dueDate: "2026-08-14",
+    dueTime: "10:30",
+    done: false,
+  },
+  // Dateless: the letter had a clear action and no clear date. It never
+  // reminds and never touches the calendar; the list itself is the reminder.
+  {
+    id: "task_community",
+    title: "Return community centre form",
+    issuer: "Carlton Community Centre",
+    dueDate: null,
+    done: false,
+  },
+];
+
+export type TaskStatus = Extract<
+  Status,
+  "overdue" | "upcoming" | "completed" | "no-date"
+>;
+
+/** The tick, a due date and "today": the only inputs a task's status needs. */
+export function taskStatus(task: MockTask, today: string = TODAY): TaskStatus {
+  if (task.done) return "completed";
+  if (!task.dueDate) return "no-date";
+  return task.dueDate < today ? "overdue" : "upcoming";
+}
+
+/**
+ * The text a task row shows on its right-hand side, read off the prototype:
+ * "was due" (not a colour) for overdue, "Done · reminders off" only for a
+ * task that had a date to begin with, plain "Done" otherwise, "No date" for
+ * the dateless case, and the due date (with a time, for an appointment)
+ * otherwise.
+ */
+export function formatTaskWhen(task: MockTask, today: string = TODAY): string {
+  const status = taskStatus(task, today);
+  if (status === "no-date") return "No date";
+  if (status === "completed") return task.dueDate ? "Done · reminders off" : "Done";
+  if (!task.dueDate) return "No date";
+  const short = formatDueDate(task.dueDate, "short");
+  const stamped = task.dueTime ? `${short}, ${formatDueTime(task.dueTime)}` : short;
+  return status === "overdue" ? `was due ${stamped}` : stamped;
+}
+
+/** Due date ascending, dateless last: the one sort that pins overdue rows to
+ * the top for free, because an overdue date sorts before every upcoming
+ * one. */
+export function tasksInOrder(tasks: MockTask[]): MockTask[] {
+  return [...tasks].sort((a, b) => {
+    const aKey = a.dueDate ?? "9999-12-31";
+    const bKey = b.dueDate ?? "9999-12-31";
+    if (aKey === bKey) return a.title.localeCompare(b.title);
+    return aKey < bKey ? -1 : 1;
+  });
+}
+
+export type CalendarMark = {
+  date: string; // 'YYYY-MM-DD'
+  kind: "due" | "reminder";
+  taskId: string;
+};
+
+/**
+ * Every mark a task puts on the calendar: one due-date dot, plus one
+ * reminder dot per planned reminder. Reuses `planReminders()` from the real
+ * contract rather than re-deriving the 7/3/1 (or appointment's single
+ * day-before) rule a second time here; omitting `today` deliberately returns
+ * every offset, past ones included, so the calendar can still show a
+ * reminder that has already gone out.
+ */
+export function marksForTask(task: MockTask): CalendarMark[] {
+  if (!task.dueDate) return [];
+  const marks: CalendarMark[] = [
+    { date: task.dueDate, kind: "due", taskId: task.id },
+  ];
+  for (const reminder of planReminders(task.dueDate, {
+    hasTime: Boolean(task.dueTime),
+  })) {
+    marks.push({ date: reminder.localDate, kind: "reminder", taskId: task.id });
+  }
+  return marks;
 }
