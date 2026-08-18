@@ -462,6 +462,20 @@
       marks: [ { mo: 9, d: 3, l: 'reminder' }, { mo: 9, d: 4, l: 'Dr Patel' } ],
       agenda: { day: 'Friday 4 September', line: 'Appointment with Dr Patel', sub: '10:30 am · GP clinic' } },
 
+    /* The letter we have to apologise for: a handwritten note. No photograph
+       will fix handwriting, so the only honest buttons are an apology and
+       "put it away". Putting it away is not deletion: the letter moves to
+       Your letters with its photo, which is the door the apology points at.
+
+       It sits fifth on purpose. A pile of ten photographs loses two to the
+       not-a-letter line, and the four letters above this one account for six
+       of the remaining eight, so fifth is the last position a single pile of
+       ten can still reach. Move it later in this list and one pile stops
+       being able to show all three failures at once, which is exactly what a
+       demonstration needs it to do. */
+    { who: 'Dr A. Patel', what: 'Handwritten note', sheets: 1, delay: 6000, unsupported: true,
+      facts: [], plan: [], task: null, marks: [], agenda: null },
+
     { who: 'Yarra Council', what: 'Rates notice', sheets: 2, delay: 7500,
       facts: [
         { k: 'From', v: 'City of Yarra' },
@@ -496,14 +510,7 @@
       ],
       task: { title: 'Return community centre form', when: 'No date' },
       marks: [],
-      agenda: null },
-
-    /* The letter we have to apologise for: a handwritten note. No photograph
-       will fix handwriting, so the only honest buttons are an apology and
-       "put it away". Putting it away is not deletion: the letter moves to
-       Your letters with its photo, which is the door the apology points at. */
-    { who: 'Dr A. Patel', what: 'Handwritten note', sheets: 1, delay: 6000, unsupported: true,
-      facts: [], plan: [], task: null, marks: [], agenda: null }
+      agenda: null }
   ];
 
   /* ---------- state ----------
