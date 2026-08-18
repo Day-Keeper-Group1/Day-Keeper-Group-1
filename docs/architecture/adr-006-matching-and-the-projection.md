@@ -82,11 +82,10 @@ searchable by content. Documents with no due date live under `no-date/`.
 
 The filename matters more than the directories. The first search anyone writes,
 model or person, is by who sent it: `glob("**/*agl-energy*")`. Which makes the
-issuer slug load-bearing, and means it has to be **normalised**. The seed
-already contains the problem: the same letter yields `AGL Energy` as a value
-and `AGL Energy Limited` as its raw text. Slugged separately those are two
-directories, that search finds half of them, and nothing announces the half it
-missed. Company suffixes (`Limited`, `Pty Ltd`, `Inc`) are stripped and the
+issuer slug load-bearing, and means it has to be **normalised**: the same
+company arrives as `AGL Energy` on one letter and `AGL Energy Limited` on the
+next. Slugged separately those are two directories, that search finds half of
+them, and nothing announces the half it missed. Company suffixes (`Limited`, `Pty Ltd`, `Inc`) are stripped and the
 result is normalised before it reaches a path.
 
 ### What a projected document looks like
@@ -97,26 +96,37 @@ id: 4e7a23db-...
 status: confirmed
 uploaded: 2026-08-12T09:14+10:00
 pages: 3
+task: open, due 2026-08-15
 ---
 # Electricity bill from AGL Energy
 
-From: AGL Energy
-What to do: Pay the amount due
-Due date: 2026-08-15
-Amount: $347.60
-Reference: 9201 4471 88
+action_required: Pay the amount due
+amount: $347.60
+document_type: Electricity bill
+due_date: 2026-08-15
+issuer: AGL Energy
+reference: 9201 4471 88
 
 ## What this is about
 A quarterly electricity bill for the Carlton house, payable by direct debit or
 BPAY, with a late fee after the due date.
 
 ## Also on the page
-venue: 45 Elgin Street
-dress: smart casual
-
-## As read from the page
-[the text of each page]
+billing_period: 12 May to 11 Aug
+concession: applied
 ```
+
+The `task:` line is what became of the letter, derived live from the tasks
+table at read time: `none`, `open, no date`, `open, due …`, or `completed …`.
+It is in the projection rather than stored on documents because a stored flag
+would need updating on every tick and untick, and a stale flag does not error,
+it confidently lies. When the matcher weighs "do these new photos belong to
+this letter?", whether that letter's task was ticked off three weeks ago is
+exactly the kind of thing it should know.
+
+An uncertain field is written as `(unreadable)`: storage keeps the model's
+hedge for evaluation, but no projection carries a value the model was not sure
+of (ADR 008). There is no page-text section; it left with `raw_text`.
 
 Front matter carries the facts that are matched exactly. The six fields read as
 lines because that is both legible and greppable. "Also on the page" is

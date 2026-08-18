@@ -44,15 +44,13 @@ Margaret or only makes the product feel more complete to us. It is recorded in
 
 ### Every field carries an envelope
 
-`value`, `raw_text`, `status`, and an optional confidence.
-
-`raw_text` is the part people skip and it is the part that matters. The review
-screen shows "Found on document: 15/08/26" beside a parsed date, and that is
-what turns confirming into checking. Without it, confirming is a rubber stamp
-and the product's central safety claim is theatre.
+`value`, `status`, and an optional confidence.
 
 Three states only: `confirmed`, `uncertain`, `unreadable`. There is no fourth
 for "missing", because missing is a contract violation rather than a state.
+The product treats `uncertain` exactly like `unreadable` (no screen ever shows
+a hedged value); the state exists in storage because how often the model
+hedges, and what it guesses when it does, is evaluation data. See ADR 008.
 
 ### One provider interface, and a mock that behaves badly on purpose
 
@@ -116,3 +114,15 @@ day before, instead of two): see `src/lib/contract/reminders.ts`.
 Same date: `FIELD_LABELS` rewritten to the prototype's vocabulary ("From",
 "What to do", "Reference"). The keys did not change; the labels are read by
 people who never chose this software and should not have to learn its words.
+
+**18 August 2026 — contract 2.0: `raw_text` removed.** It was designed for an
+OCR stage that would have produced it as independent evidence beside the
+model's interpretation. The OCR stage is not happening this semester, and
+without it the snippet was the same model testifying twice: showing it as
+"check against this" would have been theatre. The paragraph this revision
+replaced called `raw_text` the part that matters; it was right, back when it
+was going to be independent. If the experiment line brings OCR back, the field
+returns with the independence that was its point. The review screen's answer
+to checking is different now and belongs to ADR 008: nothing hedged is shown
+at all, and the calendar's sources are a confident read a person has seen, or
+nothing.

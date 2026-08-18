@@ -74,14 +74,16 @@ least 18px and a primary button at least 48px tall; the corners are restrained
 and the shadows almost absent, because the feel wanted here is the squareness
 of officialdom rather than the roundness of a toy.
 
-### Why "please check this" gets no alarm colour
+### Why "something is missing" gets no alarm colour
 
-The three field states are confirmed, uncertain and unreadable. Uncertain uses
-bark brown on sandy yellow rather than orange or red, and that is deliberate:
-the person this is built for tends to blame herself, and an orange exclamation
-mark reads as *I did something wrong*. What the state actually means is only
-*the system is not sure, please look*. It should feel like a pencil note in the
-margin of a letter, not a parking ticket.
+When a letter's date or action could not be read, the review card says so in a
+sentence set in bark brown on sandy yellow rather than orange or red, and that
+is deliberate: the person this is built for tends to blame herself, and an
+orange exclamation mark reads as *I did something wrong*. What the message
+actually means is only *the letter did not give this up; nothing goes on your
+calendar*. It should feel like a pencil note in the margin of a letter, not a
+parking ticket. (No screen shows a value the model was unsure of, so there is
+no "please check this" state to colour: see ADR 008.)
 
 ### Why the focus ring is black with gold inside
 

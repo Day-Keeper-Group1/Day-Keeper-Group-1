@@ -24,15 +24,20 @@ import {
  * Stored on every extraction run so that a payload read back in six weeks can
  * still be interpreted.
  */
-export const CONTRACT_VERSION = "1.0" as const;
+export const CONTRACT_VERSION = "2.0" as const;
 
 /**
  * How much the reader trusts one field.
  *
- * `confirmed` from a provider means the model was confident; from the API it
- * additionally means a person has accepted it. `uncertain` means a value was
- * produced but should not be acted on unchecked. `unreadable` means no value
- * could be produced, and a person must supply it.
+ * `confirmed` means the model was confident. `uncertain` means it produced a
+ * value it is not sure of. `unreadable` means it could not produce one.
+ *
+ * The product treats `uncertain` exactly like `unreadable`: no value reaches
+ * the documents table, the calendar, or a screen. The two are kept distinct in
+ * STORAGE because how often the model hedges, and what it guesses when it
+ * does, is evaluation data (see ADR 008). Trusting the model includes
+ * trusting its "I am not sure": the product takes that at face value instead
+ * of asking a person to adjudicate it.
  *
  * There is no fourth state for "missing". A field the model did not address is
  * a contract violation, not a state: it must say unreadable and say why.
@@ -47,16 +52,15 @@ export type FieldStatus = z.infer<typeof fieldStatusSchema>;
 /**
  * One field, as the provider returns it.
  *
- * `raw_text` is the snippet on the page the value came from. It exists so the
- * review screen can show "Found on document: 15/08/26" next to a parsed date,
- * which is what lets a person check the reading rather than merely accept it.
- * Without it, confirming is a rubber stamp.
+ * Contract 2.0 dropped `raw_text` (a transcription snippet beside each value).
+ * It was designed for an OCR stage that would have produced it independently;
+ * without OCR it was the same model testifying twice, evidence of nothing.
+ * If the experiment line brings OCR back, it returns WITH its independence.
  */
 export const extractedFieldSchema = z
   .object({
     key: z.string().min(1),
     value: z.string().nullable(),
-    raw_text: z.string().nullable(),
     status: fieldStatusSchema,
     confidence: z.number().min(0).max(1).nullish(),
   })
@@ -164,12 +168,12 @@ export function extraFieldsOf(
 }
 
 /**
- * True when nothing needs a person's attention.
+ * True when every field came back confident.
  *
- * Used to decide whether a document lands in `needs-review` or could in
- * principle skip straight past it. It never does skip today: the product's
- * promise is that nothing reaches the calendar without being seen, so this is
- * reporting, not a shortcut.
+ * Reporting only. Every document still lands in `needs-review`: the product's
+ * promise is that nothing reaches the calendar without being seen, and a
+ * not-confident field simply arrives as an absent value rather than as a
+ * question for the person.
  */
 export function isFullyConfident(result: ExtractionResult): boolean {
   return result.fields.every((f) => f.status === "confirmed");

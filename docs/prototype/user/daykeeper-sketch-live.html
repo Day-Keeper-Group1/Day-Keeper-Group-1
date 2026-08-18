@@ -129,9 +129,9 @@
   .item.reading .thumb { animation: pulse 1.5s ease-in-out infinite; }
   @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .45; } }
   .item.ready { cursor: pointer; }
-  /* "ready to check" is not an alarm. It means the machine is unsure and
-     would like a look, so it gets bark brown rather than a warning colour:
-     a pencil note in the margin, not a parking ticket. */
+  /* "ready to check" is not an alarm. It means a letter has been read and
+     is waiting for her nod, so it gets bark brown rather than a warning
+     colour: a pencil note in the margin, not a parking ticket. */
   .item.ready .st { color: var(--warn-ink); font-weight: 600; }
   .item.failed .st { color: var(--danger); font-weight: 600; }
   .item .go { font-size: 13px; font-weight: 700; color: var(--primary); flex: none; }
@@ -161,9 +161,6 @@
   .fact:first-of-type { border-top: 0; }
   .fact .k { color: var(--ink-dim); font-size: 13px; width: 84px; flex: none; }
   .fact .v { font-size: 16.5px; font-weight: 600; }
-  .fact.warn { background: var(--warn-bg); border-radius: var(--radius-card); padding: 11px 10px; border-top: 0; margin: 4px -4px; }
-  .fact.warn input { font-size: 17px; font-weight: 700; border: var(--border-w) solid var(--warn-ink); border-radius: var(--radius-btn); padding: 7px 10px; width: 150px; background: var(--bg-card); color: var(--ink); font-family: inherit; }
-  .warn-hint { font-size: 13px; color: var(--warn-ink); margin-top: 6px; }
   .plan-row { display: flex; align-items: center; gap: 11px; padding: 11px 2px; border-top: 1px solid var(--line); font-size: 15.5px; }
   .plan-row:first-of-type { border-top: 0; }
   .plan-row .ico { flex: none; font-size: 17px; }
@@ -371,7 +368,7 @@
       facts: [
         { k: 'From', v: 'AGL Energy' },
         { k: 'What to do', v: 'Pay the amount due' },
-        { k: 'Due date', v: '15 Aug 2026', warn: true, hint: '⚠ This was hard to read. Is it right?' },
+        { k: 'Due date', v: '15 Aug 2026' },
         { k: 'Amount', v: '$347.60' },
         { k: 'Reference', v: '9201 4471 88' }
       ],
@@ -454,7 +451,25 @@
       ],
       task: { title: 'Pay council rates', when: 'Mon 31 Aug', due: { mo: 8, d: 31 } },
       marks: [ { mo: 8, d: 24, l: 'reminder' }, { mo: 8, d: 28, l: 'reminder' }, { mo: 8, d: 30, l: 'reminder' }, { mo: 8, d: 31, l: 'Rates due' } ],
-      agenda: { day: 'Monday 31 August', line: 'Pay council rates', sub: '$612.40 · ref 88 3120 7' } }
+      agenda: { day: 'Monday 31 August', line: 'Pay council rates', sub: '$612.40 · ref 88 3120 7' } },
+
+    /* The letter that names no date. This is the landing pad for everything
+       the reading could not pin to a day, whatever the reason (the letter
+       does not say, or the photo would not give it up): the task exists, sits
+       in the list with "No date", never reminds, never touches the calendar.
+       The list itself is the reminder. */
+    { who: 'Carlton Community Centre', what: 'Membership form', sheets: 1, delay: 5600,
+      facts: [
+        { k: 'From', v: 'Carlton Community Centre' },
+        { k: 'What to do', v: 'Return the signed form' },
+        { k: 'Reference', v: 'Member 2214' }
+      ],
+      plan: [
+        { ico: '📄', t: "No date on this letter. It's saved; nothing goes on your calendar." }
+      ],
+      task: { title: 'Return community centre form', when: 'No date' },
+      marks: [],
+      agenda: null }
   ];
 
   /* ---------- state ----------
@@ -495,7 +510,7 @@
   /* ---------- scan: photographing a pile, and posting it ---------- */
   function addPhoto() {
     const hint = document.getElementById('cam-d');
-    if (!retakePool.length && nextPost >= LETTERS.length) { hint.textContent = 'sketch limit: five letters'; return; }
+    if (!retakePool.length && nextPost >= LETTERS.length) { hint.textContent = 'sketch limit: six letters'; return; }
     if (photos >= MAX_PHOTOS) { hint.textContent = "that's ten, the most in one go"; return; }
     photos++;
     hint.textContent = 'the camera stays open, keep going';
@@ -644,9 +659,14 @@
     current = it;
     const L = LETTERS[it.idx];
     document.getElementById('review-sub').textContent = L.who + ' · ' + L.what;
-    document.getElementById('facts').innerHTML = L.facts.map(f => f.warn
-      ? '<div class="fact warn"><span class="k">' + f.k + '</span><span><input value="' + f.v + '"><div class="warn-hint">' + f.hint + '</div></span></div>'
-      : '<div class="fact"><span class="k">' + f.k + '</span><span class="v">' + f.v + '</span></div>').join('');
+    /* Read-only on purpose. A value the model was not sure of never reaches
+       this screen (it arrives as missing, and the plan card says so in a
+       sentence), so there is nothing to interrogate her about; and nothing is
+       editable, because the one remedy for a wrong or missing reading is
+       photographing the letter again. Her job here is recognition: does this
+       match the letter? Yes is a tap. No is a retake. See ADR 008. */
+    document.getElementById('facts').innerHTML = L.facts.map(f =>
+      '<div class="fact"><span class="k">' + f.k + '</span><span class="v">' + f.v + '</span></div>').join('');
     document.getElementById('plan').innerHTML = L.plan.map(p =>
       '<div class="plan-row"><span class="ico">' + p.ico + '</span>' + p.t + '</div>').join('');
     go('review');
@@ -707,7 +727,9 @@
     const stay = inSheet ? 'true' : 'false';
     /* Overdue is told in words ("was due"), not in colour: red already means a
        failed reading in this product, and colour is never the only signal. */
-    const when = t.done ? 'Done · reminders off' : late ? 'was due ' + t.when : t.when;
+    /* A dateless task never had reminders, so its done face does not claim
+       any were switched off. */
+    const when = t.done ? (t.due ? 'Done · reminders off' : 'Done') : late ? 'was due ' + t.when : t.when;
     return '<div class="row' + (t.done ? ' done' : late ? ' late' : '') + '"><span class="dot" onclick="toggleDone(\'' + t.id + '\', ' + stay + ')">✓</span>' +
       '<span class="txt">' + t.title + '</span><span class="doc-mark">📄</span>' +
       '<span class="when">' + when + '</span></div>';
@@ -745,8 +767,10 @@
     document.getElementById('check-list').innerHTML = rows;
 
     /* CTA + badge. An ordered test, not a count of what the queue is made of:
-       something ready wins, otherwise anything still being worked on wins, and
-       only an empty queue reaches the inert panel. A pile still being divided
+       something ready wins, otherwise anything still being worked on wins.
+       Only a queue with nothing in flight reaches the inert panel; a failed
+       pile or a not-a-letter notice sits in the card below it with its own
+       controls, and is not "something to check". A pile still being divided
        counts as being worked on, and it cannot say how many letters it will
        turn out to be, so it does not try. */
     const ready = queue.filter(q => q.state === 'ready').length;

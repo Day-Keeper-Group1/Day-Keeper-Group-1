@@ -185,8 +185,8 @@ reasoning for the parts that look arbitrary.
 **Import the types, do not restate them.** `src/lib/contract/api.ts` already
 holds `DocumentSummary`, `TaskSummary`, `ExtractedFieldView` and the rest, and
 they match the shapes the interface pages were written against, down to
-`rawText` being camelCase and statuses using hyphens. If you find yourself
-declaring a type that looks like one of those, import it instead.
+statuses using hyphens. If you find yourself declaring a type that looks like
+one of those, import it instead.
 
 **Query through `src/server/db.ts`.** It has `query`, `queryOne` and
 `transaction`, and it already fixes a trap: by default the driver turns a `date`
@@ -213,8 +213,8 @@ reading another person's mail.
 **Dates are strings, and the rules live in `src/lib/contract/dates.ts`.** On
 the wire a date is `'YYYY-MM-DD'` and a time is `'HH:mm'`. Never
 `new Date('2026-08-15')`: it parses as UTC midnight and shifts the day in any
-zone that is not UTC. Today-in-Melbourne is `todayInZone()`, human formatting
-is `formatDueDate()`, and what a person typed is `parseHumanDate()`.
+zone that is not UTC. Today-in-Melbourne is `todayInZone()` and human
+formatting is `formatDueDate()`.
 
 **The reminder schedule has exactly one home, `planReminders()`.** The confirm
 handler creates rows from it and the review screen previews the plan with it.
@@ -229,12 +229,13 @@ implementation details:
 reader finishes gives the person a spinner instead of the ability to put the
 phone down. The waiting state is part of the design, not a gap in it.
 
-**`rawText` is not decoration.** Showing "Found on document: 15/08/26" beside a
-parsed date is what turns confirming into checking. Without it, confirming is a
-rubber stamp and the product's central safety claim is theatre.
-
-**Only record corrections for fields the person actually changed.** Those
-corrections are the evidence we use to measure how often the reader is wrong.
+**The review screen shows, it never asks** (ADR 008). Nothing on it is
+editable and nothing on it is a question. A value the model was not sure of
+never reaches a screen: storage keeps the hedge for evaluation, the browser
+receives an absent value, and the card says in one plain sentence what is
+missing. The one remedy offered anywhere is photographing the letter again.
+The calendar's sources are exactly two: a confident read a person has seen, or
+nothing.
 
 ## The reader
 

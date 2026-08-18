@@ -1,20 +1,21 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { StatusBadge } from "@/components/status-badge";
 import type { ExtractedField, MockDocument } from "@/lib/mock-data";
 
-const SUPPORTIVE_HINT: Record<ExtractedField["status"], string | null> = {
-  confirmed: null,
-  uncertain: "Please check this value before confirming.",
-  unreadable: "We couldn't read this from the photo. Please fill it in.",
-};
+/**
+ * The review screen shows, it never asks.
+ *
+ * There are no inputs here on purpose. A value the model was not sure of never
+ * reaches this screen (it arrives as an absent value), so there is nothing to
+ * interrogate the person about; and nothing here is editable, because the one
+ * remedy for a wrong or missing reading is photographing the letter again.
+ * The person's whole job on this screen is recognition: does this match the
+ * letter? Yes is a tap; no is a retake. See ADR 008.
+ */
 
 function PreviewPlaceholder() {
   return (
@@ -31,21 +32,20 @@ function PreviewPlaceholder() {
 
 export function ReviewForm({
   document,
-  fields: initialFields,
+  fields,
 }: {
   document: MockDocument;
   fields: ExtractedField[];
 }) {
   const router = useRouter();
-  const [fields, setFields] = useState(initialFields);
 
-  function updateValue(key: string, value: string) {
-    setFields((prev) =>
-      prev.map((field) =>
-        field.key === key ? { ...field, value, status: "confirmed" } : field,
-      ),
-    );
-  }
+  // Rows without a confident value are not drawn: an empty row invites an
+  // answer nobody is being asked for. The card-level message below speaks for
+  // whatever is missing.
+  const readable = fields.filter(
+    (field) => field.status === "confirmed" && field.value,
+  );
+  const dateMissing = !readable.some((field) => field.key === "due_date");
 
   function handleConfirm() {
     router.push(`/documents/${document.id}`);
@@ -67,61 +67,36 @@ export function ReviewForm({
           </div>
         </details>
 
-        <form
-          className="space-y-5"
-          onSubmit={(event) => {
-            event.preventDefault();
-            handleConfirm();
-          }}
-        >
-          {fields.map((field) => {
-            const hint = SUPPORTIVE_HINT[field.status];
-            return (
-              <div key={field.key} className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor={field.key}>{field.label}</Label>
-                  <StatusBadge status={field.status} />
-                </div>
-                <Input
-                  id={field.key}
-                  value={field.value}
-                  placeholder={
-                    field.status === "unreadable"
-                      ? "Enter the value"
-                      : undefined
-                  }
-                  onChange={(event) =>
-                    updateValue(field.key, event.target.value)
-                  }
-                  className={
-                    field.status !== "confirmed"
-                      ? "border-warn focus-visible:ring-warn/50 aria-[invalid=true]:border-danger"
-                      : undefined
-                  }
-                  aria-invalid={field.status === "unreadable"}
-                />
-                {field.rawText ? (
-                  <p className="text-xs text-muted-foreground">
-                    Found on document: &ldquo;{field.rawText}&rdquo;
-                  </p>
-                ) : null}
-                {hint ? (
-                  <p className="text-warn text-xs font-medium">{hint}</p>
-                ) : null}
+        <div className="space-y-5">
+          <dl className="space-y-4">
+            {readable.map((field) => (
+              <div key={field.key} className="space-y-0.5">
+                <dt className="text-sm text-muted-foreground">{field.label}</dt>
+                <dd className="text-base font-medium text-foreground">
+                  {field.value}
+                </dd>
               </div>
-            );
-          })}
+            ))}
+          </dl>
+
+          {dateMissing ? (
+            <p className="rounded-lg border border-border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+              This letter doesn&apos;t give a clear date. It will be saved, and
+              nothing goes on your calendar. If the date is on the letter,
+              photographing it again may pick it up.
+            </p>
+          ) : null}
 
           <div className="flex flex-col gap-3 pt-2 sm:flex-row">
-            <Button type="submit" className="sm:flex-1">
-              Confirm and create task
+            <Button onClick={handleConfirm} className="sm:flex-1">
+              Looks right, save it
             </Button>
             <Button
               variant="outline"
-              render={<Link href={`/documents/${document.id}`}>Cancel</Link>}
+              render={<Link href="/documents/new">Take the photos again</Link>}
             />
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );

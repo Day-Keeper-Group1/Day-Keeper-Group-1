@@ -42,11 +42,14 @@ CREATE TYPE user_role AS ENUM ('user', 'platform_operator', 'org_admin', 'org_wo
 --   archived      the person put it away; it stays readable
 CREATE TYPE document_status AS ENUM ('processing', 'needs-review', 'confirmed', 'failed', 'archived');
 
--- How much we trust one extracted field.
---   confirmed   a person has accepted this value (or the model was sure and
---               the person did not change it)
---   uncertain   the model produced a value but flagged it; the person must look
---   unreadable  the model could not read it at all; the person must type it
+-- How much the model trusts one extracted field.
+--   confirmed   the model was confident; this is the only state a value ever
+--               leaves storage in
+--   uncertain   the model produced a value it is not sure of; kept here as
+--               evaluation data, treated everywhere else as "no value"
+--   unreadable  the model could not read it at all
+-- Nobody supplies or fixes a value by hand; the remedy for a wrong or missing
+-- reading is photographing the letter again. See ADR 008.
 CREATE TYPE field_status AS ENUM ('confirmed', 'uncertain', 'unreadable');
 
 -- One attempt at any of the three jobs a model does here: dividing a batch into
@@ -143,10 +146,12 @@ CREATE TABLE documents (
   -- Denormalised from the extraction so that lists and the calendar do not
   -- have to join through extracted_fields on every render. Written as soon as
   -- a reading SUCCEEDS (the "to check" list shows who a letter is from before
-  -- it is confirmed), then overwritten with the person's corrections at
-  -- confirm. Null until the first successful reading, which is why the
-  -- browser-facing types declare them nullable: a processing or failed
-  -- document genuinely has no issuer yet.
+  -- it is confirmed), and only from CONFIDENT values: a hedged date or an
+  -- unreadable reference stays NULL here, because a value the model was not
+  -- sure of never reaches documents, the calendar, or a screen (ADR 008).
+  -- Nobody edits these by hand; a re-photographed letter re-reading is the
+  -- only thing that changes them. Null until the first successful reading,
+  -- which is why the browser-facing types declare them nullable.
   issuer         text,
   document_type  text,
   due_date       date,
@@ -398,33 +403,22 @@ CREATE INDEX extraction_runs_status_idx ON extraction_runs (status) WHERE status
 -- it than drop it. The six that must always be present are enforced in the
 -- contract validator, not here.
 --
--- Both what the model said and what the person typed are kept. Overwriting the
--- model's answer with the correction would destroy the only evidence of how
--- often the model is wrong.
+-- 'uncertain' rows keep their extracted_value here even though no screen ever
+-- shows it: how often the model hedges, and what it guesses when it does, is
+-- evaluation data. The product treats uncertain as "no value" everywhere
+-- (nothing reaches documents or the calendar), and nobody edits a reading in
+-- this version, so there are no correction columns: the remedy for a wrong or
+-- missing value is photographing the letter again. See ADR 008.
 CREATE TABLE extracted_fields (
   id                uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   extraction_run_id uuid NOT NULL REFERENCES extraction_runs(id) ON DELETE CASCADE,
   field_key         text NOT NULL,
   extracted_value   text,          -- what the model read; null when unreadable
-  raw_text          text,          -- the snippet on the page it read it from
   status            field_status NOT NULL,
   confidence        numeric(4,3),  -- 0.000 to 1.000 when the provider reports one
-  corrected_value   text,          -- what the person typed instead, if anything
-  corrected_at      timestamptz,
-  -- When a person saw this field flagged and accepted it without changing it.
-  --
-  -- The review screen promises "never from a date you haven't checked", and
-  -- this column is where that promise stops being decorative: a flagged field
-  -- with neither a correction nor this timestamp was never looked at. The
-  -- obvious alternative, flipping `status` from 'uncertain' to 'confirmed',
-  -- would erase the fact that the model was ever unsure, which is the same
-  -- accuracy evidence corrected_value exists to protect.
-  acknowledged_at   timestamptz,
   CONSTRAINT extracted_fields_unique_key UNIQUE (extraction_run_id, field_key),
   CONSTRAINT extracted_fields_confidence_range
-    CHECK (confidence IS NULL OR (confidence >= 0 AND confidence <= 1)),
-  CONSTRAINT extracted_fields_correction_has_timestamp
-    CHECK ((corrected_value IS NULL) = (corrected_at IS NULL))
+    CHECK (confidence IS NULL OR (confidence >= 0 AND confidence <= 1))
 );
 
 CREATE INDEX extracted_fields_run_idx ON extracted_fields (extraction_run_id);
@@ -636,6 +630,20 @@ SELECT
     'status: ' || d.status::text,
     'uploaded: ' || to_char(d.uploaded_at AT TIME ZONE u.timezone, 'YYYY-MM-DD"T"HH24:MI'),
     'pages: ' || coalesce(pg.n, 0)::text,
+    -- What became of this letter, as live truth. When the matching model reads
+    -- a candidate ("do these new photos belong to this letter?"), whether its
+    -- task is still open or was ticked off on some date is exactly what it
+    -- should know. Derived here rather than stored on documents: a stored
+    -- flag would need updating on every tick and untick, and a stale flag
+    -- does not error, it confidently lies. The tick stays the only state
+    -- (ADR 007); this line is a window onto it.
+    'task: ' || CASE
+      WHEN tk.id IS NULL THEN 'none'
+      WHEN tk.state = 'completed' THEN 'completed ' || to_char(tk.completed_at AT TIME ZONE u.timezone, 'YYYY-MM-DD')
+      WHEN tk.state = 'dismissed' THEN 'dismissed'
+      WHEN tk.due_date IS NULL THEN 'open, no date'
+      ELSE 'open, due ' || to_char(tk.due_date, 'YYYY-MM-DD')
+    END,
     '---',
     '',
     '# ' || coalesce(d.document_type, 'Unread document')
@@ -645,8 +653,7 @@ SELECT
     -- A heading with nothing under it is noise a search has to wade through,
     -- so each section exists only when it has content.
     CASE WHEN d.summary   IS NOT NULL THEN E'\n## What this is about\n'   || d.summary   END,
-    CASE WHEN extra.lines IS NOT NULL THEN E'\n## Also on the page\n'     || extra.lines END,
-    CASE WHEN fields.raw  IS NOT NULL THEN E'\n## As read from the page\n' || fields.raw END
+    CASE WHEN extra.lines IS NOT NULL THEN E'\n## Also on the page\n'     || extra.lines END
   ) AS body
 
 FROM documents d
@@ -663,16 +670,27 @@ LEFT JOIN LATERAL (
   LIMIT 1
 ) latest ON true
 
+-- An uncertain value is written here as unreadable: storage keeps the hedge
+-- for evaluation, but as far as anything downstream is concerned, including
+-- this projection, a value the model was not sure of does not exist (ADR 008).
 LEFT JOIN LATERAL (
   SELECT
     string_agg(f.field_key || ': ' ||
-               coalesce(f.corrected_value, f.extracted_value, '(unreadable)'),
-               E'\n' ORDER BY f.field_key) AS lines,
-    string_agg(f.raw_text, E'\n' ORDER BY f.field_key)
-      FILTER (WHERE f.raw_text IS NOT NULL) AS raw
+               CASE WHEN f.status = 'confirmed' THEN f.extracted_value
+                    ELSE '(unreadable)' END,
+               E'\n' ORDER BY f.field_key) AS lines
   FROM extracted_fields f
   WHERE f.extraction_run_id = latest.id
 ) fields ON true
+
+-- The letter's task, if confirming ever made one. At most one this semester.
+LEFT JOIN LATERAL (
+  SELECT t.id, t.state, t.due_date, t.completed_at
+  FROM tasks t
+  WHERE t.document_id = d.id
+  ORDER BY t.created_at DESC
+  LIMIT 1
+) tk ON true
 
 LEFT JOIN LATERAL (
   SELECT string_agg(k || ': ' || v, E'\n' ORDER BY k) AS lines

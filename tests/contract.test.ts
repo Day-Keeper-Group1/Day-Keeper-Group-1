@@ -25,7 +25,6 @@ function validField(key: string) {
   return {
     key,
     value: "something",
-    raw_text: "something as printed",
     status: "confirmed" as const,
     confidence: 0.9,
   };
@@ -131,7 +130,7 @@ describe("field states", () => {
     expect(safeParseExtractionResult(empty).success).toBe(false);
   });
 
-  it("reports which fields want a person to look", () => {
+  it("reports which fields came back not confident", () => {
     const mixed = extractionResultSchema.parse(
       validResult({
         fields: CONTRACT_FIELD_KEYS.map((k) =>

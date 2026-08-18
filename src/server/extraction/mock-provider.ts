@@ -35,14 +35,6 @@ const SPECIMENS = [
     due_time: null,
     amount: "$347.60",
     reference: "9201 4471 88",
-    raw: {
-      document_type: "Electricity account statement",
-      issuer: "AGL Energy Limited",
-      action_required: "Please pay by the due date shown below",
-      due_date: "15/08/26",
-      amount: "$347.60",
-      reference: "Account 9201 4471 88",
-    },
   },
   {
     document_type: "Government letter",
@@ -52,14 +44,6 @@ const SPECIMENS = [
     due_time: null,
     amount: null,
     reference: "CLM 30991 442",
-    raw: {
-      document_type: "Medicare claim form",
-      issuer: "Services Australia",
-      action_required: "Complete and return this form within 28 days",
-      due_date: "22 August 2026",
-      amount: null,
-      reference: "CLM 30991 442",
-    },
   },
   {
     document_type: "Registration renewal",
@@ -69,14 +53,6 @@ const SPECIMENS = [
     due_time: null,
     amount: "$852.10",
     reference: "1AB 2CD",
-    raw: {
-      document_type: "Vehicle registration renewal notice",
-      issuer: "VicRoads",
-      action_required: "Renew before the expiry date to avoid a fine",
-      due_date: "1 September 2026",
-      amount: "$852.10",
-      reference: "Registration 1AB 2CD",
-    },
   },
   {
     document_type: "Rates notice",
@@ -86,14 +62,6 @@ const SPECIMENS = [
     due_time: null,
     amount: "$612.40",
     reference: "88 3120 7",
-    raw: {
-      document_type: "Council rates and valuation notice",
-      issuer: "Yarra City Council",
-      action_required: "First instalment due",
-      due_date: "31/08/2026",
-      amount: "$612.40",
-      reference: "Assessment 88 3120 7",
-    },
   },
   {
     document_type: "Medical letter",
@@ -105,14 +73,6 @@ const SPECIMENS = [
     due_time: "10:30",
     amount: null,
     reference: "PT-40192",
-    raw: {
-      document_type: "Appointment confirmation",
-      issuer: "Dr A. Patel",
-      action_required: "Please attend at 10:30 am",
-      due_date: "Friday 4 September",
-      amount: null,
-      reference: "Patient PT-40192",
-    },
   },
 ] as const;
 
@@ -178,28 +138,24 @@ export class MockExtractionProvider implements DocumentExtractionProvider {
       {
         key: "document_type",
         value: specimen.document_type,
-        raw_text: specimen.raw.document_type,
         status: "confirmed" as const,
         confidence: 0.97,
       },
       {
         key: "issuer",
         value: specimen.issuer,
-        raw_text: specimen.raw.issuer,
         status: "confirmed" as const,
         confidence: 0.96,
       },
       {
         key: "action_required",
         value: specimen.action_required,
-        raw_text: specimen.raw.action_required,
         status: "confirmed" as const,
         confidence: 0.92,
       },
       {
         key: "due_date",
         value: specimen.due_date,
-        raw_text: specimen.raw.due_date,
         status: dateUncertain ? ("uncertain" as const) : ("confirmed" as const),
         confidence: dateUncertain ? 0.61 : 0.94,
       },
@@ -209,14 +165,12 @@ export class MockExtractionProvider implements DocumentExtractionProvider {
         ? {
             key: "amount",
             value: NO_PAYMENT_REQUIRED,
-            raw_text: null,
             status: "confirmed" as const,
             confidence: 0.9,
           }
         : {
             key: "amount",
             value: specimen.amount,
-            raw_text: specimen.raw.amount,
             status: "confirmed" as const,
             confidence: 0.95,
           },
@@ -224,14 +178,12 @@ export class MockExtractionProvider implements DocumentExtractionProvider {
         ? {
             key: "reference",
             value: null,
-            raw_text: "(smudged in photo)",
             status: "unreadable" as const,
             confidence: 0.18,
           }
         : {
             key: "reference",
             value: specimen.reference,
-            raw_text: specimen.raw.reference,
             status: "confirmed" as const,
             confidence: 0.88,
           },
@@ -242,7 +194,6 @@ export class MockExtractionProvider implements DocumentExtractionProvider {
             {
               key: "due_time",
               value: specimen.due_time,
-              raw_text: "10:30 am",
               status: "confirmed" as const,
               confidence: 0.93,
             },

@@ -24,14 +24,15 @@ export type MockTask = {
 };
 
 export const MOCK_DOCUMENTS: MockDocument[] = [
+  // Its extraction below has a hedged date and an unreadable reference, so
+  // the summary carries neither: a value the model was not sure of never
+  // reaches a summary (ADR 008).
   {
     id: "doc_1",
     issuer: "Yarra Valley Water",
     documentType: "Utility bill",
     status: "needs-review",
-    dueDate: "2026-08-15",
     amount: "$142.30",
-    reference: "YVW-88213",
     uploadedAt: "2026-08-04",
   },
   {
@@ -39,7 +40,7 @@ export const MOCK_DOCUMENTS: MockDocument[] = [
     issuer: "Centrelink",
     documentType: "Government letter",
     status: "confirmed",
-    dueDate: "2026-08-20",
+    dueDate: "2026-08-05",
     reference: "CRN-2201884",
     uploadedAt: "2026-08-03",
   },
@@ -69,14 +70,8 @@ export const MOCK_DOCUMENTS: MockDocument[] = [
 ];
 
 export const MOCK_TASKS: MockTask[] = [
-  {
-    id: "task_1",
-    title: "Pay water bill",
-    documentId: "doc_1",
-    issuer: "Yarra Valley Water",
-    dueDate: "2026-08-15",
-    status: "upcoming",
-  },
+  // Tasks exist only for confirmed letters, so every documentId below points
+  // at one; the needs-review water bill has no task yet.
   {
     id: "task_2",
     title: "Respond to Centrelink review",
@@ -99,12 +94,17 @@ export function getDocumentById(id: string) {
   return MOCK_DOCUMENTS.find((doc) => doc.id === id);
 }
 
+/**
+ * A field as a screen sees it: two states only. Storage knows a third
+ * (`uncertain`), but the server collapses it to `unreadable` on the way out:
+ * a value the model was not sure of does not exist as far as any screen is
+ * concerned, and nobody is asked about it. See ADR 008.
+ */
 export type ExtractedField = {
   key: string;
   label: string;
   value: string;
-  rawText: string;
-  status: Extract<Status, "confirmed" | "uncertain" | "unreadable">;
+  status: Extract<Status, "confirmed" | "unreadable">;
 };
 
 const MOCK_EXTRACTIONS: Record<string, ExtractedField[]> = {
@@ -113,42 +113,39 @@ const MOCK_EXTRACTIONS: Record<string, ExtractedField[]> = {
       key: "document_type",
       label: "Document type",
       value: "Utility bill",
-      rawText: "Electricity & water usage statement",
       status: "confirmed",
     },
     {
       key: "issuer",
       label: "Issuer",
       value: "Yarra Valley Water",
-      rawText: "Yarra Valley Water Corporation",
       status: "confirmed",
     },
     {
       key: "action_required",
       label: "Action required",
       value: "Pay bill",
-      rawText: "Please pay by the due date shown below",
       status: "confirmed",
     },
+    // Storage holds this one as `uncertain` with the model's guess; what the
+    // browser receives is the collapsed form: no value. The screen's message
+    // line, not this row, is what tells the person the date is missing.
     {
       key: "due_date",
       label: "Due date",
-      value: "2026-08-15",
-      rawText: "15/08/26",
-      status: "uncertain",
+      value: "",
+      status: "unreadable",
     },
     {
       key: "amount",
       label: "Amount",
       value: "$142.30",
-      rawText: "$142.30",
       status: "confirmed",
     },
     {
       key: "reference",
       label: "Reference number",
       value: "",
-      rawText: "(smudged in photo)",
       status: "unreadable",
     },
   ],
@@ -165,14 +162,12 @@ export function getExtractionFields(documentId: string): ExtractedField[] {
       key: "document_type",
       label: "Document type",
       value: document.documentType,
-      rawText: document.documentType,
       status: "confirmed",
     },
     {
       key: "issuer",
       label: "Issuer",
       value: document.issuer,
-      rawText: document.issuer,
       status: "confirmed",
     },
   ];
@@ -181,7 +176,6 @@ export function getExtractionFields(documentId: string): ExtractedField[] {
       key: "due_date",
       label: "Due date",
       value: document.dueDate,
-      rawText: document.dueDate,
       status: "confirmed",
     });
   }
@@ -190,7 +184,6 @@ export function getExtractionFields(documentId: string): ExtractedField[] {
       key: "amount",
       label: "Amount",
       value: document.amount,
-      rawText: document.amount,
       status: "confirmed",
     });
   }
@@ -199,7 +192,6 @@ export function getExtractionFields(documentId: string): ExtractedField[] {
       key: "reference",
       label: "Reference number",
       value: document.reference,
-      rawText: document.reference,
       status: "confirmed",
     });
   }

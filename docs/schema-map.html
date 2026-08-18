@@ -310,24 +310,21 @@
   </div>
 
   <div class="tbl" style="left:820px; top:558px; height:272px">
-    <h2>extracted_fields<span class="badges"><b>2</b><b>3</b></span></h2>
+    <h2>extracted_fields<span class="badges"><b>2</b></span></h2>
     <ul>
       <li class="key">id</li>
       <li>extraction_run_id</li>
       <li>field_key</li>
       <li class="star">extracted_value</li>
-      <li>raw_text</li>
-      <li>status</li>
+      <li class="star">status</li>
       <li>confidence</li>
-      <li class="star">corrected_value</li>
-      <li>corrected_at</li>
-      <li class="star">acknowledged_at</li>
     </ul>
   </div>
   <div class="note" style="left:820px; top:834px">
-    What the model read stays; what the person typed sits beside it, never on
-    top. The third stamp is what makes "never from a date you haven't checked"
-    checkable.
+    Nobody edits a reading, so the reading is the only writer here. An
+    uncertain row keeps the model's guess for evaluation, but every screen
+    treats it as "no value": what she sees is what was read clearly, or
+    nothing.
   </div>
 
   <!-- ---------- column E: the outcome ---------- -->
@@ -428,7 +425,7 @@
   Drawn from <code>db/schema.sql</code>, which also defines <code>document_search</code>: the view the
   reading searches when it is placing a letter against everything already here. Endpoints are specified
   in <code>docs/api.md</code>; none of them are built yet. The reasoning behind the shapes is in
-  <code>docs/architecture/</code>, ADRs 003 through 006.
+  <code>docs/architecture/</code>, ADRs 003 through 008.
 </footer>
 
 </body>

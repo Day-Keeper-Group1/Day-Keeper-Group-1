@@ -1,9 +1,10 @@
 /**
  * Seed data.
  *
- * Margaret's world, at the moment she opens the app: two things she has already
- * dealt with, one letter waiting to be checked, one still being read, and one
- * that came out too blurry. Every state the interface has to draw is present,
+ * Margaret's world, at the moment she opens the app: six letters confirmed
+ * (two of them from one interleaved pile), one waiting to be checked, one
+ * still being read, and one that came out too blurry, twice. Every state the
+ * interface has to draw is present,
  * so nobody has to imagine what a failed document looks like or upload six
  * files to find out.
  *
@@ -115,13 +116,16 @@ async function main() {
     await db.query(
       // The denormalised columns are filled the moment a reading succeeds, not
       // at confirm: the "to check" list names who a letter is from before
-      // anybody has checked it. Everything except the reference, which came
-      // out unreadable and therefore has nothing to denormalise.
+      // anybody has checked it. Only CONFIDENT values land here. The due date
+      // came out uncertain and the reference unreadable, so both columns stay
+      // NULL: a value the model was not sure of never reaches documents, the
+      // calendar, or a screen (ADR 008). The hedge itself lives one table
+      // over, in extracted_fields, as evaluation data.
       `INSERT INTO documents
-         (id, user_id, status, uploaded_at, issuer, document_type, due_date, amount_text)
+         (id, user_id, status, uploaded_at, issuer, document_type, amount_text)
        VALUES ($1, $2, 'needs-review', now() - interval '2 hours',
-               'AGL Energy', 'Utility bill', $3, '$347.60')`,
-      [agl, margaretId, isoDaysFromNow(6)],
+               'AGL Energy', 'Utility bill', '$347.60')`,
+      [agl, margaretId],
     );
     const [aglPage] = await uploadBatch(db, margaretId, {
       pages: 1,
@@ -143,24 +147,16 @@ async function main() {
       [aglRun, agl],
     );
     await insertFields(db, aglRun, [
-      [
-        "document_type",
-        "Utility bill",
-        "Electricity account statement",
-        "confirmed",
-        0.97,
-      ],
-      ["issuer", "AGL Energy", "AGL Energy Limited", "confirmed", 0.96],
-      [
-        "action_required",
-        "Pay the amount due",
-        "Please pay by the due date shown below",
-        "confirmed",
-        0.92,
-      ],
-      ["due_date", isoDaysFromNow(6), "15/08/26", "uncertain", 0.61],
-      ["amount", "$347.60", "$347.60", "confirmed", 0.95],
-      ["reference", null, "(smudged in photo)", "unreadable", 0.18],
+      ["document_type", "Utility bill", "confirmed", 0.97],
+      ["issuer", "AGL Energy", "confirmed", 0.96],
+      ["action_required", "Pay the amount due", "confirmed", 0.92],
+      // The model hedged on the date and could not read the reference.
+      // Storage keeps the hedge and its guess (evaluation data); the product
+      // treats both rows the same way, as "no value": nothing goes on the
+      // calendar, and nobody is asked to adjudicate. See ADR 008.
+      ["due_date", isoDaysFromNow(6), "uncertain", 0.61],
+      ["amount", "$347.60", "confirmed", 0.95],
+      ["reference", null, "unreadable", 0.18],
     ]);
 
     // ---- A letter still being read ----------------------------------------
@@ -386,14 +382,14 @@ never taken. Upload something through the app to see a real one.
 async function insertFields(
   db: Client,
   runId: string,
-  fields: Array<[string, string | null, string | null, string, number]>,
+  fields: Array<[string, string | null, string, number]>,
 ) {
-  for (const [key, value, rawText, status, confidence] of fields) {
+  for (const [key, value, status, confidence] of fields) {
     await db.query(
       `INSERT INTO extracted_fields
-         (extraction_run_id, field_key, extracted_value, raw_text, status, confidence)
-       VALUES ($1, $2, $3, $4, $5, $6)`,
-      [runId, key, value, rawText, status, confidence],
+         (extraction_run_id, field_key, extracted_value, status, confidence)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [runId, key, value, status, confidence],
     );
   }
 }
@@ -518,17 +514,17 @@ async function confirmedDocument(
     [runId, documentId],
   );
   await insertFields(db, runId, [
-    ["document_type", spec.documentType, spec.documentType, "confirmed", 0.96],
-    ["issuer", spec.issuer, spec.issuer, "confirmed", 0.95],
-    ["action_required", spec.action, spec.action, "confirmed", 0.93],
-    ["due_date", spec.dueDate, spec.dueDate, "confirmed", 0.94],
+    ["document_type", spec.documentType, "confirmed", 0.96],
+    ["issuer", spec.issuer, "confirmed", 0.95],
+    ["action_required", spec.action, "confirmed", 0.93],
+    ["due_date", spec.dueDate, "confirmed", 0.94],
     ...(spec.dueTime
-      ? ([["due_time", spec.dueTime, spec.dueTime, "confirmed", 0.9]] as Array<
-          [string, string | null, string | null, string, number]
+      ? ([["due_time", spec.dueTime, "confirmed", 0.9]] as Array<
+          [string, string | null, string, number]
         >)
       : []),
-    ["amount", spec.amount, spec.amount, "confirmed", 0.95],
-    ["reference", spec.reference, spec.reference, "confirmed", 0.9],
+    ["amount", spec.amount, "confirmed", 0.95],
+    ["reference", spec.reference, "confirmed", 0.9],
   ]);
 
   const { rows } = await db.query<{ id: string }>(

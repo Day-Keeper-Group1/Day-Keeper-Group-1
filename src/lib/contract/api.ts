@@ -2,8 +2,8 @@
  * What the browser sees.
  *
  * These types are deliberately close in shape to the ones the interface was
- * already written against (src/lib/mock-data.ts), down to `rawText` being
- * camelCase and `status` using hyphens. Where the two disagree, it is because
+ * already written against (src/lib/mock-data.ts), down to `status` using
+ * hyphens. Where the two disagree, it is because
  * the fixture invented facts the system cannot know: mock-data gives a
  * still-processing document an issuer, and no real document has one until it
  * has been read. The types here tell the truth about the database; the fixture
@@ -19,7 +19,6 @@
  * that way.
  */
 
-import type { FieldStatus } from "./extraction";
 import type { ContractFieldKey } from "./fields";
 import { APP_TIME_ZONE, todayInZone } from "./dates";
 
@@ -83,8 +82,10 @@ export type DocumentFailureView = {
  * `issuer` and `documentType` are null until a reading has succeeded: a
  * document that is still processing, or that failed, has not told anyone who
  * it is from. The interface labels those rows from `uploadedAt` and
- * `pageCount` instead. They are filled in as soon as extraction succeeds and
- * overwritten with the person's corrections at confirm.
+ * `pageCount` instead. They are filled in as soon as extraction succeeds, and
+ * only from confident values: a hedged date stays absent here, because a
+ * value the model was not sure of never reaches a summary (ADR 008). Nobody
+ * edits them; a re-photographed letter re-reading is what changes them.
  */
 export type DocumentSummary = {
   id: string;
@@ -190,27 +191,29 @@ export type TaskDetail = TaskSummary & {
  * `label` is presentation, resolved from the field key on the server so that
  * every surface spells "Reference" the same way.
  *
- * `value` and `rawText` are null for exactly one case: a field the reader could
- * not read at all. The extraction contract enforces that pairing in the other
- * direction too (status `unreadable` requires a null value), so these two types
- * agree rather than needing a translation that invents `""`. An empty string
- * would mean "the model read an empty string", which is a different fact from
- * "the model could not read this", and the review screen draws a different row
- * for each. The screen renders an empty input for a null.
+ * The browser never sees `uncertain`. Storage keeps it (how often the model
+ * hedges is evaluation data), but on the way out the server collapses it to
+ * `unreadable`: as far as any screen is concerned, a value the model was not
+ * sure of does not exist. The screen shows, it never asks; there is nothing
+ * to edit and nothing to acknowledge, and the way to change a reading is to
+ * photograph the letter again. See ADR 008.
+ *
+ * `value` is null exactly when status is `unreadable`. An empty string would
+ * mean "the model read an empty string", which is a different fact.
  */
 export type ExtractedFieldView = {
   key: ContractFieldKey | string;
   label: string;
   value: string | null;
-  rawText: string | null;
-  status: FieldStatus;
+  status: "confirmed" | "unreadable";
 };
 
 export type DocumentDetail = DocumentSummary & {
   /**
    * Empty while status is 'processing' and for a document that has never been
-   * read successfully. Otherwise the most recent successful reading, with a
-   * person's corrections taking precedence.
+   * read successfully. Otherwise the most recent successful reading. There are
+   * no corrections to overlay: nobody edits a reading in this version, so
+   * what the model read confidently is exactly what every screen shows.
    */
   fields: ExtractedFieldView[];
   pages: DocumentPageView[];
@@ -263,23 +266,13 @@ export type BatchSummary = {
   failure?: DocumentFailureView;
 };
 
-/**
- * What the review screen sends back when a person accepts a document.
- *
- * `fields` carries ONLY what the person changed. Sending unchanged fields back
- * records corrections that never happened and quietly destroys the accuracy
- * numbers; see docs/api.md on confirm.
- *
- * `acknowledged` carries the keys of every field that was flagged (uncertain
- * or unreadable), that the person saw, and that they accepted without editing.
- * Without it, "checked and left alone" is indistinguishable from "never looked
- * at", and the review screen's promise ("never from a date you haven't
- * checked") could not be kept honestly.
+/*
+ * There is deliberately no ConfirmDocumentRequest any more. Confirming sends
+ * an empty body: the person looked, the person nodded, that is the entire
+ * message. Nothing is edited (no fields array) and nothing is attested (no
+ * acknowledged array): a value the model was unsure of never reached the
+ * screen, so there is nothing on it to interrogate anyone about. See ADR 008.
  */
-export type ConfirmDocumentRequest = {
-  fields: Array<{ key: string; value: string }>;
-  acknowledged: string[];
-};
 
 /** What the home screen needs, in one request. */
 export type HomeCounts = {

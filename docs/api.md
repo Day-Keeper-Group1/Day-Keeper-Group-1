@@ -537,7 +537,6 @@ The review screen's endpoint: the summary, its fields, and its pages.
   "documentType": "Electricity bill",
   "label": "AGL Energy · Electricity bill",
   "status": "needs-review",
-  "dueDate": "2026-08-15",
   "amount": "$347.60",
   "reference": "4021 9987 1",
   "uploadedAt": "2026-08-10T09:12:44+10:00",
@@ -547,42 +546,36 @@ The review screen's endpoint: the summary, its fields, and its pages.
       "key": "document_type",
       "label": "Document type",
       "value": "Electricity bill",
-      "rawText": "Tax invoice",
       "status": "confirmed"
     },
     {
       "key": "issuer",
       "label": "From",
       "value": "AGL Energy",
-      "rawText": "AGL Energy Limited",
       "status": "confirmed"
     },
     {
       "key": "action_required",
       "label": "What to do",
       "value": "Pay the electricity bill",
-      "rawText": "Amount due on 15/08/26",
       "status": "confirmed"
     },
     {
       "key": "due_date",
       "label": "Due date",
-      "value": "15 Aug 2026",
-      "rawText": "15/08/26",
-      "status": "uncertain"
+      "value": null,
+      "status": "unreadable"
     },
     {
       "key": "amount",
       "label": "Amount",
       "value": "$347.60",
-      "rawText": "TOTAL DUE $347.60",
       "status": "confirmed"
     },
     {
       "key": "reference",
       "label": "Reference",
       "value": null,
-      "rawText": null,
       "status": "unreadable"
     }
   ],
@@ -610,29 +603,31 @@ The review screen's endpoint: the summary, its fields, and its pages.
 
 `fields` is empty while status is `processing`, and for a document that has
 never been read successfully. Otherwise it holds the most recent successful
-reading, in reading order, with a person's correction taking precedence over
-what the model said.
+reading, in reading order. There are no corrections to overlay: nobody edits a
+reading in this version.
 
-`value` and `rawText` are null for exactly one case, a field the reader could
-not read at all; `""` would mean the model read an empty string, which is a
-different fact. `value` is display text, already formatted server-side, so
-`due_date` arrives as `15 Aug 2026` rather than ISO. The screen shows what it
-is given. The one place ISO travels is the confirm request coming back.
+**The browser never sees `uncertain`.** Storage keeps it (how often the model
+hedges, and what it guesses, is evaluation data), but on the way out the
+server collapses it to `unreadable`: a value the model was not sure of does
+not exist as far as any screen is concerned. The example above is exactly
+that: storage holds a hedged "15 Aug 2026", and the response carries a null.
+The same rule keeps the hedged date off `DocumentSummary.dueDate`, which is
+why the summary above has none.
 
-**`rawText` is carried and stored, and the prototype does not display it.**
-Saying this plainly matters more than tidying it away, because three documents
-in this repository assert the opposite: `AGENTS.md` says never drop it from the
-review screen and that without it confirming is a rubber stamp, ADR 004 shows
-a row reading "Found on document: 15/08/26", and the field above hands it to a
-screen that has nowhere to put it. The prototype's flagged row asks "This was
-hard to read. Is it right?" and shows the person nothing to check the value
-against, which is a weaker promise than the one the other documents make.
+`value` is null exactly when status is `unreadable`; `""` would mean the model
+read an empty string, which is a different fact. `value` is display text,
+already formatted server-side, so a date arrives as `15 Aug 2026` rather than
+ISO.
 
-The prototype is the authority, so the resolution is not a quiet edit here.
-**Open, and it is the largest one in this document**: whether the review screen
-grows a source snippet under each value, or the page image beside it, or
-neither, is a product decision. The data is kept either way, so deciding late
-costs nothing but deciding by accident costs the product's central claim.
+**The review screen shows, it never asks** (ADR 008). Rows without a value are
+not drawn: an empty row invites an answer nobody is being asked for. When the
+date or the action is missing, the card says so in one plain sentence ("This
+letter doesn't give a clear date. It's saved; nothing goes on your calendar."),
+a statement with a full stop, not a question. The one remedy offered anywhere
+is photographing the letter again. There was a plan to show a `rawText`
+transcription snippet beside each value; it is gone, and ADR 008 records why
+(it was designed as an OCR by-product, and without OCR it was the same model
+testifying twice).
 
 The screen's header is `` `${issuer} · ${documentType}` ``, from those two
 fields verbatim. The prototype's shorter headings ("Medicare" over a letter
@@ -653,13 +648,12 @@ is presentation. Three default decisions, open to review:
   `Fri 4 Sep, 10:30 am`. An appointment happens at a moment, and splitting that
   moment across two rows makes a person assemble it themselves. A deadline,
   which has no time, keeps the plain `Due date` row in the `fact` style
-  (`15 Aug 2026`). This is the one row on the screen that is two fields, so if
-  it is ever flagged it is edited as two boxes, one per key, and each key
-  travels separately in the confirm request.
+  (`15 Aug 2026`). If either half is missing, the row shows what exists: a
+  date without a time is a deadline, a time without a date is not drawn.
 
 ## Confirm a document
 
-Accepts a letter, with corrections, and turns it into a task with reminders.
+Accepts a letter as read, and turns it into a task with reminders.
 
 **URL** : `/api/documents/:id/confirm`
 
@@ -669,22 +663,10 @@ Accepts a letter, with corrections, and turns it into a task with reminders.
 
 **Data constraints**
 
-`ConfirmDocumentRequest`. **`fields` carries only what the person changed.**
-`acknowledged` carries the keys of every flagged field (status `uncertain` or
-`unreadable`) that the person accepted without editing.
-
-A `due_date` value must be `'YYYY-MM-DD'`. The review screen's date box is free
-text, so parse what the person typed with `parseHumanDate()` (day-first,
-Australian) before sending.
-
-**Data example**
-
-```json
-{
-  "fields": [{ "key": "due_date", "value": "2026-08-15" }],
-  "acknowledged": ["reference"]
-}
-```
+**Empty body.** The person looked, the person nodded, that is the entire
+message. There is no fields array (nothing on this screen is editable) and no
+acknowledged array (a value the model was unsure of never reached the screen,
+so there is nothing to attest to). See ADR 008.
 
 ### Success Response
 
@@ -731,46 +713,30 @@ and a reminder in the past is never created. The 12th and the 14th survive.
 
 ### Error Responses
 
-**Condition** : A `due_date` the server cannot parse.
-**Code** : `400 BAD REQUEST`, with `fields.due_date`.
-
-**Condition** : A flagged field appears in neither `fields` nor
-`acknowledged`.
-**Code** : `409 CONFLICT`
-
 **Condition** : The document has already been confirmed.
 **Code** : `409 CONFLICT`
 
-**Where those three errors appear on screen**, since the prototype's confirm
-button navigates unconditionally and has nowhere to put one: `invalid_request`
-with `fields.due_date` renders under that field's box, where the wrong value
-still is. Both `409`s render as a line above the button. A `message` is written
-to be shown as-is, so no screen needs to invent wording.
+It renders as a line above the button, since the prototype's confirm button
+navigates unconditionally and has nowhere else to put one. The `message` is
+written to be shown as-is.
 
 ### Notes
 
 The returned task includes its reminders, so the calendar the person lands on
 can draw itself without a second request.
 
-**Send only the fields the person changed.** This rule is load-bearing and the
-easiest one to break by accident: the lazy implementation POSTs all six fields
-back, every unchanged value is recorded as a correction, and the numbers we
-use to measure how often the reader is wrong are quietly destroyed from day
-one, with no error anywhere. Corrections are the accuracy data.
+**Nothing on the review screen is editable, and that is the design, not a
+gap** (ADR 008). What the model read confidently is what she sees; what it
+was not sure of she never sees at all. Her job is recognition, not data entry:
+does this match the letter? Yes is a tap. No is photographing the letter
+again, through the same camera as everything else, and the matching step
+placing the new reading against this letter is what corrects it. There is no
+other correction channel, which also means the accuracy numbers come entirely
+from the synthetic evaluation line rather than from user edits.
 
-`acknowledged` lands in `extracted_fields.acknowledged_at`, beside the
-correction column and without touching `status`: flipping `uncertain` to
-`confirmed` would erase the fact that the model was ever unsure, which is the
-same evidence corrections exist to preserve.
-
-**Be honest about what that proves.** The review screen has one button for the
-whole letter, so the client computes this array as "flagged, minus edited" and
-the server could have worked that out alone. It is a record of what the person
-was shown and accepted, not proof that they read it, and the `409` catches a
-malformed client rather than an inattentive person. Whether a flagged row needs
-its own control, which would turn the record into evidence, is a product
-question for the prototype and not something this document can decide.
-**Open.**
+**What confirming means is therefore exact**: a person saw this reading and
+accepted it. The calendar's sources stay two and only two, a confident read
+that a person has seen, or nothing.
 
 Confirming is the moment a document becomes a task with reminders, all in one
 transaction. The scheduling rule lives in `src/lib/contract/reminders.ts` and
@@ -785,10 +751,10 @@ from `PLAN_LINES` in that same file for the same reason.
 
 Default decisions, open to review:
 
-- **An unreadable field does not block confirming.** The person may supply a
-  value, but an empty unreadable field stays empty and the task is created
-  anyway. Blocking would trap the person on a form they cannot complete, which
-  is a worse failure for this audience than a missing reference number.
+- **An unreadable field does not block confirming.** It stays empty and the
+  task is created anyway. Blocking would trap the person on a screen that
+  offers her nothing to fix, which is a worse failure for this audience than a
+  missing reference number.
 - **The task's title is `` `${action_required} (${issuer})` ``**, mechanical
   and predictable. The prototype's hand-written titles ("Pay AGL electricity
   bill") cannot be derived from the six fields; a nicer rule is a product
@@ -1299,13 +1265,7 @@ that has not stopped being true.
 Not oversights. Each needs a decision nobody has made yet, and guessing now
 would mean building the wrong thing twice.
 
-**The largest is stated in full under `GET /api/documents/:id`, not repeated
-here: whether the review screen shows the person the snippet each value was
-read from.** Three documents in this repository say it does and the prototype
-does not draw it, which makes it the one open question that touches what this
-product claims to be for rather than how a screen behaves.
-
-Four more belong to the capture screen and to failures, and they are listed
+Four of them belong to the capture screen and to failures, and they are listed
 first because they are the ones a person meets soonest:
 
 - **how one row becomes several.** A batch is one row while it is being

@@ -78,9 +78,10 @@ been rehearsed.
 - **Extraction history is kept.** Every attempt, including failures, with the
   provider's raw response. Deleting the history would make honest accuracy
   reporting impossible and would hide how often a person had to retake a photo.
-- **Corrections sit beside the model's answer, never on top of it.**
-  `extracted_fields` holds both `extracted_value` and `corrected_value`.
-  Overwriting would destroy the only evidence of how often the reader is wrong.
+- **Nobody edits a reading** (since 18 August 2026, ADR 008). The
+  `corrected_value` column this bullet used to describe is gone with the
+  editing it recorded; accuracy measurement lives on the synthetic evaluation
+  line, where ground truth is known by construction.
 - **Reminders are rows, not a rule.** Each one has its own fate to record
   (sent, skipped because the task was already done when its moment came, or
   failed), and a rule evaluated at read time cannot remember any of that.

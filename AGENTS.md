@@ -69,7 +69,7 @@ The pages have no working sign-in yet and read `src/lib/mock-data.ts`, so `npm r
 Two rules that are easy to break by accident:
 
 - **The six fields are a floor, not a ceiling.** A reader may return more, and the extra is kept in `open_payload`. But all six must be present, and a field that could not be read says `unreadable` rather than being omitted. `summary` is deliberately not one of them; see ADR 004.
-- **Never drop `rawText` from the review screen.** Showing the snippet the value came from is what turns confirming into checking. Without it the product's central safety claim is theatre.
+- **The review screen shows, it never asks** (ADR 008). Nothing on it is editable and nothing on it is a question: a value the model was not sure of arrives as an absent value, the card says so in a sentence, and the one remedy anywhere is photographing the letter again. A date reaches the calendar from exactly two sources, a confident read a person has seen, or nowhere.
 
 ## Worktrees: parallel agents without collisions
 

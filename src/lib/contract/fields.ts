@@ -114,11 +114,11 @@ export const NO_PAYMENT_REQUIRED = "No payment required";
  * The one value that means "this document does not have such a thing".
  *
  * Six fields are a floor, so an appointment letter that prints no reference
- * number still has to report `reference`. Without this it would have to say
- * `unreadable`, which flags the field, draws the amber box, and asks a person
- * to type in a number that does not exist, before refusing to confirm until
- * they acknowledge it. "There is nothing to read" and "I could not read it"
- * are different answers and only one of them is this letter's.
+ * number still has to report `reference`. Without this it could only say
+ * `unreadable`, and "there is nothing to read" and "I could not read it" are
+ * different answers: the first is a confident fact about the letter, the
+ * second makes the card say something is missing and suggest photographing
+ * it again, a suggestion that could never help here.
  *
  * A field carrying this value has status `confirmed`, not `unreadable`, and a
  * screen may hide its row the same way it may hide a NO_PAYMENT_REQUIRED
@@ -127,18 +127,11 @@ export const NO_PAYMENT_REQUIRED = "No payment required";
 export const NOT_APPLICABLE = "Not applicable";
 
 /**
- * The sentence shown under a flagged field, resolved from status the way
- * FIELD_LABELS is resolved from key, so every surface says it identically.
- * The `uncertain` wording is the prototype's, verbatim.
+ * There is deliberately no table of "please check this" hints here any more.
+ * The review screen shows, it never asks: a field the model was not sure of
+ * arrives as an absent value, the card says so in a sentence, and the way to
+ * change the outcome is to photograph the letter again. See ADR 008.
  */
-export const FIELD_STATUS_HINTS: Record<
-  "confirmed" | "uncertain" | "unreadable",
-  string | null
-> = {
-  confirmed: null,
-  uncertain: "⚠ This was hard to read. Is it right?",
-  unreadable: "⚠ We couldn't read this. Please type it in.",
-};
 
 /**
  * Fields a document can carry that are deliberately not in the contract yet.

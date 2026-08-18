@@ -165,18 +165,19 @@ export function formatDueTime(hhmm: string): string {
 }
 
 /**
- * Parse what a person typed into a date box, day-first, to 'YYYY-MM-DD'.
+ * Parse human date writing, day-first, to 'YYYY-MM-DD'.
  *
- * The review screen's date field is a plain text input prefilled with
- * '15 Aug 2026', so the server will receive human writing, not ISO. Accepted:
+ * Dormant this version: nothing collects a typed date any more, because the
+ * review screen is read-only (ADR 008) and the date-filling feature was
+ * deferred. Kept because the rules are right and the day it returns is the
+ * day this would otherwise be rewritten from scratch. Accepted:
  *
  *   '2026-08-15'      already ISO
  *   '15/08/2026'      day-first with / - or . and a 2- or 4-digit year
  *   '15 Aug 2026'     day, month name (short or full), year
  *
  * Anything else, and any string that names an impossible day, returns null.
- * Day-first is a product decision, not a guess: the audience is Australian and
- * the field description already tells the model the same thing.
+ * Day-first is a product decision, not a guess: the audience is Australian.
  */
 export function parseHumanDate(input: string): string | null {
   const text = input.trim();

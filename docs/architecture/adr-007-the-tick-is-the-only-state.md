@@ -84,9 +84,9 @@ tick landed, which is the only thing that was ever true.
 ## Consequences
 
 - `reminder_status` is `scheduled | sent | skipped | failed`. `skipped` is
-  written only by the dispatcher, with no `sent_at`. The seed plants one: a
-  bill ticked off before its last reminder's morning, so that morning's clock
-  found it done and stayed silent.
+  written only by the dispatcher, with no `sent_at`. The seed plants a worked
+  example: a bill ticked off after its first reminder went out but before its
+  later ones, so those mornings' clocks found it done and stayed silent.
 - The complete and undo endpoints each write one row. Their sections in
   `docs/api.md` no longer mention reminders except to say they are untouched.
 - The dispatcher (transport still undecided: cron, platform scheduler, or
