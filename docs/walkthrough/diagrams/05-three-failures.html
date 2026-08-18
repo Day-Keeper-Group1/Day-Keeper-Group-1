@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Three failures</title>
+<link rel="stylesheet" href="_style.css">
+<style>
+  .sheet { width: 1500px; }
+  .lede { max-width: 1400px; margin-bottom: 18px; }
+
+  /* the one question, then the fan out */
+  .origin { display: flex; justify-content: center; }
+  .origin .box { width: 760px; text-align: center; padding: 10px 14px; }
+  .origin .box .d { font-size: 13.5px; margin-top: 3px; }
+
+  svg.fan { display: block; }
+  svg.fan line { stroke: var(--line); stroke-width: 2; }
+  svg.fan polygon { fill: var(--line); }
+
+  /* the three readings that failed */
+  .lanes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+
+  .lane {
+    background: var(--card);
+    border: 2px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .lane .hd {
+    display: flex; align-items: center; gap: 11px;
+    padding: 9px 13px;
+    border-bottom: 2px solid var(--line);
+  }
+  .lane .hd .mk {
+    width: 27px; height: 27px; border-radius: 50%; flex: 0 0 27px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14.5px; font-weight: 700;
+    color: var(--green-ink);
+  }
+  .lane .hd .ttl { font-size: 16.5px; font-weight: 700; line-height: 1.2; }
+  .lane .hd .kind { font-family: var(--mono); font-size: 12.5px; color: var(--dim); margin-top: 2px; }
+
+  .lane .in { padding: 11px 13px 13px; display: flex; flex-direction: column; gap: 9px; flex: 1; }
+
+  .lbl {
+    font-size: 12px; font-weight: 700; letter-spacing: 0.5px;
+    text-transform: uppercase; color: var(--dim);
+    display: block; margin-bottom: 4px;
+  }
+
+  .cause { min-height: 78px; }
+  .cause .m { font-size: 14px; line-height: 1.4; }
+  .cause .also {
+    display: block; margin-top: 7px;
+    font-size: 12.5px; line-height: 1.4; color: var(--dim);
+  }
+  .cause .also b { color: var(--ink); }
+
+  /* what she actually reads on the glass */
+  .screen {
+    background: var(--bg);
+    border-radius: 8px;
+    padding: 8px 12px 10px 13px;
+    min-height: 78px;
+  }
+  .screen .q { font-size: 14.5px; line-height: 1.42; font-weight: 600; }
+  .screen .q::before { content: "\201C"; margin-right: 1px; }
+  .screen .q::after  { content: "\201D"; margin-left: 1px; }
+
+  /* the single control on that row */
+  .act { display: flex; align-items: flex-end; gap: 12px; }
+  .btn {
+    display: inline-block;
+    font-size: 14.5px; font-weight: 700;
+    padding: 8px 17px; border-radius: 8px;
+    color: var(--green-ink);
+    white-space: nowrap;
+  }
+  .act .keep { padding-bottom: 4px; }
+
+  .photos { display: flex; gap: 8px; font-size: 13px; line-height: 1.4; color: var(--dim); }
+  .photos .tag { flex: 0 0 auto; margin-top: 1px; }
+
+  /* the identical follow up, on a band at the foot of every lane */
+  .after {
+    margin: auto -13px -13px;
+    padding: 9px 13px 11px;
+    background: var(--bg);
+    border-top: 1.5px solid var(--line);
+    font-size: 13px; line-height: 1.45; color: var(--dim);
+  }
+  .after b { color: var(--ink); }
+
+  /* why that sentence and not another one */
+  .note {
+    border-top: 1px dashed var(--line);
+    padding-top: 10px;
+    font-size: 12.5px; line-height: 1.42; color: var(--dim);
+  }
+  .note .box.warn { padding: 9px 11px; }
+  .note .box.warn .d { font-size: 12.5px; line-height: 1.42; margin-top: 0; }
+
+  /* lane A, ours */
+  .lane.a .hd { background: var(--warn-bg); }
+  .lane.a .hd .ttl { color: var(--warn-ink); }
+  .lane.a .hd .mk { background: var(--gold); }
+  .lane.a .screen { border-left: 5px solid var(--gold); }
+  .lane.a .btn { background: var(--gold); }
+
+  /* lane B, the photograph */
+  .lane.b .hd { background: var(--soft); }
+  .lane.b .hd .ttl { color: var(--green); }
+  .lane.b .hd .mk { background: var(--green); }
+  .lane.b .screen { border-left: 5px solid var(--green); }
+  .lane.b .btn { background: var(--green); }
+
+  /* lane C, the dead end */
+  .lane.c .hd { background: var(--danger-bg); }
+  .lane.c .hd .ttl { color: var(--danger); }
+  .lane.c .hd .mk { background: var(--danger); }
+  .lane.c .screen { border-left: 5px solid var(--danger); }
+  .lane.c .btn { background: var(--danger); }
+
+  /* the two that are not readings that failed */
+  .extras-hd {
+    margin-top: 18px; margin-bottom: 9px;
+    display: flex; align-items: baseline; gap: 12px;
+  }
+  .extras-hd .h { font-size: 15px; font-weight: 700; color: var(--green); }
+  .extras-hd .s { font-size: 13px; color: var(--dim); }
+
+  .extras { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .ex {
+    border: 1.5px dashed var(--line);
+    border-radius: 10px;
+    padding: 11px 14px 12px;
+    display: grid;
+    grid-template-columns: 1fr 154px;
+    column-gap: 14px;
+    align-items: start;
+  }
+  .ex .ttl { font-size: 15px; font-weight: 700; color: var(--dim); margin-bottom: 7px; }
+  .ex .queue {
+    font-family: var(--mono); font-size: 12.5px; color: var(--dim);
+    background: var(--bg); border-radius: 6px; padding: 8px 10px;
+    white-space: nowrap; overflow: hidden;
+  }
+  .ex .why { grid-column: 1 / -1; font-size: 12.5px; line-height: 1.42; color: var(--dim); margin-top: 9px; }
+  .ex .ctrl { text-align: center; }
+  .ex .btn { background: var(--dim); font-size: 14px; padding: 7px 15px; }
+  .ex .tag { margin-top: 8px; white-space: nowrap; }
+
+  /* the closing */
+  .foot { margin-top: 18px; border-top: 2px solid var(--line); padding-top: 12px; }
+  .foot p { font-size: 13.5px; line-height: 1.5; color: var(--dim); max-width: 1424px; }
+  .foot p b { color: var(--ink); }
+</style>
+</head>
+<body>
+<div class="sheet">
+  <h1>Failures are told apart by one question: what can she do about it</h1>
+  <p class="lede">
+    A failed reading reaches her only after the automatic attempts are spent. What she reads then is decided
+    by one question, and it is not a technical one: what can she do about this? Three answers, three sentences
+    that share no words, and one identical follow up.
+  </p>
+
+  <div class="origin">
+    <div class="box green">
+      <div class="t">A reading failed</div>
+      <div class="d">Not sorted by what broke. Sorted by whether anything she does next can change the answer.</div>
+    </div>
+  </div>
+
+  <svg class="fan" width="1424" height="46" viewBox="0 0 1424 46" xmlns="http://www.w3.org/2000/svg">
+    <line x1="712" y1="0" x2="712" y2="16"/>
+    <line x1="230.7" y1="16" x2="1193.3" y2="16"/>
+    <line x1="230.7" y1="16" x2="230.7" y2="34"/>
+    <line x1="712" y1="16" x2="712" y2="34"/>
+    <line x1="1193.3" y1="16" x2="1193.3" y2="34"/>
+    <polygon points="230.7,46 223.2,33 238.2,33"/>
+    <polygon points="712,46 704.5,33 719.5,33"/>
+    <polygon points="1193.3,46 1185.8,33 1200.8,33"/>
+  </svg>
+
+  <div class="lanes">
+
+    <div class="lane a">
+      <div class="hd">
+        <span class="mk">A</span>
+        <div>
+          <div class="ttl">It was ours</div>
+          <div class="kind">transient</div>
+        </div>
+      </div>
+      <div class="in">
+        <div class="cause">
+          <span class="lbl">What happened</span>
+          <span class="m">the photographs are fine, something on our side broke</span>
+          <span class="also"><b>Before she saw anything:</b> three automatic retries have already happened and failed, silently</span>
+        </div>
+        <div class="screen">
+          <span class="lbl">On her screen</span>
+          <div class="q">It wasn't your photo. Something went wrong on our side. Please try again.</div>
+        </div>
+        <div class="act">
+          <span class="btn">Try again</span>
+          <span class="keep"><span class="lbl" style="margin-bottom:0">the one control</span></span>
+        </div>
+        <div class="photos">
+          <span class="tag">Photos kept</span>
+          <span>the same photographs are read again as a fresh attempt</span>
+        </div>
+        <div class="note">
+          <div class="box warn">
+            <div class="d">
+              The ideal is that she never meets this button: the system keeps retrying, or support retries it
+              from an operations console, or the provider is swapped over there. All of that is console side
+              work, deferred. One tap is the honest floor until then.
+            </div>
+          </div>
+        </div>
+        <div class="after">
+          <span class="lbl">What follows</span>
+          The automatic attempts are spent; this one spends a deliberate one.
+        </div>
+      </div>
+    </div>
+
+    <div class="lane b">
+      <div class="hd">
+        <span class="mk">B</span>
+        <div>
+          <div class="ttl">It was the photograph</div>
+          <div class="kind">unreadable_image</div>
+        </div>
+      </div>
+      <div class="in">
+        <div class="cause">
+          <span class="lbl">What happened</span>
+          <span class="m">the letter exists and was recognised, the picture is too poor to read</span>
+          <span class="also">Retrying on our side would read the same blurred pixels and fail the same way.</span>
+        </div>
+        <div class="screen">
+          <span class="lbl">On her screen</span>
+          <div class="q">The photo was too blurry to read. Please take it again.</div>
+        </div>
+        <div class="act">
+          <span class="btn">Take it again</span>
+          <span class="keep"><span class="lbl" style="margin-bottom:0">the one control</span></span>
+        </div>
+        <div class="photos">
+          <span class="tag">Photos kept</span>
+          <span>the failed reading was judged against them</span>
+        </div>
+        <div class="note">
+          This is the one failure where naming the photograph is both true and useful: the picture is the only
+          thing in it she can change, and changing it is the entire fix.
+        </div>
+        <div class="after">
+          <span class="lbl">What follows</span>
+          <b>The row is put away and the camera opens;</b> what she posts next is an ordinary pile.
+        </div>
+      </div>
+    </div>
+
+    <div class="lane c">
+      <div class="hd">
+        <span class="mk">C</span>
+        <div>
+          <div class="ttl">We cannot read this kind of thing</div>
+          <div class="kind">unsupported_document</div>
+        </div>
+      </div>
+      <div class="in">
+        <div class="cause">
+          <span class="lbl">What happened</span>
+          <span class="m">a handwritten note. No photograph will fix handwriting.</span>
+          <span class="also">The reading knew what it was looking at, and knew it could not read it.</span>
+        </div>
+        <div class="screen">
+          <span class="lbl">On her screen</span>
+          <div class="q">We're sorry. We can't read this kind of document. Your photos are kept safe.</div>
+        </div>
+        <div class="act">
+          <span class="btn">Put it away</span>
+          <span class="keep"><span class="lbl" style="margin-bottom:0">the one control</span></span>
+        </div>
+        <div class="photos">
+          <span class="tag">Photos kept</span>
+          <span>it moves to Your letters with its photograph and the apology on it</span>
+        </div>
+        <div class="note">
+          It opens with an apology rather than an instruction. There is nothing she did and nothing she can do,
+          so blame has no business anywhere near this face.
+        </div>
+        <div class="after">
+          <span class="lbl">What follows</span>
+          <b>The row is put away and no camera opens:</b> a better photograph would not help.
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="extras-hd">
+    <span class="h">Two more things land in the same queue</span>
+    <span class="s">Neither is a reading that failed, and both are the only cases where photographs are not kept.</span>
+  </div>
+
+  <div class="extras">
+
+    <div class="ex">
+      <div>
+        <div class="ttl">D. That photograph was not a letter</div>
+        <div class="queue">1 photo wasn't a letter &middot; a photograph of a person &middot; we didn't keep it</div>
+      </div>
+      <div class="ctrl">
+        <span class="btn">OK</span>
+        <div><span class="tag bad">Photos not kept</span></div>
+      </div>
+      <div class="why">
+        A server for vulnerable people that permanently holds a picture of somebody's grandchild which nothing
+        will ever display is a liability with no matching benefit.
+      </div>
+    </div>
+
+    <div class="ex">
+      <div>
+        <div class="ttl">E. There were no letters in that pile at all</div>
+        <div class="queue">couldn't find any letters in these</div>
+      </div>
+      <div class="ctrl">
+        <span class="btn">Take again</span>
+        <div><span class="tag bad">Photos not kept</span></div>
+      </div>
+      <div class="why">
+        The batch is void. Nothing can proceed and no letter was ever recognised, so the only honest interface
+        is a plain card and the camera again.
+      </div>
+    </div>
+
+  </div>
+
+  <div class="foot">
+    <p>
+      The wording differs by cause because the causes are genuinely different, and this reader assumes every
+      error is hers. <b>The one that really is ours says so first.</b> But the follow up is one thing everywhere:
+      the row goes away, and where photographing again could change the answer, the camera opens.
+      <b>There is no special mode afterwards.</b> What she posts next is an ordinary pile, and nothing assumes
+      it is that letter, or only that letter, or any letter at all.
+    </p>
+  </div>
+</div>
+</body>
+</html>

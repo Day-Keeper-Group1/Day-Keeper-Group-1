@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>The clock</title>
+<link rel="stylesheet" href="_style.css">
+<style>
+  .sheet { width: 1460px; }
+  .lede { max-width: 1320px; }
+
+  /* ---------- the timeline ---------- */
+  .tl { display: grid; grid-template-columns: 140px 1fr; }
+
+  .lanes { position: relative; }
+  .lane { position: absolute; left: 0; width: 130px; }
+  .lane b { display: block; font-size: 14.5px; font-weight: 700; color: var(--green); }
+  .lane span { display: block; font-size: 12.5px; color: var(--dim); line-height: 1.3; margin-top: 3px; }
+
+  .track { position: relative; height: 468px; }
+  .at { position: absolute; left: var(--x); transform: translateX(-50%); }
+
+  /* an alarm going off */
+  .alarm { top: 0; width: 232px; padding: 11px 13px; display: flex; gap: 11px; align-items: flex-start; }
+  .alarm .bell { font-size: 25px; line-height: 1.05; }
+  .alarm .when { font-size: 15.5px; font-weight: 700; color: var(--green); }
+  .alarm .what { font-size: 13px; color: var(--dim); margin-top: 2px; }
+
+  /* the look it takes at the task, drawn dashed because it writes nothing */
+  .drop {
+    position: absolute; left: var(--x); top: 70px; width: 2px; height: 38px;
+    border-left: 2px dashed var(--line); margin-left: -1px;
+  }
+  .drop::after {
+    content: ""; position: absolute; left: -5px; bottom: -10px;
+    border-left: 6px solid transparent; border-right: 6px solid transparent;
+    border-top: 10px solid var(--line);
+  }
+
+  /* what the look found, resting on the timeline at that moment */
+  .chip { bottom: 272px; width: 232px; padding: 10px 13px; }
+  .chip .r1 { font-size: 13.5px; color: var(--dim); }
+  .chip .r2 { display: flex; align-items: center; gap: 9px; margin-top: 7px; }
+  .chip .r2 .n { font-size: 12.5px; color: var(--dim); }
+
+  .code { font-family: var(--mono); font-size: 13px; padding: 1px 6px; border-radius: 4px; }
+  .code.open { background: var(--soft); color: var(--green); }
+  .code.done { background: var(--green); color: var(--green-ink); }
+
+  /* the days, with the task's one column painted underneath them */
+  .axis {
+    position: absolute; top: 200px; left: 0; right: 0; height: 46px;
+    background: var(--card); border: 2px solid var(--line); border-radius: 8px; overflow: hidden;
+  }
+  .day {
+    position: absolute; top: 2px; left: var(--x); transform: translateX(-50%);
+    font-size: 13px; font-weight: 700; color: var(--dim);
+  }
+  .seg {
+    position: absolute; top: 20px; height: 22px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono); font-size: 12px; letter-spacing: 0.2px;
+  }
+  .seg.open { background: var(--soft); color: var(--green); }
+  .seg.done { background: var(--green); color: var(--green-ink); }
+  .due {
+    position: absolute; top: 0; bottom: 0; left: 1045px; right: 0;
+    background: var(--warn-bg); border-left: 3px solid var(--gold);
+    display: flex; align-items: center; padding-left: 13px;
+    font-size: 13.5px; color: var(--warn-ink);
+  }
+  .due b { margin-right: 5px; }
+
+  /* what she does */
+  .conn { position: absolute; left: var(--x); top: 246px; width: 2px; background: var(--line); margin-left: -1px; }
+  .act { top: 272px; width: 225px; padding: 11px 13px; display: flex; gap: 11px; align-items: flex-start; }
+  .act.r2 { top: 378px; width: 312px; }
+  .act .when { font-size: 15.5px; font-weight: 700; color: var(--green); }
+  .act .what { font-size: 13px; color: var(--dim); margin-top: 2px; line-height: 1.35; }
+  .act .wrote { font-family: var(--mono); font-size: 12.5px; color: var(--green); margin-top: 7px; }
+  .cb {
+    flex: none; width: 25px; height: 25px; border-radius: 6px; margin-top: 2px;
+    border: 2.5px solid var(--line); background: var(--card);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 700; color: transparent;
+  }
+  .cb.on { background: var(--green); border-color: var(--green); color: var(--green-ink); }
+
+  .strap {
+    margin: 16px 0 20px; padding: 9px 0 9px 15px; border-left: 4px solid var(--green);
+    font-size: 14.5px; color: var(--ink); line-height: 1.45;
+  }
+  .strap b { color: var(--green); }
+
+  /* ---------- the two blocks underneath ---------- */
+  .pair { display: flex; gap: 24px; align-items: flex-start; }
+  .pair > * { flex: none; }
+  .rem { width: 760px; }
+  .old { width: 600px; }
+
+  .rem .hd { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 9px; }
+  .rem .hd .tname { font-family: var(--mono); font-size: 15px; font-weight: 700; color: var(--green); }
+  .rem .hd .note { font-size: 13px; color: var(--dim); }
+  .rem table { width: 100%; border-collapse: collapse; }
+  .rem th {
+    text-align: left; font-family: var(--mono); font-size: 12px; font-weight: 400;
+    color: var(--dim); padding: 0 0 5px; border-bottom: 2px solid var(--line);
+  }
+  .rem td { font-family: var(--mono); font-size: 14px; color: var(--ink); padding: 7px 0; border-bottom: 1px solid var(--soft); }
+  .rem td.st { width: 130px; }
+  .rem td.by { width: 260px; font-family: var(--sans); font-size: 12.5px; color: var(--dim); }
+  .rem .cap { font-size: 13.5px; color: var(--dim); line-height: 1.5; margin-top: 11px; }
+
+  .old .head { display: flex; align-items: baseline; justify-content: space-between; }
+  .old .body { font-size: 13.5px; color: var(--warn-ink); line-height: 1.55; margin-top: 8px; }
+
+  .foot { margin-top: 20px; padding-left: 15px; border-left: 4px solid var(--line); }
+  .foot p { font-size: 14px; color: var(--dim); line-height: 1.55; }
+  .foot p b { color: var(--ink); }
+</style>
+</head>
+<body>
+<div class="sheet">
+  <h1>The clock checks the tick at the moment it rings</h1>
+  <p class="lede">
+    One bill, due 18 September, confirmed on 11 September. Ticking it off changes one column of one row
+    and writes nothing to the reminders table. Each reminder is an alarm clock that looks at the task at
+    the moment it rings and decides right then whether to speak. So Margaret can change her mind as often
+    as she likes, and nothing has to be kept in step.
+  </p>
+
+  <div class="tl">
+    <div class="lanes">
+      <div class="lane" style="top: 16px"><b>The clock</b><span>three alarms, planned at confirm</span></div>
+      <div class="lane" style="top: 204px"><b>September 2026</b><span>tasks.state, painted along the days</span></div>
+      <div class="lane" style="top: 278px"><b>Margaret</b><span>ticking and unticking</span></div>
+    </div>
+
+    <div class="track">
+
+      <!-- alarm 1 -->
+      <div class="at alarm box" style="--x: 116px">
+        <div class="bell">&#128276;</div>
+        <div>
+          <div class="when">11 Sep, 9 am</div>
+          <div class="what">reminder 1 rings</div>
+        </div>
+      </div>
+      <div class="drop" style="--x: 116px"></div>
+      <div class="at chip box" style="--x: 116px">
+        <div class="r1">it reads the task: <span class="code open">open</span></div>
+        <div class="r2"><span class="tag">sent</span><span class="n">the reminder goes out</span></div>
+      </div>
+
+      <!-- alarm 2 -->
+      <div class="at alarm box" style="--x: 648px">
+        <div class="bell">&#128276;</div>
+        <div>
+          <div class="when">15 Sep, 9 am</div>
+          <div class="what">reminder 2 rings</div>
+        </div>
+      </div>
+      <div class="drop" style="--x: 648px"></div>
+      <div class="at chip box" style="--x: 648px">
+        <div class="r1">it reads the task: <span class="code open">open</span></div>
+        <div class="r2"><span class="tag">sent</span><span class="n">the reminder goes out</span></div>
+      </div>
+
+      <!-- alarm 3 -->
+      <div class="at alarm box" style="--x: 914px">
+        <div class="bell">&#128277;</div>
+        <div>
+          <div class="when">17 Sep, 9 am</div>
+          <div class="what">reminder 3 rings</div>
+        </div>
+      </div>
+      <div class="drop" style="--x: 914px"></div>
+      <div class="at chip box" style="--x: 914px">
+        <div class="r1">it reads the task: <span class="code done">completed</span></div>
+        <div class="r2"><span class="tag warn">skipped</span><span class="n">nothing is sent</span></div>
+      </div>
+
+      <!-- the days, and the task's one column along them -->
+      <div class="axis">
+        <div class="day" style="--x: 114px">11</div>
+        <div class="day" style="--x: 247px">12</div>
+        <div class="day" style="--x: 380px">13</div>
+        <div class="day" style="--x: 513px">14</div>
+        <div class="day" style="--x: 646px">15</div>
+        <div class="day" style="--x: 779px">16</div>
+        <div class="day" style="--x: 912px">17</div>
+
+        <div class="seg open" style="left: 114px; width: 133px">open</div>
+        <div class="seg done" style="left: 247px; width: 133px">completed</div>
+        <div class="seg open" style="left: 380px; width: 399px">open</div>
+        <div class="seg done" style="left: 779px; width: 266px">completed</div>
+
+        <div class="due"><b>18 Sep,</b> the bill is due</div>
+      </div>
+
+      <!-- what she does -->
+      <div class="conn" style="--x: 247px; height: 26px"></div>
+      <div class="at act box" style="--x: 247px">
+        <div class="cb on">&#10003;</div>
+        <div>
+          <div class="when">12 Sep</div>
+          <div class="what">she ticks it off</div>
+          <div class="wrote">tasks.state = completed</div>
+        </div>
+      </div>
+
+      <div class="conn" style="--x: 380px; height: 132px"></div>
+      <div class="at act r2 box" style="--x: 380px">
+        <div class="cb">&#10003;</div>
+        <div>
+          <div class="when">13 Sep</div>
+          <div class="what">she changes her mind and unticks it</div>
+          <div class="wrote">tasks.state = open</div>
+        </div>
+      </div>
+
+      <div class="conn" style="--x: 779px; height: 26px"></div>
+      <div class="at act box" style="--x: 779px">
+        <div class="cb on">&#10003;</div>
+        <div>
+          <div class="when">16 Sep</div>
+          <div class="what">she ticks it off again</div>
+          <div class="wrote">tasks.state = completed</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="strap">
+    All three of her actions write to the same column of the same row, <b>tasks.state</b>. None of them
+    reads the reminders table, and none of them writes to it.
+  </div>
+
+  <div class="pair">
+    <div class="rem box">
+      <div class="hd">
+        <span class="tname">reminders</span>
+        <span class="note">written once, at confirm</span>
+      </div>
+      <table>
+        <tr><th>scheduled_for</th><th>status</th><th class="by">who wrote the status</th></tr>
+        <tr><td>2026-09-11 09:00</td><td class="st"><span class="tag">sent</span></td><td class="by">the dispatcher, at 9 am on the 11th</td></tr>
+        <tr><td>2026-09-15 09:00</td><td class="st"><span class="tag">sent</span></td><td class="by">the dispatcher, at 9 am on the 15th</td></tr>
+        <tr><td>2026-09-17 09:00</td><td class="st"><span class="tag warn">skipped</span></td><td class="by">the dispatcher, at 9 am on the 17th</td></tr>
+      </table>
+      <div class="cap">
+        Three rows, planned when she confirmed the letter. Ticking wrote none of them; the dispatcher
+        wrote the last column, each row at its own moment.
+      </div>
+    </div>
+
+    <div class="old box bad">
+      <div class="head">
+        <div class="t">The design this replaced</div>
+        <span class="tag bad">removed</span>
+      </div>
+      <div class="body">
+        Ticking cancelled every waiting reminder, unticking revived them, except the ones whose time had
+        already passed, which had to stay cancelled. Two writes, then two writes back, minus an exception.
+        All of it bookkeeping, and the undo rule needed an exception within a week of being written.
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <p>
+      <b>A task stores one fact a person controls: whether it is ticked.</b> Overdue, upcoming and
+      completed are worked out while drawing the screen, from that tick and today's date in her timezone.
+      Nothing writes the word "overdue" anywhere, so nothing has to wake up at midnight to write it, and
+      nothing can forget to unwrite it. <b>Ticking is never locked:</b> tick at breakfast, untick at lunch,
+      tick again at dinner, three writes to one column, no ledger and no residue.
+    </p>
+  </div>
+</div>
+</body>
+</html>

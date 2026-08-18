@@ -15,6 +15,10 @@ DayKeeper (Group 1): an AI-powered life management system for people in vulnerab
 - `docs/prototype/admin/daykeeper-admin-sketch.html`: wireframe of the admin dashboard (desktop). Static, no interaction. Keep the two prototypes separate: different device, different person, different module.
 - `.agents/skills/daykeeper-jira/`: how this team's Jira board actually works, as a skill. Codex loads it when a ticket, the board or a sprint comes up; it needs the Atlassian MCP server, which `.codex/config.toml` already defines and the README explains how to authenticate. Optional: nothing in the build depends on it.
 - `db/schema.sql`: the database, and its only definition. No migrations: edit it and run `npm run db:reset`.
+- `docs/walkthrough/`: **the way in**. A walk through the product one action at a time, and under each
+  screen what the system does, which tables it writes, and why. Start here if you are new, or if you are
+  about to change something and want to know what it is connected to. The PDF is built from the typst
+  sources beside it; `docs/walkthrough/README.md` says how to rebuild it and how the diagrams are made.
 - `docs/schema-map.html`: the same fourteen tables as a picture, with a letter's five steps along the top and a badge on each table saying which step writes it. Open it in a browser when you want to see the shape; read `db/schema.sql` when you need the truth.
 - `src/lib/contract/`: the six-field extraction contract and the grouping manifest (how a pile of photographs becomes letters), in TypeScript, with validators. Import these types; do not restate them.
 - `src/server/`: server-only code. `db.ts` for queries, `storage.ts` for the photographs themselves (an S3 bucket, MinIO locally), `extraction/` for the reader interface and its mock. `src/lib` is safe anywhere; `src/server` never reaches the browser.

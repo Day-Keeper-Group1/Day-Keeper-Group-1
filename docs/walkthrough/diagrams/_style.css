@@ -1,0 +1,154 @@
+/* Shared look for every diagram in the walkthrough.
+   The palette is the product's own (Eucalypt & Wattle, docs/theme.md), so a
+   diagram and a screenshot on the same page belong to one world.
+
+   Every diagram is one .sheet element, screenshotted by Playwright at 2x.
+   Keep the width at 1400 unless a diagram genuinely needs more. */
+
+:root {
+  --bg: #f4f0e4;
+  --card: #fbf8f0;
+  --ink: #1c1a15;
+  --dim: #454b41;
+  --line: #8a8265;
+  --green: #17452c;
+  --green-ink: #f7f4ea;
+  --soft: #d9e5d5;
+  --warn-bg: #f0e6cd;
+  --warn-ink: #4a3b20;
+  --danger: #8c0d07;
+  --danger-bg: #fbe6e2;
+  --gold: #b87500;
+  --sans: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+  --mono: Consolas, "Cascadia Mono", ui-monospace, monospace;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--sans);
+  color: var(--ink);
+  background: #fff;
+}
+
+.sheet {
+  width: 1400px;
+  background: var(--bg);
+  padding: 34px 38px 30px;
+  position: relative;
+}
+
+.sheet.narrow {
+  width: 1200px;
+}
+
+h1 {
+  font-size: 34px;
+  font-weight: 700;
+  color: var(--green);
+  letter-spacing: -0.2px;
+  margin-bottom: 5px;
+}
+
+.lede {
+  font-size: 19px;
+  color: var(--dim);
+  line-height: 1.45;
+  max-width: 1000px;
+  margin-bottom: 22px;
+}
+
+/* a labelled box, the workhorse */
+.box {
+  background: var(--card);
+  border: 2px solid var(--line);
+  border-radius: 9px;
+  padding: 12px 14px;
+}
+.box .t {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--green);
+}
+.box .d {
+  font-size: 15.5px;
+  color: var(--dim);
+  line-height: 1.4;
+  margin-top: 3px;
+}
+.box.green {
+  background: var(--green);
+  border-color: var(--green);
+}
+.box.green .t {
+  color: var(--green-ink);
+}
+.box.green .d {
+  color: var(--green-ink);
+  opacity: 0.9;
+}
+.box.warn {
+  background: var(--warn-bg);
+  border-color: var(--warn-ink);
+}
+.box.warn .t,
+.box.warn .d {
+  color: var(--warn-ink);
+}
+.box.bad {
+  background: var(--danger-bg);
+  border-color: var(--danger);
+}
+.box.bad .t {
+  color: var(--danger);
+}
+.box.bad .d {
+  color: var(--warn-ink);
+}
+
+.mono {
+  font-family: var(--mono);
+  font-size: 15px;
+}
+
+/* arrows drawn as text, sized so they read at print scale */
+.arrow {
+  font-size: 34px;
+  color: var(--line);
+  line-height: 1;
+}
+
+.caption {
+  font-size: 15.5px;
+  color: var(--dim);
+  line-height: 1.45;
+}
+
+.tag {
+  display: inline-block;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--soft);
+  color: var(--green);
+}
+.tag.bad {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+.tag.warn {
+  background: var(--warn-bg);
+  color: var(--warn-ink);
+}
+
+/* Print-size floor, as a rule of thumb rather than a rule: a diagram is
+   screenshotted at 1400 to 1500 CSS px and lands at 170mm on the page, so
+   anything under about 15px on screen falls below 5pt on paper. Keep body text
+   in a diagram at 15px or more, and carry fewer words rather than smaller ones. */

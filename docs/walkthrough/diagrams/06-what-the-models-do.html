@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Where a model is called</title>
+<link rel="stylesheet" href="_style.css">
+<style>
+  .sheet { width: 1500px; }
+  .lede { max-width: 1330px; margin-bottom: 20px; }
+
+  /* ---------- the two calls ---------- */
+  .calls { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+
+  .call {
+    background: var(--card);
+    border: 2px solid var(--line);
+    border-radius: 11px;
+    padding: 15px 16px 15px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .chead { margin-bottom: 14px; }
+  .chead .top { display: flex; align-items: center; gap: 11px; }
+  .chead .nm { font-size: 19.5px; font-weight: 700; color: var(--green); letter-spacing: -0.2px; }
+  .chead .tr { font-size: 13.5px; color: var(--dim); margin-top: 5px; line-height: 1.35; }
+  .chead .tr b { color: var(--ink); font-weight: 600; }
+
+  .flow { display: grid; grid-template-columns: 168px 26px 1fr 26px 168px; align-items: stretch; }
+  .flow .arrow { text-align: center; font-size: 27px; align-self: center; }
+
+  .io { display: flex; flex-direction: column; }
+  .io .cap {
+    font-size: 12px; font-weight: 700; letter-spacing: 0.6px;
+    text-transform: uppercase; color: var(--line); margin-bottom: 5px;
+  }
+  .io .box { padding: 11px 13px; flex: 1; display: flex; align-items: center; }
+  .io .box .d { margin-top: 0; font-size: 13.5px; color: var(--ink); line-height: 1.42; }
+  .io .box .d em { font-style: normal; color: var(--dim); }
+  .io .sub { font-size: 12.5px; color: var(--dim); line-height: 1.42; margin-top: 9px; }
+
+  .does { align-self: stretch; padding: 13px 15px 14px; }
+  .does .t { font-size: 14.5px; line-height: 1.3; }
+  .does ul { list-style: none; margin-top: 9px; display: flex; flex-direction: column; gap: 8px; }
+  .does li .h { font-family: var(--mono); font-size: 12.5px; font-weight: 700; color: var(--green-ink); line-height: 1.3; }
+  .does li .s { font-size: 12.5px; line-height: 1.34; color: var(--green-ink); opacity: 0.88; margin-top: 3px; }
+  .does li .s code { font-family: var(--mono); font-size: 12px; }
+
+  .costs { display: flex; gap: 7px; flex-wrap: wrap; margin-top: 12px; margin-bottom: 12px; }
+  .cost {
+    display: inline-block; font-size: 12.5px; font-weight: 600;
+    padding: 4px 9px; border-radius: 999px; white-space: nowrap;
+    background: var(--soft); color: var(--green);
+  }
+  .cost.hot { background: var(--warn-bg); color: var(--warn-ink); font-weight: 700; }
+
+  .why {
+    font-size: 12.5px; color: var(--dim); line-height: 1.45;
+    margin-top: auto; padding-top: 12px; border-top: 1px solid var(--line);
+  }
+  .why b { color: var(--ink); font-weight: 600; }
+
+  /* ---------- the floor: ordinary code ---------- */
+  .bottom { display: grid; grid-template-columns: 1fr 408px; gap: 24px; margin-top: 20px; align-items: start; }
+
+  .panel { border: 2px solid var(--line); border-radius: 11px; padding: 14px 17px 15px; }
+  .panel.code { background: var(--soft); }
+  .panel.cash { background: var(--card); }
+  .panel .ph { display: flex; align-items: baseline; gap: 12px; margin-bottom: 12px; }
+  .panel .ph .h { font-size: 19.5px; font-weight: 700; color: var(--green); letter-spacing: -0.2px; }
+  .panel .ph .sub { font-size: 13px; color: var(--dim); }
+
+  .rows { display: flex; flex-direction: column; gap: 6px; }
+  .row {
+    display: grid; grid-template-columns: 322px 24px 1fr; align-items: start;
+    background: var(--card); border: 1px solid var(--line); border-radius: 7px;
+    padding: 8px 13px;
+  }
+  .row .q { font-size: 13.5px; font-weight: 700; color: var(--ink); line-height: 1.35; }
+  .row .ar { font-size: 15px; color: var(--line); text-align: center; line-height: 1.4; }
+  .row .m { font-size: 13px; color: var(--dim); line-height: 1.4; }
+  .row .m code { font-family: var(--mono); font-size: 12.5px; color: var(--ink); font-weight: 700; }
+
+  .note { font-size: 13px; color: var(--dim); line-height: 1.5; margin-top: 13px; }
+  .note b { color: var(--ink); font-weight: 600; }
+
+  .cl { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+  .cl li { font-size: 13.5px; line-height: 1.42; color: var(--ink); padding-left: 17px; position: relative; }
+  .cl li::before {
+    content: "\25AA"; position: absolute; left: 0; top: -1px;
+    color: var(--green); font-size: 13px;
+  }
+  .cl li span { color: var(--dim); }
+
+  .mock {
+    margin-top: 14px; background: var(--soft); border: 1px solid var(--green);
+    border-radius: 8px; padding: 11px 13px;
+    font-size: 12.5px; line-height: 1.5; color: var(--dim);
+  }
+  .mock b { color: var(--green); font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="sheet">
+  <h1>Where a model is called, and where it is not</h1>
+  <p class="lede">
+    Two places in the whole product call a model, and everything else is ordinary code and ordinary SQL. The call
+    that looks at photographs is the expensive one, so it does all of the looking in a single pass: it divides the
+    pile into letters and reads their fields at the same time.
+  </p>
+
+  <div class="calls">
+
+    <section class="call">
+      <div class="chead">
+        <div class="top">
+          <span class="tag">Call 1</span>
+          <span class="nm">The reading</span>
+        </div>
+        <div class="tr">Runs <b>once per upload, on the whole pile</b>.</div>
+      </div>
+
+      <div class="flow">
+        <div class="io">
+          <div class="cap">In</div>
+          <div class="box"><div class="d">every photograph in the batch, <em>as images</em></div></div>
+          <div class="sub">Up to ten in one upload, in whatever order she happened to take them.</div>
+        </div>
+        <div class="arrow">&rarr;</div>
+        <div class="box green does">
+          <div class="t">It does two things in one pass</div>
+          <ul>
+            <li>
+              <div class="h">divides the pile into letters</div>
+              <div class="s">a manifest: which photographs make each letter, in reading order, what it appears to be, why they are one letter, and that letter's full text.</div>
+            </li>
+            <li>
+              <div class="h">reads the six fields of each letter</div>
+              <div class="s"><code>document_type &middot; issuer &middot; action_required &middot; due_date &middot; amount &middot; reference</code>, plus an optional <code>due_time</code>.</div>
+            </li>
+          </ul>
+        </div>
+        <div class="arrow">&rarr;</div>
+        <div class="io">
+          <div class="cap">Out</div>
+          <div class="box"><div class="d">a manifest, plus six fields per letter, <em>each with a status</em></div></div>
+          <div class="sub">Confirmed, uncertain, or unreadable. A photograph that is no letter at all is named as one, and becomes nothing.</div>
+        </div>
+      </div>
+
+      <div class="costs">
+        <span class="cost hot">vision tokens, the expensive one</span>
+        <span class="cost">the photographs are looked at once and once only</span>
+      </div>
+
+      <p class="why">
+        <b>Why the two jobs are one call.</b>
+        The evidence for a page boundary is visual: a letterhead, a logo, a change of layout. Almost none of it
+        survives being flattened into text. Asking the reader for the words and then paying a second model to
+        reconstruct the boundaries is discarding the evidence and then buying a guess.
+      </p>
+    </section>
+
+    <section class="call">
+      <div class="chead">
+        <div class="top">
+          <span class="tag">Call 2</span>
+          <span class="nm">The matcher</span>
+        </div>
+        <div class="tr">Runs <b>once per letter</b>, when it might be the rest of something she already has.</div>
+      </div>
+
+      <div class="flow">
+        <div class="io">
+          <div class="cap">In</div>
+          <div class="box"><div class="d">the new letter's text, plus three tools over <em>a view of her archive</em></div></div>
+          <div class="sub">The view is assembled from the database on every read, so it is never a copy and cannot go stale.</div>
+        </div>
+        <div class="arrow">&rarr;</div>
+        <div class="box green does">
+          <div class="t">It searches, and code does not narrow first</div>
+          <ul>
+            <li>
+              <div class="h">glob(pattern) &nbsp; grep(pattern, path_glob?) &nbsp; read(path)</div>
+              <div class="s">The model is handed tools and a question, not a result set. It decides what to look for, how many times, and what the answers mean.</div>
+            </li>
+            <li>
+              <div class="h">every pattern and hit is logged</div>
+              <div class="s">an accuracy record a person can read, rather than a similarity score nobody can argue with.</div>
+            </li>
+          </ul>
+        </div>
+        <div class="arrow">&rarr;</div>
+        <div class="io">
+          <div class="cap">Out</div>
+          <div class="box"><div class="d">a document id, or nothing, <em>which is an answer and not a failure to answer</em></div></div>
+          <div class="sub">Nothing means the letter is new. Attaching pages to the wrong letter is the mistake worth avoiding.</div>
+        </div>
+      </div>
+
+      <div class="costs">
+        <span class="cost">text only, cheap, a few turns</span>
+      </div>
+
+      <p class="why">
+        <b>Why not a query written by us in advance.</b>
+        Letters are not a genre. A party invitation has no issuer worth matching on and no reference number,
+        and the save the date it belongs with names a suburb where the invitation names a street. A query written
+        in advance has to anticipate the shape of somebody's correspondence, and there is no shape.
+      </p>
+    </section>
+
+  </div>
+
+  <div class="bottom">
+
+    <section class="panel code">
+      <div class="ph">
+        <span class="h">Not a model call</span>
+        <span class="sub">these look like judgement, and every one of them is ordinary code</span>
+      </div>
+
+      <div class="rows">
+        <div class="row">
+          <div class="q">Whether what she must do has changed</div>
+          <div class="ar">&rarr;</div>
+          <div class="m"><code>!=</code> on four values: <code>action_required</code>, <code>due_date</code>, <code>due_time</code>, <code>amount</code></div>
+        </div>
+        <div class="row">
+          <div class="q">Whose archive gets searched</div>
+          <div class="ar">&rarr;</div>
+          <div class="m">a <code>WHERE user_id = ...</code> clause the model cannot set</div>
+        </div>
+        <div class="row">
+          <div class="q">Whether a manifest contradicts itself</div>
+          <div class="ar">&rarr;</div>
+          <div class="m">arithmetic on page numbers: a photograph cited twice, a photograph never mentioned, a page number past the end</div>
+        </div>
+        <div class="row">
+          <div class="q">Whether a task is overdue</div>
+          <div class="ar">&rarr;</div>
+          <div class="m">its due date compared with today, in her timezone, worked out while drawing the screen</div>
+        </div>
+        <div class="row">
+          <div class="q">Whether a reminder fires</div>
+          <div class="ar">&rarr;</div>
+          <div class="m">the dispatcher reads the task at the moment the clock rings</div>
+        </div>
+      </div>
+
+      <p class="note">
+        Each of these is a place where being merely probably right was not good enough, so it was moved
+        out of the model's hands and into something that can be tested.
+      </p>
+    </section>
+
+    <section class="panel cash">
+      <div class="ph">
+        <span class="h">What this costs to run</span>
+      </div>
+      <ul class="cl">
+        <li>One upload of ten photographs is <b>one vision call</b>, <span>whatever it turns out to contain.</span></li>
+        <li>One matcher call per letter, <span>over text.</span></li>
+        <li>Everything else in the product is <span>ordinary code and ordinary SQL.</span></li>
+      </ul>
+      <div class="mock">
+        <b>No model access is needed to run the product end to end.</b>
+        A mock reader that hedges and fails on purpose is the default, so the whole flow can be built and
+        demonstrated before a key exists.
+      </div>
+    </section>
+
+  </div>
+</div>
+</body>
+</html>
