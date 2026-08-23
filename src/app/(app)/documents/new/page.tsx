@@ -18,12 +18,7 @@ type Photo = {
  * open across taps and the pages grow as a grid rather than replacing each
  * other, but every photograph in an upload belongs to the same letter. Which
  * letter a page belongs to is settled here, by the person, rather than
- * inferred later by a model. See docs/scope.md.
- *
- * ⚠️ The screen below has not caught up: its copy still offers to sort a pile
- * of mixed letters, which this release does not do. That is a separate ticket,
- * because changing it changes what a person sees rather than what a document
- * says.
+ * inferred later by a model. See docs/scope.md. (KAN-28)
  */
 export default function UploadDocumentPage() {
   const router = useRouter();
@@ -60,16 +55,16 @@ export default function UploadDocumentPage() {
     setSubmitting(true);
     // No backend yet (see AGENTS.md: the API and the pages are the work
     // still to build), so this is where a real POST /api/documents would
-    // go. The mock flow moves straight to the archive, where the batch
-    // would appear as it divides into letters.
+    // go. The mock flow moves straight to the letters area, where the
+    // letter would appear while it is being read.
     router.push("/documents");
   }
 
   return (
     <div className="mx-auto max-w-2xl space-y-8">
       <PageHeader
-        title="Take photos"
-        description="A letter, a bill, a doctor's note: anything with a date in it. They don't have to be the same letter."
+        title="Photograph a letter"
+        description="A letter, a bill, a doctor's note: anything with a date in it. One letter at a time, as many pages as it runs to."
       />
 
       <input
@@ -94,7 +89,9 @@ export default function UploadDocumentPage() {
           <Camera className="size-6" strokeWidth={1.75} />
         </span>
         <span className="text-sm font-medium text-foreground">
-          {atLimit ? "That's ten, the most in one go" : "Tap to photograph"}
+          {atLimit
+            ? "That's ten pages, the most in one letter"
+            : "Tap to photograph"}
         </span>
         <span className="text-xs text-muted-foreground">
           the camera stays open, keep going
@@ -104,7 +101,7 @@ export default function UploadDocumentPage() {
       {photos.length > 0 ? (
         <div className="space-y-3">
           <p className="text-sm font-medium text-foreground">
-            Your pile &middot; {photos.length}{" "}
+            This letter &middot; {photos.length}{" "}
             {photos.length === 1 ? "photo" : "photos"}
           </p>
           <div className="grid grid-cols-4 gap-3 sm:grid-cols-5">
@@ -117,7 +114,7 @@ export default function UploadDocumentPage() {
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={photo.previewUrl}
-                    alt={`Photo ${index + 1} of the pile`}
+                    alt={`Photo ${index + 1} of this letter`}
                     className="size-full object-cover"
                   />
                 ) : (
@@ -157,12 +154,11 @@ export default function UploadDocumentPage() {
           onClick={handleSubmit}
         >
           <Upload className="size-4" strokeWidth={1.75} />
-          {photos.length > 1 ? "Read them" : "Read it"}
+          Read it
         </Button>
         <p className="text-center text-xs text-muted-foreground">
-          Photograph the whole pile. We work out where one letter ends and the
-          next begins, so you don&apos;t have to sort them first. Up to{" "}
-          {MAX_PAGES} photos in one go.
+          Every photo you take here belongs to this one letter. They go
+          together, and they are read as one. Up to {MAX_PAGES} pages.
         </p>
       </div>
     </div>

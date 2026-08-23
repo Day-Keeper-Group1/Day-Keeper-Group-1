@@ -7,7 +7,6 @@ import {
   CheckCircle2,
   Eye,
   FileText,
-  RotateCcw,
   Search,
   ShieldCheck,
 } from "lucide-react";
@@ -16,73 +15,71 @@ import { Button } from "@/components/ui/button";
 /**
  * The public landing page.
  *
- * Rebuilt from docs/walkthrough/ rather than from a generic template: the
- * copy below is the product's own story (Margaret, the pile, the two verbs,
- * the promise, the two places a model is ever called) rather than invented
- * marketing language. The prototype it is drawn from is a phone sketch, but
- * this page is not a phone frame: it is the same content laid out to work at
- * any width, because the project description asks for a responsive web app,
- * not a mobile-only one.
+ * KAN-28: the copy is the product's own story, the one docs/scope.md and
+ * docs/walkthrough/ tell (Margaret, one letter per upload, the two verbs, the
+ * promise, the one place a model is called), rather than invented marketing
+ * language. The prototype it is drawn from is a phone sketch, but this page is
+ * not a phone frame: the project description asks for a responsive web app.
  */
 
 const STEPS = [
   {
     icon: Camera,
-    title: "Photograph the pile",
-    body: "Whatever came in the post, in whatever order it came to hand. Up to ten photographs in one go, and they don't have to be sorted first.",
-  },
-  {
-    icon: FileText,
-    title: "It divides into letters",
-    body: "The reading looks at every photograph and works out which ones belong together, in the order they read — not the order the camera happened to take them.",
+    title: "Photograph the letter",
+    body: "As many pages as it runs to. The camera stays open across taps, so a three page letter is three taps, not three trips.",
   },
   {
     icon: Search,
-    title: "Each letter gets read",
-    body: "Who it's from, what to do, by when, how much, and what number to quote. Six facts, every time, or a plain “unreadable” rather than silence.",
+    title: "It gets read",
+    body: "Who it's from, what to do, by when, how much, and what number to quote. Six facts every time, or a plain “unreadable” rather than silence.",
   },
   {
-    icon: CheckCircle2,
+    icon: Eye,
     title: "You check it, once",
-    body: "Read the card, tap once. Nothing on it is editable and nothing on it is a question — the whole job is recognising whether it matches the letter.",
+    body: "Read the card, tap once. Nothing on it is editable and nothing on it is a question: the whole job is recognising whether it matches the letter.",
   },
   {
     icon: CalendarDays,
     title: "It's on your calendar",
-    body: "A dot for the due date, a dot for each morning you'll be reminded. Tick it off whenever it's done, and change your mind as often as you like.",
+    body: "A red mark on the due date, a gold mark on each morning you'll be reminded: seven, three and one day before, at nine.",
+  },
+  {
+    icon: CheckCircle2,
+    title: "Tick it off",
+    body: "The tick is the only state there is. Reminders stop the moment it's set, start again if you untick, and the calendar keeps the answer to “did I pay that”.",
   },
 ] as const;
 
-const MODEL_CALLS = [
+const MODEL_WORK = [
   {
-    icon: Camera,
+    icon: FileText,
     title: "The reading",
-    when: "Runs once per upload, over the whole pile.",
-    body: "It divides the pile into letters and reads their six fields in the same pass, because the evidence for a page break is visual — a letterhead, a logo, a change of layout — and almost none of it survives being flattened into text first.",
+    when: "Runs once per upload, on the pages of one letter.",
+    body: "It looks at the photographs, not a text dump of them: half of what a letter means is in the arrangement, the box around the number that matters, the column a reference sits in. Six fields come back, each marked sure or unreadable.",
   },
   {
-    icon: Search,
-    title: "The matcher",
-    when: "Runs once per letter, when it might be the rest of something already here.",
-    body: "It searches your own archive the way a person would: glob for candidates, grep inside them, read one to decide. No similarity score nobody can argue with — every search and every hit is logged.",
+    icon: CheckCircle2,
+    title: "Everything after it",
+    when: "Ordinary code, all the way to the reminder.",
+    body: "Whether a task is overdue is a date comparison in Melbourne time. When a reminder goes out is arithmetic on the due date. Whether to send it is reading the tick at the moment the alarm rings.",
   },
 ] as const;
 
 const FAILURE_MODES = [
   {
-    icon: RotateCcw,
-    title: "It was our fault",
-    body: "Retried automatically, quietly, up to three times. You're only ever asked to try again if it keeps failing on our side.",
+    icon: FileText,
+    title: "It says so plainly",
+    body: "The letter stays in your list and says it could not be read. No spinner that never ends, and no guess dressed up as a reading.",
   },
   {
     icon: Camera,
-    title: "The photograph was too poor",
-    body: "The letter is kept, because the reading that failed was judged against it. Photographing it again, in better light, is the whole fix.",
+    title: "The photographs are kept",
+    body: "The paper may already be in the bin, so the photos are the only copy. They stay with the letter, whatever the reading did.",
   },
   {
     icon: ShieldCheck,
-    title: "We can't read this kind of writing",
-    body: "A handwritten note, for instance. No photograph will fix that, so we say so plainly and keep the photo safe rather than pretending a retake would help.",
+    title: "Never your fault",
+    body: "An error here never opens by describing something you did. A model that can't read a page usually can't say why, so we don't pretend it can.",
   },
 ] as const;
 
@@ -95,12 +92,12 @@ const DESIGN_RULES = [
   {
     swatch: "bg-primary",
     label: "Nothing is blue",
-    body: "An ageing eye needs roughly 2400ms longer to tell blue from yellow, so blue can't carry anything that has to be caught quickly — and it isn't the primary colour here.",
+    body: "An ageing eye needs roughly 2400ms longer to tell blue from yellow, so blue can't carry anything that has to be caught quickly, and it isn't the primary colour here.",
   },
   {
     swatch: "bg-warn-bg border border-warn/40",
     label: "Colour is never the only signal",
-    body: "Overdue is told in bold words, not red — red already means “couldn't read it.” Every state also spells itself out for the colour-blind third of this audience.",
+    body: "Overdue is told in bold words, not red: red already means “couldn't read it.” Every state also spells itself out for the colour-blind third of this audience.",
   },
   {
     swatch: "bg-dot-rem",
@@ -129,18 +126,18 @@ export default function PublicEntryPage() {
         </Link>
       </header>
 
-      {/* ---------- Hero: the pile, and what comes back ---------- */}
+      {/* ---------- Hero: one letter, and what comes back ---------- */}
       <section className="px-4 pt-8 pb-16 md:px-8 md:pt-12">
         <div className="mx-auto grid w-full max-w-6xl items-center gap-12 lg:grid-cols-[1.1fr_1fr]">
           <div className="space-y-6">
             <h1 className="text-4xl font-semibold tracking-tight text-foreground md:text-5xl">
-              Every bill still arrives on paper. Photograph the pile.
+              Every bill still arrives on paper. Photograph it.
             </h1>
             <p className="max-w-xl text-base text-muted-foreground md:text-lg">
-              Ten photographs, taken in whatever order they came to hand.
-              DayKeeper works out which ones belong to which letter, reads
-              what each one says, and turns the pile into one list of what to
-              do and when — without ever asking you to sort it first.
+              One letter at a time, as many pages as it runs to. DayKeeper reads
+              it, you check what it read, and the date inside becomes a task, a
+              place on the calendar, and reminders that stop the moment you tick
+              it off. You never type a date.
             </p>
             <div className="flex flex-col gap-3 sm:flex-row">
               <Button
@@ -154,8 +151,8 @@ export default function PublicEntryPage() {
               />
             </div>
             <p className="text-sm text-muted-foreground">
-              Works from a phone, a tablet, or a computer — the same
-              account, the same list, wherever you open it.
+              Works from a phone, a tablet, or a computer: the same account, the
+              same list, wherever you open it.
             </p>
           </div>
 
@@ -187,45 +184,19 @@ export default function PublicEntryPage() {
       <section className="border-t border-border bg-card/60 px-4 py-14 md:px-8">
         <div className="mx-auto max-w-4xl space-y-6 text-center">
           <h2 className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
-            There is no rule that sorts a pile like hers.
+            Reading the letter was never the hard part.
           </h2>
           <p className="text-balance text-muted-foreground md:text-lg">
-            Margaret is 78. Her cataracts are getting worse, and every bill
-            she has still comes on paper. Once a week she clears the pile by
-            the front door the way anyone would — whatever&apos;s on top,
-            then whatever&apos;s under that. Read her photographs in order and
-            the problem states itself: the electricity bill turns up on
-            photograph one and again on photograph three, with a different
-            letter in between. One photograph is of her grandson. One letter
-            is too blurred to read. One is handwriting that nothing will ever
-            read.
+            Margaret is 78. Her cataracts are getting worse, and every bill she
+            has still comes on paper. She can read a letter, with time and good
+            light. But reading it is not enough: the date inside has to survive
+            the week between reading the letter and acting on it, and nothing in
+            the house is doing that job. Right now her daughter&apos;s phone
+            calls are doing that job.
           </p>
           <p className="text-balance font-medium text-foreground">
-            Every rule anyone writes down encodes an expectation, and a pile
-            picked out of an album has none. So the reading decides where the
-            letters divide — not a filing convention nobody agreed to.
+            DayKeeper does one thing: it makes the date outlive the letter.
           </p>
-
-          <div className="grid grid-cols-2 gap-3 pt-4 text-left sm:grid-cols-3">
-            {[
-              { label: "Electricity bill", note: "pages 1 and 3, split by another letter" },
-              { label: "Council rates notice", note: "the letter in between" },
-              { label: "Her grandson", note: "not a letter — becomes nothing" },
-              { label: "Registration renewal", note: "too blurred to read" },
-              { label: "A doctor's note", note: "handwriting, unreadable" },
-              { label: "Two letters, one photo", note: "lying side by side on the table" },
-            ].map((item) => (
-              <div
-                key={item.label}
-                className="rounded-lg border border-border bg-card px-3 py-2.5"
-              >
-                <p className="text-sm font-medium text-foreground">
-                  {item.label}
-                </p>
-                <p className="text-xs text-muted-foreground">{item.note}</p>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 
@@ -237,9 +208,9 @@ export default function PublicEntryPage() {
               The whole product is two verbs: photograph, and tick.
             </h2>
             <p className="text-muted-foreground">
-              She never types a date, never sorts pages, never files
-              anything, and never opens a settings screen to make any of it
-              work. Everything below exists to keep that true.
+              She never types a date, never sorts pages, never files anything,
+              and never opens a settings screen to make any of it work.
+              Everything below exists to keep that true.
             </p>
           </div>
 
@@ -271,14 +242,13 @@ export default function PublicEntryPage() {
       <section className="px-4 pb-14 md:px-8">
         <div className="mx-auto max-w-4xl rounded-2xl bg-primary px-6 py-10 text-center text-primary-foreground sm:px-12">
           <p className="text-xl font-semibold text-balance sm:text-2xl">
-            &ldquo;Nothing happens until you say so, and never from a date
-            you haven&apos;t checked.&rdquo;
+            &ldquo;Nothing happens until you say so, and never from a date you
+            haven&apos;t checked.&rdquo;
           </p>
           <p className="mt-4 text-sm text-primary-foreground/85 sm:text-base">
-            The calendar has exactly two sources: a confident reading a
-            person has seen, or nothing. There is no third way for a date to
-            arrive there — not a checkpoint that someone could forget to
-            add, a missing road.
+            The calendar has exactly two sources: a confident reading a person
+            has seen, or nothing. There is no third path for a date to arrive
+            there.
           </p>
         </div>
       </section>
@@ -288,19 +258,18 @@ export default function PublicEntryPage() {
         <div className="mx-auto max-w-5xl space-y-8">
           <div className="mx-auto max-w-2xl space-y-3 text-center">
             <h2 className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
-              Two calls to a model. Everything else is ordinary code.
+              One call to a model. Everything else is ordinary code.
             </h2>
             <p className="text-muted-foreground">
-              &ldquo;An AI app&rdquo; usually means something vaguer than
-              this. Whether two pages belong to the same letter is judgement,
-              and it&apos;s the model&apos;s. Whether what you have to do has
-              changed is <code className="text-xs">!=</code> on four values,
-              worked out in code that can be tested.
+              &ldquo;An AI app&rdquo; usually means something vaguer than this.
+              The one judgement in the product is reading a letter that was
+              drawn for a human eye, and that is the one place a model is
+              called.
             </p>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            {MODEL_CALLS.map((call) => (
+            {MODEL_WORK.map((call) => (
               <div
                 key={call.title}
                 className="space-y-3 rounded-xl border border-border bg-card p-6"
@@ -320,10 +289,10 @@ export default function PublicEntryPage() {
           </div>
 
           <p className="mx-auto max-w-3xl text-center text-sm text-muted-foreground">
-            No model access is needed to run DayKeeper end to end. A mock
-            reader that hedges and fails on purpose is the default, so the
-            waiting, the correcting and the failing are all designed and
-            tested before a real model is ever connected.
+            No model access is needed to run DayKeeper end to end. A mock reader
+            that hedges and fails on purpose is the default, so the waiting, the
+            checking and the failing are all designed and tested before a real
+            model is ever connected.
           </p>
         </div>
       </section>
@@ -336,9 +305,9 @@ export default function PublicEntryPage() {
               When it doesn&apos;t go well
             </h2>
             <p className="text-muted-foreground">
-              A product for this reader is judged on the case where the
-              reading fails, not the case where it works. Failures are told
-              apart by one question: what can you actually do about it?
+              About one letter in eight can&apos;t be read, and this release is
+              honest about that rather than clever. A product for this reader is
+              judged on the case where the reading fails.
             </p>
           </div>
 
@@ -372,10 +341,9 @@ export default function PublicEntryPage() {
               Designed for eyes that get tired
             </h2>
             <p className="text-muted-foreground">
-              Roughly half of this product&apos;s readers are over seventy.
-              The theme you&apos;re looking at right now, Eucalypt &amp;
-              Wattle, is built to a stricter rule than most software bothers
-              with.
+              Roughly half of this product&apos;s readers are over seventy. The
+              theme you&apos;re looking at right now, Eucalypt &amp; Wattle, is
+              built to a stricter rule than most software bothers with.
             </p>
           </div>
 
@@ -403,11 +371,11 @@ export default function PublicEntryPage() {
             <Bell className="size-5" strokeWidth={1.75} />
           </span>
           <h2 className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
-            Stop sorting the pile yourself.
+            Let the date outlive the letter.
           </h2>
           <p className="max-w-xl text-muted-foreground">
-            Create an account, photograph what&apos;s on the table, and check
-            the first thing it finds. That&apos;s the whole onboarding.
+            Create an account, photograph the letter on the table, and check
+            what it finds. That&apos;s the whole onboarding.
           </p>
           <div className="flex flex-col gap-3 sm:flex-row">
             <Button
@@ -430,7 +398,7 @@ export default function PublicEntryPage() {
             Your letters are never visible to anyone but you.
           </span>
           <span>
-            DayKeeper &mdash; RMIT COSC2648 capstone, Group 1. A student
+            DayKeeper &middot; RMIT COSC2648 capstone, Group 1. A student
             prototype, not a live service.
           </span>
         </div>
