@@ -1,14 +1,16 @@
 #import "lib.typ": *
 
+#pagebreak(weak: true)
+
 #part("Where the model is called")
 
 One place in the whole product calls a model. Everything after it is ordinary
 code and ordinary SQL.
 
-#v(6pt)
-#image("figures/d3-model-call.png", width: 100%)
-#v(3pt)
-#block[
+#block(breakable: false)[
+  #v(6pt)
+  #image("figures/d3-model-call.png", width: 100%)
+  #v(3pt)
   #set text(font: sans, size: 8.5pt, fill: ink-dim)
   #set par(justify: false, leading: 0.5em)
   The single call, and six things that look like judgement and are not.
@@ -29,24 +31,24 @@ sound like they need judgement. Every one of them is a line of ordinary code.
 #part("The ten tables")#anchor(<tables>)
 
 The next page is the whole database at once, laid out along the same journey as
-the previous part. Two things in it are worth knowing before you look, because
-both are absences and an absence is easy to read past.
+the previous part. Two absences are worth knowing before you look, because an
+absence is easy to read past.
 
 *The third column is empty.* The step where she checks the reading writes
-nothing, because the screen shows and never asks, so there is no answer for it
-to record. Every design that asked her a question needed somewhere to put the
-answer, and this one does not.
+nothing. The screen shows, it never asks, so there is no answer to record. A
+design that asks questions needs somewhere to store the answers. This one asks
+none.
 
 *Nothing derivable is stored.* There is no overdue column, no reminders-off
-flag, and no count of anything. Each of those would be a second copy of a truth
-that already exists, and a second copy is a thing that can disagree with the
-first. Whether a task is overdue is a comparison made at the moment somebody
-asks, and whether its reminders are off is simply whether the tick is set.
+flag, and no count of anything. Each would be a second copy of a truth that
+already exists, and a second copy can disagree with the first. Overdue is a
+comparison made when somebody asks. Reminders off is the tick, read at the
+moment an alarm rings.
 
 The definition of every column, and the reason it exists, is in
-#raw("db/schema.sql"). That file is the database rather than a description of
-it: there are no migrations, so editing it and running #raw("npm run db:reset")
-is the whole of changing the schema.
+#raw("db/schema.sql"). That file is not a description of the database. It is
+the database: there are no migrations, so editing it and running
+#raw("npm run db:reset") is the whole of changing the schema.
 
 #page(flipped: true)[
   #v(4pt)
@@ -56,8 +58,8 @@ is the whole of changing the schema.
     #set text(font: sans, size: 9pt, fill: ink-dim)
     #set par(justify: false, leading: 0.55em)
     The last two steps share a column because they write at the same moment and
-    neither writes the other: the reminder records what it decided, and the tick
-    records that she is done.
+    neither writes the other. The reminder records what it decided, and the
+    tick records that she is done.
   ]
 ]
 
@@ -106,7 +108,7 @@ That is why the reasoning was put in the code.
   [the six fields, and why six is a floor], [`src/lib/contract/fields.ts`],
   [what a field status means, and `open_payload`], [`src/lib/contract/extraction.ts`],
   [why the review screen has no inputs], [`src/lib/contract/api.ts`],
-  [the reminder ladder, and the clock check], [`src/lib/contract/reminders.ts`],
+  [the 7/3/1 reminder rule, and the clock check], [`src/lib/contract/reminders.ts`],
   [why every date is Melbourne and date only], [`src/lib/contract/dates.ts`],
   [every table and every column, with reasons], [`db/schema.sql`],
   [what a reader has to promise], [`src/server/extraction/provider.ts`],
@@ -121,5 +123,4 @@ That is why the reasoning was put in the code.
 
 About to change something? Read #raw("docs/scope.md") first to see whether it is
 in this release at all, then find the file above. This document is a tour, and a
-tour is not a source: it is rebuilt from those files rather than the other way
-round.
+tour is not a source: it is rebuilt from those files, never the other way round.

@@ -2,8 +2,13 @@
 
 #part("One letter, from the front door to the tick")
 
-Six steps. For each one: the screen she sees, and the rows it writes. Some
-steps write nothing at all, and those are worth noticing.
+The quickest way to understand DayKeeper is to watch it handle one letter.
+This part does that. The letter is an electricity bill from AGL: three pages,
+\$347.60, due Saturday 15 August. Today, in every screenshot, is Monday
+10 August.
+
+Each step names the tables it writes. One step writes nothing at all, and it
+is the most important screen in the product.
 
 #v(6pt)
 
@@ -14,84 +19,93 @@ steps write nothing at all, and those are worth noticing.
   "figures/03-camera-empty.png",
   "figures/04-camera-pages.png",
   [The camera stays open across taps, so a three page letter is three taps
-   rather than three trips. The button stays dim until there is at least one
-   page.],
+   rather than three trips. The upload button stays dim until there is at
+   least one page.],
 )
 
-The photographs go to an object store rather than into the database, and the row
-in #t("document_pages") holds the key to find them again. A photograph is large,
-it never changes, and it is served straight from the bucket to the browser
-rather than through the application.
+She taps the camera, photographs the three pages, and sends them. That is her
+whole job here. She never says what the letter is, and she never will.
 
-#v(4pt)
+Two kinds of rows are written. One row in #t("documents"): the letter exists.
+Three rows in #t("document_pages"): one per photograph. The photographs
+themselves go to the bucket, not into the database. A photograph is large and
+never changes, so the browser fetches it straight from the bucket, and the row
+keeps only the key for finding it.
 
 #step(2, "The system reads it")
 #writes(`extraction_runs`, `extracted_fields`, `ai_prompt_logs`)
 
 #spread("figures/05-notification.png",
-  [The notification, and behind it the letter waiting to be checked. The waiting
-   was on the home screen, not on a spinner, so she could close the app.],
+  [The reading finished while the phone was in her bag. The message is what
+   brings her back.],
 )[
-  This is the only place in the product where a model is called. It takes about
-  ten seconds, which is long enough that holding her on a loading screen would
-  be a small cruelty and short enough that a queue would be over-engineering.
-  So the request answers immediately, the interface polls, and the home screen
-  carries the waiting.
+  The upload screen closes at once. She puts the phone down.
 
-  When it finishes, a notification arrives. The wording is deliberate: it says
-  the letter is ready to check, and that nothing happens until she looks at it.
-  It is an invitation, not a report of something already done.
+  About ten seconds later it buzzes: _Your letter is ready to check. Nothing
+  happens until you look at it._
 
-  What comes back is six fields, each with a status. The definition of those
-  six, and the rule that a reader may return more but never fewer, is in
-  #raw("src/lib/contract/fields.ts").
+  In those ten seconds the product did its one clever thing. A vision model
+  looked at the three photographs and answered six questions: what kind of
+  letter this is, who sent it, what she has to do, by when, how much, and what
+  reference to quote. For this bill: an electricity bill, from AGL Energy, pay
+  the amount due, by 15 August, \$347.60, reference 9201~4471~88.
+
+  The six questions, and the rule that a reader must answer all six every
+  time, are in #raw("src/lib/contract/fields.ts"). The call and its exact
+  prompt are stored in #t("extraction_runs") and #t("ai_prompt_logs"), so a
+  wrong answer can always be traced to the call that produced it.
+
+  On this bill the model was sure of all six. It is not always. Each answer
+  carries a verdict: #raw("confirmed"), or #raw("uncertain") when it has a
+  value it is not sure of, or #raw("unreadable") when it has nothing.
 ]
 
-#v(6pt)
-#image("figures/d1-six-fields.png", width: 100%)
-#v(3pt)
-#block[
+#block(breakable: false)[
+  #v(4pt)
+  #image("figures/d1-six-fields.png", width: 100%)
+  #v(3pt)
   #set text(font: sans, size: 8.5pt, fill: ink-dim)
   #set par(justify: false, leading: 0.5em)
-  Three statuses live in the database and two reach a screen. The collapse
-  happens once, on the server, on the way out.
+  A second bill, written to go wrong: the model was not sure of the due date,
+  and could not read the reference at all.
 ]
 
 #why[
-  *A value the model was not sure of is not offered as a guess.* It reaches the
-  screen as no value at all, and the card says so in a sentence.
-
-  Show her a half sure date in grey and she will approve it with a nod. So it is
-  not shown. A date nobody really checked has no way to reach the calendar.
+  *A value the model was not sure of is never offered as a guess.* Show her a
+  half sure date in grey and she will approve it with a nod. So it is not
+  shown at all, and the card says so in a sentence. A date nobody really
+  checked has no way to reach the calendar.
 ]
-
-#v(4pt)
 
 #step(3, "She checks it")
 #writes()
 
 #spread("figures/07-review.png",
-  [The whole screen. Nothing on it is editable and nothing on it is a question.],
+  [The whole screen. Nothing on it is editable, and nothing on it is a
+   question.],
 )[
-  This is the screen the product is built around, and it is the one that writes
-  nothing at all.
+  She taps the letter and gets this screen. The top card is what the letter
+  says. The bottom card is what DayKeeper will do about it: remind her on
+  Wednesday the 12th and Friday the 14th, and put the due date on her
+  calendar. One green button.
 
-  There are no inputs here on purpose. Her job is recognition, not data entry:
-  does this match the letter in her hand? Recognition is something a tired
-  person with poor eyesight can still do reliably. Entry is not.
+  Her whole job is to hold the letter in one hand and check the screen
+  against it. Recognition is something a tired person with poor eyesight can
+  still do reliably. Typing is not, so there is nothing to type.
 
-  Under *what DayKeeper will do* is the plan, before it is a plan. Two reminder
-  mornings and a calendar entry, named as dates rather than as settings. She is
-  agreeing to a specific week, not to a feature.
+  And this step writes nothing to the database. The screen shows, it never
+  asks, so there is no answer to record.
 
-  There are two reminders here rather than three because the bill was confirmed
-  on the tenth and is due on the fifteenth. The seven day rung fell in the past,
-  so it is not offered. The card and the rows written afterwards are planned by
-  the same function so that the screen can never promise a reminder that never
-  arrives.
+  The reminder mornings follow one rule: nine in the morning, seven days
+  before the due date, three days before, and one day before. Seven days
+  before this bill's due date was 8 August. That morning is already gone, so
+  the card offers two mornings instead of three. The card and the later rows
+  are planned by the same function, so the screen can never promise a morning
+  that never comes.
+
+  The sentence under the plan is the product's one promise. The next two
+  steps are how it is kept.
 ]
-
-#v(4pt)
 
 #step(4, "Her yes writes the rows")
 #writes(`tasks`, `reminders`, `documents`)
@@ -99,119 +113,127 @@ rather than through the application.
 #screens(
   "figures/09-home-task.png",
   "figures/08-calendar.png",
-  [The same letter, now a task on the list and three marks on the calendar: two
-   reminder mornings in gold and the due date in red.],
+  [The same bill, now the third task on the list and three marks on the
+   calendar: the two reminder mornings in gold, the due date in red.],
 )
 
-Confirming is the only thing in the product that turns a reading into something
-that will act on its own. Before it, the letter is a row and some fields. After
-it, there is a task with a date and three alarm clocks set.
+She taps *Looks right, save it*. Three writes happen together. One row in
+#t("tasks"): pay AGL electricity bill, due 15 August. Two rows in
+#t("reminders"): Wednesday at nine and Friday at nine, exactly the mornings
+the card named. And the letter's row in #t("documents") is marked confirmed.
+
+This tap is the only thing in the product that turns a reading into something
+that will act later. Before it, the bill was rows the model wrote and a screen
+she could look at. After it, there is a task on her list and two alarm clocks
+set.
 
 #why[
-  *The calendar has exactly two sources: a confident reading a person has seen,
-  or nothing.* There is no third path, no import, no inference from an
-  unconfirmed letter. That is why the promise on the previous screen holds
-  without anyone having to be careful.
+  *Everything on the calendar got there the same way: a sure reading that a
+  person looked at.* There is no import, no guess, and no other path. That is
+  how the promise on the review screen is kept. Not by anyone being careful,
+  but because no other path exists.
 ]
-
-#v(4pt)
 
 #step(5, "A reminder rings")
 #writes(`reminders`)
 
 #spread("figures/10-daysheet.png",
-  [Any day on the calendar opens like this. A reminder is a fact about a
-   morning, not a notification setting.],
+  [Wednesday 12 August, opened from the calendar. Any day can be opened to
+   see what it holds.],
+  w: 50mm,
 )[
-  Seven days, three days and one day before, at nine in the morning. Every
-  letter gets the same three, and a rung that would fall in the past is simply
-  not planned.
+  Wednesday, nine in the morning. Her phone says: _Pay AGL electricity bill,
+  due Sat 15 Aug._
 
-  The rows are written at confirm time rather than worked out later, because
-  each one has a fate of its own to record: sent, skipped, or failed. The
-  calendar draws its gold marks from those rows.
+  What sent it is the clock, the one part of the product that acts with
+  nobody in the room. At nine it finds every reminder row whose morning has
+  come. Then, for each one, it does one thing before speaking: it reads the
+  task.
 
-  When one rings, it reads the task at that moment and decides right then
-  whether to speak. Still open means send it. Already ticked means send nothing
-  and write that down.
+  This task is still open, so the reminder goes out and the row is marked
+  #raw("sent"). Had she already ticked the bill off, the clock would send
+  nothing and mark the row #raw("skipped"). Every row ends up marked one of
+  three ways: sent, skipped, or failed.
 ]
 
-#v(6pt)
-#image("figures/d2-the-clock.png", width: 100%)
-#v(3pt)
-#block[
+#block(breakable: false)[
+  #image("figures/d2-the-clock.png", width: 100%)
+  #v(3pt)
   #set text(font: sans, size: 8.5pt, fill: ink-dim)
   #set par(justify: false, leading: 0.5em)
-  Ticking writes one column of one row and touches nothing in the reminders
-  table. The judgement is made at the moment of use, not stored in advance.
+  A different bill through a fickle week: ticked, unticked, ticked again.
+  Each alarm reads the tick at its own moment.
 ]
 
 #why[
-  *The alternative was bookkeeping.* Ticking would cancel every waiting
-  reminder, unticking would revive them, except the ones whose time had passed.
-  That is one truth written in two places. Every copy needs a transaction to keep
-  it honest and an undo rule to unwind it.
+  *Why the clock reads the tick, instead of the tick cancelling reminders.*
+  She ticks the bill at breakfast, unticks it at lunch, ticks it again at
+  dinner. What must the system do to Friday's reminder each time? Nothing.
+  Friday's alarm will read the tick on Friday.
 
-  Reading the tick when the alarm rings stores it once. She can tick at
-  breakfast, untick at lunch and tick again at dinner, and nothing has to keep
-  up with her.
+  The design this replaced did the opposite: ticking cancelled the waiting
+  reminders, and unticking revived them, except the ones whose morning had
+  passed. The same fact kept in two places, and rules to keep the copies
+  agreeing. Reading the tick at the moment it matters keeps it in one place,
+  and lets her change her mind for free.
 ]
-
-#v(4pt)
 
 #step(6, "She ticks it")
 #writes(`tasks`)
 
 #spread("figures/13-ticked.png",
-  [Struck through, still on the list, and told in words: done, reminders off.],
+  [Struck through, still on the list, and told in words: done, reminders
+   off.],
 )[
-  The tick is a task's only state. Overdue is not stored. It is worked out from
-  the clock when somebody asks, in Melbourne time, so nothing goes overdue at
-  eleven at night because a server sits in another country.
+  She pays the bill on Wednesday and ticks it off. One column of one row
+  changes: the tick on the task.
 
-  A ticked task stays on the list for a week rather than vanishing, because
-  vanishing is indistinguishable from having been lost. Its calendar entry stays
-  forever, so the answer to "did I pay that" is still there in December.
+  On Friday at nine the second alarm rings, reads the task, finds the tick,
+  and stays silent. That is all "reminders off" is. It is not a switch stored
+  anywhere. It is true because the tick is set, and it stops being true the
+  moment she unticks.
 
-  "Reminders off" is derived, not a switch. It is true because the tick is set,
-  and it becomes false again the moment she unticks, with nothing to undo.
+  The ticked task stays on the list for a week, struck through, because a
+  task that vanishes looks exactly like a task that was lost. Its calendar
+  entry stays forever, so "did I pay that" still has an answer in December.
+
+  Overdue works like reminders off: worked out, never stored. The water bill
+  at the top of her list says _was due Wed 5 Aug_ because today is the 10th
+  and nobody has ticked it. Every screen makes that comparison in Melbourne
+  time at the moment it draws, so nothing goes overdue at eleven at night
+  because a server sits in another country.
 ]
-
-#v(4pt)
 
 #part("The letters she has kept")
 
 #screens(
   "figures/11-letters.png",
   "figures/12-letter-opened.png",
-  [Every letter that has been read, and one of them opened with the photographs
-   that came with it.],
+  [Every letter that has been read, and one of them opened: what was read,
+   and the photographs it was read from.],
 )
 
 Nothing in this area asks anything of her. It exists because a letter is
-evidence, and because the photographs are the only copy of a piece of paper that
-may well have gone in the bin. Opening a letter shows what was read and the
-pages it was read from, which is also the only way to check the system against
-the original.
+evidence. The paper itself may well be in the bin, so the photographs are the
+only copy. Opening a letter here is also the only way to check what the
+system read against the original.
 
 #part("When the reading fails")
 
-About one letter in eight cannot be read. The mock reader fails deliberately at
-roughly that rate so the path is never untested.
+About one letter in eight cannot be read at all. During development the model
+is played by a stand-in reader, and the stand-in fails on purpose at roughly
+that rate, so the failure path is exercised every day.
 
-In this release a failed reading is the end of the road. There is no retry, no
-prompt to photograph it again, and no message suggesting the photograph was her
-fault. The letter keeps its photographs and says plainly that it could not be
-read.
+In this release, a failed reading is the end of the road. The letter keeps its
+photographs and says plainly that it could not be read. There is no retry, no
+prompt to photograph it again, and nothing that suggests the failure was her
+fault.
 
 #why[
-  *That is a smaller promise than the product would like to make, and it is
-  made honestly.* An earlier design offered her a way out of every failure:
-  photograph it again, or a screen explaining which kind of failure it was.
-  Every one of those paths needed the system to know why it had failed, and a
-  model that cannot read a page is usually not able to say why. Offering a
-  remedy that does not work is worse than offering none, so this release offers
-  none and says so.
+  *A smaller promise, made honestly.* An earlier design offered her a way out
+  of every failure: photograph it again, or a screen explaining what went
+  wrong. Every one of those paths needed the system to know why it had
+  failed, and a model that cannot read a page usually cannot say why. A
+  remedy that does not work is worse than none, so this release offers none
+  and says so.
 ]
-
-

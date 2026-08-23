@@ -113,8 +113,9 @@
   pagebreak()
 }
 
-// A step number and its title, as a running band.
-#let step(n, title) = block(above: 1.8em, below: 1.0em, breakable: false)[
+// A step number and its title, as a running band. Sticky, so a band can never
+// be left stranded at the bottom of a page while its content starts the next.
+#let step(n, title) = block(above: 1.8em, below: 1.0em, breakable: false, sticky: true)[
   #grid(
     columns: (auto, 1fr),
     gutter: 8pt,
@@ -130,8 +131,8 @@
   #line(length: 100%, stroke: 0.6pt + rule)
 ]
 
-// A section that is not one of her steps.
-#let part(title) = block(above: 1.8em, below: 1.0em, breakable: false)[
+// A section that is not one of her steps. Sticky for the same reason as step.
+#let part(title) = block(above: 1.8em, below: 1.0em, breakable: false, sticky: true)[
   #set text(font: sans, size: 15pt, fill: primary, weight: 700)
   #title
   #v(-2pt)
@@ -164,9 +165,10 @@
   #caption
 ]
 
-// Screenshot on the left, prose on the right.
-#let spread(path, caption, body) = grid(
-  columns: (56mm, 1fr),
+// Screenshot on the left, prose on the right. `w` is the screenshot column;
+// narrowing it is the knob for fitting a diagram on the same page.
+#let spread(path, caption, body, w: 56mm) = grid(
+  columns: (w, 1fr),
   gutter: 9mm,
   screen(path, caption),
   body,
@@ -220,7 +222,7 @@
 #let pageof(lbl) = context [#counter(page).at(lbl).first()]
 
 // Which tables a step writes, as a strip under the step band.
-#let writes(..names) = block(below: 1.2em)[
+#let writes(..names) = block(below: 1.2em, sticky: true)[
   #set text(font: sans, size: 9pt, fill: ink-dim)
   Writes:
   #h(3pt)

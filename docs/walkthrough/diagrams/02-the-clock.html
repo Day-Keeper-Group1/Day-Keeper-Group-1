@@ -6,7 +6,6 @@
 <link rel="stylesheet" href="_style.css">
 <style>
   .sheet { width: 1460px; }
-  .lede { max-width: 1320px; }
 
   /* ---------- the timeline ---------- */
   .tl { display: grid; grid-template-columns: 140px 1fr; }
@@ -94,8 +93,7 @@
   /* ---------- the two blocks underneath ---------- */
   .pair { display: flex; gap: 24px; align-items: flex-start; }
   .pair > * { flex: none; }
-  .rem { width: 760px; }
-  .old { width: 600px; }
+  .rem { width: 1000px; margin: 0 auto; }
 
   .rem .hd { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 9px; }
   .rem .hd .tname { font-family: var(--mono); font-size: 15px; font-weight: 700; color: var(--green); }
@@ -110,23 +108,11 @@
   .rem td.by { width: 260px; font-family: var(--sans); font-size: 12.5px; color: var(--dim); }
   .rem .cap { font-size: 13.5px; color: var(--dim); line-height: 1.5; margin-top: 11px; }
 
-  .old .head { display: flex; align-items: baseline; justify-content: space-between; }
-  .old .body { font-size: 13.5px; color: var(--warn-ink); line-height: 1.55; margin-top: 8px; }
-
-  .foot { margin-top: 20px; padding-left: 15px; border-left: 4px solid var(--line); }
-  .foot p { font-size: 14px; color: var(--dim); line-height: 1.55; }
-  .foot p b { color: var(--ink); }
 </style>
 </head>
 <body>
 <div class="sheet">
   <h1>The clock checks the tick at the moment it rings</h1>
-  <p class="lede">
-    One bill, due 18 September, confirmed on 11 September. Ticking it off changes one column of one row
-    and writes nothing to the reminders table. Each reminder is an alarm clock that looks at the task at
-    the moment it rings and decides right then whether to speak. So Margaret can change her mind as often
-    as she likes, and nothing has to be kept in step.
-  </p>
 
   <div class="tl">
     <div class="lanes">
@@ -244,38 +230,19 @@
       </div>
       <table>
         <tr><th>scheduled_for</th><th>status</th><th class="by">who wrote the status</th></tr>
-        <tr><td>2026-09-11 09:00</td><td class="st"><span class="tag">sent</span></td><td class="by">the dispatcher, at 9 am on the 11th</td></tr>
-        <tr><td>2026-09-15 09:00</td><td class="st"><span class="tag">sent</span></td><td class="by">the dispatcher, at 9 am on the 15th</td></tr>
-        <tr><td>2026-09-17 09:00</td><td class="st"><span class="tag warn">skipped</span></td><td class="by">the dispatcher, at 9 am on the 17th</td></tr>
+        <tr><td>2026-09-11 09:00</td><td class="st"><span class="tag">sent</span></td><td class="by">the clock, at 9 am on the 11th</td></tr>
+        <tr><td>2026-09-15 09:00</td><td class="st"><span class="tag">sent</span></td><td class="by">the clock, at 9 am on the 15th</td></tr>
+        <tr><td>2026-09-17 09:00</td><td class="st"><span class="tag warn">skipped</span></td><td class="by">the clock, at 9 am on the 17th</td></tr>
       </table>
       <div class="cap">
-        Three rows, planned when she confirmed the letter. Ticking wrote none of them; the dispatcher
+        Three rows, planned when she confirmed the letter. Ticking wrote none of them. The clock
         wrote the last column, each row at its own moment.
       </div>
     </div>
 
-    <div class="old box bad">
-      <div class="head">
-        <div class="t">The design this replaced</div>
-        <span class="tag bad">removed</span>
-      </div>
-      <div class="body">
-        Ticking cancelled every waiting reminder, unticking revived them, except the ones whose time had
-        already passed, which had to stay cancelled. Two writes, then two writes back, minus an exception.
-        All of it bookkeeping, and the undo rule needed an exception within a week of being written.
-      </div>
     </div>
   </div>
 
-  <div class="foot">
-    <p>
-      <b>A task stores one fact a person controls: whether it is ticked.</b> Overdue, upcoming and
-      completed are worked out while drawing the screen, from that tick and today's date in her timezone.
-      Nothing writes the word "overdue" anywhere, so nothing has to wake up at midnight to write it, and
-      nothing can forget to unwrite it. <b>Ticking is never locked:</b> tick at breakfast, untick at lunch,
-      tick again at dinner, three writes to one column, no ledger and no residue.
-    </p>
-  </div>
 </div>
 </body>
 </html>

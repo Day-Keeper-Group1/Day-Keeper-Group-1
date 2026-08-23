@@ -49,9 +49,9 @@ screen. Everything else in this document exists to keep that true.
   Nothing happens until you say so, and never from a date you haven't checked.
 ]
 
-That promise is on the review screen, and it is the sentence this document keeps
-coming back to. The interesting part is that it is not kept by being careful. It
-is kept by there being no path.
+That promise is printed on the review screen. It does not hold because anyone
+is careful. It holds because the system has no path around her, and the next
+part walks every step there is.
 
 Who she is matters to the design more than usual, because the people this
 product is for are the ones least able to absorb a mistake it makes. Eyes over
@@ -67,10 +67,11 @@ letter*, which may run to several pages.
 
 A larger design was drawn first. It took a pile of mixed post at once, worked
 out where one letter ended and the next began, and joined a later upload to a
-letter already in the system. Each of those needed its own model and its own way
-of being wrong quietly, and together they were most of the engineering. That
-design is the one a funded team builds. This is the one five students finish in
-a semester, and the rest is written down and deferred rather than forgotten.
+letter already in the system. Each of those needed its own model call. Each
+could be wrong without anyone noticing. Together they were most of the
+engineering. That design is the one a funded team builds. This is the one five
+students finish in a semester, and the rest is written down and deferred rather
+than forgotten.
 
 What is left is one model call whose answer has a fixed shape, and after that a
 system made of tables, dates and a checkbox. The full list is
@@ -139,7 +140,7 @@ doing its job.
     #set text(size: 9.5pt)
     #set par(justify: false, leading: 0.55em)
     The clock sits apart from everything above. It is the only part that acts
-    when nobody has tapped anything, which is why the reminder step spends a
+    when nobody has tapped anything. That is why the reminder step spends a
     page on what it is allowed to decide.
   ],
 )
@@ -155,5 +156,3 @@ same types. Change the shape of a response and both sides stop compiling.
 Anything the browser must never see is marked #raw("server-only"), so a leak is
 a build error instead of a surprise. One dependency set, one deployment, one
 test run, and one place to look when something breaks.
-
-
