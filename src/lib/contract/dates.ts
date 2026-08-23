@@ -4,8 +4,16 @@
  * Every date in this system travels as a calendar day, 'YYYY-MM-DD'. Every time
  * of day travels as a wall clock, 'HH:mm'. Instants (timestamptz columns, Date
  * objects) appear only at the one edge where a reminder becomes a scheduled
- * send. There are two directions this can go wrong, and they are guarded in two
- * places:
+ * send.
+ *
+ * Dates are date-only because that is what they are. A due date is printed on a
+ * piece of paper: the 15th of August, no hour, no zone. Turning it into an
+ * instant invents both, and the invention surfaces as a day off by one, which
+ * for this product is the worst available bug. A reminder that goes out a day
+ * late is worse than no reminder, because she stopped watching for the letter.
+ *
+ * There are two directions the invention can creep in, and they are guarded in
+ * two places:
  *
  * - src/server/db.ts stops the driver turning a `date` column into a shifted
  *   JavaScript Date on the way OUT of the database.
@@ -20,14 +28,21 @@
  */
 
 /**
- * The application's timezone.
+ * The application's timezone: Melbourne.
  *
  * The product promises "a reminder at 9 am", and 9 am is meaningless without a
- * zone. Users carry a `timezone` column (defaulted to this value) so the server
- * should prefer the person's own zone when it has a session; this constant is
- * the default for new accounts and the fallback for code that has no user in
- * hand. One-zone-per-deployment is a deliberate simplification for a Melbourne
- * pilot, not an oversight.
+ * zone. So is "overdue", which is decided by comparing calendar days in the
+ * person's zone rather than instants (see deriveTaskStatus in ./api.ts).
+ *
+ * Users carry a `timezone` column defaulted to this value, so the server should
+ * prefer the person's own zone whenever it has a session; this constant is the
+ * default for new accounts and the fallback for code with no user in hand.
+ * One zone per deployment is a deliberate simplification for a Melbourne pilot,
+ * not an oversight, and the column is what makes undoing it a change of data
+ * rather than a change of design.
+ *
+ * Melbourne is UTC+10 in winter and UTC+11 in summer, and its winter is the
+ * northern summer, which is why the tests in tests/dates.test.ts assert on both.
  */
 export const APP_TIME_ZONE = "Australia/Melbourne";
 
@@ -167,10 +182,11 @@ export function formatDueTime(hhmm: string): string {
 /**
  * Parse human date writing, day-first, to 'YYYY-MM-DD'.
  *
- * Dormant this version: nothing collects a typed date any more, because the
- * review screen is read-only (ADR 008) and the date-filling feature was
- * deferred. Kept because the rules are right and the day it returns is the
- * day this would otherwise be rewritten from scratch. Accepted:
+ * Dormant this version: nothing collects a typed date any more, because nothing
+ * on any screen is editable (./api.ts) and the date-filling feature was
+ * deferred rather than rejected. Kept because the rules are right, and the day
+ * it comes back is the day this would otherwise be rewritten from scratch and
+ * get day-first wrong. Accepted:
  *
  *   '2026-08-15'      already ISO
  *   '15/08/2026'      day-first with / - or . and a 2- or 4-digit year

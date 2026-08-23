@@ -1,15 +1,25 @@
 /**
  * The six fields.
  *
- * These are the minimum a document must yield before it can become a task.
- * Six is a floor, not a ceiling: a provider may return more, and anything extra
- * is kept in the document's open payload rather than thrown away. But a payload
- * that is missing one of these six is not a valid extraction, and the validator
- * rejects it.
+ * `document_type`, `issuer`, `action_required`, `due_date`, `amount`,
+ * `reference`: the minimum a letter must yield before it can become a task.
+ *
+ * **Six is a floor, not a ceiling.** A reader that returns more is not punished
+ * for being richer. Anything outside the keys below is kept in the extraction's
+ * `open_payload` rather than thrown away, so nothing is lost while we work out
+ * whether a field has earned a place in the contract. See ./extraction.ts.
+ *
+ * A payload missing one of the six is rejected, and a field the reader could not
+ * read must say `unreadable` rather than be left out. Silence and "I could not
+ * read this" are different answers, and the contract will not accept one for the
+ * other: a key that is simply absent could mean the model skipped it, the prompt
+ * lost it, or the letter never carried it, and nothing downstream can tell those
+ * apart. The validator that holds this line is in ./extraction.ts.
  *
  * The keys are snake_case because that is what the model is asked to produce and
- * what every design document already calls them. Do not rename one without
- * changing the prompt, the seed data, and the database rows together.
+ * what every design document already calls them. Renaming one means changing the
+ * prompt, the seed data and the stored rows together, and that friction is
+ * deliberate.
  */
 export const CONTRACT_FIELD_KEYS = [
   "document_type",
@@ -116,9 +126,8 @@ export const NO_PAYMENT_REQUIRED = "No payment required";
  * Six fields are a floor, so an appointment letter that prints no reference
  * number still has to report `reference`. Without this it could only say
  * `unreadable`, and "there is nothing to read" and "I could not read it" are
- * different answers: the first is a confident fact about the letter, the
- * second makes the card say something is missing and suggest photographing
- * it again, a suggestion that could never help here.
+ * different answers: the first is a confident fact about the letter, the second
+ * makes the card tell a person something is missing when nothing is.
  *
  * A field carrying this value has status `confirmed`, not `unreadable`, and a
  * screen may hide its row the same way it may hide a NO_PAYMENT_REQUIRED
@@ -127,21 +136,7 @@ export const NO_PAYMENT_REQUIRED = "No payment required";
 export const NOT_APPLICABLE = "Not applicable";
 
 /**
- * There is deliberately no table of "please check this" hints here any more.
- * The review screen shows, it never asks: a field the model was not sure of
- * arrives as an absent value, the card says so in a sentence, and the way to
- * change the outcome is to photograph the letter again. See ADR 008.
+ * There is deliberately no table of "please check this" hints here. The screen
+ * shows and never asks, and nothing on it is a question; the argument is in
+ * ./api.ts, beside the confirm request that does not exist.
  */
-
-/**
- * Fields a document can carry that are deliberately not in the contract yet.
- *
- * `summary` appears in the implementation roadmap's Step 5 as a seventh field.
- * It is not part of the contract: a generated prose summary adds a surface for
- * hallucination and costs screen space that a large-type field list uses better,
- * for readers who are exactly the people least able to spot an invented
- * sentence. It stays here as a named deferral rather than an oversight, so that
- * whoever revisits it knows it was considered. See
- * docs/architecture/adr-004-extraction-contract.md.
- */
-export const DEFERRED_FIELD_KEYS = ["summary"] as const;

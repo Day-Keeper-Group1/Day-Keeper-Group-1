@@ -29,18 +29,25 @@ export const CONTRACT_VERSION = "2.0" as const;
 /**
  * How much the reader trusts one field.
  *
- * `confirmed` means the model was confident. `uncertain` means it produced a
- * value it is not sure of. `unreadable` means it could not produce one.
+ * `confirmed`: the model was confident. `uncertain`: it produced a value it is
+ * not sure of. `unreadable`: it could not produce one at all.
  *
- * The product treats `uncertain` exactly like `unreadable`: no value reaches
- * the documents table, the calendar, or a screen. The two are kept distinct in
- * STORAGE because how often the model hedges, and what it guesses when it
- * does, is evaluation data (see ADR 008). Trusting the model includes
- * trusting its "I am not sure": the product takes that at face value instead
- * of asking a person to adjudicate it.
+ * There is no fourth state for "missing". A field the model did not address is a
+ * contract violation rather than a state: it says `unreadable`, and the
+ * validator below rejects a payload that leaves it out. See ./fields.ts on why
+ * silence and "I could not read this" cannot be allowed to look alike.
  *
- * There is no fourth state for "missing". A field the model did not address is
- * a contract violation, not a state: it must say unreadable and say why.
+ * **The product treats `uncertain` exactly like `unreadable`.** The server
+ * collapses it on the way out, and no screen, no response, no task and no
+ * calendar entry ever carries a value the model was not sure of. Trusting the
+ * model includes trusting its "I am not sure", and the person this product is
+ * for is the one least equipped to adjudicate a model's hesitation; the full
+ * argument is in ./api.ts.
+ *
+ * The two are kept apart in STORAGE because how often the model hedges, and what
+ * it guesses when it does, is the evaluation data. Collapsing them in the
+ * database would throw that away, and the synthetic evaluation line is now the
+ * only place accuracy is measured.
  */
 export const fieldStatusSchema = z.enum([
   "confirmed",
@@ -50,12 +57,17 @@ export const fieldStatusSchema = z.enum([
 export type FieldStatus = z.infer<typeof fieldStatusSchema>;
 
 /**
- * One field, as the provider returns it.
+ * One field, as the reader returns it.
  *
- * Contract 2.0 dropped `raw_text` (a transcription snippet beside each value).
- * It was designed for an OCR stage that would have produced it independently;
- * without OCR it was the same model testifying twice, evidence of nothing.
- * If the experiment line brings OCR back, it returns WITH its independence.
+ * `value` is null exactly when `status` is `unreadable`; an empty string would
+ * mean the model read an empty string, which is a different fact. The refinement
+ * below is what holds that, in both directions.
+ *
+ * Contract 2.0 dropped `raw_text`, a transcription snippet beside each value. It
+ * was designed for a separate transcription stage that would have produced it
+ * independently. There is no such stage, so the snippet and the value came from
+ * the same model looking at the same pixels: the same witness testifying twice,
+ * and showing it to a person as something to check against would be theatre.
  */
 export const extractedFieldSchema = z
   .object({
@@ -86,10 +98,18 @@ export type ExtractedFieldPayload = z.infer<typeof extractedFieldSchema>;
 /**
  * A whole extraction.
  *
- * `open_payload` is the escape hatch. Anything a provider returns that is not
- * one of the six lands here untyped, so that a richer model is not punished for
- * being richer and we do not lose data while deciding whether a field deserves
- * promotion into the contract.
+ * `open_payload` is the escape hatch, and it is what lets six fields be a floor
+ * without the contract having to grow every time a model gets better. Anything a
+ * reader returns that is not a key ./fields.ts knows about lands here untyped and
+ * is stored: a richer model is not punished for being richer, and nothing is
+ * lost while we decide whether a field deserves promotion into the contract.
+ *
+ * Nothing reads it to make a decision. Promoting a field is what makes it
+ * load-bearing, and that is a deliberate edit to ./fields.ts, the prompt, the
+ * seed and the stored rows together.
+ *
+ * `provider` and `model` are stored on every run so that an accuracy figure can
+ * always name what produced it.
  */
 export const extractionResultSchema = z
   .object({
@@ -170,15 +190,18 @@ export function extraFieldsOf(
 /**
  * True when every field came back confident.
  *
- * Reporting only. Every document still lands in `needs-review`: the product's
- * promise is that nothing reaches the calendar without being seen, and a
- * not-confident field simply arrives as an absent value rather than as a
- * question for the person.
+ * Reporting only: nothing branches on it. Every letter goes to the screen either
+ * way, and a field that came back hedged arrives there as an absent value rather
+ * than as a question. See ./api.ts.
  */
 export function isFullyConfident(result: ExtractionResult): boolean {
   return result.fields.every((f) => f.status === "confirmed");
 }
 
+/**
+ * The fields that will not reach a screen: hedged or unreadable, which the
+ * product treats alike. For evaluation and for logs, not for a person.
+ */
 export function fieldsNeedingAttention(
   result: ExtractionResult,
 ): ExtractedFieldPayload[] {

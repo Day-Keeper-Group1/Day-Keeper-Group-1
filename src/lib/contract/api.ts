@@ -1,99 +1,83 @@
 /**
  * What the browser sees.
  *
- * These types are deliberately close in shape to the ones the interface was
- * already written against (src/lib/mock-data.ts), down to `status` using
- * hyphens. Where the two disagree, it is because
- * the fixture invented facts the system cannot know: mock-data gives a
- * still-processing document an issuer, and no real document has one until it
- * has been read. The types here tell the truth about the database; the fixture
- * is a sketch.
+ * The reader speaks snake_case (./extraction.ts), because that is what a model
+ * is asked to produce. These types are camelCase, because the interface was
+ * written first and in TypeScript. The translation between the two happens in
+ * exactly one place, src/server/extraction, so there is one file to open when a
+ * name does not line up.
  *
- * The translation from the provider's snake_case contract into this shape
- * happens in exactly one place, src/server/extraction, so there is only ever one
- * file to look at when a name does not line up.
+ * Statuses keep the database's spellings, hyphens and all, so that a value read
+ * out of Postgres is the value a component compares against. See db/schema.sql.
  *
- * Wire formats, stated once: every date is 'YYYY-MM-DD' (a calendar day, never
- * a timestamp, never a zone), every time of day is 'HH:mm' (24-hour), and every
- * instant is ISO 8601 with a zone. See ./dates.ts for the helpers that keep it
- * that way.
+ * Wire formats: a date is 'YYYY-MM-DD', a time of day is 'HH:mm' on a 24-hour
+ * clock, an instant is ISO 8601 with a zone. The rule and its helpers live in
+ * ./dates.ts.
  */
 
 import type { ContractFieldKey } from "./fields";
 import { APP_TIME_ZONE, todayInZone } from "./dates";
 
-/** Where a document is in its life. Mirrors the document_status enum. */
+/** Where a document is in its life. Mirrors document_status in db/schema.sql. */
 export type DocumentStatus =
   "processing" | "needs-review" | "confirmed" | "failed" | "archived";
 
 /**
- * A task's state as the interface wants it.
+ * A task's state as the interface shows it.
  *
- * `upcoming` and `overdue` are computed from the due date at read time, not
- * stored: a task becomes overdue because time passed, and nothing in the system
- * wakes up at midnight to write that down. `completed` is stored.
+ * `completed` is stored, because it is the tick and the tick is the only thing a
+ * person writes. `upcoming` and `overdue` are worked out from the due date and
+ * the clock while the list is being drawn. Nothing writes "overdue" anywhere, so
+ * nothing has to wake at midnight to write it and nothing can forget to unwrite
+ * it.
+ *
+ * Overdue is told in words, not colour: the date column reads "was due Wed 5
+ * Aug", set bolder. Red already means a failed reading in this product, and
+ * colour is never the only signal (docs/theme.md). There is no badge and no
+ * separate list either. Sorting by due date ascending puts every overdue task
+ * above every upcoming one, so the pinning is the sort.
+ *
+ * deriveTaskStatus() at the foot of this file is the one place it is computed.
  */
 export type TaskStatus = "upcoming" | "overdue" | "completed";
 
 /**
- * Why a reading failed, in the three kinds the whole system distinguishes.
- * The server-side ExtractionFailure class carries the same union; this is the
- * one definition the browser may import.
+ * What a person is told when a reading failed.
+ *
+ * One sentence, because there is one kind of failure left to tell anyone about.
+ * The system does not decide that a photograph is too blurry, does not decide
+ * that a page is not a letter, and never asks for a retake: docs/scope.md says
+ * why none of that is in this release. The only failure a person can meet is
+ * ours, so the sentence leads by saying so. This product's reader tends to
+ * assume every error is her fault, and here it genuinely is not.
+ *
+ * Resolved here rather than in a component so every surface says it identically.
+ * The `failure_detail` column is developer text and never leaves the server.
  */
-export type ExtractionFailureKind =
-  "transient" | "unreadable_image" | "unsupported_document";
+export const FAILURE_MESSAGE =
+  "It wasn't your photo. Something went wrong on our side. Please try again.";
 
 /**
- * What the person is told for each kind of failure.
+ * A failed reading, as a list row needs it.
  *
- * Resolved here, like FIELD_LABELS, so every surface says it identically. The
- * `failure_detail` column is developer text and never leaves the server; this
- * table is what `failure.message` is built from.
- */
-export const FAILURE_MESSAGES: Record<ExtractionFailureKind, string> = {
-  // A failure reaches a person only after the automatic attempts are spent, so
-  // this cannot say "we're trying again": at the one moment it is displayable,
-  // that sentence is already false and it sits beside a button asking the
-  // person to do the thing it claims is happening by itself.
-  //
-  // The transient wording leads with "it wasn't your photo" because this
-  // product's reader tends to assume every error is her fault, and this is
-  // the one failure that genuinely is ours. The unsupported wording leads
-  // with an apology for the same reason: the honest content of that face is
-  // "we can't", and blame has no business anywhere near it.
-  transient:
-    "It wasn't your photo. Something went wrong on our side. Please try again.",
-  unreadable_image: "The photo was too blurry to read. Please take it again.",
-  unsupported_document:
-    "We're sorry. We can't read this kind of document. Your photos are kept safe.",
-};
-
-/**
- * A failure as a list row needs it.
- *
- * This lives on the summary, not only the detail, because the home screen's
- * queue draws the retake affordance directly on the failed row. If it lived
- * only on DocumentDetail, drawing the home screen would cost one extra request
- * per failed document, which is exactly what GET /api/home exists to avoid.
+ * This lives on the summary rather than only on the detail because the home
+ * screen draws the failed row itself. If it lived only on DocumentDetail,
+ * drawing the home screen would cost one extra request per failed document,
+ * which is exactly what GET /api/home exists to avoid.
  */
 export type DocumentFailureView = {
-  kind: ExtractionFailureKind;
-  /** Written for the person, not for a developer. From FAILURE_MESSAGES. */
+  /** Written for the person, not for a developer. FAILURE_MESSAGE. */
   message: string;
-  /** Whether offering "take the photo again" makes sense for this failure. */
-  canRetake: boolean;
 };
 
 /**
  * One document in a list.
  *
- * `issuer` and `documentType` are null until a reading has succeeded: a
- * document that is still processing, or that failed, has not told anyone who
- * it is from. The interface labels those rows from `uploadedAt` and
- * `pageCount` instead. They are filled in as soon as extraction succeeds, and
- * only from confident values: a hedged date stays absent here, because a
- * value the model was not sure of never reaches a summary (ADR 008). Nobody
- * edits them; a re-photographed letter re-reading is what changes them.
+ * `issuer` and `documentType` are null until a reading has succeeded: a letter
+ * still being read, or one that failed, has not told anyone who it is from. They
+ * are filled in from confident values only, so a hedged value stays absent here
+ * as it does everywhere else (see the note on confirming, below). Nobody edits
+ * them.
  */
 export type DocumentSummary = {
   id: string;
@@ -102,14 +86,15 @@ export type DocumentSummary = {
   /**
    * What to call this row, always present, resolved on the server.
    *
-   * `${issuer} · ${documentType}` once the six fields have been read, and the
-   * provisional label the division gave it before then. A letter therefore has
-   * a name from the moment it exists, which it can, because the pass that
-   * divided the pile had already read the letterhead.
+   * `${issuer} · ${documentType}` once the six fields have been read, and before
+   * then a provisional label from the upload itself: when it arrived and how
+   * many photographs it holds. A letter therefore has a name from the moment it
+   * exists, so a list of letters being read is not a column of identical rows
+   * saying "reading...".
    *
-   * Resolved in one place for the same reason FIELD_LABELS and
-   * FAILURE_MESSAGES are: two screens draw this row and they must not word it
-   * differently. See docs/api.md on GET /api/documents.
+   * Resolved in one place for the same reason FIELD_LABELS is (./fields.ts): two
+   * screens draw this row and they must not word it differently. See docs/api.md
+   * on GET /api/documents.
    */
   label: string;
   status: DocumentStatus;
@@ -128,9 +113,9 @@ export type DocumentSummary = {
 /**
  * One reminder, readable at last.
  *
- * `localDate` is the calendar day the server bucketed the reminder into, in
- * the user's zone. The calendar draws its dots from this string so the client
- * never has to turn an instant back into a day (and get it wrong by one).
+ * `localDate` is the calendar day the server bucketed the reminder into, in the
+ * person's zone. The calendar draws its dots from this string so the client
+ * never has to turn an instant back into a day, and get it wrong by one.
  */
 export type ReminderView = {
   id: string;
@@ -139,19 +124,19 @@ export type ReminderView = {
   /** The day it lands on for calendar purposes, 'YYYY-MM-DD'. */
   localDate: string;
   /**
-   * The wall clock it lands at in the user's zone, 'HH:mm'. Computed beside
+   * The wall clock it lands at in the person's zone, 'HH:mm'. Computed beside
    * `localDate` for the same reason: the day sheet says "a reminder goes out
    * this morning, 9 am", and the only other way to that string is turning
    * `scheduledFor` back into a local time in the browser, which is the
-   * conversion `localDate` exists to keep out of the client. It is always
-   * 09:00 today; it is data rather than copy so that the day the hour becomes
-   * a setting, the sentence does not quietly start lying.
+   * conversion `localDate` exists to keep out of the client. It is always 09:00
+   * today; it is data rather than copy so that the day the hour becomes a
+   * setting, the sentence does not quietly start lying.
    */
   localTime: string;
   channel: "in_app" | "email";
   /**
-   * 'skipped' is written by the dispatcher when the clock rang and the task
-   * was already done. Ticking a task changes no reminder row; see ADR 007.
+   * 'skipped' is what the dispatcher writes when the clock rang and the task was
+   * already ticked. Ticking changes no reminder row; see ./reminders.ts.
    */
   status: "scheduled" | "sent" | "skipped" | "failed";
 };
@@ -169,16 +154,16 @@ export type TaskSummary = {
   /**
    * Every reminder for this task, whatever its status: still scheduled, sent,
    * skipped because the task was already done when the clock rang, or failed.
-   * The calendar draws its dots from these rows' `localDate`s, and the day
-   * sheet words each one from its status.
+   * The calendar draws its dots from these rows' `localDate`s, and the day sheet
+   * words each one from its status.
    */
   reminders: ReminderView[];
 };
 
 /**
- * A task opened from the calendar's day sheet: the summary plus the extracted
- * fields of the letter it came from, and enough to show the photograph.
- * Served by GET /api/tasks/:id.
+ * A task opened from the calendar's day sheet: the summary, the extracted fields
+ * of the letter it came from, and enough to show the photographs. Served by
+ * GET /api/tasks/:id.
  */
 export type TaskDetail = TaskSummary & {
   /**
@@ -189,7 +174,7 @@ export type TaskDetail = TaskSummary & {
    */
   documentId: string;
   fields: ExtractedFieldView[];
-  /** Pages in the current attempt only, not every page ever photographed. */
+  /** How many photographs the letter has. */
   pageCount: number;
 };
 
@@ -197,14 +182,10 @@ export type TaskDetail = TaskSummary & {
  * One row on the review screen.
  *
  * `label` is presentation, resolved from the field key on the server so that
- * every surface spells "Reference" the same way.
+ * every surface spells "Reference" the same way. See ./fields.ts.
  *
- * The browser never sees `uncertain`. Storage keeps it (how often the model
- * hedges is evaluation data), but on the way out the server collapses it to
- * `unreadable`: as far as any screen is concerned, a value the model was not
- * sure of does not exist. The screen shows, it never asks; there is nothing
- * to edit and nothing to acknowledge, and the way to change a reading is to
- * photograph the letter again. See ADR 008.
+ * The browser never sees `uncertain`. The server collapses it to `unreadable` on
+ * the way out, and why storage keeps the two apart is in ./extraction.ts.
  *
  * `value` is null exactly when status is `unreadable`. An empty string would
  * mean "the model read an empty string", which is a different fact.
@@ -219,9 +200,9 @@ export type ExtractedFieldView = {
 export type DocumentDetail = DocumentSummary & {
   /**
    * Empty while status is 'processing' and for a document that has never been
-   * read successfully. Otherwise the most recent successful reading. There are
-   * no corrections to overlay: nobody edits a reading in this version, so
-   * what the model read confidently is exactly what every screen shows.
+   * read successfully. Otherwise the most recent successful reading, exactly as
+   * it came back. There is nothing to overlay on it, because nobody edits a
+   * reading.
    */
   fields: ExtractedFieldView[];
   pages: DocumentPageView[];
@@ -233,53 +214,84 @@ export type DocumentPageView = {
   /**
    * Where to load the image from: `/api/documents/{id}/pages/{n}`, which checks
    * who is asking and then redirects to a link storage has signed. It is this
-   * path rather than the signed link itself so that a payload sitting in a
-   * cache cannot go stale.
+   * path rather than the signed link itself so that a payload sitting in a cache
+   * cannot go stale.
    */
   url?: string;
 };
 
 /**
- * Upload limits, shared with the capture screen so it can stop the person at
- * page ten rather than rejecting ten deliberate photographs at the end.
+ * The limits an upload is held to, exported so the capture screen can hold the
+ * person to the same ones.
  *
- * Ten is not a claim about how many pages a reading can divide correctly. It is
- * a bound on how much there is to untangle when it divides them wrongly.
+ * An upload is one letter. A letter may run to several pages, and every
+ * photograph in one upload belongs to that one letter (docs/scope.md).
+ *
+ * Ten is not a claim about letters. It is the point past which an upload has
+ * stopped being one letter in practice, and it bounds how much image goes into
+ * a single model call. It is exported rather than checked only on the server so
+ * the capture screen can stop the person at page ten, instead of accepting ten
+ * deliberate photographs and rejecting the lot at the end.
+ *
+ * Size and type are the only other things checked before the reading, and they
+ * are the only two things code can check without holding an opinion: is this an
+ * image we can decode, and is it under the limit. Whether a photograph is sharp
+ * enough, and whether a page is a letter at all, are judgements this release
+ * does not make.
  */
 export const MAX_PAGES = 10;
 export const MAX_PAGE_BYTES = 10 * 1024 * 1024;
 
-/** Where a batch of photographs is in its life. Mirrors the batch_status enum. */
-export type BatchStatus = "uploaded" | "grouping" | "grouped" | "failed";
-
-/**
- * What an upload becomes.
- *
- * A batch, not a document, because nothing about photographing a pile of post
- * says where one letter ends. `documents` fills in as the reading works out how
- * many there are: empty while `status` is `uploaded` or `grouping`, and then
- * however many letters were in the pile.
- *
- * The interface draws one row for the batch while it is being divided, and that
- * row becomes several. See docs/architecture/adr-005-ingestion-and-grouping.md.
- */
-export type BatchSummary = {
-  id: string;
-  status: BatchStatus;
-  /** How many photographs arrived. Known immediately, unlike the letter count. */
-  pageCount: number;
-  uploadedAt: string;
-  documents: DocumentSummary[];
-  /** Present exactly when status is 'failed': the pages are still here. */
-  failure?: DocumentFailureView;
-};
-
 /*
- * There is deliberately no ConfirmDocumentRequest any more. Confirming sends
- * an empty body: the person looked, the person nodded, that is the entire
- * message. Nothing is edited (no fields array) and nothing is attested (no
- * acknowledged array): a value the model was unsure of never reached the
- * screen, so there is nothing on it to interrogate anyone about. See ADR 008.
+ * There is deliberately no ConfirmDocumentRequest, and deliberately no endpoint
+ * anywhere that corrects a reading.
+ *
+ * Confirming sends an empty body. The person looked, the person nodded, that is
+ * the entire message. Nothing is edited, because nothing on the screen is
+ * editable. Nothing is attested, because a value the model was unsure of never
+ * reached the screen, so there is nothing on it to interrogate anyone about.
+ *
+ * The screen this replaced was an exam. A field the model was not sure of came
+ * back flagged, drew an amber box, asked "This was hard to read. Is it right?",
+ * offered a text input, and refused to confirm until the person had either
+ * edited the value or acknowledged it.
+ *
+ * It interrogated the wrong party. When the model is unsure, the honest answers
+ * available to this product's reader are "go and find the paper letter again"
+ * or "guess". The product exists so that the paper can leave her life, and the
+ * exam quietly reinstated the paper as the reference she was expected to
+ * consult. She is also the person least equipped to adjudicate a model's
+ * hesitation, which is the reason the product exists at all. And recognition is
+ * easy where entry is hard: reading a card and nodding is a different kind of
+ * work from typing a date into a box on a phone. The exam demanded the hard
+ * kind, at the worst moment, about the values least likely to be right.
+ *
+ * So the screen shows and it never asks. Rows the model read confidently are
+ * displayed, read-only. A row with no value is not drawn at all, because an
+ * empty box invites an answer nobody is asking for; the card states the absence
+ * in one sentence instead: "This letter doesn't give a clear date. It's saved;
+ * nothing goes on your calendar."
+ *
+ * What this buys is one invariant, and it is worth more than the exam was: a
+ * date reaches the calendar from exactly two places, a confident read that a
+ * person has seen, or nowhere. That is a missing path rather than a checkpoint,
+ * so no procedure has to guard it and no later change can forget to. It is also
+ * the test for any proposal that sounds reasonable here, an edit box "just for
+ * the date", a "confirm you checked this" toggle, a transcription snippet shown
+ * "just as a hint": after it ships, are the calendar's sources still exactly
+ * two?
+ *
+ * What it costs, named honestly. Corrections were going to be the in-product
+ * accuracy signal, the value a person typed against the value the model read;
+ * with editing gone that signal is gone, and accuracy now rests entirely on the
+ * synthetic evaluation line, where ground truth is known by construction. And
+ * this release has no correction path at all: joining a later upload to a letter
+ * already in the system is not in it (docs/scope.md), so photographing a letter
+ * again makes a second letter rather than mending the first.
+ *
+ * A letter with a clear action and no clear date still becomes a task. It sits
+ * in the list saying "No date", never reminds, never touches the calendar, and
+ * stays until it is ticked. The list itself is the reminder.
  */
 
 /** What the home screen needs, in one request. */
@@ -290,22 +302,16 @@ export type HomeCounts = {
 };
 
 /**
- * GET /api/home. One request rather than three so the counts and the lists
+ * GET /api/home. One request rather than three, so the counts and the lists
  * cannot disagree with each other on screen.
  *
  * `inbox` is every document not yet dealt with: status 'processing',
  * 'needs-review' or 'failed', in one merged list, newest upload first. The
- * prototype renders these interleaved in a single card, so the server sends
- * them as the one list they are, not as three lists the client must weave.
+ * prototype renders these interleaved in a single card, so the server sends them
+ * as the one list they are rather than as three the client has to weave.
  */
 export type HomePayload = {
   counts: HomeCounts;
-  /**
-   * Batches posted and not yet turned into letters. One row each, saying how
-   * many photographs are in it, replaced by its letters when the dividing
-   * finishes. Usually empty, and never for long.
-   */
-  dividing: BatchSummary[];
   inbox: DocumentSummary[];
   tasks: TaskSummary[];
 };
@@ -331,6 +337,13 @@ export type ApiError = {
   };
 };
 
+/**
+ * The signed-in person.
+ *
+ * `role` mirrors user_role in db/schema.sql. The operator roles stay in the
+ * schema and this release builds no surface for them; docs/scope.md says why
+ * that absence is deliberate rather than an oversight.
+ */
 export type SessionUser = {
   id: string;
   email: string;
@@ -346,9 +359,9 @@ export type SessionUser = {
  * Kept here, beside the type it produces, so the front end and the back end
  * cannot disagree about when something is overdue.
  *
- * The comparison happens on calendar days in the user's zone, as strings.
- * Comparing instants against a UTC end-of-day looks equivalent and is not: it
- * keeps a Melbourne task "upcoming" until ten the next morning.
+ * The comparison happens on calendar days in the person's zone, as strings.
+ * Comparing instants against a UTC end of day looks equivalent and is not: it
+ * keeps a Melbourne task "upcoming" until ten the next morning. See ./dates.ts.
  */
 export function deriveTaskStatus(
   state: "open" | "completed" | "dismissed",
@@ -358,6 +371,6 @@ export function deriveTaskStatus(
 ): TaskStatus {
   if (state === "completed") return "completed";
   if (!dueDate) return "upcoming";
-  // Something due today is not overdue until today, in the user's zone, is over.
+  // Something due today is not overdue until today, in the person's zone, is over.
   return dueDate < todayInZone(timeZone, now) ? "overdue" : "upcoming";
 }

@@ -26,11 +26,11 @@ config({ path: ".env.local", quiet: true });
 config({ path: ".env", quiet: true });
 
 describe("upload keys", () => {
-  it("puts the person first and the batch second", () => {
+  it("puts the person first and the letter second", () => {
     const key = uploadObjectKey({
       userId: "11111111-1111-1111-1111-111111111111",
-      batchId: "22222222-2222-2222-2222-222222222222",
-      position: 3,
+      documentId: "22222222-2222-2222-2222-222222222222",
+      pageNumber: 3,
       contentType: "image/jpeg",
     });
 
@@ -42,8 +42,8 @@ describe("upload keys", () => {
   it("is derived, so the same photograph retried lands on the same object", () => {
     const params = {
       userId: "user",
-      batchId: "batch",
-      position: 1,
+      documentId: "letter",
+      pageNumber: 1,
       contentType: "image/png",
     };
     expect(uploadObjectKey(params)).toBe(uploadObjectKey(params));
@@ -52,8 +52,8 @@ describe("upload keys", () => {
   it("keeps a phone's own format rather than pretending everything is a jpeg", () => {
     const heic = uploadObjectKey({
       userId: "user",
-      batchId: "batch",
-      position: 1,
+      documentId: "letter",
+      pageNumber: 1,
       contentType: "image/heic",
     });
     expect(heic.endsWith(".heic")).toBe(true);
@@ -62,8 +62,8 @@ describe("upload keys", () => {
   it("does not guess an extension it does not know", () => {
     const key = uploadObjectKey({
       userId: "user",
-      batchId: "batch",
-      position: 1,
+      documentId: "letter",
+      pageNumber: 1,
       contentType: "application/octet-stream",
     });
     expect(key.endsWith(".bin")).toBe(true);
@@ -98,8 +98,8 @@ if (!storageIsUp) {
 describe.skipIf(!storageIsUp)("round trip through storage", () => {
   const key = uploadObjectKey({
     userId: "test-user",
-    batchId: "test-batch",
-    position: 1,
+    documentId: "test-letter",
+    pageNumber: 1,
     contentType: "image/png",
   });
   const body = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10, 1, 2, 3]);

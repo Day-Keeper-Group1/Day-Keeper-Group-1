@@ -1,6 +1,8 @@
 # Start here
 
-What this branch gives you, and what is yours to build.
+What this branch gives you, and what is yours to build. [`scope.md`](scope.md)
+says what this release builds and what it leaves out; this page says how to run
+it and where everything is.
 
 ## What is here
 
@@ -71,16 +73,16 @@ service called `storage`.
 Margaret's world at the moment she opens the app, with every state the interface
 has to draw already present, so you never have to manufacture one:
 
-- a letter **waiting to be checked**, with an uncertain due date and a reference
-  that could not be read at all
 - a letter **still being read**
-- a letter that **came out too blurry**, twice
-- six letters **confirmed**: one overdue, one upcoming, one **appointment with
-  a time of day** (and therefore one reminder, not two), one already done
-  (ticked off before its last reminders' mornings, so those rang, found it
-  done, and were recorded `skipped`), and two that arrived interleaved in
-  one pile of five photographs, one of which was a photo of her grandson and
-  became nothing
+- a letter **waiting to be checked**, where the reader was unsure of the due
+  date and could not read the reference at all
+- letters **confirmed**: one overdue, one upcoming, one **appointment with a
+  time of day** (and therefore a shorter reminder ladder, see
+  `src/lib/contract/reminders.ts`), and one already done, ticked off before its
+  last reminder's morning, so that reminder rang, found it done, and was
+  recorded `skipped`
+
+`db/seed.ts` is the inventory: what it prints when it runs is the list.
 
 Two accounts: **margaret@example.com** and **operator@example.com**, both with
 the password `daykeeper`, already hashed in the database. They will work as soon
@@ -141,8 +143,8 @@ therefore identical to everyone else's, always.
 
 This works because there is no data worth keeping. It stops working the moment
 there is, and `db/reset.ts` refuses to run against a non-local database so
-nobody finds that out the hard way. Reasoning in
-[ADR 003](architecture/adr-003-data-storage.md).
+nobody finds that out the hard way. The rest of the reasoning is at the top of
+`db/schema.sql`.
 
 ## Where things are
 
@@ -168,14 +170,17 @@ src/server/               server only (password.ts and token.ts excepted: the
   auth/password.ts          hashing and verifying passwords
   auth/token.ts             making and hashing session tokens
   auth/session.ts           THE seam: createSession, getCurrentUser,
-                            requireUser, destroySession. See ADR 002.
+                            requireUser, destroySession
   extraction/
     provider.ts             the interface every reader implements
-    mock-provider.ts        the stand-in that takes time and sometimes fails
+    mock-provider.ts        the stand-in that takes time and is sometimes unsure
 
+docs/scope.md             what this release builds, and what it does not
 docs/api.md               the API to build
-docs/architecture/        why things are the way they are
 ```
+
+Why a thing is the way it is sits beside the thing itself, in a comment at the
+top of the file that implements it.
 
 ## Building against this
 
@@ -204,7 +209,8 @@ photograph the first time the app is redeployed.
 asking from the session cookie, in one place, or throws an
 `UnauthenticatedError` you map to a 401. Never read the cookie or the sessions
 table yourself: five hand-rolled versions of that lookup drifting apart is a
-security hole, and ADR 002 exists to prevent it.
+security hole, and the seam in `src/server/auth/session.ts` exists to prevent
+it.
 
 **Scope every query by user id.** There is no "get this document" that does not
 also ask whose it is. A missing `WHERE user_id` is how one person ends up
@@ -218,10 +224,10 @@ formatting is `formatDueDate()`.
 
 **The reminder schedule has exactly one home, `planReminders()`.** The confirm
 handler creates rows from it and the review screen previews the plan with it.
-If you find yourself typing `[7, 1]` or `09:00`, you are creating the second
-copy that lets the promise and the behaviour disagree.
+If you find yourself typing an offset in days, or the hour they go out, you are
+creating the second copy that lets the promise and the behaviour disagree.
 
-Three things about the document flow that are design decisions rather than
+Two things about the document flow that are design decisions rather than
 implementation details:
 
 **Reading takes seconds.** An upload should answer immediately with
@@ -229,29 +235,22 @@ implementation details:
 reader finishes gives the person a spinner instead of the ability to put the
 phone down. The waiting state is part of the design, not a gap in it.
 
-**The review screen shows, it never asks** (ADR 008). Nothing on it is
-editable and nothing on it is a question. A value the model was not sure of
-never reaches a screen: storage keeps the hedge for evaluation, the browser
-receives an absent value, and the card says in one plain sentence what is
-missing. The one remedy offered anywhere is photographing the letter again.
-The calendar's sources are exactly two: a confident read a person has seen, or
-nothing.
+**The review screen shows, it never asks.** Nothing on it is editable and
+nothing on it is a question, and a value the reader was unsure of never reaches
+the browser. The rule, and why there is no correction anywhere in the product,
+are in `src/lib/contract/api.ts`. Do not add a field for a person to fix.
 
 ## The reader
 
 `AI_EXTRACTION_PROVIDER=mock` is the default and needs no credentials. The mock
-takes two to seven seconds, is unsure about the due date about half the time,
-cannot read the reference about one time in five, and fails outright about one
-document in eight on the first attempt, all deterministically by document id.
+takes time, is sometimes unsure of a value, and sometimes cannot read one at
+all, deterministically by document id, so a test can assert on it and a
+demonstration does not surprise anyone. The numbers behind that behaviour live
+in `src/server/extraction/mock-provider.ts`, and only there.
 
-That is on purpose. A reader that always succeeded instantly would produce an
-interface with no waiting state, no correction path and no failure path, and all
-three of those are where this product lives.
+It behaves that way on purpose. A reader that always succeeded instantly would
+produce an interface with no waiting state and nothing ever missing from a
+card, and both of those are states the product has to draw.
 
-Failures are classified by what the person can do about them: retry silently,
-ask for a retake, or say plainly that we cannot read this kind of document. The
-chance of failure falls away with each attempt, so a retake is a real way out
-rather than a loop.
-
-Real providers are not implemented. Reasoning in
-[ADR 004](architecture/adr-004-extraction-contract.md).
+Real providers are not implemented. `src/server/extraction/provider.ts` is the
+interface each one implements, and says why the seam is there.

@@ -1,30 +1,30 @@
 /**
  * The extraction provider interface.
  *
- * Everything that reads a document implements this, and nothing else in the
- * application knows which one is in use. That is the whole point: the product
- * can be built, demonstrated and tested today against the mock, and the day
- * RACE grants access to a real vision model, one environment variable changes
- * and nothing else does.
+ * Everything that reads a letter implements this, and nothing else in the
+ * application knows which one is in use. That is what the seam is for: the
+ * product can be built, demonstrated and tested today against the mock in
+ * ./mock-provider.ts, and the day RACE grants access to a real vision model,
+ * one environment variable changes and nothing else does. Without the seam the
+ * model's own client would be imported in a route handler, its response shape
+ * would spread into the code that writes the tables, and changing model would
+ * be a search through the application rather than a setting.
  *
- * A provider is never trusted. Whatever it returns is validated against the
- * contract before it is allowed anywhere near the database.
+ * A provider is never trusted. A model asked for a shape can still return
+ * prose, a missing field, or a date where a string was promised, so whatever it
+ * returns is validated against the contract in src/lib/contract/extraction.ts
+ * before it goes anywhere near the database.
+ *
+ * One reading per letter. This release makes one model call and everything
+ * after it is ordinary code, so there is no second model and nothing that
+ * searches over what was read; see docs/scope.md.
  */
 
 import "server-only";
 import type { ExtractionResult } from "@/lib/contract/extraction";
-import type { ExtractionFailureKind } from "@/lib/contract/api";
 
 export type ExtractionInput = {
   documentId: string;
-  /**
-   * Which attempt this is, counting from 1.
-   *
-   * A real provider has no use for it. The mock does: without it, a document
-   * that failed once would fail identically forever, and retaking the photo
-   * would be a dead end rather than the way out that the interface promises.
-   */
-  attempt: number;
   /** One entry per photographed page, in the order the person took them. */
   pages: Array<{
     pageNumber: number;
@@ -36,37 +36,22 @@ export type ExtractionInput = {
 };
 
 /**
- * Why an attempt failed.
+ * The reading did not happen.
  *
- * The distinction is not bookkeeping: it decides what the person is offered.
- * A transient failure is retried without telling them. An unreadable image asks
- * them to retake the photo, which is something they can act on. An unsupported
- * document is a dead end and should say so plainly instead of inviting a
- * retake that will fail the same way.
+ * One kind of failure, because there is one thing to say. This release has no
+ * rejection and no repair: a letter is never turned away for being the wrong
+ * sort of document, a photograph is never refused for being blurred, and nobody
+ * is asked to take it again. So a failure here is our side failing, the
+ * document is marked failed, and that is the end of it.
  *
- * The union itself is defined in the shared contract (the browser draws these
- * kinds); this module re-exports it so server code keeps importing from here.
+ * `message` is developer text. It is stored with the run and never shown; the
+ * sentence a person reads is worded once, in src/lib/contract/api.ts, so that
+ * every surface says it identically.
  */
-export type { ExtractionFailureKind };
-
 export class ExtractionFailure extends Error {
-  constructor(
-    readonly kind: ExtractionFailureKind,
-    message: string,
-    readonly detail?: string,
-  ) {
+  constructor(message: string) {
     super(message);
     this.name = "ExtractionFailure";
-  }
-
-  /** Whether offering "take the photo again" makes sense for this failure. */
-  get canRetake(): boolean {
-    return this.kind === "unreadable_image";
-  }
-
-  /** Whether the system should try again by itself, without bothering anyone. */
-  get shouldAutoRetry(): boolean {
-    return this.kind === "transient";
   }
 }
 
@@ -77,25 +62,13 @@ export interface DocumentExtractionProvider {
   readonly model: string | null;
 
   /**
-   * Read a document.
+   * Read a letter.
    *
    * Resolves with a payload that still has to pass the contract validator, or
    * rejects with an ExtractionFailure. Any other rejection is a bug in the
-   * provider and is treated as transient.
+   * provider, and the caller records it as a failed reading just the same.
    */
   extract(input: ExtractionInput): Promise<unknown>;
 }
-
-/**
- * How many attempts a document gets in total before it gives up, counting the
- * first one. Three attempts is two automatic retries, not three.
- *
- * This budget is spent only by automatic retries. A person pressing "try again"
- * or retaking the photograph starts the count over: they are deciding to spend
- * their own patience, and a button that silently does nothing because a counter
- * ran out is worse than one that fails again visibly. See docs/api.md on
- * `/retry` and `/retake`.
- */
-export const MAX_ATTEMPTS = 3;
 
 export type { ExtractionResult };

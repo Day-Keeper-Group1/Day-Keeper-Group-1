@@ -4,23 +4,19 @@ DayKeeper (Group 1): an AI-powered life management system for people in vulnerab
 
 ## Where things live
 
+- `docs/scope.md`: what this release builds, and what it deliberately does not. Where any other document describes behaviour that is not in it, that document is wrong.
 - `docs/start-here.md`: how to run the whole thing, what the seed contains, and where everything lives. Read this first.
 - `docs/api.md`: the API specification. **Not built yet**: this is the shape to build against, with the reasoning for the parts that look arbitrary.
 - `docs/theme.md`: the theme. The palette, the contrast measurements, and the rules that make this product readable by the people it is for. Read it before styling a screen.
-- `docs/architecture/adr-00*.md`: the decisions that shape the rest (one Next.js app, our own auth behind one function, plain Postgres and an S3 bucket, the six-field extraction contract, the grouping manifest, model-driven matching, and the tick as a task's only state). When something looks odd, the reason is in one of these.
-- `docs/project-description.md`: the official project description, verbatim. Our requirements baseline; when wording conflicts, this file wins.
-- `docs/DayKeeper-Tech-Stack-Recommendation.md`: the tech stack recommendation, corrected 18 August 2026 to match ADRs 001-008. Where it and an ADR disagree, the ADR wins.
-- `docs/Technical-Research-and-Implementation-Roadmap.md`: step-by-step research and build plan, corrected 18 August 2026 to match ADRs 001-008; check this before starting new feature work.
+- `docs/project-description.md`: the official project description, verbatim. Our requirements baseline; when wording conflicts, this file wins on what the product is for, and `docs/scope.md` says which part of it we are building now.
 - `docs/prototype/user/daykeeper-sketch-live.html`: clickable prototype of the user flow (phone). The live one; user-flow design work happens here, and its `:root` block is where the theme's palette lives. See "The look" below.
-- `docs/prototype/admin/daykeeper-admin-sketch.html`: wireframe of the admin dashboard (desktop). Static, no interaction. Keep the two prototypes separate: different device, different person, different module.
 - `.agents/skills/daykeeper-jira/`: how this team's Jira board actually works, as a skill. Codex loads it when a ticket, the board or a sprint comes up; it needs the Atlassian MCP server, which `.codex/config.toml` already defines and the README explains how to authenticate. Optional: nothing in the build depends on it.
 - `db/schema.sql`: the database, and its only definition. No migrations: edit it and run `npm run db:reset`.
 - `docs/walkthrough/`: **the way in**. A walk through the product one action at a time, and under each
   screen what the system does, which tables it writes, and why. Start here if you are new, or if you are
   about to change something and want to know what it is connected to. The PDF is built from the typst
   sources beside it; `docs/walkthrough/README.md` says how to rebuild it and how the diagrams are made.
-- `docs/schema-map.html`: the same fourteen tables as a picture, with a letter's five steps along the top and a badge on each table saying which step writes it. Open it in a browser when you want to see the shape; read `db/schema.sql` when you need the truth.
-- `src/lib/contract/`: the six-field extraction contract and the grouping manifest (how a pile of photographs becomes letters), in TypeScript, with validators. Import these types; do not restate them.
+- `src/lib/contract/`: the agreement, in TypeScript, with validators: the six fields, the shapes the browser receives, the date rules and the reminder ladder. Import these types; do not restate them.
 - `src/server/`: server-only code. `db.ts` for queries, `storage.ts` for the photographs themselves (an S3 bucket, MinIO locally), `extraction/` for the reader interface and its mock. `src/lib` is safe anywhere; `src/server` never reaches the browser.
 - `src/app/`: the interface. The pages still read from `src/lib/mock-data.ts`; wiring them to real endpoints is the work.
 
@@ -33,6 +29,18 @@ DayKeeper (Group 1): an AI-powered life management system for people in vulnerab
 - Never commit secrets, API keys, or `.env` files. Personal API keys and personal paid cloud accounts are banned for this project.
 - Large binaries and generated output stay out of git (see `.gitignore`); small curated fixtures are fine.
 
+## One application, not two
+
+The project description names React/Next.js, Python and FastAPI in its skill set, which reads as an invitation to put a Python API behind a Next.js front end. This is one Next.js application instead: the interface, the route handlers and the database access live in the same project and deploy as one thing.
+
+The description lists a skill set, not an architecture. Doing the work in route handlers does not fail it; a half-finished two-service system would.
+
+The one honest argument for Python is that the AI ecosystem lives there, and it does not apply here. We send a vision model an image and a prompt over HTTP, which is a `fetch` in any language, and nothing in Module 1 needs numpy.
+
+A second service is not one decision, it is a permanent tax: two dependency sets, two deployments, a network boundary to authenticate across, CORS, and a second set of types that has to be kept identical to the first by hand. Four of the five of us have not shipped a web application before, and every one of those costs a beginner more than it costs an experienced team.
+
+What would reopen this: a reading takes about ten seconds, which a route handler answers immediately while the interface polls. If a reading ever takes minutes, the decision gets revisited and a queue appears.
+
 ## The look
 
 The theme is **Eucalypt & Wattle**, adopted 10 August 2026. **Read [`docs/theme.md`](docs/theme.md) before styling anything**: it has the palette, what each colour is for, the measured contrast of every pair, and the reasoning you would otherwise have to guess at.
@@ -44,7 +52,7 @@ The short version, so you know when to go and read it:
 - Body text clears **7:1, not 4.5:1**, nothing is blue, nothing is pure white or pure black, gold is never text, and colour is never the only signal. Each of those has a reason involving eyes over 70, and `docs/theme.md` gives it.
 - Body text is at least 18px and primary buttons at least 48px tall. The prototype's own type is still the older smaller scale, so build new screens at the larger size rather than matching the sketch.
 
-`tests/theme.test.ts` keeps the three copies of the palette (the stylesheet, the prototype, the doc) in agreement, and fails the build if a colour drifts or a blue appears.
+`tests/theme.test.ts` holds the two copies of the palette (the prototype and `docs/theme.md`) against `src/app/globals.css`, which is where it lives, and fails the build if a colour drifts or a blue appears.
 
 ## Build and test
 
@@ -70,10 +78,10 @@ Tests are Vitest, in `tests/`. `tests/contract.test.ts` needs no database and no
 
 The pages have no working sign-in yet and read `src/lib/mock-data.ts`, so `npm run dev` shows the interface with fixture data. The seeded accounts (`margaret@example.com` and `operator@example.com`, password `daykeeper`) are already in the database and will work once somebody builds authentication.
 
-Two rules that are easy to break by accident:
+Two rules that are easy to break by accident. Both are written where they are enforced, with the reasoning attached, so read them there rather than trusting a summary:
 
-- **The six fields are a floor, not a ceiling.** A reader may return more, and the extra is kept in `open_payload`. But all six must be present, and a field that could not be read says `unreadable` rather than being omitted. `summary` is deliberately not one of them; see ADR 004.
-- **The review screen shows, it never asks** (ADR 008). Nothing on it is editable and nothing on it is a question: a value the model was not sure of arrives as an absent value, the card says so in a sentence, and the one remedy anywhere is photographing the letter again. A date reaches the calendar from exactly two sources, a confident read a person has seen, or nowhere.
+- **The six fields are a floor, not a ceiling**, and a field the reader could not read says so rather than going missing. `src/lib/contract/fields.ts` and `src/lib/contract/extraction.ts`.
+- **The review screen shows, it never asks.** `src/lib/contract/api.ts`.
 
 ## Worktrees: parallel agents without collisions
 

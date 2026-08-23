@@ -1,26 +1,46 @@
 /**
- * The reminder scheduling rule.
+ * The reminder ladder, and the clock that checks the tick when it rings.
  *
- * This rule used to live only inside the seed script, which the browser cannot
- * reach. It has to live here because two different people need the identical
- * answer: whoever writes the confirm handler (which creates the reminder rows)
- * and whoever builds the review screen (whose "What DayKeeper will do" card
- * shows the person the plan before they agree to it). Two copies of a schedule
- * is how the card ends up promising a reminder that never arrives.
+ * The ladder used to live only inside the seed script, which the browser cannot
+ * reach. It lives here because two different people need the identical answer:
+ * whoever writes the confirm handler, which creates the reminder rows, and
+ * whoever builds the screen whose "What DayKeeper will do" card shows the person
+ * the plan before they agree to it. Two copies of a schedule is how the card ends
+ * up promising a reminder that never arrives.
  *
- * The rule, read off the product prototype:
+ * ## The ladder
  *
- * - A deadline (a bill, a form, anything you act on BY a date) gets three
- *   reminders: seven days, three days and one day before, at 9 am.
- *   (Decided 18 August 2026: for a bill due the 18th they land on the 11th,
- *   the 15th and the 17th.)
- * - An appointment (anything you attend AT a time) gets one reminder, the day
- *   before, at 9 am. Nobody needs a nudge a week before the dentist, and the
- *   day itself is on the calendar.
+ * - A deadline, a bill or a form or anything you act on BY a date, gets three
+ *   reminders: **seven days, three days and one day before**, at 9 am. For a
+ *   bill due the 18th they land on the 11th, the 15th and the 17th.
+ * - An appointment, anything you attend AT a time, gets one, the day before, at
+ *   9 am. Nobody needs a nudge a week before the dentist, and the day itself is
+ *   already on the calendar.
  *
- * What makes something an appointment: it has a time of day (`due_time` is
- * present). That is a default decision recorded here so it can be argued with
- * at review, not silently in the seed.
+ * What makes something an appointment is that it has a time of day: `due_time`
+ * is present (./fields.ts). That is a default recorded here so that it can be
+ * argued with, rather than buried in the seed.
+ *
+ * ## The clock check
+ *
+ * Ticking a task writes nothing to reminders, and unticking writes nothing
+ * either. When a reminder's moment arrives, the dispatcher reads the task at
+ * that moment: still open means send it and write `sent`; already ticked means
+ * send nothing and write `skipped`. That is the product's only judgement about
+ * whether to nag, and it is made at the only moment when the answer is known.
+ *
+ * The alternative was bookkeeping. Ticking would have cancelled every waiting
+ * reminder in the same transaction, and unticking would have revived them,
+ * except the ones whose time had already passed. That is the same truth written
+ * twice in two tables, and every copy needs a transaction to keep it honest and
+ * an undo rule to unwind it. The undo rule needed an exception within a week of
+ * being written. Reading the tick at fire time stores the truth once and reads
+ * it at the moment of use, so a person can tick at breakfast, untick at lunch
+ * and tick again at dinner without the system keeping a ledger of her wavering.
+ *
+ * Rows are still planned and written at confirm time rather than worked out
+ * later, because each one has its own fate to record (`sent`, `skipped`,
+ * `failed`) and the calendar draws its dots from them.
  */
 
 import { APP_TIME_ZONE, addDays, zonedTimeToInstant } from "./dates";

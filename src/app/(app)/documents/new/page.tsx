@@ -14,13 +14,16 @@ type Photo = {
 };
 
 /**
- * An upload is a batch, not a single letter (ADR 005). A person clears a
- * week of post however it comes to hand: several letters, shuffled,
- * sometimes more than one page each. So the camera stays open across taps,
- * the pile grows as a grid rather than replacing itself, and the one thing
- * this screen asks is "read it" or "read them" — never how many letters
- * that pile will turn out to be. That answer is the reading's judgement,
- * not this screen's.
+ * An upload is one letter. It may run to several pages, so the camera stays
+ * open across taps and the pages grow as a grid rather than replacing each
+ * other, but every photograph in an upload belongs to the same letter. Which
+ * letter a page belongs to is settled here, by the person, rather than
+ * inferred later by a model. See docs/scope.md.
+ *
+ * ⚠️ The screen below has not caught up: its copy still offers to sort a pile
+ * of mixed letters, which this release does not do. That is a separate ticket,
+ * because changing it changes what a person sees rather than what a document
+ * says.
  */
 export default function UploadDocumentPage() {
   const router = useRouter();
@@ -138,8 +141,7 @@ export default function UploadDocumentPage() {
                 onClick={() => inputRef.current?.click()}
                 className="flex aspect-[3/4] flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-border text-xs font-medium text-primary hover:bg-muted/40"
               >
-                <Camera className="size-4" strokeWidth={1.75} />
-                + photo
+                <Camera className="size-4" strokeWidth={1.75} />+ photo
               </button>
             ) : null}
           </div>
@@ -158,8 +160,8 @@ export default function UploadDocumentPage() {
           {photos.length > 1 ? "Read them" : "Read it"}
         </Button>
         <p className="text-center text-xs text-muted-foreground">
-          Photograph the whole pile. We work out where one letter ends and
-          the next begins, so you don&apos;t have to sort them first. Up to{" "}
+          Photograph the whole pile. We work out where one letter ends and the
+          next begins, so you don&apos;t have to sort them first. Up to{" "}
           {MAX_PAGES} photos in one go.
         </p>
       </div>

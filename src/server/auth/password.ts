@@ -1,15 +1,20 @@
 /**
  * Password hashing.
  *
- * scrypt from Node's own crypto module: a memory-hard key derivation function
- * designed for exactly this, available without a dependency, and without a
- * native build step that would break on somebody's Windows laptop the first
- * time they run npm ci.
+ * scrypt over bcrypt and argon2. It is memory-hard, which is the property that
+ * makes a stolen table expensive to attack on hardware built for guessing in
+ * parallel, and it is in Node's standard library: no dependency to add, and no
+ * native build step to fail on somebody's Windows laptop during their first
+ * npm ci. A hashing library a teammate cannot install is worse than one chosen
+ * on a less fashionable argument.
  *
  * The stored format is self-describing so the parameters can be raised later
  * without invalidating existing passwords:
  *
  *   scrypt$N$r$p$<salt-base64>$<hash-base64>
+ *
+ * Why we are hashing passwords ourselves at all is in ./session.ts, which is
+ * the seam the whole decision rests on.
  */
 
 // Deliberately not marked server-only: this module is pure computation with no

@@ -29,7 +29,7 @@ const envSchema = z.object({
    * MinIO in docker-compose.yml; deployed it is whatever bucket the host
    * provides. The protocol is the same either way, which is the whole point of
    * choosing one now rather than writing to the server's disk and rewriting it
-   * later. See docs/architecture/adr-003-data-storage.md.
+   * later. See db/schema.sql.
    */
   STORAGE_ENDPOINT: z
     .string()

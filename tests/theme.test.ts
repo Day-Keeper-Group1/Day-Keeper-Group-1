@@ -23,7 +23,6 @@ const read = (p: string) => readFileSync(resolve(root, p), "utf8");
 const GLOBALS = "src/app/globals.css";
 const PROTOTYPE = "docs/prototype/user/daykeeper-sketch-live.html";
 const DOC = "docs/theme.md";
-const SCHEMA_MAP = "docs/schema-map.html";
 
 /** `--name: #rrggbb;` inside the first :root block. A literal hex is a palette
  *  colour; everything mapped with var() is a name pointed at one. */
@@ -121,27 +120,6 @@ describe("the copies of the palette", () => {
       if (hits) offenders.push(`${file}: ${[...new Set(hits)].join(", ")}`);
     }
     expect(offenders).toEqual([]);
-  });
-
-  it("the schema map uses the palette, for the subset it names", () => {
-    // A fourth standalone file that repeats colours, for the same reason the
-    // prototype does: it has to open with no build step. Unlike the other two
-    // it needs only some of the eighteen, so this checks what it names rather
-    // than demanding all of them. An unchecked copy is how a palette drifts.
-    const map = paletteFrom(read(SCHEMA_MAP));
-    expect(map.size).toBeGreaterThan(0);
-    for (const [name, hex] of map) {
-      expect(canonical.get(name), `--${name} in the schema map`).toBe(hex);
-    }
-  });
-
-  it("the schema map names no colour outside its own token block", () => {
-    // The check above only sees declarations. Without this one, a hex written
-    // straight onto an SVG stroke is invisible to the whole theme, which is
-    // exactly where the first three of them were.
-    const html = read(SCHEMA_MAP);
-    const afterTokens = html.slice(html.indexOf("}", html.indexOf(":root")));
-    expect(afterTokens.match(/#[0-9a-fA-F]{3,8}\b/g) ?? []).toEqual([]);
   });
 
   it("the prototype names no colour outside its own token block", () => {

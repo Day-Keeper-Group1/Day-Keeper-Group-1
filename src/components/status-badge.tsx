@@ -33,13 +33,13 @@ const STATUS_LABEL: Record<Status, string> = {
  * which is why each badge also spells its state out in words.
  *
  * There is deliberately no badge for a hedged reading: a value the model was
- * not sure of never reaches a screen at all (ADR 008), so there is nothing to
+ * not sure of never reaches a screen at all (src/lib/contract/api.ts), so there is nothing to
  * badge. "Needs review" keeps its unalarmed colour because this product's
  * reader tends to assume anything orange is her fault.
  *
- * "No date" (ADR 008: a letter with a clear action and no clear date still
+ * "No date" (src/lib/contract/api.ts: a letter with a clear action and no clear date still
  * becomes a task) shares "archived"'s quiet, neutral styling on purpose:
- * ADR 007 gives an overdue row no severity beyond bold text, and a dateless
+ * src/lib/contract/api.ts gives an overdue row no severity beyond bold text, and a dateless
  * task is not even overdue, so it earns no colour at all.
  */
 const STATUS_CLASS: Record<Status, string> = {

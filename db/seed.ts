@@ -1,12 +1,10 @@
 /**
  * Seed data.
  *
- * Margaret's world, at the moment she opens the app: six letters confirmed
- * (two of them from one interleaved pile), one waiting to be checked, one
- * still being read, and one that came out too blurry, twice. Every state the
- * interface has to draw is present,
- * so nobody has to imagine what a failed document looks like or upload six
- * files to find out.
+ * Margaret's world at the moment she opens the app: four letters confirmed, one
+ * waiting to be checked, and one still being read. Every state the interface
+ * has to draw is present, so nobody has to imagine what an overdue task looks
+ * like, or photograph a letter to find out.
  *
  * Everything is synthetic. No real person, account number or amount appears
  * here, and none may be added: the project cannot lawfully hold real
@@ -21,6 +19,7 @@ import { config } from "dotenv";
 import { hashPassword } from "../src/server/auth/password";
 import { hashSessionToken } from "../src/server/auth/token";
 import { APP_TIME_ZONE, addDays, todayInZone } from "../src/lib/contract/dates";
+import { CONTRACT_VERSION } from "../src/lib/contract/extraction";
 import { NO_PAYMENT_REQUIRED } from "../src/lib/contract/fields";
 import { planReminders } from "../src/lib/contract/reminders";
 
@@ -59,6 +58,10 @@ if (!isLocal && process.env.DK_ALLOW_REMOTE_RESET !== "yes") {
  * Obviously not a secret. The guard above keeps it off anything shared.
  */
 export const DEV_SESSION_TOKEN = "dk-dev-session-margaret-do-not-ship";
+
+/** The reader this seed pretends produced every reading below. */
+const SEED_PROVIDER = "mock";
+const SEED_MODEL = "mock-specimen-v1";
 
 /**
  * Dates relative to today IN MELBOURNE, so the seed never goes stale and
@@ -110,7 +113,7 @@ async function main() {
 
     // ---- A letter waiting to be checked -----------------------------------
     // The reading finished; the due date came out uncertain and the reference
-    // could not be read at all. This is the document the review screen exists
+    // could not be read at all. This is the letter the review screen exists
     // for, and the one to open first when looking at the app.
     const agl = randomUUID();
     await db.query(
@@ -118,122 +121,78 @@ async function main() {
       // at confirm: the "to check" list names who a letter is from before
       // anybody has checked it. Only CONFIDENT values land here. The due date
       // came out uncertain and the reference unreadable, so both columns stay
-      // NULL: a value the model was not sure of never reaches documents, the
-      // calendar, or a screen (ADR 008). The hedge itself lives one table
-      // over, in extracted_fields, as evaluation data.
+      // NULL: a value the model was unsure of never reaches a document, the
+      // calendar, or a screen (src/lib/contract/api.ts). The hedge itself lives
+      // one table over, in extracted_fields, as evaluation data.
       `INSERT INTO documents
          (id, user_id, status, uploaded_at, issuer, document_type, amount_text)
        VALUES ($1, $2, 'needs-review', now() - interval '2 hours',
                'AGL Energy', 'Utility bill', '$347.60')`,
       [agl, margaretId],
     );
-    const [aglPage] = await uploadBatch(db, margaretId, {
-      pages: 1,
-      daysAgo: 0,
-      documentCount: 1,
-    });
-    await db.query(
-      `INSERT INTO document_pages
-         (document_id, upload_page_id, page_number, storage_path, mime_type, byte_size)
-       VALUES ($1, $2, 1, $3, 'image/jpeg', 1843200)`,
-      [agl, aglPage.id, aglPage.storagePath],
-    );
+    await insertPages(db, margaretId, agl, 1);
     const aglRun = randomUUID();
     await db.query(
       `INSERT INTO extraction_runs
-         (id, document_id, attempt, status, provider, model, started_at, finished_at, duration_ms)
-       VALUES ($1, $2, 1, 'succeeded', 'mock', 'mock-specimen-v1',
+         (id, document_id, status, provider, model, contract_version,
+          started_at, finished_at, duration_ms)
+       VALUES ($1, $2, 'succeeded', $3, $4, $5,
                now() - interval '2 hours', now() - interval '2 hours' + interval '6 seconds', 6100)`,
-      [aglRun, agl],
+      [aglRun, agl, SEED_PROVIDER, SEED_MODEL, CONTRACT_VERSION],
     );
     await insertFields(db, aglRun, [
       ["document_type", "Utility bill", "confirmed", 0.97],
       ["issuer", "AGL Energy", "confirmed", 0.96],
       ["action_required", "Pay the amount due", "confirmed", 0.92],
-      // The model hedged on the date and could not read the reference.
-      // Storage keeps the hedge and its guess (evaluation data); the product
-      // treats both rows the same way, as "no value": nothing goes on the
-      // calendar, and nobody is asked to adjudicate. See ADR 008.
+      // The model hedged on the date and could not read the reference. Storage
+      // keeps the hedge and its guess as evaluation data; the product treats
+      // both rows the same way, as "no value", and asks nobody to adjudicate.
+      // See src/lib/contract/extraction.ts.
       ["due_date", isoDaysFromNow(6), "uncertain", 0.61],
       ["amount", "$347.60", "confirmed", 0.95],
       ["reference", null, "unreadable", 0.18],
     ]);
 
     // ---- A letter still being read ----------------------------------------
-    // Uploaded a moment ago. Shows the waiting state, which is where a person
-    // spends the first ten seconds of every upload.
-    const metro = randomUUID();
+    // Photographed a moment ago. This is the waiting state, which is where a
+    // person spends the first ten seconds of every upload.
+    const stillReading = randomUUID();
     await db.query(
       `INSERT INTO documents (id, user_id, status, uploaded_at)
        VALUES ($1, $2, 'processing', now() - interval '20 seconds')`,
-      [metro, margaretId],
+      [stillReading, margaretId],
     );
-    const [metroPage] = await uploadBatch(db, margaretId, {
-      pages: 1,
-      daysAgo: 0,
-      documentCount: 1,
-    });
+    await insertPages(db, margaretId, stillReading, 1);
     await db.query(
-      `INSERT INTO document_pages
-         (document_id, upload_page_id, page_number, storage_path, mime_type, byte_size)
-       VALUES ($1, $2, 1, $3, 'image/jpeg', 2201984)`,
-      [metro, metroPage.id, metroPage.storagePath],
-    );
-    await db.query(
-      `INSERT INTO extraction_runs (document_id, attempt, status, provider, model)
-       VALUES ($1, 1, 'processing', 'mock', 'mock-specimen-v1')`,
-      [metro],
+      `INSERT INTO extraction_runs
+         (document_id, status, provider, model, contract_version)
+       VALUES ($1, 'processing', $2, $3, $4)`,
+      [stillReading, SEED_PROVIDER, SEED_MODEL, CONTRACT_VERSION],
     );
 
-    // ---- A letter that came out too blurry ---------------------------------
-    // Two attempts, both refused. This is the document that offers "take the
-    // photo again", and the reason the failure kinds are distinguished at all.
-    const bupa = randomUUID();
-    await db.query(
-      `INSERT INTO documents (id, user_id, status, uploaded_at)
-       VALUES ($1, $2, 'failed', now() - interval '1 day')`,
-      [bupa, margaretId],
-    );
-    const [bupaPage] = await uploadBatch(db, margaretId, {
-      pages: 1,
-      daysAgo: 1,
-      documentCount: 1,
-    });
-    await db.query(
-      `INSERT INTO document_pages
-         (document_id, upload_page_id, page_number, storage_path, mime_type, byte_size)
-       VALUES ($1, $2, 1, $3, 'image/jpeg', 987654)`,
-      [bupa, bupaPage.id, bupaPage.storagePath],
-    );
-    for (const attempt of [1, 2]) {
-      await db.query(
-        `INSERT INTO extraction_runs
-           (document_id, attempt, status, provider, model, failure_kind, failure_detail, finished_at, duration_ms)
-         VALUES ($1, $2, 'failed', 'mock', 'mock-specimen-v1', 'unreadable_image',
-                 'mock provider: simulated low-quality capture', now() - interval '1 day', 5400)`,
-        [bupa, attempt],
-      );
-    }
+    // ---- Four letters already dealt with -----------------------------------
+    // Overdue, upcoming, an appointment, and one already ticked. These are the
+    // ways a task reads on screen, and each has its own wording and its own
+    // place in the sort, so none of them can be judged until they are all on
+    // the screen at the same time.
 
-    // ---- Three letters already dealt with ----------------------------------
-    // One of each task state, because each one has its own colour and its own
-    // wording, and none of them can be judged until they are on the screen at
-    // the same time.
-
-    // Overdue: the date has passed and nobody has ticked it off.
-    const centrelink = await confirmedDocument(db, margaretId, {
+    // Overdue: the date has passed and nobody has ticked it off. It sorts to
+    // the top of the home list, by due date ascending and nothing else.
+    // Two pages, because a form is rarely a single sheet and a letter with
+    // several photographs is the only way to see the letters area work.
+    const centrelink = await confirmedLetter(db, margaretId, {
       issuer: "Services Australia",
       documentType: "Government letter",
       action: "Return the completed form",
       dueDate: isoDaysFromNow(-3),
       amount: NO_PAYMENT_REQUIRED,
       reference: "CRN 2201 8845",
-      pages: 2, // a form is rarely a single sheet
+      pages: 2,
       uploadedDaysAgo: 9,
     });
 
     // Upcoming: the ordinary case.
-    const water = await confirmedDocument(db, margaretId, {
+    const water = await confirmedLetter(db, margaretId, {
       issuer: "Yarra Valley Water",
       documentType: "Utility bill",
       action: "Pay the amount due",
@@ -244,11 +203,12 @@ async function main() {
       uploadedDaysAgo: 4,
     });
 
-    // An appointment: the one kind of document with a time of day. Having a
-    // due_time is what makes it an appointment, and an appointment gets one
-    // reminder (the day before) rather than two. Both rules live in
-    // src/lib/contract; this row exists so nobody has to imagine them.
-    const gp = await confirmedDocument(db, margaretId, {
+    // An appointment: the one kind of letter with a time of day. Having a
+    // due_time is what makes it one, and an appointment gets a single reminder
+    // the day before rather than the three a deadline gets. Both rules live in
+    // src/lib/contract/reminders.ts; this row exists so nobody has to imagine
+    // them.
+    const gp = await confirmedLetter(db, margaretId, {
       issuer: "Dr A. Patel, GP clinic",
       documentType: "Medical letter",
       action: "Attend the appointment",
@@ -260,12 +220,14 @@ async function main() {
       uploadedDaysAgo: 1,
     });
 
-    // Done, ticked off BEFORE its second reminder's morning arrived. Nothing
-    // cancelled anything: the dispatcher rang on that morning, found the task
-    // already completed, sent nothing, and wrote 'skipped'. Being nagged about
-    // something already handled is the anxiety this product exists to remove,
-    // and this is the row that shows the mechanism working (ADR 007).
-    const telstra = await confirmedDocument(db, margaretId, {
+    // Done, ticked off before its later reminders' mornings arrived. Nothing
+    // cancelled anything: the dispatcher rang on each of those mornings, found
+    // the task already completed, sent nothing, and wrote 'skipped'. Being
+    // nagged about something already handled is the anxiety this product exists
+    // to remove, and this is the row that shows the mechanism working. The
+    // mechanism itself is explained in db/schema.sql, above the reminders
+    // table.
+    const telstra = await confirmedLetter(db, margaretId, {
       issuer: "Telstra",
       documentType: "Utility bill",
       action: "Pay the amount due",
@@ -283,8 +245,8 @@ async function main() {
     // The bill was due 20 days ago, so its reminders rang 27, 23 and 21 days
     // ago. She ticked it off 24 days ago: the first had already been sent by
     // then; the later two rang into a done task and became 'skipped'. The
-    // insert below marked every past reminder 'sent', so this corrects the
-    // ones whose mornings came after the tick.
+    // insert below marked every past reminder 'sent', so this corrects the ones
+    // whose mornings came after the tick.
     await db.query(
       `UPDATE reminders SET status = 'skipped', sent_at = NULL
         WHERE task_id IN (SELECT id FROM tasks WHERE document_id = $1)
@@ -292,59 +254,14 @@ async function main() {
       [telstra],
     );
 
-    // ---- One pile, two letters, and a photograph of a grandchild -----------
-    // Five photographs picked out of an album in no useful order: rates notice
-    // page 1, insurance renewal page 1, rates notice page 2, a photo of her
-    // grandson, insurance renewal page 2. Nobody sorts before uploading, and
-    // nothing asks them to: the reading's manifest is what says photographs
-    // 1 and 3 are one letter, 2 and 5 are another, and 4 is no letter at all.
-    // Photograph 4 stays in the batch and becomes nothing, which is an answer.
-    // This is the ordinary case rather than an edge case, and it is the only
-    // place in this seed you can see it.
-    //
-    // The insurer is "RACV Insurance Pty Ltd" on purpose: the projection strips
-    // company suffixes before slugging, so that a search by sender finds this
-    // letter whether the reading called it "RACV Insurance" or gave it the
-    // whole legal name. That rule is invisible until some data exercises it.
-    const pile = await uploadBatch(db, margaretId, {
-      pages: 5,
-      daysAgo: 2,
-      documentCount: 2,
-      notLetterCount: 1,
-    });
-
-    const rates = await confirmedDocument(db, margaretId, {
-      issuer: "City of Yarra",
-      documentType: "Rates notice",
-      action: "Pay the rates instalment",
-      dueDate: isoDaysFromNow(14),
-      amount: "$612.40",
-      reference: "88 3120 7",
-      usePages: [pile[0], pile[2]], // photographs 1 and 3, interleaved
-      uploadedDaysAgo: 2,
-    });
-
-    const insurance = await confirmedDocument(db, margaretId, {
-      issuer: "RACV Insurance Pty Ltd",
-      documentType: "Insurance renewal",
-      action: "Renew the policy",
-      dueDate: isoDaysFromNow(21),
-      amount: "$1,043.00",
-      reference: "POL 55219",
-      usePages: [pile[1], pile[4]], // photographs 2 and 5
-      uploadedDaysAgo: 2,
-    });
-
     await db.query(
       `INSERT INTO audit_logs (actor_id, action, target_type, target_id) VALUES
          ($1, 'user.register', 'user', $1),
          ($1, 'document.confirm', 'document', $2),
          ($1, 'document.confirm', 'document', $3),
          ($1, 'document.confirm', 'document', $4),
-         ($1, 'document.confirm', 'document', $5),
-         ($1, 'document.confirm', 'document', $6),
-         ($1, 'document.confirm', 'document', $7)`,
-      [margaretId, centrelink, water, gp, telstra, rates, insurance],
+         ($1, 'document.confirm', 'document', $5)`,
+      [margaretId, centrelink, water, gp, telstra],
     );
 
     await db.query("COMMIT");
@@ -361,12 +278,9 @@ Seeded.
 
   1 letter waiting to be checked (an uncertain date and an unreadable reference)
   1 letter still being read
-  1 letter that came out too blurry, twice
-  6 letters confirmed: one overdue, one upcoming, one appointment with a
-    time of day, one done early (its last reminder rang, found it done, and
-    was skipped), and two
-    that arrived interleaved in one pile of five photographs, one of which
-    was a photo of her grandson and became nothing
+  4 letters confirmed: one overdue and two pages long, one upcoming, one
+    appointment with a time of day, and one done early, whose later reminders
+    rang into a finished task and were skipped
 
 The page images are not on disk: these rows describe photographs that were
 never taken. Upload something through the app to see a real one.
@@ -395,58 +309,43 @@ async function insertFields(
 }
 
 /**
- * A batch of photographs, as they arrived.
+ * The photographs of one letter, as rows. The bytes are not written anywhere,
+ * only the key they would sit under.
  *
- * Every photograph enters through one of these, because a person clearing a
- * week of post takes ten pictures without pausing to say where one letter
- * ends. The letters are worked out afterwards, by the reading, which is why
- * `grouping_runs` records how many it decided there were: nobody is asked to
- * confirm that division, so this row is the only thing a miss rate could ever
- * be measured against.
+ * That key is spelled out here rather than imported, because
+ * `uploadObjectKey()` lives in a `server-only` module that a script running
+ * outside Next cannot import. Its shape and the reasons for it are in
+ * src/server/storage.ts; if it changes, this line changes with it.
  */
-async function uploadBatch(
+async function insertPages(
   db: Client,
   userId: string,
-  spec: {
-    pages: number;
-    daysAgo: number;
-    documentCount: number;
-    /** Photographs the reading said were no letter at all. Default none. */
-    notLetterCount?: number;
-  },
-): Promise<Array<{ id: string; storagePath: string }>> {
-  const batchId = randomUUID();
-  const ago = `now() - ('${spec.daysAgo}' || ' days')::interval`;
-  await db.query(
-    `INSERT INTO upload_batches (id, user_id, status, created_at, grouped_at)
-     VALUES ($1, $2, 'grouped', ${ago}, ${ago} + interval '40 seconds')`,
-    [batchId, userId],
-  );
-
-  const pages: Array<{ id: string; storagePath: string }> = [];
-  for (let position = 1; position <= spec.pages; position++) {
-    const storagePath = `uploads/${userId}/${batchId}/page-${position}.jpg`;
-    const { rows } = await db.query<{ id: string }>(
-      `INSERT INTO upload_pages (batch_id, position, storage_path, mime_type, byte_size)
-       VALUES ($1, $2, $3, 'image/jpeg', 1500000) RETURNING id`,
-      [batchId, position, storagePath],
+  documentId: string,
+  pages: number,
+) {
+  for (let pageNumber = 1; pageNumber <= pages; pageNumber++) {
+    await db.query(
+      `INSERT INTO document_pages
+         (document_id, page_number, storage_path, mime_type, byte_size)
+       VALUES ($1, $2, $3, 'image/jpeg', 1500000)`,
+      [
+        documentId,
+        pageNumber,
+        `uploads/${userId}/${documentId}/${pageNumber}.jpg`,
+      ],
     );
-    pages.push({ id: rows[0].id, storagePath });
   }
-
-  await db.query(
-    `INSERT INTO grouping_runs
-       (batch_id, attempt, status, provider, model, contract_version,
-        document_count, not_letter_count, finished_at, duration_ms)
-     VALUES ($1, 1, 'succeeded', 'mock', 'mock-specimen-v1', '2.0', $2, $3,
-             ${ago} + interval '40 seconds', 4200)`,
-    [batchId, spec.documentCount, spec.notLetterCount ?? 0],
-  );
-
-  return pages;
 }
 
-async function confirmedDocument(
+/**
+ * One letter, all the way through: its photographs, the reading that came back
+ * confident on every field, the task that reading produced, and that task's
+ * reminders.
+ *
+ * This is the whole product in one function, which is why the seed is worth
+ * reading before the code that will do it for real.
+ */
+async function confirmedLetter(
   db: Client,
   userId: string,
   spec: {
@@ -454,14 +353,11 @@ async function confirmedDocument(
     documentType: string;
     action: string;
     dueDate: string;
-    /** 'HH:mm'. Present makes this an appointment: one reminder, not two. */
+    /** 'HH:mm'. Present makes this an appointment: one reminder, not three. */
     dueTime?: string;
     amount: string;
     reference: string;
-    /** Ignored when `usePages` is given, which brings its own count. */
-    pages?: number;
-    /** Photographs from a batch that held more than this one letter. */
-    usePages?: Array<{ id: string; storagePath: string }>;
+    pages: number;
     uploadedDaysAgo: number;
   },
 ): Promise<string> {
@@ -486,32 +382,15 @@ async function confirmedDocument(
     ],
   );
 
-  // Its own batch unless it came out of a shared one. Either way the pages
-  // point back at the photographs they arrived as, so "which upload did this
-  // come from, and what else came with it" stays answerable months later.
-  const uploaded =
-    spec.usePages ??
-    (await uploadBatch(db, userId, {
-      pages: spec.pages ?? 1,
-      daysAgo: spec.uploadedDaysAgo,
-      documentCount: 1,
-    }));
-
-  for (const [index, page] of uploaded.entries()) {
-    await db.query(
-      `INSERT INTO document_pages
-         (document_id, upload_page_id, page_number, storage_path, mime_type, byte_size)
-       VALUES ($1, $2, $3, $4, 'image/jpeg', 1500000)`,
-      [documentId, page.id, index + 1, page.storagePath],
-    );
-  }
+  await insertPages(db, userId, documentId, spec.pages);
 
   const runId = randomUUID();
   await db.query(
     `INSERT INTO extraction_runs
-       (id, document_id, attempt, status, provider, model, finished_at, duration_ms)
-     VALUES ($1, $2, 1, 'succeeded', 'mock', 'mock-specimen-v1', now(), 5800)`,
-    [runId, documentId],
+       (id, document_id, status, provider, model, contract_version,
+        finished_at, duration_ms)
+     VALUES ($1, $2, 'succeeded', $3, $4, $5, now(), 5800)`,
+    [runId, documentId, SEED_PROVIDER, SEED_MODEL, CONTRACT_VERSION],
   );
   await insertFields(db, runId, [
     ["document_type", spec.documentType, "confirmed", 0.96],
@@ -541,9 +420,9 @@ async function confirmedDocument(
   );
   const taskId = rows[0].id;
 
-  // The one scheduling rule, imported rather than restated. The confirm
-  // handler must use the same function; two copies of this rule is how the
-  // review screen ends up promising a reminder that never arrives.
+  // The one scheduling rule, imported rather than restated. The confirm handler
+  // must call the same function: two copies of this rule is how the review
+  // screen ends up promising a reminder that never arrives.
   for (const planned of planReminders(spec.dueDate, {
     hasTime: Boolean(spec.dueTime),
     timeZone: APP_TIME_ZONE,
