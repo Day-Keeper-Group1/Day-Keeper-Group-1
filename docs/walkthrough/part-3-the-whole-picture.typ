@@ -2,9 +2,8 @@
 
 #part("Where the model is called")
 
-One place in the whole product calls a model. Everything downstream of it is
-ordinary code and ordinary SQL, which is worth saying plainly because it is the
-opposite of how a product like this is usually imagined.
+One place in the whole product calls a model. Everything after it is ordinary
+code and ordinary SQL.
 
 #v(6pt)
 #image("figures/d3-model-call.png", width: 100%)
@@ -16,20 +15,16 @@ opposite of how a product like this is usually imagined.
 ]
 
 #why[
-  *Why the model is given the photographs.* A letter is designed for a human
-  eye, and half of what it means is carried by arrangement rather than by
-  words: a box drawn around the number that matters, a heading in bold, and
-  five payment methods printed side by side, each with its own reference number
-  and nothing but a column to say which belongs to which. A model that looks at
-  the page has all of that in front of it, and answers in one pass with the
-  arrangement still intact.
+  *Why the model is given the photographs.* A letter is drawn for a human eye,
+  and half of what it means is in the arrangement rather than the words. The
+  number that matters sits in a box. The heading is bold. Five ways to pay sit
+  side by side, each with its own reference number, and the only thing saying
+  which number goes with which is the column it is in. A model that looks at the
+  page sees all of that.
 ]
 
-The bottom half of that diagram is the more useful one. Six questions that sound
-like they need judgement, and every one of them is a line of ordinary code:
-whether a task is overdue, whose letters get read back, when a reminder goes
-out, whether to send it, whether the upload can be read at all, and which letter
-a page belongs to.
+The bottom half of that diagram is the more useful one. Six questions that
+sound like they need judgement. Every one of them is a line of ordinary code.
 
 #part("The ten tables")#anchor(<tables>)
 
@@ -80,7 +75,7 @@ that are known rather than the ones that are hidden.
   not.],
 
   [How a reminder reaches her], [The row carries a channel. In app is drawn on
-  the screens; email needs a sender the project does not have yet, and so does
+  the screens. Email needs a sender the project does not have yet, and so does
   password reset.],
 
   [The upload at its limits], [A page count and a size are checked. What the
@@ -97,10 +92,9 @@ that are known rather than the ones that are hidden.
 
 #part("Where the answers live")#anchor(<jobs>)
 
-Every fact in this repository has one home, and the home is usually the thing
-itself rather than a document about it. This table is how to find it. If a
-document and the code disagree, the code is right, which is why the code is
-where the reasoning was put.
+Every fact here has one home, and the home is usually the thing itself. This
+table is how to find it. If a document and the code disagree, the code is right.
+That is why the reasoning was put in the code.
 
 #tbl(
   columns: (1fr, 62mm),

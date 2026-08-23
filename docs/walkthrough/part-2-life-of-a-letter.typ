@@ -2,10 +2,8 @@
 
 #part("One letter, from the front door to the tick")
 
-Six steps. Each one is a screen she sees and a row somewhere she does not, and
-the point of this part is to put those two things next to each other. Where a
-step writes nothing, that is said too, because a step that writes nothing is
-usually a step that was designed not to ask her anything.
+Six steps. For each one: the screen she sees, and the rows it writes. Some
+steps write nothing at all, and those are worth noticing.
 
 #v(6pt)
 
@@ -60,11 +58,11 @@ rather than through the application.
 ]
 
 #why[
-  *A value the model was not sure of is not offered as a guess.* It arrives at
-  the screen as no value at all, and the card says so in a sentence. The reason
-  is the promise on the review screen: a date she has not checked has no path to
-  the calendar, and a half sure date shown in grey is a date she will check by
-  nodding.
+  *A value the model was not sure of is not offered as a guess.* It reaches the
+  screen as no value at all, and the card says so in a sentence.
+
+  Show her a half sure date in grey and she will approve it with a nod. So it is
+  not shown. A date nobody really checked has no way to reach the calendar.
 ]
 
 #v(4pt)
@@ -151,11 +149,12 @@ it, there is a task with a date and three alarm clocks set.
 #why[
   *The alternative was bookkeeping.* Ticking would cancel every waiting
   reminder, unticking would revive them, except the ones whose time had passed.
-  That is the same truth written in two tables, and every copy needs a
-  transaction to keep it honest and an undo rule to unwind it. Reading the tick
-  when the alarm rings stores the truth once, so she can tick at breakfast,
-  untick at lunch and tick again at dinner without the system keeping a ledger
-  of her wavering.
+  That is one truth written in two places. Every copy needs a transaction to keep
+  it honest and an undo rule to unwind it.
+
+  Reading the tick when the alarm rings stores it once. She can tick at
+  breakfast, untick at lunch and tick again at dinner, and nothing has to keep
+  up with her.
 ]
 
 #v(4pt)
@@ -166,10 +165,9 @@ it, there is a task with a date and three alarm clocks set.
 #spread("figures/13-ticked.png",
   [Struck through, still on the list, and told in words: done, reminders off.],
 )[
-  The tick is a task's only state. Whether it is overdue is not stored anywhere;
-  it is worked out from the clock at the moment somebody asks, in Melbourne
-  time, so a task does not become overdue at eleven at night because a server
-  somewhere is in another timezone.
+  The tick is a task's only state. Overdue is not stored. It is worked out from
+  the clock when somebody asks, in Melbourne time, so nothing goes overdue at
+  eleven at night because a server sits in another country.
 
   A ticked task stays on the list for a week rather than vanishing, because
   vanishing is indistinguishable from having been lost. Its calendar entry stays

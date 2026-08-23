@@ -23,9 +23,9 @@ calendar, and three reminders. That is the whole of it.
 
 #why[
   *One thing to know before the screens.* The prototype has a fixed fictional
-  today: *Monday 10 August 2026*. Every date in every screenshot is relative to
-  it, which is why the water bill due on the fifth is already late and the
-  pension form due on the eleventh is not. The prototype wears this date in its
+  today: *Monday 10 August 2026*. Every date in the screenshots is relative to
+  that. The water bill was due on the fifth, so it is late. The pension form is
+  due on the eleventh, so it is not. The prototype wears this date in its
   toolbar so nobody has to guess.
 ]
 
@@ -41,10 +41,9 @@ calendar, and three reminders. That is the whole of it.
 One list of what to do and the day it has to be done, and a calendar drawn from
 that same list. From where she is standing, that is the whole product.
 
-The way she operates it is *two verbs: photograph, and tick.* She never types a
-date, never sorts pages, never files anything, never names a document, and never
-opens a settings screen to make any of it work. Everything else in this document
-exists to keep that true.
+*Two verbs run the whole thing: photograph, and tick.* She never types a date.
+She never sorts pages, files anything, names a document, or opens a settings
+screen. Everything else in this document exists to keep that true.
 
 #promise[
   Nothing happens until you say so, and never from a date you haven't checked.
@@ -121,7 +120,7 @@ doing its job.
     rows: (auto, auto, auto),
     row-gutter: 4pt,
     piece("PostgreSQL")[Ten tables. Everything except the photographs.],
-    piece("An S3 bucket")[The photographs. MinIO on a laptop, a real bucket later; same protocol either way.],
+    piece("An S3 bucket")[The photographs. MinIO on a laptop, a real bucket later. Same protocol either way.],
     piece("One model call")[It looks at the pages and returns six fields. Nothing else in the product calls a model.],
   ),
 )
@@ -139,10 +138,9 @@ doing its job.
   [
     #set text(size: 9.5pt)
     #set par(justify: false, leading: 0.55em)
-    The clock is separate from everything above because it runs when nobody is
-    looking at anything. It is the only part of the system that acts without a
-    person having just tapped something, which is exactly why the reminder step
-    spends a page on what it is allowed to decide.
+    The clock sits apart from everything above. It is the only part that acts
+    when nobody has tapped anything, which is why the reminder step spends a
+    page on what it is allowed to decide.
   ],
 )
 ]
@@ -150,12 +148,12 @@ doing its job.
 #v(8pt)
 
 *One application, one language.* The pages, the route handlers and the database
-access are one Next.js project in TypeScript. The gain shows up in
-#raw("src/lib/contract/"): those types are the agreement between the browser and
-the server, and both sides import the same file, so changing the shape of a
-response is a compile error on both sides at once. Anything the browser must
-never see is marked #raw("server-only"), which turns a leak into a build error
-rather than a discovery. One dependency set, one deployment, one test run, and
-one place to look when something is wrong.
+access are one Next.js project in TypeScript.
+
+The gain is in #raw("src/lib/contract/"). The browser and the server import the
+same types. Change the shape of a response and both sides stop compiling.
+Anything the browser must never see is marked #raw("server-only"), so a leak is
+a build error instead of a surprise. One dependency set, one deployment, one
+test run, and one place to look when something breaks.
 
 
