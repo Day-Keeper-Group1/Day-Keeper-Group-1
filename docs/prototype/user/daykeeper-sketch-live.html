@@ -13,20 +13,10 @@
      These values are a COPY. They live in src/app/globals.css, and
      are repeated here because this file has to open standalone with
      no build step. Change one and change the other;
-     tests/theme.test.ts fails when they disagree. The reasoning for
-     every value is in docs/theme.md.
+     tests/theme.test.ts fails when they disagree. What each value is
+     for, and the reasoning behind it, is in docs/theme.md.
 
      Nothing below this block names a colour directly.
-
-     Three rules the values encode, so nobody undoes them by eye:
-     · No blue anywhere. Ageing eyes take roughly 2400ms longer to
-       tell blue from yellow, so blue is the one hue this product
-       cannot spend on anything that has to be caught quickly.
-     · No pure white, no pure black. The paper tones cut the glare
-       that cataracts and macular degeneration make painful.
-     · Wattle gold is never text. Saturated yellow on a light
-       ground reaches 2:1, so gold appears only as the focus ring's
-       lining and the reminder dot.
      ============================================================ */
   :root {
     --bg: #f4f0e4;
@@ -68,15 +58,13 @@
   body { font-family: var(--font); background: var(--scaffold-bg); color: var(--ink); }
 
   /* The focus state, everywhere: a near-black ring with a gold lining.
-     Gold alone cannot carry a focus ring on a light page, and a thin
-     outline is invisible to the eyes this is for. */
+     Why it is built from two colours rather than one is in docs/theme.md. */
   :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; box-shadow: 0 0 0 6px var(--focus-ink); }
 
   /* ---------- top toolbar ---------- */
   .toolbar { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 10px; font-size: 13px; color: var(--scaffold-ink); flex-wrap: wrap; }
   .toolbar .name { font-weight: 700; color: var(--ink); }
   .toolbar button { border: 1px solid var(--line); background: var(--bg-card); padding: 6px 14px; border-radius: 999px; font-size: 13px; cursor: pointer; color: var(--ink); }
-  .toolbar a { border: 1px solid var(--line); background: var(--bg-card); padding: 6px 14px; border-radius: 999px; font-size: 13px; color: var(--ink); text-decoration: none; }
   /* The sketch's clock, worn on the outside. Overdue, "was due", reminder
      tenses, everything date-shaped in here is computed against this fictional
      day, and anyone reading the sketch needs to know it without opening the
@@ -94,6 +82,12 @@
 
   .card { background: var(--bg-card); border: var(--border-w) solid var(--line); border-radius: var(--radius-card); padding: 16px; margin-bottom: 14px; box-shadow: var(--shadow-card); }
   .card h2 { font-size: 12.5px; text-transform: uppercase; letter-spacing: .7px; color: var(--ink-dim); margin-bottom: 12px; }
+
+  /* sign in */
+  .field { margin-bottom: 14px; }
+  .field:last-child { margin-bottom: 0; }
+  .field label { display: block; font-size: 13.5px; color: var(--ink-dim); margin-bottom: 5px; }
+  .field input { width: 100%; min-height: var(--btn-h); background: var(--bg); color: var(--ink); border: var(--border-w) solid var(--line); border-radius: var(--radius-btn); padding: 12px 14px; font-size: 16.5px; font-family: inherit; }
 
   /* home CTA */
   .review-cta { background: var(--primary); color: var(--primary-ink); border: var(--border-w) solid transparent; border-radius: var(--radius-card); padding: 18px; margin-bottom: 14px; cursor: pointer; box-shadow: var(--shadow-card); }
@@ -121,7 +115,7 @@
   .row .when { color: var(--ink-dim); font-size: 13.5px; }
   .doc-mark { font-size: 13px; color: var(--ink-dim); flex: none; }
 
-  /* queue rows (posted letters) */
+  /* queue rows (letters sent to be read) */
   .item { display: flex; align-items: center; gap: 11px; padding: 11px 2px; border-top: 1px solid var(--line); font-size: 15px; }
   .item:first-of-type { border-top: 0; }
   .thumb { width: 34px; height: 44px; border-radius: 5px; background: var(--primary-soft); border: 1px solid var(--line); flex: none; }
@@ -136,17 +130,9 @@
      is waiting for her nod, so it gets bark brown rather than a warning
      colour: a pencil note in the margin, not a parking ticket. */
   .item.ready .st { color: var(--warn-ink); font-weight: 600; }
-  .item.failed .st { color: var(--danger); font-weight: 600; }
   .item .go { font-size: 13px; font-weight: 700; color: var(--primary); flex: none; }
-  .item .retake { font-size: 12.5px; font-weight: 700; color: var(--danger); flex: none; cursor: pointer; }
-  /* A photo that wasn't a letter. Quiet on purpose: the letters went through
-     untouched, nothing is being asked of her, this line only accounts for a
-     photo so a wrongly rejected letter never vanishes in silence. */
-  .item.notice .txt, .item.notice .st { color: var(--ink-dim); }
-  .item.notice .thumb { opacity: .5; }
-  .item .ok { font-size: 13px; font-weight: 700; color: var(--ink-dim); flex: none; cursor: pointer; }
 
-  /* scan */
+  /* photographing a letter */
   .cam { border: 2px dashed var(--line); background: var(--primary-soft); border-radius: var(--radius-card); padding: 34px 16px; text-align: center; color: var(--primary); margin-bottom: 14px; cursor: pointer; }
   .cam .ico { font-size: 32px; margin-bottom: 6px; }
   .cam .t { font-size: 17px; font-weight: 700; }
@@ -196,11 +182,10 @@
   .sheet .ent + .ent { border-top: 1px solid var(--line); padding-top: 12px; margin-top: 12px; }
   .sheet .t { font-size: 16.5px; font-weight: 700; }
   .sheet .remind { font-size: 14.5px; color: var(--ink-dim); margin-bottom: 3px; }
-  .photo-row { display: flex; align-items: center; gap: 11px; margin-top: 10px; cursor: pointer; }
-  .photo-row .cap { font-size: 13.5px; color: var(--primary); font-weight: 600; }
-  .cap2 { font-size: 12.5px; color: var(--ink-dim); }
+  .strip { margin-top: 12px; }
+  .cap2 { font-size: 12.5px; color: var(--ink-dim); margin-bottom: 7px; }
 
-  /* toast (batched notification) */
+  /* toast: the message that arrives when a reading lands */
   .toast { position: absolute; left: 14px; right: 14px; top: 14px; background: var(--focus); color: var(--primary-ink); border-radius: var(--radius-card); padding: 12px 14px; font-size: 13.5px; box-shadow: 0 8px 24px rgba(0,0,0,.3); opacity: 0; visibility: hidden; pointer-events: none; transform: translateY(-14px); transition: all .35s; cursor: pointer; z-index: 5; }
   .toast.show { opacity: 1; visibility: visible; pointer-events: auto; transform: translateY(0); }
   .toast b { display: block; font-size: 14.5px; margin-bottom: 2px; }
@@ -210,12 +195,11 @@
   .nav { position: absolute; bottom: 0; left: 0; right: 0; background: var(--bg-card); border-top: var(--border-w) solid var(--line); display: flex; justify-content: space-around; align-items: center; padding: 8px 10px 14px; }
   .nav button { background: none; border: none; font-size: 12px; color: var(--ink-dim); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 3px; width: 76px; position: relative; font-family: inherit; }
   .nav button .i { font-size: 21px; }
-  /* The selected tab is marked by weight and a bar, not by colour alone:
-     roughly half of this product's readers are over 70, and colour vision
-     deficiency is common enough that colour can never be the only signal. */
+  /* The selected tab is marked by weight and a bar, not by colour alone.
+     Colour is never the only signal in this product; docs/theme.md says why. */
   .nav button.on { color: var(--ink); font-weight: 700; }
   .nav button.on::after { content: ""; display: block; width: 28px; height: 4px; border-radius: 2px; background: var(--primary); }
-  .nav .scanbtn { background: var(--primary); color: var(--primary-ink); width: 58px; height: 58px; border-radius: 50%; font-size: 25px; display: flex; align-items: center; justify-content: center; margin-top: -26px; box-shadow: 0 6px 14px rgba(23,69,44,.35); border: 4px solid var(--bg); }
+  .nav .cambtn { background: var(--primary); color: var(--primary-ink); width: 58px; height: 58px; border-radius: 50%; font-size: 25px; display: flex; align-items: center; justify-content: center; margin-top: -26px; box-shadow: 0 6px 14px rgba(23,69,44,.35); border: 4px solid var(--bg); }
   .badge { position: absolute; top: -4px; right: 14px; background: var(--primary); color: var(--primary-ink); font-size: 11px; font-weight: 700; border-radius: 999px; padding: 1px 6px; }
 
   .screen { display: none; }
@@ -230,7 +214,6 @@
   <span class="name">DayKeeper</span> <span>understanding sketch · G1 · live flow</span>
   <span class="today" id="tb-today"></span>
   <button id="tb-reset" title="restart the demo">↺ Restart</button>
-  <a href="../admin/daykeeper-admin-sketch.html">→ admin sketch</a>
 </div>
 
 <!-- ================= PHONE ================= -->
@@ -239,14 +222,37 @@
 
     <div class="toast" id="toast" onclick="go('home'); this.classList.remove('show')">
       <div class="env">Email · DayKeeper</div>
-      <b id="toast-big">Letters are ready to check</b>
-      <span id="toast-small">One message, not one per letter.</span>
+      <b id="toast-big">Your letter is ready to check</b>
+      <span>Nothing happens until you look at it.</span>
     </div>
 
     <div class="app">
 
+      <!-- SIGN IN -->
+      <!-- The walk starts here because the release does. The sketch checks
+           nothing: any tap arrives. What a real sign-in is made of, and why
+           the whole application reaches it through one function, is in
+           src/server/auth/. -->
+      <section class="screen" id="s-signin">
+        <h1>DayKeeper</h1>
+        <div class="sub">Sign in to see what needs you today.</div>
+
+        <div class="card">
+          <div class="field">
+            <label for="si-email">Email</label>
+            <input id="si-email" type="email" value="margaret@example.com">
+          </div>
+          <div class="field">
+            <label for="si-pw">Password</label>
+            <input id="si-pw" type="password" value="daykeeper">
+          </div>
+        </div>
+
+        <button class="btn" onclick="signIn()">Sign in</button>
+      </section>
+
       <!-- HOME -->
-      <section class="screen active" id="s-home">
+      <section class="screen" id="s-home">
         <h1>Good morning, Margaret</h1>
         <div class="sub">Here's what needs you today.</div>
 
@@ -268,10 +274,10 @@
         <div class="all-letters" onclick="go('letters')">📁 All your letters →</div>
       </section>
 
-      <!-- SCAN -->
-      <section class="screen" id="s-scan">
-        <h1 id="scan-h1">Take photos</h1>
-        <div class="sub" id="scan-sub">A letter, a bill, a doctor's note: anything with a date in it. They don't have to be the same letter.</div>
+      <!-- PHOTOGRAPH ONE LETTER -->
+      <section class="screen" id="s-camera">
+        <h1>Photograph your letter</h1>
+        <div class="sub">One letter at a time. If it runs to several pages, photograph every page.</div>
 
         <div class="cam" onclick="addPhoto()">
           <div class="ico">📷</div>
@@ -280,15 +286,15 @@
         </div>
 
         <div class="card" id="pages-card" style="display:none">
-          <h2 id="pages-title">Your pile</h2>
+          <h2 id="pages-title">This letter</h2>
           <div class="pages" id="pages-list"></div>
         </div>
 
-        <button class="btn off" id="read-btn" onclick="postPile()">Read it</button>
-        <div class="tiny" id="scan-tiny">Photograph the whole pile. We work out where one letter ends and the next begins, so you don't have to sort them first.</div>
+        <button class="btn off" id="read-btn" onclick="uploadLetter()">Read it</button>
+        <div class="tiny">Every photo you take here belongs to this one letter. They go together, and they are read as one.</div>
 
         <div class="card" id="posted-card" style="display:none">
-          <h2>Posted just now</h2>
+          <h2>Sent to be read</h2>
           <div id="posted-list"></div>
         </div>
       </section>
@@ -314,12 +320,11 @@
       </section>
 
       <!-- YOUR LETTERS -->
-      <!-- The door. Putting a letter away, or a letter we could not read,
-           promises "the photo is kept, you can always see it": this is where
-           that promise is kept. It is the matching projection made visible:
-           months as folders, each letter named by what the reading found,
-           nothing renamed on disk. Reached from the quiet line on Home, not
-           from a fourth tab: she can ignore it for a year and lose nothing. -->
+      <!-- The door. Saving a letter promises "the photographs are kept, you can
+           always see them": this is where that promise is kept. Months as
+           folders, each letter named by what the reading found, nothing renamed
+           on disk. Reached from the quiet line on Home, not from a fourth tab:
+           she can ignore it for a year and lose nothing. -->
       <section class="screen" id="s-letters">
         <div class="cal-screen-head">
           <h1>Your letters</h1>
@@ -353,9 +358,9 @@
       </section>
 
       <!-- bottom nav -->
-      <div class="nav">
+      <div class="nav" id="nav">
         <button data-s="home" class="on"><span class="i">🏠</span>Home<span class="badge" id="nav-badge" style="display:none">0</span></button>
-        <button class="scanbtn" data-s="scan">📷</button>
+        <button class="cambtn" data-s="camera">📷</button>
         <button data-s="calendar"><span class="i">📅</span>Calendar</button>
       </div>
 
@@ -367,25 +372,23 @@
   </div>
 </div>
 
-<div class="disclaimer">Wireframe sketch, for discussion. Nothing here is final; every screen is a question.</div>
+<div class="disclaimer">Wireframe sketch, for discussion. The release it walks through is docs/scope.md.</div>
 
 <script>
-  /* ---------- sample letters found in the pile ----------
+  /* ---------- the letters this sketch can read ----------
 
-     `sheets` is how many photographs this letter turns out to be. The sketch
-     hands out letters by walking this list until the photographs run out,
-     but that tidiness is the sketch's convenience, not the product's rule:
-     in the real thing the reading returns a manifest, one letter's pages can
-     arrive shuffled between another's, and a photograph can turn out to be
-     no letter at all. The sketch keeps its pile tidy only because it has no
-     real photographs to be untidy with. Tap the camera four times and the
-     pile comes back as two letters plus a note about the photograph that was
-     no letter at all, which is the whole point of this screen. */
-  const MAX_PHOTOS = 10;   /* MAX_PAGES in src/lib/contract/api.ts */
-  const DIVIDE_MS = 2600;  /* how long the pile sits as one row before it splits */
+     One upload is one letter, so the sketch hands out this list one entry per
+     upload: the first letter photographed comes back as the AGL bill, the
+     second as the Medicare form, and so on. How many photographs a letter is
+     made of is however many she took, because every photograph in an upload
+     belongs to that one letter.
+
+     `delay` is how long the reading takes. A few seconds here stands in for
+     the tens of seconds there: a vision model reading several pages is slow,
+     which is why the waiting state below is a state and not a spinner. */
 
   const LETTERS = [
-    { who: 'AGL Energy', what: 'Electricity bill', sheets: 2, delay: 5200,
+    { who: 'AGL Energy', what: 'Electricity bill', delay: 5200,
       facts: [
         { k: 'From', v: 'AGL Energy' },
         { k: 'What to do', v: 'Pay the amount due' },
@@ -393,11 +396,11 @@
         { k: 'Amount', v: '$347.60' },
         { k: 'Reference', v: '9201 4471 88' }
       ],
-      /* Two reminders, not three: the rule is 7, 3 and 1 days before, the
-         bill is due the 15th and "today" is the 10th, so the seven-days one
-         would land on the 8th, in the past, and a reminder in the past is
-         never planned. The plan card and the calendar marks agree on this,
-         which is the promise they keep everywhere. */
+      /* Two reminders, not three: this bill is due the 15th and the sketch's
+         today is the 10th, so the seven-day one would land in the past, and a
+         reminder in the past is never planned. The ladder and that rule are in
+         src/lib/contract/reminders.ts. The plan card and the calendar marks
+         below agree with it, which is the promise they keep everywhere. */
       plan: [
         { ico: '🔔', t: 'Remind you: Wed 12 Aug, 9 am' },
         { ico: '🔔', t: 'Remind you: Fri 14 Aug, 9 am' },
@@ -407,7 +410,7 @@
       marks: [ { mo: 8, d: 12, l: 'reminder' }, { mo: 8, d: 14, l: 'reminder' }, { mo: 8, d: 15, l: 'AGL due' } ],
       agenda: { day: 'Saturday 15 August', line: 'Pay AGL electricity bill', sub: '$347.60 · ref 9201 4471 88' } },
 
-    { who: 'Medicare', what: 'Claim form', sheets: 1, delay: 7000,
+    { who: 'Medicare', what: 'Claim form', delay: 7000,
       facts: [
         { k: 'From', v: 'Services Australia' },
         { k: 'What to do', v: 'Return the completed form' },
@@ -424,13 +427,7 @@
       marks: [ { mo: 8, d: 15, l: 'reminder' }, { mo: 8, d: 19, l: 'reminder' }, { mo: 8, d: 21, l: 'reminder' }, { mo: 8, d: 22, l: 'Medicare' } ],
       agenda: { day: 'Saturday 22 August', line: 'Return Medicare form', sub: 'ref CLM 30991 442' } },
 
-    /* The transient specimen: the photos are fine, we broke. By the time this
-       face is on screen, three automatic retries have already happened and
-       failed, silently; the button spends a deliberate fourth. The ideal is
-       that nobody ever meets this button at all (the system keeps retrying,
-       or support retries from the console, or the provider is swapped), all
-       of which is console-side work deferred as beyond this semester. */
-    { who: 'VicRoads', what: 'Registration renewal', sheets: 2, delay: 6200, transient: true, retryDelay: 4200,
+    { who: 'VicRoads', what: 'Registration renewal', delay: 6200,
       facts: [
         { k: 'From', v: 'VicRoads' },
         { k: 'What to do', v: 'Renew the registration' },
@@ -448,7 +445,9 @@
       marks: [ { mo: 8, d: 25, l: 'reminder' }, { mo: 8, d: 29, l: 'reminder' }, { mo: 8, d: 31, l: 'reminder' }, { mo: 9, d: 1, l: 'Rego due' } ],
       agenda: { day: 'Tuesday 1 September', line: 'Renew car registration', sub: '$852.10 · rego 1AB 2CD' } },
 
-    { who: 'Dr Patel', what: 'Appointment letter', sheets: 1, delay: 6800, fails: true, retryDelay: 4200,
+    /* The appointment: the letter that prints a time of day, so the calendar
+       shows the time. The reminders are the same three as everything else. */
+    { who: 'Dr Patel', what: 'Appointment letter', delay: 6800,
       facts: [
         { k: 'From', v: 'Dr A. Patel, GP clinic' },
         { k: 'What to do', v: 'Attend follow-up appointment' },
@@ -462,21 +461,7 @@
       marks: [ { mo: 9, d: 3, l: 'reminder' }, { mo: 9, d: 4, l: 'Dr Patel' } ],
       agenda: { day: 'Friday 4 September', line: 'Appointment with Dr Patel', sub: '10:30 am · GP clinic' } },
 
-    /* The letter we have to apologise for: a handwritten note. No photograph
-       will fix handwriting, so the only honest buttons are an apology and
-       "put it away". Putting it away is not deletion: the letter moves to
-       Your letters with its photo, which is the door the apology points at.
-
-       It sits fifth on purpose. A pile of ten photographs loses two to the
-       not-a-letter line, and the four letters above this one account for six
-       of the remaining eight, so fifth is the last position a single pile of
-       ten can still reach. Move it later in this list and one pile stops
-       being able to show all three failures at once, which is exactly what a
-       demonstration needs it to do. */
-    { who: 'Dr A. Patel', what: 'Handwritten note', sheets: 1, delay: 6000, unsupported: true,
-      facts: [], plan: [], task: null, marks: [], agenda: null },
-
-    { who: 'Yarra Council', what: 'Rates notice', sheets: 2, delay: 7500,
+    { who: 'Yarra Council', what: 'Rates notice', delay: 7500,
       facts: [
         { k: 'From', v: 'City of Yarra' },
         { k: 'What to do', v: 'Pay the rates instalment' },
@@ -495,11 +480,10 @@
       agenda: { day: 'Monday 31 August', line: 'Pay council rates', sub: '$612.40 · ref 88 3120 7' } },
 
     /* The letter that names no date. This is the landing pad for everything
-       the reading could not pin to a day, whatever the reason (the letter
-       does not say, or the photo would not give it up): the task exists, sits
-       in the list with "No date", never reminds, never touches the calendar.
-       The list itself is the reminder. */
-    { who: 'Carlton Community Centre', what: 'Membership form', sheets: 1, delay: 5600,
+       the reading could not pin to a day, whatever the reason: the task
+       exists, sits in the list with "No date", never reminds, never touches
+       the calendar. The list itself is the reminder. */
+    { who: 'Carlton Community Centre', what: 'Membership form', delay: 5600,
       facts: [
         { k: 'From', v: 'Carlton Community Centre' },
         { k: 'What to do', v: 'Return the signed form' },
@@ -514,18 +498,13 @@
   ];
 
   /* ---------- state ----------
-     The queue holds two kinds of row. A pile that has been posted and not yet
-     divided is one row (kind 'batch', state 'dividing'); it is replaced in
-     place by one row per letter (kind 'letter') the moment the division
-     lands. Nothing ever asks whether that division was right: a merge shows
-     itself on the review screen as one letter whose facts disagree, and a
-     split as two letters with half their facts missing, and that screen is
-     one tap away either way. */
-  let queue = [];        // {kind:'batch'|'batch-failed'|'letter'|'notice', ...}
+     The queue holds letters that have been sent to be read and not yet
+     confirmed: 'reading' while the model has them, 'ready' once the reading
+     lands. Nothing else lives in there. */
+  let queue = [];        // {id, idx, pages, state:'reading'|'ready'}
   let tasks = [];        // confirmed tasks: {id, title, when, done, marks, agenda}
-  let letters = [];      // every letter she has: {who, what, due, when, pages, facts, note?}
-  let nextPost = 0, photos = 0, uid = 0, posted = 0, current = null, selDay = null, calMo = 8, calYr = 2026;
-  let retakePool = [];   // sketch bookkeeping: letters put away to reappear in the next pile
+  let letters = [];      // every letter she has: {who, what, due, when, pages, facts}
+  let nextRead = 0, photos = 0, uid = 0, current = null, selDay = null, calMo = 8, calYr = 2026;
   let timers = [], toastTimer = null;
 
   const INITIAL_TASKS = [
@@ -560,11 +539,15 @@
       facts: [ { k: 'From', v: 'Services Australia' }, { k: 'What to do', v: 'Return the completed form' } ] }
   ];
 
-  /* ---------- scan: photographing a pile, and posting it ---------- */
+  /* ---------- signing in ---------- */
+  function signIn() { go('home'); }
+
+  /* ---------- photographing one letter ----------
+     The sketch puts no ceiling on the photographs. The real bound on one
+     upload is MAX_PAGES in src/lib/contract/api.ts. */
   function addPhoto() {
     const hint = document.getElementById('cam-d');
-    if (!retakePool.length && nextPost >= LETTERS.length) { hint.textContent = 'sketch limit: seven letters'; return; }
-    if (photos >= MAX_PHOTOS) { hint.textContent = "that's ten, the most in one go"; return; }
+    if (nextRead >= LETTERS.length) { hint.textContent = 'that is every letter the sketch has'; return; }
     photos++;
     hint.textContent = 'the camera stays open, keep going';
     renderPages();
@@ -574,162 +557,41 @@
     const card = document.getElementById('pages-card');
     card.style.display = photos ? 'block' : 'none';
     document.getElementById('pages-title').textContent =
-      'Your pile · ' + photos + (photos === 1 ? ' photo' : ' photos');
+      'This letter · ' + photos + (photos === 1 ? ' photo' : ' photos');
     let h = '';
     for (let i = 1; i <= photos; i++) h += '<div class="pg">photo ' + i + '</div>';
-    if (photos < MAX_PHOTOS) h += '<div class="pg add" onclick="addPhoto()">+ photo</div>';
+    h += '<div class="pg add" onclick="addPhoto()">+ photo</div>';
     document.getElementById('pages-list').innerHTML = h;
-    const btn = document.getElementById('read-btn');
-    btn.className = photos ? 'btn' : 'btn off';
-    btn.textContent = photos > 1 ? 'Read them' : 'Read it';
+    document.getElementById('read-btn').className = photos ? 'btn' : 'btn off';
   }
 
-  /* ---------- "take it again" ----------
-     No special channel, no mode. The error's WORDING differs by kind (a photo
-     that was no letter, a letter too blurry to read, a pile with no letters
-     in it), but the follow-up is one thing everywhere: the row is put away,
-     and where photographing again makes sense, the camera opens. What she
-     posts next is an ordinary pile: nothing assumes it is that letter, or
-     only that letter, or any letter at all. If the same letter comes back in
-     better light, recognising it is the reading's judgement, not a hard-wired
-     link. (The sketch's retakePool is stagecraft so the demo letter can
-     reappear and succeed; the product has no such pool.) */
-  function retake(id) {
-    const it = queue.find(q => q.id === id);
-    queue = queue.filter(q => q.id !== id);
-    if (it) retakePool.push(it.idx);
-    document.getElementById('cam-d').textContent = 'photograph it again, in good light';
-    renderAll();
-    go('scan');
-  }
-
-  function postPile() {
-    if (!photos) return;
-    if (!retakePool.length && nextPost >= LETTERS.length) return;
-    const batch = { id: ++uid, kind: 'batch', photos: photos, post: ++posted };
-    queue.unshift(batch);
-    const taken = photos;
+  /* One upload, one letter, one reading. The row appears the moment the
+     photographs are sent, so there is something honest to look at while the
+     model has them, and it is still there when she comes back. */
+  function uploadLetter() {
+    if (!photos || nextRead >= LETTERS.length) return;
+    const it = { id: ++uid, idx: nextRead++, pages: photos, state: 'reading' };
+    queue.unshift(it);
     photos = 0;
     renderPages(); renderAll();
-    timers.push(setTimeout(() => divide(batch, taken), DIVIDE_MS));
-  }
-
-  /* One row becomes several, in place. The sketch scripts what the reading
-     finds so both outcomes can be demonstrated:
-
-     Pile 1 succeeds. With three or more photos, one of them turns out to be
-     no letter at all (a photo of her grandson): the letters go through
-     untouched and one quiet line accounts for the photo. The line exists
-     because a real letter wrongly judged "not a letter" is the one mistake
-     nothing else would ever surface; saying the rejection out loud is the
-     only pair of eyes that path has. With one or two photos, a clean success.
-
-     Pile 2 has no letters in it at all: holiday photos, a banana. Nothing can
-     proceed, so the only honest interface is a plain card and the camera
-     again. The photos are not kept. Later piles succeed as normal. */
-  function divide(batch, photoCount) {
-    const at = queue.indexOf(batch);
-    if (at === -1) return;
-
-    if (batch.post === 2) {
-      batch.kind = 'batch-failed';
-      renderAll();
-      return;
-    }
-
-    /* The rejects are one line however many there are: "one message, not one
-       per letter" governs rejection too. Demo control: 3 or 4 photos gives
-       one reject, 5 or more gives two, 1 or 2 gives a clean success. */
-    const REJECT_REASONS = ['a photo of a person', 'a shopping receipt'];
-    let left = photoCount;
-    const extras = [];
-    if (batch.post === 1 && photoCount >= 3) {
-      const rejects = photoCount >= 5 ? 2 : 1;
-      left -= rejects;
-      extras.push({ id: ++uid, kind: 'notice', count: rejects, reasons: REJECT_REASONS.slice(0, rejects) });
-    }
-
-    const found = [];
-    /* A letter she put away and photographed again comes back through the
-       ordinary pipeline like anything else; `retaken` only tells the sketch
-       to let it succeed this time, standing in for the better photograph. */
-    while (left > 0 && retakePool.length) {
-      const idx = retakePool.shift();
-      found.push({ id: ++uid, kind: 'letter', idx: idx, pages: Math.min(LETTERS[idx].sheets, left), state: 'reading', retaken: true });
-      left -= LETTERS[idx].sheets;
-    }
-    while (left > 0 && nextPost < LETTERS.length) {
-      const L = LETTERS[nextPost];
-      found.push({ id: ++uid, kind: 'letter', idx: nextPost, pages: Math.min(L.sheets, left), state: 'reading' });
-      left -= L.sheets;
-      nextPost++;
-    }
-
-    queue.splice(at, 1, ...found, ...extras);
-    renderAll();
-
-    found.forEach(it => {
-      const L = LETTERS[it.idx];
-      timers.push(setTimeout(() => {
-        it.state = L.unsupported ? 'failed-unsupported'
-                 : L.transient && !it.retried ? 'failed-transient'
-                 : L.fails && !it.retaken ? 'failed' : 'ready';
-        renderAll();
-        if (it.state === 'ready') scheduleToast();
-      }, (it.retaken || it.retried) ? (L.retryDelay || 4200) : L.delay));
-    });
-  }
-
-  /* The failed pile is void: the photos were not kept, so there is nothing to
-     re-read. "Take again" just puts her back at the camera. */
-  /* "Try again" re-reads the same photographs: nothing was wrong with them,
-     so there is nothing to re-take. */
-  function retryRead(id) {
-    const it = queue.find(q => q.id === id);
-    if (!it) return;
-    it.retried = true;
-    it.state = 'reading';
-    renderAll();
-    const L = LETTERS[it.idx];
     timers.push(setTimeout(() => {
       it.state = 'ready';
       renderAll();
       scheduleToast();
-    }, L.retryDelay || 4200));
+    }, LETTERS[it.idx].delay));
   }
 
-  /* "Put it away" is not deletion. The letter moves to Your letters with its
-     photograph, which is where the apology's "the photo is kept" points. */
-  function putAway(id) {
-    const it = queue.find(q => q.id === id);
-    queue = queue.filter(q => q.id !== id);
-    if (it) {
-      const L = LETTERS[it.idx];
-      letters.push({ who: L.who, what: L.what, due: null, when: null, pages: it.pages || 1,
-        note: "We couldn't read this one. The photo is kept.", facts: [] });
-    }
-    renderAll();
-  }
-
-  function retakePile(id) {
-    queue = queue.filter(q => q.id !== id);
-    document.getElementById('cam-d').textContent = 'no letters in those, photograph the letters themselves';
-    renderAll();
-    go('scan');
-  }
-
-  function dismissNotice(id) {
-    queue = queue.filter(q => q.id !== id);
-    renderAll();
-  }
-
-  /* ---------- batched notification ---------- */
+  /* ---------- the message when a reading lands ----------
+     This is what makes the waiting a state rather than a loading screen. She
+     can lock the phone and put it in her bag; the reading finishes without
+     her, and the message is what brings her back. */
   function scheduleToast() {
     if (toastTimer) clearTimeout(toastTimer);
     toastTimer = setTimeout(() => {
       const n = queue.filter(q => q.state === 'ready').length;
       if (!n) return;
-      document.getElementById('toast-big').textContent = n === 1 ? '1 letter is ready to check' : n + ' letters are ready to check';
+      document.getElementById('toast-big').textContent =
+        n === 1 ? 'Your letter is ready to check' : n + ' letters are ready to check';
       const t = document.getElementById('toast');
       t.classList.add('show');
       setTimeout(() => t.classList.remove('show'), 4200);
@@ -743,12 +605,10 @@
     current = it;
     const L = LETTERS[it.idx];
     document.getElementById('review-sub').textContent = L.who + ' · ' + L.what;
-    /* Read-only on purpose. A value the model was not sure of never reaches
-       this screen (it arrives as missing, and the plan card says so in a
-       sentence), so there is nothing to interrogate her about; and nothing is
-       editable, because the one remedy for a wrong or missing reading is
-       photographing the letter again. Her job here is recognition: does this
-       match the letter? Yes is a tap. No is a retake. See ADR 008. */
+    /* Read-only, and nothing on it is a question. Her whole job here is
+       recognition: does this match the letter? Why the screen shows rather
+       than asks, and why there is no correction anywhere in the product, is
+       in src/lib/contract/api.ts. */
     document.getElementById('facts').innerHTML = L.facts.map(f =>
       '<div class="fact"><span class="k">' + f.k + '</span><span class="v">' + f.v + '</span></div>').join('');
     document.getElementById('plan').innerHTML = L.plan.map(p =>
@@ -769,49 +629,33 @@
 
   /* ---------- rendering ---------- */
   function itemRow(q) {
-    /* A pile that has not been divided yet cannot say who any of it is from,
-       because nothing has looked at it. It says what it honestly knows: how
-       many photographs it holds. */
-    if (q.kind === 'batch')
-      return '<div class="item reading"><span class="thumb"></span><span class="txt">' + q.photos +
-        ' photos<div class="st">sorting them into letters…</div></span></div>';
-
-    if (q.kind === 'batch-failed')
-      return '<div class="item failed"><span class="thumb"></span><span class="txt">' + q.photos +
-        ' photos<div class="st">couldn\'t find any letters in these</div></span>' +
-        '<span class="retake" onclick="retakePile(' + q.id + ')">take again</span></div>';
-
-    if (q.kind === 'notice') {
-      const head = q.count === 1 ? '1 photo wasn\'t a letter' : q.count + ' photos weren\'t letters';
-      const kept = q.count === 1 ? 'we didn\'t keep it' : 'we didn\'t keep them';
-      return '<div class="item notice"><span class="thumb"></span><span class="txt">' + head +
-        '<div class="st">' + q.reasons.join(' · ') + ' · ' + kept + '</div></span>' +
-        '<span class="ok" onclick="dismissNotice(' + q.id + ')">OK</span></div>';
-    }
+    /* A letter still being read cannot say who it is from, because nothing
+       has looked at it yet. It says what it honestly knows: how many
+       photographs it holds. The name arrives with the reading. */
+    if (q.state === 'reading')
+      return '<div class="item reading"><span class="thumb"></span><span class="txt">' +
+        q.pages + (q.pages === 1 ? ' photo' : ' photos') +
+        '<div class="st">reading…</div></span></div>';
 
     const L = LETTERS[q.idx];
-    const label = L.who + ' · ' + L.what;
     const pg = q.pages > 1 ? ' · ' + q.pages + ' pages' : '';
-    if (q.state === 'reading')
-      return '<div class="item reading"><span class="thumb"></span><span class="txt">' + label + '<div class="st">reading…' + pg + '</div></span></div>';
-    if (q.state === 'failed')
-      return '<div class="item failed"><span class="thumb"></span><span class="txt">' + label + '<div class="st">couldn\'t read this one</div></span><span class="retake" onclick="retake(' + q.id + ')">retake</span></div>';
-    /* Ours, not hers: the wording leads with "it wasn't your photo" because
-       this reader assumes every error is her fault, and this one really is
-       ours. The button re-reads the same photographs; nothing to re-take. */
-    if (q.state === 'failed-transient')
-      return '<div class="item failed"><span class="thumb"></span><span class="txt">' + label + '<div class="st">it wasn\'t your photo, something went wrong on our side</div></span><span class="retake" onclick="retryRead(' + q.id + ')">try again</span></div>';
-    /* The apology face. A better photograph would not help, so the only
-       honest offer is to keep it safely where she can always see it. */
-    if (q.state === 'failed-unsupported')
-      return '<div class="item failed"><span class="thumb"></span><span class="txt">' + label + '<div class="st">we\'re sorry, we can\'t read this kind of writing, the photo is kept</div></span><span class="retake" onclick="putAway(' + q.id + ')">put it away</span></div>';
-    return '<div class="item ready" onclick="openReview(' + q.id + ')"><span class="thumb"></span><span class="txt">' + label + '<div class="st">ready to check</div></span><span class="go">check →</span></div>';
+    return '<div class="item ready" onclick="openReview(' + q.id + ')"><span class="thumb"></span><span class="txt">' +
+      L.who + ' · ' + L.what + '<div class="st">ready to check' + pg + '</div></span><span class="go">check →</span></div>';
   }
 
-  /* The tick is the only state a task stores. Everything else is worked out
-     while drawing: no tick and the date behind today means overdue, no tick
-     otherwise means upcoming. Nothing writes "overdue" anywhere, so nothing
-     can forget to unwrite it when she unticks. */
+  /* The photographs, drawn wherever a letter or a task is opened. "We keep
+     your photographs" is only a promise if she can see them. */
+  function photoStrip(n, whose) {
+    let h = '<div class="strip"><div class="cap2">' + n + (n === 1 ? ' photo' : ' photos') +
+      ' · kept with this ' + whose + '</div><div class="pages">';
+    for (let i = 1; i <= n; i++) h += '<div class="pg">photo ' + i + '</div>';
+    return h + '</div></div>';
+  }
+
+  /* Overdue is not stored. It is worked out here while drawing, from the tick
+     and today's date, so nothing has to notice midnight and nothing can forget
+     to un-write it when she unticks. The tick is the one thing the row keeps;
+     the column is in db/schema.sql. */
   function isLate(t) {
     return !t.done && t.due && (t.due.mo * 100 + t.due.d) < (TODAY_MO * 100 + TODAY_D);
   }
@@ -819,8 +663,7 @@
   function taskRow(t, inSheet) {
     const late = isLate(t);
     const stay = inSheet ? 'true' : 'false';
-    /* Overdue is told in words ("was due"), not in colour: red already means a
-       failed reading in this product, and colour is never the only signal. */
+    /* Overdue is told in words ("was due"), not in colour: src/lib/contract/api.ts. */
     /* A dateless task never had reminders, so its done face does not claim
        any were switched off. */
     const when = t.done ? (t.due ? 'Done · reminders off' : 'Done') : late ? 'was due ' + t.when : t.when;
@@ -831,7 +674,7 @@
 
   /* Due date ascending, dateless last. One sort gives the pinning for free:
      an overdue date is smaller than every upcoming one, so late rows surface
-     to the top without a single line of pinning code. */
+     to the top of the home list without a single line of pinning code. */
   function tasksInOrder() {
     return tasks.slice().sort((a, b) =>
       (a.due ? a.due.mo * 100 + a.due.d : 9999) - (b.due ? b.due.mo * 100 + b.due.d : 9999));
@@ -849,26 +692,22 @@
 
   function ctaTap() {
     const first = queue.find(q => q.state === 'ready');
-    if (first) openReview(first.id); else go('scan');
+    if (first) openReview(first.id); else go('camera');
   }
 
   function renderAll() {
-    /* queue lists on scan + home */
+    /* the same queue, drawn on home and on the camera screen */
     const rows = queue.map(itemRow).join('');
     document.getElementById('posted-card').style.display = queue.length ? 'block' : 'none';
     document.getElementById('posted-list').innerHTML = rows;
     document.getElementById('check-card').style.display = queue.length ? 'block' : 'none';
     document.getElementById('check-list').innerHTML = rows;
 
-    /* CTA + badge. An ordered test, not a count of what the queue is made of:
-       something ready wins, otherwise anything still being worked on wins.
-       Only a queue with nothing in flight reaches the inert panel; a failed
-       pile or a not-a-letter notice sits in the card below it with its own
-       controls, and is not "something to check". A pile still being divided
-       counts as being worked on, and it cannot say how many letters it will
-       turn out to be, so it does not try. */
+    /* CTA + badge. An ordered test, not a count: something ready wins,
+       otherwise something still being read wins, otherwise the panel goes
+       inert. The middle case is the waiting state, and it says out loud that
+       she does not have to stay and watch. */
     const ready = queue.filter(q => q.state === 'ready').length;
-    const dividing = queue.filter(q => q.kind === 'batch').length;
     const reading = queue.filter(q => q.state === 'reading').length;
     const cta = document.getElementById('home-cta');
     if (ready) {
@@ -877,9 +716,7 @@
       document.getElementById('cta-small').textContent = 'From your photos we\'ve prepared tasks and reminders. Check them before they go on your calendar.';
     } else {
       cta.className = 'review-cta dim';
-      const busy = dividing ? 'Reading your post…'
-                 : reading ? 'Reading ' + (reading === 1 ? 'your letter…' : reading + ' letters…')
-                 : null;
+      const busy = reading ? 'Reading ' + (reading === 1 ? 'your letter…' : reading + ' letters…') : null;
       document.getElementById('cta-big').textContent = busy || 'Nothing to check right now';
       document.getElementById('cta-small').textContent = busy ? 'You can close the app. We\'ll tell you when it\'s ready.' : 'We\'ll tell you when something\'s ready.';
     }
@@ -898,10 +735,10 @@
 
   const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
-  /* Your letters, drawn as the projection looks: months as folders, newest
-     month first, days ascending inside, the dateless at the end. The names
-     are what the reading found (who, what); nothing is renamed anywhere,
-     the "file system" is a view over the same letters. */
+  /* Your letters: months as folders, newest month first, days ascending
+     inside, the dateless at the end. The names are what the reading found
+     (who, what); nothing is renamed anywhere, the "file system" is a view over
+     the same letters. */
   function renderLetters() {
     const withDate = letters.filter(l => l.due).sort((a, b) =>
       (b.due.mo - a.due.mo) || (a.due.d - b.due.d));
@@ -924,28 +761,27 @@
 
   function letterRow(l) {
     const i = letters.indexOf(l);
-    const st = l.note ? l.note : (l.when ? 'due ' + l.when : '');
+    const st = l.when ? 'due ' + l.when : '';
     return '<div class="item ready" onclick="openLetter(' + i + ')"><span class="thumb"></span><span class="txt">' +
       l.who + ' · ' + l.what + (st ? '<div class="st">' + st + '</div>' : '') + '</span><span class="go">open →</span></div>';
   }
 
-  /* A letter opens in the same sheet the calendar uses: its facts if it has
-     any, the apology note if that is all we have, and always the photo. */
+  /* A letter opens in the same sheet the calendar uses: what the reading
+     found, and the photographs it was read from. */
   function openLetter(i) {
     const l = letters[i];
     if (!l) return;
     let h = '<div class="dd-day">' + l.who + ' · ' + l.what + '</div>';
     h += '<div class="ent">';
-    if (l.note) h += '<div class="cap2">' + l.note + '</div>';
     (l.facts || []).forEach(f => { h += '<div class="fact"><span class="k">' + f.k + '</span><span class="v">' + f.v + '</span></div>'; });
-    h += '<div class="photo-row"><span class="thumb"></span><span><span class="cap">See the photo you took</span>' +
-         '<div class="cap2">' + (l.pages || 1) + (l.pages > 1 ? ' pages' : ' page') + ' · kept with this letter</div></span></div>';
+    h += photoStrip(l.pages || 1, 'letter');
     h += '</div>';
     h += '<button class="btn ghost" onclick="closeDay()">Close</button>';
     document.getElementById('sheet').innerHTML = h;
     document.getElementById('sheet-mask').classList.add('show');
     document.getElementById('sheet').classList.add('show');
   }
+
   /* The sketch's fictional "today" is Monday 10 August 2026. A specific day,
      because overdue is not a stored state: a row is overdue because its due
      date is behind today, worked out at draw time, exactly as the real thing
@@ -1022,8 +858,7 @@
          works, however long ago the day was. */
       h += '<div class="ent">' + taskRow(t, true);
       (t.facts || []).forEach(f => { h += '<div class="fact"><span class="k">' + f.k + '</span><span class="v">' + f.v + '</span></div>'; });
-      h += '<div class="photo-row"><span class="thumb"></span><span><span class="cap">See the photo you took</span>' +
-           '<div class="cap2">' + (t.pages || 1) + (t.pages > 1 ? ' pages' : ' page') + ' · kept with this task</div></span></div>';
+      h += photoStrip(t.pages || 1, 'task');
       h += '</div>';
     });
     h += '<button class="btn ghost" onclick="closeDay()">Close</button>';
@@ -1045,6 +880,8 @@
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById('s-' + name).classList.add('active');
     document.querySelectorAll('.nav button').forEach(b => b.classList.toggle('on', b.dataset.s === name));
+    /* Signed out, there is nowhere to navigate to. */
+    document.getElementById('nav').style.display = name === 'signin' ? 'none' : 'flex';
     document.querySelector('.phone').scrollIntoView({ block: 'start' });
   }
   document.querySelectorAll('.nav button').forEach(b => b.addEventListener('click', () => { if (b.dataset.s) go(b.dataset.s); }));
@@ -1056,10 +893,9 @@
     document.getElementById('toast').classList.remove('show');
     queue = []; tasks = INITIAL_TASKS.map(t => Object.assign({}, t));
     letters = INITIAL_LETTERS.map(l => Object.assign({}, l));
-    retakePool = [];
-    nextPost = 0; photos = 0; posted = 0; current = null; selDay = null; calMo = 8; calYr = 2026;
+    nextRead = 0; photos = 0; current = null; selDay = null; calMo = 8; calYr = 2026;
     document.getElementById('cam-d').textContent = 'the camera stays open, keep going';
-    renderPages(); renderAll(); go('home');
+    renderPages(); renderAll(); go('signin');
   }
   document.getElementById('tb-reset').addEventListener('click', reset);
 

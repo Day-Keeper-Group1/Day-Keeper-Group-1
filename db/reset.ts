@@ -4,7 +4,7 @@
  * There are no migrations in this project. schema.sql is the truth, and this
  * script makes the database match it by dropping everything and starting again.
  * That is only safe because there is no production data; see
- * docs/architecture/adr-003-data-storage.md for why we chose it and what has to
+ * db/schema.sql for why we chose it and what has to
  * change before the first real user exists.
  *
  *   npm run db:reset

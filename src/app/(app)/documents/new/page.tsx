@@ -14,13 +14,11 @@ type Photo = {
 };
 
 /**
- * An upload is a batch, not a single letter (ADR 005). A person clears a
- * week of post however it comes to hand: several letters, shuffled,
- * sometimes more than one page each. So the camera stays open across taps,
- * the pile grows as a grid rather than replacing itself, and the one thing
- * this screen asks is "read it" or "read them" — never how many letters
- * that pile will turn out to be. That answer is the reading's judgement,
- * not this screen's.
+ * An upload is one letter. It may run to several pages, so the camera stays
+ * open across taps and the pages grow as a grid rather than replacing each
+ * other, but every photograph in an upload belongs to the same letter. Which
+ * letter a page belongs to is settled here, by the person, rather than
+ * inferred later by a model. See docs/scope.md. (KAN-28)
  */
 export default function UploadDocumentPage() {
   const router = useRouter();
@@ -57,16 +55,16 @@ export default function UploadDocumentPage() {
     setSubmitting(true);
     // No backend yet (see AGENTS.md: the API and the pages are the work
     // still to build), so this is where a real POST /api/documents would
-    // go. The mock flow moves straight to the archive, where the batch
-    // would appear as it divides into letters.
+    // go. The mock flow moves straight to the letters area, where the
+    // letter would appear while it is being read.
     router.push("/documents");
   }
 
   return (
     <div className="mx-auto max-w-2xl space-y-8">
       <PageHeader
-        title="Take photos"
-        description="A letter, a bill, a doctor's note: anything with a date in it. They don't have to be the same letter."
+        title="Photograph a letter"
+        description="A letter, a bill, a doctor's note: anything with a date in it. One letter at a time, as many pages as it runs to."
       />
 
       <input
@@ -91,7 +89,9 @@ export default function UploadDocumentPage() {
           <Camera className="size-6" strokeWidth={1.75} />
         </span>
         <span className="text-sm font-medium text-foreground">
-          {atLimit ? "That's ten, the most in one go" : "Tap to photograph"}
+          {atLimit
+            ? "That's ten pages, the most in one letter"
+            : "Tap to photograph"}
         </span>
         <span className="text-xs text-muted-foreground">
           the camera stays open, keep going
@@ -101,7 +101,7 @@ export default function UploadDocumentPage() {
       {photos.length > 0 ? (
         <div className="space-y-3">
           <p className="text-sm font-medium text-foreground">
-            Your pile &middot; {photos.length}{" "}
+            This letter &middot; {photos.length}{" "}
             {photos.length === 1 ? "photo" : "photos"}
           </p>
           <div className="grid grid-cols-4 gap-3 sm:grid-cols-5">
@@ -114,7 +114,7 @@ export default function UploadDocumentPage() {
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={photo.previewUrl}
-                    alt={`Photo ${index + 1} of the pile`}
+                    alt={`Photo ${index + 1} of this letter`}
                     className="size-full object-cover"
                   />
                 ) : (
@@ -138,8 +138,7 @@ export default function UploadDocumentPage() {
                 onClick={() => inputRef.current?.click()}
                 className="flex aspect-[3/4] flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-border text-xs font-medium text-primary hover:bg-muted/40"
               >
-                <Camera className="size-4" strokeWidth={1.75} />
-                + photo
+                <Camera className="size-4" strokeWidth={1.75} />+ photo
               </button>
             ) : null}
           </div>
@@ -155,12 +154,11 @@ export default function UploadDocumentPage() {
           onClick={handleSubmit}
         >
           <Upload className="size-4" strokeWidth={1.75} />
-          {photos.length > 1 ? "Read them" : "Read it"}
+          Read it
         </Button>
         <p className="text-center text-xs text-muted-foreground">
-          Photograph the whole pile. We work out where one letter ends and
-          the next begins, so you don&apos;t have to sort them first. Up to{" "}
-          {MAX_PAGES} photos in one go.
+          Every photo you take here belongs to this one letter. They go
+          together, and they are read as one. Up to {MAX_PAGES} pages.
         </p>
       </div>
     </div>

@@ -59,7 +59,7 @@ colour is a state some readers cannot see.
 | `--primary-soft` | `#d9e5d5` | quiet green fills: thumbnails, the capture panel, calendar arrows |
 | `--focus` | `#191a12` | the focus ring itself. Near-black, and thick |
 | `--focus-ink` | `#ffd21f` | the gold lining inside the focus ring. Never text |
-| `--danger` | `#8c0d07` | could not read it, destructive. Never the overdue state: overdue is words in the date column (ADR 007) |
+| `--danger` | `#8c0d07` | destructive, and a check that turned an upload away. Never the overdue state: overdue is told in words, see `src/lib/contract/api.ts` |
 | `--danger-bg` | `#fbe6e2` | the tint behind danger text |
 | `--success` | `#0f5130` | done, confirmed |
 | `--success-bg` | `#d3e7d9` | the tint behind success text |
@@ -82,8 +82,8 @@ is deliberate: the person this is built for tends to blame herself, and an
 orange exclamation mark reads as *I did something wrong*. What the message
 actually means is only *the letter did not give this up; nothing goes on your
 calendar*. It should feel like a pencil note in the margin of a letter, not a
-parking ticket. (No screen shows a value the model was unsure of, so there is
-no "please check this" state to colour: see ADR 008.)
+parking ticket. (No screen shows a value the reader was unsure of, so there is
+no "please check this" state to colour: see `src/lib/contract/api.ts`.)
 
 ### Why the focus ring is black with gold inside
 
@@ -105,9 +105,9 @@ Lowest text pair 7.23:1, lowest non-text pair 3.37:1.
 | secondary text on card | 8.5:1 | 7 |
 | secondary text on page | 7.9:1 | 7 |
 | button label on primary | 9.9:1 | 7 |
-| "please check" on card | 10.2:1 | 7 |
-| uncertain text on its tint | 8.7:1 | 7 |
-| "could not read" on card | 9.1:1 | 7 |
+| the missing-value note on card | 10.2:1 | 7 |
+| the missing-value note on its tint | 8.7:1 | 7 |
+| danger text on card | 9.1:1 | 7 |
 | danger on its tint | 8.1:1 | 7 |
 | done on card | 8.8:1 | 7 |
 | success on its tint | 7.2:1 | 7 |
@@ -145,5 +145,3 @@ rather than inventing a nineteenth colour on the spot.
 - **The prototype's type scale.** The prototype carries the palette but its
   type is still the older, smaller scale. Build new screens at the sizes above
   rather than matching the sketch.
-- **The admin dashboard.** A different device, a different reader, and a
-  separate module. Its sketch has not been themed.

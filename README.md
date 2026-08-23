@@ -100,30 +100,19 @@ automatically when you commit, so do not spend time on either.
 
 ## What is here
 
+Four things to open, in this order:
+
+- [`docs/scope.md`](docs/scope.md): what this release builds and what it does
+  not. Read it first. If any other document disagrees with it, that document is
+  the one that is wrong.
 - [`docs/start-here.md`](docs/start-here.md): setup in more depth, what the
   example data contains, and the shape of the codebase.
-- [`docs/api.md`](docs/api.md): the API specification. **Not built yet**; this
-  is the shape to build against, and it is where most tickets point.
-- [`docs/theme.md`](docs/theme.md): the theme. Read it before styling a screen;
-  the colours are chosen for readers over 70 and the reasons are in there.
-- [`docs/architecture/`](docs/architecture/): four decision records. When
-  something looks odd, the reason is in one of these. **They supersede the two
-  planning documents below wherever they disagree.**
-- [`db/schema.sql`](db/schema.sql): the database, and its only definition. No
-  migrations: edit it and run `npm run db:reset`.
 - [`docs/prototype/user/daykeeper-sketch-live.html`](docs/prototype/user/daykeeper-sketch-live.html):
-  clickable prototype of the user flow (phone). Open it in a browser.
-- `docs/prototype/admin/daykeeper-admin-sketch.html`: wireframe of the admin
-  dashboard (desktop). Static.
-- `docs/project-description.md`: the official project description, verbatim.
-  Our requirements baseline.
-- `docs/DayKeeper-Tech-Stack-Recommendation.md`: Sai's technology stack
-  proposal, 31 July. A draft the team never formally adopted; parts of it were
-  later decided differently in the ADRs.
-- `docs/Technical-Research-and-Implementation-Roadmap.md`: step-by-step
-  research and build plan, 6 August. Same caveat.
-- `src/`: the Next.js app. The pages currently read example data; wiring them
-  to real endpoints is the work.
+  clickable prototype of the user flow. Open it in a browser to see what a
+  screen is supposed to look like.
+- [`AGENTS.md`](AGENTS.md): the full index of the repository, the conventions,
+  and the reasons behind the shape it has. Everything else is listed there, so
+  it is listed there once rather than in two places that drift apart.
 
 ## Optional: let your AI use Jira directly
 

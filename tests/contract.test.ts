@@ -166,7 +166,6 @@ describe("the mock reader", () => {
   it("produces something the contract accepts", async () => {
     const raw = await provider.extract({
       documentId: "fixed-id-for-a-successful-read",
-      attempt: 1,
       pages: [{ pageNumber: 1, storagePath: "x.jpg", mimeType: "image/jpeg" }],
     });
     const parsed = safeParseExtractionResult(raw);
@@ -176,7 +175,6 @@ describe("the mock reader", () => {
   it("gives the same answer for the same document", async () => {
     const input = {
       documentId: "stable-across-runs",
-      attempt: 1,
       pages: [{ pageNumber: 1, storagePath: "x.jpg", mimeType: "image/jpeg" }],
     };
     const [a, b] = await Promise.all([
@@ -186,15 +184,15 @@ describe("the mock reader", () => {
     expect(a).toEqual(b);
   }, 20_000);
 
-  it("sometimes refuses a photo, so the retake path is real", async () => {
+  it("sometimes cannot read a letter, so the failure path is real", async () => {
     // Across many documents at least one must fail; a reader that always
     // succeeds would leave the whole failure path untested.
+    // A failed reading is terminal in this release: nothing retries it.
     const attempts = await Promise.all(
       Array.from({ length: 40 }, (_, i) =>
         provider
           .extract({
             documentId: `sample-${i}`,
-            attempt: 1,
             pages: [
               { pageNumber: 1, storagePath: "x.jpg", mimeType: "image/jpeg" },
             ],
@@ -237,39 +235,4 @@ describe("when a task counts as overdue", () => {
       "overdue",
     );
   });
-});
-
-describe("retaking a photo is a real way out", () => {
-  const provider = new MockExtractionProvider();
-
-  it("lets a document that failed succeed on a later attempt", async () => {
-    // Find a document the reader refuses on the first try, then retake it. If
-    // the outcome did not depend on the attempt, the retake would fail too and
-    // the interface would be promising a way out that does not exist.
-    //
-    // Searched in parallel: each read genuinely waits a few seconds, so doing
-    // this one at a time would take minutes.
-    const page = {
-      pageNumber: 1,
-      storagePath: "x.jpg",
-      mimeType: "image/jpeg",
-    };
-    const outcomes = await Promise.all(
-      Array.from({ length: 40 }, (_, i) => `retake-sample-${i}`).map((id) =>
-        provider
-          .extract({ documentId: id, attempt: 1, pages: [page] })
-          .then(() => null)
-          .catch(() => id),
-      ),
-    );
-    const failing = outcomes.find((id): id is string => id !== null);
-    expect(failing).toBeDefined();
-
-    const secondTry = await provider.extract({
-      documentId: failing!,
-      attempt: 2,
-      pages: [page],
-    });
-    expect(safeParseExtractionResult(secondTry).success).toBe(true);
-  }, 60_000);
 });

@@ -58,7 +58,7 @@ function daysInMonth(year: number, month: number): number {
 
 export default function CalendarPage() {
   // Mock-only state, local to this page: see tasks/page.tsx. Ticking a task
-  // from the day sheet works the same way ADR 007 requires everywhere else,
+  // from the day sheet works the same way src/lib/contract/api.ts requires everywhere else,
   // it just does not (yet) travel back to the tasks page without a backend.
   const [tasks, setTasks] = useState<MockTask[]>(MOCK_TASKS);
   const [year, setYear] = useState(TODAY_YEAR);
@@ -174,8 +174,7 @@ export default function CalendarPage() {
               if (!cell) return <div key={`blank-${index}`} />;
               const marks = marksByDay.get(cell.day) ?? [];
               const hasMarks = marks.length > 0;
-              const isToday =
-                isCurrentMonth && cell.day === TODAY_DAY;
+              const isToday = isCurrentMonth && cell.day === TODAY_DAY;
               const isSelected = selectedDay === cell.day;
               const dueMarks = marks.filter((m) => m.kind === "due").length;
               const reminderMarks = marks.filter(
@@ -187,9 +186,7 @@ export default function CalendarPage() {
                   key={cell.day}
                   type="button"
                   disabled={!hasMarks}
-                  onClick={() =>
-                    setSelectedDay(isSelected ? null : cell.day)
-                  }
+                  onClick={() => setSelectedDay(isSelected ? null : cell.day)}
                   className={cn(
                     "flex min-h-14 flex-col items-center justify-start gap-1 rounded-md py-1.5 text-sm",
                     hasMarks && "cursor-pointer",
@@ -276,7 +273,10 @@ export default function CalendarPage() {
 
                   if (mark.kind === "due") {
                     return (
-                      <div key={`due-${task.id}-${index}`} className="space-y-2">
+                      <div
+                        key={`due-${task.id}-${index}`}
+                        className="space-y-2"
+                      >
                         <TaskRow task={task} onToggle={toggleDone} />
                         {task.documentId ? (
                           <Link

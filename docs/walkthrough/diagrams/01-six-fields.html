@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Six fields and the wall</title>
+<link rel="stylesheet" href="_style.css">
+<style>
+  .sheet { width: 1440px; }
+
+  .stage {
+    display: grid;
+    grid-template-columns: 218px 100px 1fr 90px 1fr;
+    gap: 14px;
+    align-items: center;
+  }
+  .stage > * { min-width: 0; }
+
+  /* the letter itself */
+  .letter .frame {
+    background: #fff;
+    border: 1px solid #cfc9b4;
+    box-shadow: 0 4px 14px rgba(28, 26, 21, 0.18);
+    padding: 7px;
+    height: 342px;
+    display: flex;
+    overflow: hidden;
+  }
+  .letter .frame img { width: 100%; object-fit: cover; object-position: top center; }
+  .letter .cap { font-size: 13px; line-height: 1.4; margin-top: 9px; color: var(--dim); }
+  .letter .cap b { display: block; color: var(--ink); font-size: 13.5px; }
+
+  .to { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .to .arrow { font-size: 38px; }
+  .to .t { font-size: 12.5px; color: var(--dim); text-align: center; line-height: 1.3; }
+
+  /* the two exhibits */
+  .panel {
+    border: 2px solid var(--line);
+    border-radius: 10px;
+    background: var(--card);
+    overflow: hidden;
+  }
+  .panel .hd { background: var(--green); padding: 9px 14px; }
+  .panel .hd .t { font-size: 15px; font-weight: 700; color: var(--green-ink); }
+  .panel .hd .d { font-size: 12.5px; color: var(--green-ink); opacity: 0.88; margin-top: 2px; line-height: 1.35; }
+  .panel .body { padding: 13px 14px; display: flex; flex-direction: column; gap: 11px; }
+
+  .row {
+    height: 46px;
+    display: grid;
+    grid-template-columns: 128px 1fr auto;
+    align-items: center;
+    gap: 10px;
+    padding: 0 11px;
+    border: 1.5px solid var(--line);
+    border-radius: 7px;
+    background: var(--bg);
+  }
+  .row .k { font-family: var(--mono); font-size: 12.5px; color: var(--green); font-weight: 700; }
+  .row .v { font-size: 13.5px; color: var(--ink); }
+  .row .v.none { color: var(--dim); font-style: italic; }
+  .row.hedged { background: var(--warn-bg); border-color: var(--warn-ink); }
+  .row.hedged .k { color: var(--warn-ink); }
+  .row.hedged .v { color: var(--warn-ink); font-weight: 600; }
+  .row.gone { background: var(--danger-bg); border-color: var(--danger); }
+  .row.gone .k { color: var(--danger); }
+  .row.gone .v.none { color: var(--danger); }
+
+  /* the slot where a row would have been, deliberately empty */
+  .ghost {
+    height: 46px;
+    display: flex;
+    align-items: center;
+    padding: 0 11px;
+    font-size: 12.5px;
+    font-style: italic;
+    color: var(--dim);
+    line-height: 1.32;
+  }
+
+  /* the wall */
+  .wall {
+    align-self: stretch;
+    background: var(--green);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .wall .wt {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    color: var(--green-ink);
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.5;
+    text-align: center;
+    letter-spacing: 0.2px;
+  }
+
+  /* what each side is for, sitting under its own exhibit */
+  .below {
+    display: grid;
+    grid-template-columns: 218px 100px 1fr 90px 1fr;
+    gap: 14px;
+    margin-top: 14px;
+    align-items: stretch;
+  }
+  .below > * { min-width: 0; }
+  .keep { grid-column: 3; }
+  .conseq { grid-column: 5; }
+
+  .note { padding: 11px 14px; display: flex; flex-direction: column; justify-content: center; }
+  .note .t { font-size: 14px; font-weight: 700; color: var(--green); }
+  .note .d { font-size: 13px; color: var(--dim); line-height: 1.45; margin-top: 3px; }
+
+  .conseq .inner { display: flex; gap: 14px; align-items: center; }
+  .task {
+    flex: 0 0 194px;
+    background: var(--bg);
+    border: 1.5px solid var(--line);
+    border-radius: 8px;
+    padding: 9px 11px;
+  }
+  .task .h { font-size: 13.5px; font-weight: 700; color: var(--ink); line-height: 1.25; }
+  .task .s { font-size: 12.5px; color: var(--dim); margin-top: 2px; }
+  .task .chip {
+    display: inline-block;
+    margin-top: 7px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--dim);
+    background: var(--card);
+    border: 1.5px solid var(--line);
+    border-radius: 999px;
+    padding: 2px 10px;
+  }
+
+</style>
+</head>
+<body>
+<div class="sheet">
+  <h1>Six fields, three states, and the one she never sees</h1>
+
+  <div class="stage">
+
+    <div class="letter">
+      <div class="frame"><img src="source-images/SYN-0001-p1.png" alt=""></div>
+      <div class="cap"><b>One letter, photographed</b>read once, and nobody is asked for a second opinion</div>
+    </div>
+
+    <div class="to">
+      <div class="arrow">&rarr;</div>
+      <div class="t">the model answers with all six, every time</div>
+    </div>
+
+    <div class="panel">
+      <div class="hd">
+        <div class="t">What storage keeps</div>
+        <div class="d">extracted_fields, one row per field, six every time</div>
+      </div>
+      <div class="body">
+        <div class="row"><span class="k">document_type</span><span class="v">Electricity bill</span><span class="tag">confirmed</span></div>
+        <div class="row"><span class="k">issuer</span><span class="v">Example Energy</span><span class="tag">confirmed</span></div>
+        <div class="row"><span class="k">action_required</span><span class="v">Pay the total amount due</span><span class="tag">confirmed</span></div>
+        <div class="row hedged"><span class="k">due_date</span><span class="v">24 Aug 2026</span><span class="tag warn">uncertain</span></div>
+        <div class="row"><span class="k">amount</span><span class="v">$82.42</span><span class="tag">confirmed</span></div>
+        <div class="row gone"><span class="k">reference</span><span class="v none">(nothing)</span><span class="tag bad">unreadable</span></div>
+      </div>
+    </div>
+
+    <div class="wall">
+      <div class="wt">the server collapses uncertain to unreadable<br>on the way out</div>
+    </div>
+
+    <div class="panel">
+      <div class="hd">
+        <div class="t">What any screen can show</div>
+        <div class="d">the API response, the review screen, and the calendar</div>
+      </div>
+      <div class="body">
+        <div class="row"><span class="k">document_type</span><span class="v">Electricity bill</span><span class="tag">confirmed</span></div>
+        <div class="row"><span class="k">issuer</span><span class="v">Example Energy</span><span class="tag">confirmed</span></div>
+        <div class="row"><span class="k">action_required</span><span class="v">Pay the total amount due</span><span class="tag">confirmed</span></div>
+        <div class="ghost">the row is not drawn at all; an empty row invites an answer nobody is asking for</div>
+        <div class="row"><span class="k">amount</span><span class="v">$82.42</span><span class="tag">confirmed</span></div>
+        <div class="ghost">the same here, and for the same reason: on this side of the wall there are only two states</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="below">
+    <div class="keep box note">
+      <div class="t">The hedged value is not thrown away</div>
+      <div class="d">
+        It stays in extracted_fields, where the accuracy work can count how often the model hedges and
+        what it guessed when it did. That measurement is the only reader it has.
+      </div>
+    </div>
+
+    <div class="conseq box note">
+      <div class="inner">
+        <div class="task">
+          <div class="h">Pay the total amount due</div>
+          <div class="s">Example Energy</div>
+          <span class="chip">No date</span>
+        </div>
+        <div>
+          <div class="t">So the letter becomes a task with no date</div>
+          <div class="d">
+            The date never reached a screen, so nothing is scheduled: no reminder, no dot on the calendar.
+            It stays on the list until she ticks it, and the list is the reminder.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

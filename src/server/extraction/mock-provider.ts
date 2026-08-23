@@ -2,11 +2,21 @@
  * The mock reader.
  *
  * This is not a placeholder that returns one canned answer. It is a stand-in
- * that behaves like the real thing will: it takes time, it is sometimes
- * uncertain, it sometimes cannot read a field, and it sometimes fails outright.
- * Building the product against a provider that always succeeds instantly
- * produces an interface with no waiting state, no correction path and no
- * failure path, and all three of those are where this product lives.
+ * that behaves the way the real thing will, and this file is the only place
+ * that behaviour is written down. Four numbers describe it, and every one of
+ * them is a misbehaviour on purpose:
+ *
+ *   - a reading takes two to seven seconds
+ *   - it hedges on the due date about half the time
+ *   - it cannot read the reference about one time in five
+ *   - it fails outright about one document in eight
+ *
+ * A reader that always succeeded instantly and confidently would let the whole
+ * product be built with no waiting state, no way of showing that a value is
+ * absent, and no failed letter on the home screen. All three are states this
+ * product genuinely spends time in, and building against a flawless mock means
+ * meeting them for the first time against a live model, which is the worst
+ * moment to be designing them.
  *
  * It is deterministic: the same document id always produces the same result, so
  * a test can assert on it and a demonstration does not surprise anyone.
@@ -89,9 +99,10 @@ export class MockExtractionProvider implements DocumentExtractionProvider {
   async extract(input: ExtractionInput): Promise<unknown> {
     const seed = input.documentId;
 
-    // Reading takes time. The interface has a waiting state and a batched
-    // notification precisely because it does, so the mock has to take time too
-    // or that whole design goes untested.
+    // Two to seven seconds. A vision model reading photographs of a letter
+    // takes about that long, and the interface has a waiting state precisely
+    // because it does, so the mock has to take time too or that part of the
+    // design goes untested.
     //
     // MOCK_EXTRACTION_DELAY_MS overrides it; vitest.config.mts sets 0. The
     // delay is product behaviour for the interface, not something any test
@@ -102,35 +113,39 @@ export class MockExtractionProvider implements DocumentExtractionProvider {
     const delayMs =
       envDelay !== undefined
         ? Number(envDelay)
-        : 2500 + Math.floor(hashUnit(`${seed}:delay`) * 4000);
+        : 2000 + Math.floor(hashUnit(`${seed}:delay`) * 5000);
     if (delayMs > 0) {
       await new Promise((resolve) => setTimeout(resolve, delayMs));
     }
 
-    // One document in eight cannot be read on the first try. The person is
-    // asked to retake the photo, which is the path the whole quality gate
-    // depends on.
+    // About one document in eight cannot be read at all. Readings fail, and a
+    // failed letter is a real state on the home screen with its own sentence to
+    // write, so the mock has to produce one often enough to build against.
     //
-    // The chance falls away sharply with each attempt, because a person who has
-    // been told the photo was blurry takes a better one. Leaving it flat would
-    // make a failing document fail forever, and the retake would be a dead end
-    // rather than the way out.
-    const failureChance = 0.125 / Math.pow(6, input.attempt - 1);
-    if (hashUnit(`${seed}:fails:${input.attempt}`) < failureChance) {
+    // The same document fails every time. There is no retake and no second
+    // attempt in this release (docs/scope.md), so a mock that relented on a
+    // later try would be rehearsing a way out that the product does not have.
+    if (hashUnit(`${seed}:fails`) < 0.125) {
       throw new ExtractionFailure(
-        "unreadable_image",
-        "We couldn't read this photo clearly enough. Please take it again in better light.",
-        "mock provider: simulated low-quality capture",
+        "mock provider: simulated failed reading, one document in eight",
       );
     }
 
     const specimen =
       SPECIMENS[Math.floor(hashUnit(`${seed}:pick`) * SPECIMENS.length)];
 
-    // Which fields the reader is unsure about. Dates are the usual casualty
-    // because 08/09/2026 is two different days depending on which country
-    // printed it, and references suffer because they are long strings of digits
-    // that smudge.
+    // Two ways of being unsure.
+    //
+    // The due date is hedged about half the time because 08/09/2026 is two
+    // different days depending on which country printed it, and the date is the
+    // field everything downstream hangs on. The reference cannot be read about
+    // one time in five because it is a long string of digits that smudges, with
+    // no surrounding sense to recover it from.
+    //
+    // Both rates are high on purpose. A value the model was not sure of is
+    // shown as no value at all, so that sentence is the case a screen has to be
+    // designed around rather than a rarity somebody forgets. What the three
+    // statuses mean is in src/lib/contract/extraction.ts.
     const dateUncertain = hashUnit(`${seed}:date`) < 0.45;
     const referenceUnreadable = hashUnit(`${seed}:ref`) < 0.2;
 

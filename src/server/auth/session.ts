@@ -1,21 +1,51 @@
 /**
  * The authentication seam.
  *
- * ADR 002's whole promise is that "who is asking?" is answered in exactly one
- * place. This is the place. Route handlers call `requireUser()` (or
- * `getCurrentUser()` when signed-out is a legal state) and never look at the
- * cookie, the sessions table, or the users table themselves. If five handlers
- * each grew their own version of this lookup, the five would drift, and the
- * drift would be a security hole.
+ * "Who is asking?" is answered in exactly one place, and this is the place.
+ * Route handlers call `requireUser()` (or `getCurrentUser()` when signed-out is
+ * a legal state) and never look at the cookie, the sessions table, or the users
+ * table themselves. If five handlers each grew their own version of this
+ * lookup, the five would drift, and the drift would be a security hole.
  *
- * What is deliberately NOT here: the auth route handlers themselves
- * (register, login, logout, me). They are specified in docs/api.md and are
- * ordinary tickets. This module is only the part everyone else depends on,
- * provided early so no ticket has to wait for the sign-in ticket.
+ * The seam is also the decision. A users table of our own, with scrypt hashes
+ * (./password.ts) and sessions as rows (./token.ts holds the token side), is
+ * not a claim that hand-rolled authentication beats a managed provider. For
+ * anything with real users it does not. It is a claim that for a prototype on
+ * synthetic data the interface between the two is one function either way, and
+ * this file is that function: adopting a managed provider later replaces it and
+ * the other seventy files do not change. Adopting one now would be irreversible
+ * in the direction that matters, because it puts people in its own schema, and
+ * every table that references a person would then point into it.
  *
- * The session model, from ADR 002: a random token in an httpOnly cookie, its
- * SHA-256 in the sessions table, one row per signed-in browser. Deleting the
- * row signs out everywhere, immediately.
+ * The session model: a random token in an httpOnly cookie, its SHA-256 in the
+ * sessions table, one row per signed-in browser. Rows rather than a
+ * self-contained signed token, because signing out, deactivating an account and
+ * a lost laptop all have to end a session immediately, and a signed token stays
+ * valid until it expires no matter what we do. Deleting the row signs out
+ * everywhere, at once, using the database this module already queries on every
+ * request.
+ *
+ * Ownership is enforced in the queries rather than by row level security: every
+ * statement that reads a person's data is scoped by their user id. That is a
+ * rule handlers keep rather than something the database enforces, so it earns a
+ * test as soon as there are handlers to test, one that proves a document
+ * belonging to one person is invisible to another.
+ *
+ * Roles are defined in db/schema.sql and grant nothing here. The one that could
+ * have, platform_operator, existed for an admin dashboard that is not in this
+ * release (docs/scope.md). What kept letter content away from it was never a
+ * promise on a screen: it is the scoping rule above, which leaves no path from
+ * any role to another person's letter.
+ *
+ * What is deliberately NOT here: the auth route handlers themselves (register,
+ * login, logout, me). They are specified in docs/api.md and are ordinary
+ * tickets. This module is only the part everyone else depends on, provided
+ * early so no ticket has to wait for the sign-in ticket.
+ *
+ * Two things are missing and are missing honestly. Password reset is not
+ * implemented and its page does nothing, because it needs an email sender we do
+ * not have. Sign-in has no rate limiting, which is worth a ticket before
+ * anything faces the public.
  */
 
 import "server-only";

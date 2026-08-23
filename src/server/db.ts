@@ -4,7 +4,7 @@
  * Plain SQL through `pg`. There is no ORM on purpose: the schema is small, the
  * queries are the interesting part of the backend, and a teammate reading a
  * query should see exactly what hits the database. See
- * docs/architecture/adr-003-data-storage.md.
+ * db/schema.sql.
  *
  * Server-only. Importing this from a client component would ship the connection
  * string to the browser, so the guard is a real one, not a convention.

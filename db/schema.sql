@@ -1,17 +1,39 @@
 -- DayKeeper database schema
 --
--- This file is the single source of truth for the database. There are no
--- migrations: to change the shape of the database you edit this file and reset,
--- which drops everything and rebuilds from scratch. That is safe because the
--- project has no production data and no users outside the team. See
--- docs/architecture/adr-003-data-storage.md.
+-- This file is the database. There are no migration files: to change the shape
+-- of the database you edit this file and run `npm run db:reset`, which drops
+-- everything, rebuilds it, and reseeds.
 --
---   npm run db:reset     drop, recreate, seed
+-- Migrations solve the problem of changing a database you cannot drop. We can
+-- drop ours. There is no production data and no user outside the team, while
+-- the schema still changes several times a week and five people build against
+-- it at once. A folder of ordered migration files would conflict whenever two
+-- of us wrote one in the same week, and would leave teammates running subtly
+-- different schemas without knowing it. Rebuilding from a single file means
+-- every database is identical to every other, and the diff of a schema change
+-- is the schema rather than an instruction for reaching it.
 --
--- Plain PostgreSQL. Nothing here depends on a specific host, so the same file
--- runs against the local Docker container, a Supabase project, or any other
--- managed Postgres. Keep it that way: no vendor-specific extensions, no
--- references to an external auth schema.
+-- This has an expiry date. The moment anything real is stored it stops being
+-- safe, and the first migration tool arrives before the first real user does.
+-- db/reset.ts refuses to run against a database that is not local unless it is
+-- told to in so many words.
+--
+-- Ten tables, spoken as plain SQL through `pg`. No ORM: the interesting part of
+-- this backend is the queries, a teammate reading one should see exactly what
+-- reaches the database, and an ORM would add a second definition of everything
+-- below that has to be kept in step with this one by hand.
+--
+-- Plain PostgreSQL. No vendor-specific extension and no reference to a hosted
+-- provider's auth schema, so the same file runs against the local Docker
+-- container or against any managed Postgres. Keep it that way.
+--
+-- The photographs are not in here. These tables hold a key; the bytes are
+-- objects in a bucket, reached only through src/server/storage.ts. `db:reset`
+-- empties that bucket in the same breath as it drops these tables, because
+-- rows and objects drifting out of step is how "it works on my machine"
+-- starts.
+--
+-- What this release builds, and what it deliberately leaves out: docs/scope.md.
 
 BEGIN;
 
@@ -23,64 +45,58 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;   -- gen_random_uuid()
 -- ---------------------------------------------------------------------------
 -- Enumerated vocabularies
 --
--- These values are the ones the user interface already speaks, so a status
--- travels from the database to the screen without being translated on the way.
--- Add a value here and it is immediately legal everywhere; invent one anywhere
--- else and Postgres rejects it.
+-- These values are the ones the interface already speaks, so a status travels
+-- from a table to the screen without being translated on the way: hence
+-- 'needs-review' rather than 'needs_review'. Field keys stay snake_case,
+-- because that is what the extraction contract calls them. Add a value here and
+-- it is legal everywhere at once; invent one anywhere else and Postgres rejects
+-- it.
 -- ---------------------------------------------------------------------------
 
--- Who someone is. Only 'user' and 'platform_operator' are implemented this
--- semester; the organisation roles are named here because the project
--- description anticipates them, and adding a value later is not free.
+-- Who someone is. Two kinds of account sign in this release, a person and a
+-- platform operator. There is no operator dashboard in it (docs/scope.md); the
+-- role stays because who someone is outlives what has been built for them, and
+-- an account created without one would have to be given one retrospectively by
+-- guesswork. The organisation roles are named because the project description
+-- anticipates institutional customers, so the vocabulary is settled once here
+-- rather than invented twice later.
 CREATE TYPE user_role AS ENUM ('user', 'platform_operator', 'org_admin', 'org_worker');
 
--- Where a document is in its life.
---   processing    a photo is in, extraction has not finished
---   needs-review  extraction finished, the person has not confirmed it yet
---   confirmed     the person checked the fields and accepted them
---   failed        extraction could not produce a usable result
+-- Where a letter is in its life.
+--   processing    the photographs are stored, the reading has not come back
+--   needs-review  the reading came back, the person has not confirmed it yet
+--   confirmed     the person looked at what was read and accepted it
+--   failed        no reading could be produced at all
 --   archived      the person put it away; it stays readable
+--
+-- 'failed' is here because a model call can fail for ordinary technical
+-- reasons, and a row has to be able to say so: a letter left on 'processing'
+-- forever is the same fact told as a lie. Nothing in this release offers a way
+-- back out of it, which is a scope decision rather than an oversight; see
+-- docs/scope.md.
 CREATE TYPE document_status AS ENUM ('processing', 'needs-review', 'confirmed', 'failed', 'archived');
 
--- How much the model trusts one extracted field.
---   confirmed   the model was confident; this is the only state a value ever
---               leaves storage in
---   uncertain   the model produced a value it is not sure of; kept here as
---               evaluation data, treated everywhere else as "no value"
---   unreadable  the model could not read it at all
--- Nobody supplies or fixes a value by hand; the remedy for a wrong or missing
--- reading is photographing the letter again. See ADR 008.
+-- How much the reading trusts one field. What each value means, and why a value
+-- the model was unsure of is stored and never shown, is in
+-- src/lib/contract/extraction.ts.
 CREATE TYPE field_status AS ENUM ('confirmed', 'uncertain', 'unreadable');
 
--- One attempt at any of the three jobs a model does here: dividing a batch into
--- letters, reading a letter's fields, and placing a letter against the archive.
--- All three are recorded the same way, because all three have an accuracy story
--- and none of them can be reported on without the failures.
+-- Where a reading got to.
 CREATE TYPE run_status AS ENUM ('queued', 'processing', 'succeeded', 'failed');
 
--- Where a batch of photographs is in its life.
---   uploaded   the files are stored, nothing has looked at them
---   grouping   a reading is dividing them into letters
---   grouped    the reading has said what every photograph is. Some may be no
---              letter at all; that is an answer, not a leftover
---   failed     the reading could not divide them; the pages are still here
-CREATE TYPE batch_status AS ENUM ('uploaded', 'grouping', 'grouped', 'failed');
-
--- Why an attempt failed. This distinction drives what the interface offers:
--- a transient failure is retried automatically, a quality failure asks the
--- person to retake the photo, and an unsupported document is a dead end that
--- we should say plainly rather than retry forever.
-CREATE TYPE extraction_failure AS ENUM ('transient', 'unreadable_image', 'unsupported_document');
-
--- A task's life. 'upcoming' and 'overdue' are not stored: they are derived from
--- due_date and completed_at, because a task silently becomes overdue with the
--- passage of time and nothing in the system wakes up to write that down.
+-- A task's life. 'upcoming' and 'overdue' are not values here, and there is no
+-- column for them anywhere: a task becomes overdue because time passed, and
+-- nothing in this system wakes at midnight to write that down. Both are worked
+-- out while a screen is drawn, from the tick and today's date in the person's
+-- zone. A stored flag would need a clock to keep it honest, and a stale flag
+-- raises no error, it simply reads wrong.
+--
+-- 'dismissed' is written by nothing in this release. Ticking is the only thing
+-- that completes a task.
 CREATE TYPE task_state AS ENUM ('open', 'completed', 'dismissed');
 
--- What a reminder is for, and where it got to. There is no 'cancelled':
--- completing a task cancels nothing, because the dispatcher looks at the task
--- at the moment the clock rings and writes 'skipped' if it finds it already
--- done. See docs/architecture/adr-007-the-tick-is-the-only-state.md.
+-- What a reminder goes out over, and what became of it. There is deliberately
+-- no 'cancelled'; the reminders table below says why.
 CREATE TYPE reminder_channel AS ENUM ('in_app', 'email');
 CREATE TYPE reminder_status AS ENUM ('scheduled', 'sent', 'skipped', 'failed');
 
@@ -95,14 +111,17 @@ CREATE TABLE users (
   -- " Margaret.W@Example.COM " and expect to be let in.
   email_canonical text GENERATED ALWAYS AS (lower(btrim(email))) STORED,
   display_name    text NOT NULL,
+  -- What hashes this, and why sessions are rows rather than a signed cookie:
+  -- src/server/auth/.
   password_hash   text NOT NULL,
   role            user_role NOT NULL DEFAULT 'user',
   -- IANA zone name. The product promises "a reminder at 9 am", and 9 am is
-  -- meaningless without knowing whose morning. Defaulted rather than asked
-  -- for at registration; a settings screen can expose it later.
+  -- meaningless without knowing whose morning. Defaulted rather than asked for
+  -- at registration; a settings screen can expose it later.
   timezone        text NOT NULL DEFAULT 'Australia/Melbourne',
-  -- Deactivating a person keeps their documents intact and stops them signing
-  -- in. The admin dashboard offers this; it never offers deletion.
+  -- Deactivating a person stops them signing in and leaves their letters
+  -- intact. A timestamp rather than a boolean, because when it happened is
+  -- worth as much as that it happened. Nothing deletes a person.
   deactivated_at  timestamptz,
   created_at      timestamptz NOT NULL DEFAULT now(),
   updated_at      timestamptz NOT NULL DEFAULT now(),
@@ -113,14 +132,15 @@ CREATE TABLE users (
 
 CREATE UNIQUE INDEX users_email_canonical_key ON users (email_canonical);
 
--- Sessions live in the database rather than in a signed cookie so that signing
--- out, deactivating an account, or a stolen laptop can all end a session
--- immediately. The cookie carries only the hash lookup key.
+-- The cookie carries a token; this row is the session itself. Keeping the
+-- session here rather than inside the cookie is what lets signing out, a
+-- deactivated account or a stolen laptop end one immediately. See
+-- src/server/auth/.
 CREATE TABLE sessions (
   id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id       uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  -- SHA-256 of the cookie value. The plaintext token never touches the database,
-  -- so a database leak does not hand over live sessions.
+  -- The hash of the cookie value, never the value. The plaintext token does not
+  -- touch the database, so a database leak does not hand over live sessions.
   token_hash    text NOT NULL UNIQUE,
   expires_at    timestamptz NOT NULL,
   created_at    timestamptz NOT NULL DEFAULT now(),
@@ -132,73 +152,64 @@ CREATE INDEX sessions_user_id_idx ON sessions (user_id);
 CREATE INDEX sessions_expires_at_idx ON sessions (expires_at);
 
 -- ---------------------------------------------------------------------------
--- Documents
+-- Letters
 --
 -- A document is one piece of correspondence: one letter, one bill, one form.
--- A letter can be several sheets of paper, so the images hang off it in a
--- separate table. The unit the person thinks about is the letter, not the page.
+-- A letter is often several sheets of paper, so the photographs hang off it in
+-- document_pages. The unit a person thinks about is the letter, not the page,
+-- and treating one photograph as one document would have made every task about
+-- page three of a form.
+--
+-- One upload is one letter, and every photograph in that upload belongs to it
+-- (docs/scope.md). So a page knows which letter it is part of at the moment it
+-- is stored, and no step between arriving and being read has to decide.
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE documents (
   id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id        uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   status         document_status NOT NULL DEFAULT 'processing',
-  -- Denormalised from the extraction so that lists and the calendar do not
-  -- have to join through extracted_fields on every render. Written as soon as
-  -- a reading SUCCEEDS (the "to check" list shows who a letter is from before
-  -- it is confirmed), and only from CONFIDENT values: a hedged date or an
-  -- unreadable reference stays NULL here, because a value the model was not
-  -- sure of never reaches documents, the calendar, or a screen (ADR 008).
-  -- Nobody edits these by hand; a re-photographed letter re-reading is the
-  -- only thing that changes them. Null until the first successful reading,
+  -- Everything down to `reference` is denormalised from the reading, so that
+  -- lists and the calendar do not join through extracted_fields on every
+  -- render. It is written the moment a reading SUCCEEDS, because the "to check"
+  -- list names who a letter is from before anybody has confirmed it, and only
+  -- from CONFIDENT values: a hedged date or an unreadable reference stays NULL
+  -- here, because a value the model was unsure of never reaches a document, the
+  -- calendar or a screen (src/lib/contract/api.ts). The hedge itself is kept
+  -- one table over, in extracted_fields.
+  --
+  -- Nobody edits these by hand, and they are NULL until the reading succeeds,
   -- which is why the browser-facing types declare them nullable.
   issuer         text,
   document_type  text,
+  -- A calendar day, with no zone and no time in it. The rules that keep it that
+  -- way on the journey to a screen are in src/lib/contract/dates.ts, and the
+  -- driver is stopped from turning it into a shifted instant on the way out of
+  -- here in src/server/db.ts. For a product about deadlines, a date landing on
+  -- the day before is the worst bug available.
   due_date       date,
-  -- Appointments happen AT a time, not just BY a date. Null for everything
-  -- that only has a deadline. 24-hour local wall clock; the zone is the
-  -- user's. Presence of a time is what makes a document an appointment for
-  -- reminder scheduling (see src/lib/contract/reminders.ts).
+  -- Appointments happen AT a time, not just BY a date. Null for everything that
+  -- only has a deadline. A 24-hour local wall clock; the zone is the user's.
+  -- The presence of a time is what makes a letter an appointment when reminders
+  -- are planned; see src/lib/contract/reminders.ts.
   due_time       time,
   amount_text    text,          -- kept as written on the page: "$347.60", "347.60 AUD"
   reference      text,
-  -- What the reading called this letter when it first divided the pile, from
-  -- the letterhead alone: "AGL Energy, electricity bill". Written before the
-  -- six fields exist and never overwritten, because the fields replace it on
-  -- screen rather than in the row.
-  --
-  -- It is here so a letter has a name from the moment it has an id. Extraction
-  -- takes a few seconds after the division lands, and three rows sitting in a
-  -- queue saying "reading…" with nothing to tell them apart is a screen a
-  -- person cannot use.
-  provisional_label text,
-  -- Anything the model returned that is not one of the six contract fields.
-  -- Untyped on purpose: the contract is a floor, and this is where the ceiling
-  -- goes until we decide a field is worth promoting.
+  -- Anything the reading returned that is not one of the six contract fields.
+  -- Untyped on purpose: six is a floor rather than a ceiling
+  -- (src/lib/contract/fields.ts), and this is where the ceiling goes until a
+  -- field is worth promoting.
   open_payload   jsonb NOT NULL DEFAULT '{}'::jsonb,
-  -- One to three sentences saying what this letter is about, in ordinary words.
-  --
-  -- This is an index, not a screen. It is the only part of a document written
-  -- in the vocabulary a person would search with: every official letter says
-  -- "amount due" and "please retain this for your records", so searching those
-  -- words matches everything, which is the same as matching nothing. See
-  -- docs/architecture/adr-006-matching-and-the-projection.md.
-  --
-  -- Deliberately a column and NOT a seventh contract field, so it cannot reach
-  -- the review screen by accident. ADR 004 deferred `summary` because a
-  -- generated sentence is a hallucination surface shown to readers least able
-  -- to spot one; both halves of that reason are about showing it to somebody.
-  summary        text,
   uploaded_at    timestamptz NOT NULL DEFAULT now(),
   confirmed_at   timestamptz,
   archived_at    timestamptz,
   updated_at     timestamptz NOT NULL DEFAULT now(),
-  -- One-way implications, not equalities. A person can archive a letter they
-  -- already confirmed, and when they do, the status becomes 'archived' while
-  -- confirmed_at must survive: it is the record that a human checked this
-  -- letter, which is what the whole calendar's trustworthiness rests on.
-  -- Written as an equality these two constraints would make archiving a
-  -- confirmed document impossible without erasing that record.
+  -- One-way implication, not an equality. A person can archive a letter they
+  -- already confirmed, and when they do the status becomes 'archived' while
+  -- confirmed_at has to survive: it is the record that a human checked this
+  -- letter, which is what the calendar's trustworthiness rests on. Written as
+  -- an equality, these two constraints would make archiving a confirmed letter
+  -- impossible without erasing that record.
   CONSTRAINT documents_confirmed_has_timestamp
     CHECK (status <> 'confirmed' OR confirmed_at IS NOT NULL),
   CONSTRAINT documents_archived_has_timestamp
@@ -209,137 +220,16 @@ CREATE INDEX documents_user_uploaded_idx ON documents (user_id, uploaded_at DESC
 CREATE INDEX documents_user_status_idx ON documents (user_id, status);
 CREATE INDEX documents_user_due_idx ON documents (user_id, due_date) WHERE due_date IS NOT NULL;
 
--- ---------------------------------------------------------------------------
--- Uploads
+-- One photographed sheet. The bytes live in the object store; this row holds
+-- the key and enough about the image to lay out a thumbnail without fetching
+-- it first.
 --
--- Every photograph enters here, and only here. A person clearing a week of post
--- takes ten pictures without pausing to say where one letter ends, or picks
--- them out of an album in whatever order they were found: one letter's pages
--- shuffled between another's, a photograph of a grandchild in the middle. A
--- batch is what actually arrives, the letters are the reading's answer, and
--- nothing between the two is assumed. That is why pages cannot be attached to
--- a document at the moment they are stored: nothing knows yet which document,
--- if any, they belong to. See
--- docs/architecture/adr-005-ingestion-and-grouping.md.
--- ---------------------------------------------------------------------------
-
--- There is deliberately no "which letter is this batch for" column. Every
--- upload is an ordinary pile, including the one a person posts after being
--- asked to photograph a blurry letter again: assuming the next photos are
--- that letter, or only that letter, or any letter at all, would be a rule
--- imposed on someone who obeys none. If a re-photographed letter should be
--- reconnected to anything, that is the matching step's judgement.
-CREATE TABLE upload_batches (
-  id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id        uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  status         batch_status NOT NULL DEFAULT 'uploaded',
-  failure_detail text,
-  created_at     timestamptz NOT NULL DEFAULT now(),
-  grouped_at     timestamptz
-);
-
-CREATE INDEX upload_batches_user_idx ON upload_batches (user_id, created_at DESC);
-CREATE INDEX upload_batches_pending_idx ON upload_batches (status) WHERE status IN ('uploaded', 'grouping');
-
--- One photograph, as it arrived. `position` is where it fell in the batch: the
--- name the manifest points at ("photograph 3"), and the only thing left to
--- show a person if the reading fails entirely. It carries NO meaning beyond
--- that. It does not say which letter a photograph belongs to, and it does not
--- say what order a letter's pages read in: a person picking photos from an
--- album destroys any convention before it exists. Which letter is the
--- reading's answer (document_pages rows), and reading order is the reading's
--- answer too (document_pages.page_number).
-CREATE TABLE upload_pages (
-  id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  batch_id      uuid NOT NULL REFERENCES upload_batches(id) ON DELETE CASCADE,
-  position      integer NOT NULL,
-  storage_path  text NOT NULL,
-  mime_type     text NOT NULL,
-  byte_size     integer NOT NULL,
-  width_px      integer,
-  height_px     integer,
-  created_at    timestamptz NOT NULL DEFAULT now(),
-  CONSTRAINT upload_pages_position_positive CHECK (position >= 1),
-  CONSTRAINT upload_pages_byte_size_positive CHECK (byte_size > 0),
-  CONSTRAINT upload_pages_unique_position UNIQUE (batch_id, position)
-);
-
-CREATE INDEX upload_pages_batch_idx ON upload_pages (batch_id, position);
-
--- One attempt at dividing a batch into letters.
---
--- The pass that looks at the images is the pass that divides them, so this run
--- also transcribes each letter's text for the per-letter readings to work
--- from: a letterhead is visual evidence that does not survive being flattened
--- into text, and the reading is the only thing that ever sees a page.
---
--- `raw_response` holds the manifest: which photographs form each letter, in
--- reading order, and which photographs are no letter at all. It is the only
--- record of how the division was decided, and no person is asked to confirm
--- that division, so it is also the only thing a miss rate can be measured
--- against.
-CREATE TABLE grouping_runs (
-  id               uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  batch_id         uuid NOT NULL REFERENCES upload_batches(id) ON DELETE CASCADE,
-  attempt          integer NOT NULL,
-  status           run_status NOT NULL DEFAULT 'queued',
-  provider         text NOT NULL,
-  model            text,
-  contract_version text,
-  -- How many documents this run says the batch holds. Denormalised from
-  -- raw_response so that "did it split it into three?" is a column and not a
-  -- json path, because that question is the whole accuracy story.
-  document_count   integer,
-  -- And its other half: how many photographs it said were not letters at all.
-  -- Whether it can tell a rates notice from a photograph of a grandchild is
-  -- as much the miss rate as where it draws the boundaries.
-  not_letter_count integer,
-  failure_kind     extraction_failure,
-  failure_detail   text,
-  raw_response     jsonb,
-  started_at       timestamptz NOT NULL DEFAULT now(),
-  finished_at      timestamptz,
-  duration_ms      integer,
-  CONSTRAINT grouping_runs_attempt_positive CHECK (attempt >= 1),
-  CONSTRAINT grouping_runs_unique_attempt UNIQUE (batch_id, attempt),
-  CONSTRAINT grouping_runs_failed_has_kind
-    CHECK ((status = 'failed') = (failure_kind IS NOT NULL))
-);
-
-CREATE INDEX grouping_runs_batch_idx ON grouping_runs (batch_id, attempt DESC);
-CREATE INDEX grouping_runs_status_idx ON grouping_runs (status) WHERE status IN ('queued', 'processing');
-
--- One photographed sheet, once it is known which letter it belongs to. The
--- bytes live in object storage; this table holds the path and enough metadata
--- to show a thumbnail and to tell the person which page they are looking at.
---
--- `attempt` exists because a retake uploads a fresh set of pages for the same
--- document, and the API promises that previous attempts stay in the history.
--- Without it, "replaces every page" would mean deleting the very image a
--- failed reading was judged against. The current pages of a document are the
--- rows with the highest attempt.
---
--- There is ONE attempt counter, and it belongs to extraction_runs. This column
--- records which run these pages were photographed for, so a retry (which
--- re-reads pages already on file) adds a run and no page rows, and a retake
--- writes page rows carrying the number of the run it is about to trigger. The
--- highest attempt in this table is therefore not always the highest run: after
--- retry, retry, retake the pages jump from 1 to 4, and the gap is correct.
--- Reading it the other way, as its own sequence, is how you end up unable to
--- say which images a given reading actually saw.
+-- page_number is the order the photographs were taken, and the order the
+-- letters area shows them in. A person works through a form front to back
+-- without being asked to, so nothing has to be decided here.
 CREATE TABLE document_pages (
   id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   document_id   uuid NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
-  -- Which photograph this is, back in the batch it arrived in. Keeping the link
-  -- rather than only the path is what lets anyone ask "which upload did this
-  -- come from, and what else came with it" three months later, which is the
-  -- question a wrong division raises.
-  upload_page_id uuid REFERENCES upload_pages(id) ON DELETE SET NULL,
-  attempt       integer NOT NULL DEFAULT 1,
-  -- Where this page falls when the letter is READ: page one first. This is
-  -- the manifest's answer, not the camera's. The reading can see "Page 2 of
-  -- 3" printed on a sheet; the order the photographs happened to arrive in is
-  -- upload_pages.position and means nothing here.
   page_number   integer NOT NULL,
   storage_path  text NOT NULL,
   mime_type     text NOT NULL,
@@ -347,68 +237,69 @@ CREATE TABLE document_pages (
   width_px      integer,
   height_px     integer,
   created_at    timestamptz NOT NULL DEFAULT now(),
-  CONSTRAINT document_pages_attempt_positive CHECK (attempt >= 1),
   CONSTRAINT document_pages_page_number_positive CHECK (page_number >= 1),
   CONSTRAINT document_pages_byte_size_positive CHECK (byte_size > 0),
-  CONSTRAINT document_pages_unique_page UNIQUE (document_id, attempt, page_number)
+  -- Also the index a letter's pages are read by, in order. Postgres builds one
+  -- for the constraint, so a second index on the same two columns would only be
+  -- another thing to keep updated.
+  CONSTRAINT document_pages_unique_page UNIQUE (document_id, page_number)
 );
-
-CREATE INDEX document_pages_document_idx ON document_pages (document_id, attempt DESC, page_number);
 
 -- ---------------------------------------------------------------------------
 -- Extraction
 --
--- Every attempt at reading a document is recorded, including the failures.
--- Keeping the history is what lets us report honest accuracy numbers later and
--- lets the admin dashboard show that a document failed three times before it
--- gave up.
+-- One model call looks at a letter's photographs and returns the six fields
+-- (src/lib/contract/fields.ts). The reading is recorded whether it worked or
+-- not, along with exactly what the provider sent back. Keeping the failures is
+-- what makes an accuracy figure honest: a table holding only the readings that
+-- worked can be quoted to say anything.
+--
+-- One reading per letter. There is no retry and no retake in this release
+-- (docs/scope.md, and src/server/extraction/provider.ts on what a failure
+-- means), so the unique constraint below is not bookkeeping: it is what makes a
+-- second reading arrive as an error rather than as two answers to the same
+-- question, with nothing to say which one the tables were written from.
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE extraction_runs (
   id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   document_id    uuid NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
-  -- The canonical attempt counter for a document. document_pages.attempt
-  -- points at this number; it does not run in parallel with it.
-  attempt        integer NOT NULL,
   status         run_status NOT NULL DEFAULT 'queued',
-  provider       text NOT NULL,      -- 'mock', 'openai', 'bedrock', ...
-  model          text,               -- the exact model id, for reproducible accuracy claims
+  provider       text NOT NULL,      -- which implementation of the reader ran
+  model          text,               -- the exact model id, so a figure can name what produced it
   -- The shape the payload was written in (CONTRACT_VERSION in
   -- src/lib/contract/extraction.ts). Stored per run rather than assumed,
-  -- because the contract will change and a stored payload read back weeks
-  -- later has to say which set of rules it was written under.
+  -- because the contract will change, and a stored payload read back weeks
+  -- later has to be able to say which rules it was written under.
   contract_version text,
-  failure_kind   extraction_failure,
   failure_detail text,
   -- Exactly what the provider returned, before we validated or reshaped it.
-  -- When an extraction looks wrong, this is the only place that can say whether
-  -- the model or our parsing was at fault.
+  -- When a reading looks wrong, this is the only place that can say whether the
+  -- model or our parsing was at fault.
   raw_response   jsonb,
   started_at     timestamptz NOT NULL DEFAULT now(),
   finished_at    timestamptz,
   duration_ms    integer,
-  CONSTRAINT extraction_runs_attempt_positive CHECK (attempt >= 1),
-  CONSTRAINT extraction_runs_unique_attempt UNIQUE (document_id, attempt),
-  CONSTRAINT extraction_runs_failed_has_kind
-    CHECK ((status = 'failed') = (failure_kind IS NOT NULL))
+  CONSTRAINT extraction_runs_one_per_document UNIQUE (document_id),
+  -- A failure that does not say anything is a row nobody can act on, and a
+  -- detail on a run that succeeded is a contradiction. Both directions are
+  -- worth refusing.
+  CONSTRAINT extraction_runs_failed_has_detail
+    CHECK ((status = 'failed') = (failure_detail IS NOT NULL))
 );
 
-CREATE INDEX extraction_runs_document_idx ON extraction_runs (document_id, attempt DESC);
 CREATE INDEX extraction_runs_status_idx ON extraction_runs (status) WHERE status IN ('queued', 'processing');
 
--- One field of one extraction attempt.
+-- One field of one reading.
 --
 -- field_key is text rather than an enum because the six contract fields are a
--- floor, not a ceiling: a provider may return more, and we would rather store
--- it than drop it. The six that must always be present are enforced in the
--- contract validator, not here.
+-- floor and not a ceiling: a provider may return more, and storing it costs
+-- less than deciding in advance to throw it away. That all six are present is
+-- enforced by the contract validator, not here.
 --
--- 'uncertain' rows keep their extracted_value here even though no screen ever
--- shows it: how often the model hedges, and what it guesses when it does, is
--- evaluation data. The product treats uncertain as "no value" everywhere
--- (nothing reaches documents or the calendar), and nobody edits a reading in
--- this version, so there are no correction columns: the remedy for a wrong or
--- missing value is photographing the letter again. See ADR 008.
+-- 'uncertain' rows keep their extracted_value even though no screen ever shows
+-- it; the reason is in src/lib/contract/extraction.ts. There are no correction
+-- columns, because nobody edits a reading (src/lib/contract/api.ts).
 CREATE TABLE extracted_fields (
   id                uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   extraction_run_id uuid NOT NULL REFERENCES extraction_runs(id) ON DELETE CASCADE,
@@ -423,37 +314,6 @@ CREATE TABLE extracted_fields (
 
 CREATE INDEX extracted_fields_run_idx ON extracted_fields (extraction_run_id);
 
--- One attempt at placing a letter against everything the person already has.
---
--- The question is whether these pages are the rest of a letter that is already
--- here. It cannot be a query written in advance: a party invitation has no
--- issuer worth matching and no reference number, and the save-the-date it
--- belongs with names a suburb where the invitation names a street. So the
--- reading searches for itself, and this table records how.
---
--- `tool_calls` is the search it actually performed, pattern by pattern, with
--- how many documents each one matched. Unlike a similarity score, that is
--- something a person can read and disagree with, which is the whole reason for
--- keeping it.
-CREATE TABLE matching_runs (
-  id               uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  document_id      uuid NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
-  status           run_status NOT NULL DEFAULT 'queued',
-  provider         text NOT NULL,
-  model            text,
-  -- What it concluded. Null means "this is a letter we have not seen before",
-  -- which is an answer, not a failure to answer.
-  matched_document_id uuid REFERENCES documents(id) ON DELETE SET NULL,
-  tool_calls       jsonb NOT NULL DEFAULT '[]'::jsonb,
-  failure_detail   text,
-  started_at       timestamptz NOT NULL DEFAULT now(),
-  finished_at      timestamptz,
-  duration_ms      integer,
-  CONSTRAINT matching_runs_not_itself CHECK (matched_document_id <> document_id)
-);
-
-CREATE INDEX matching_runs_document_idx ON matching_runs (document_id, started_at DESC);
-
 -- ---------------------------------------------------------------------------
 -- Tasks and reminders
 -- ---------------------------------------------------------------------------
@@ -462,15 +322,21 @@ CREATE TABLE tasks (
   id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id      uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   -- Every task points back at the letter it came from. This is the link that
-  -- makes the whole product trustworthy: three weeks later the person can ask
-  -- "what said so?" and see the photograph. It is nullable only because a
-  -- person may one day add a task by hand.
+  -- makes the whole product trustworthy: weeks later the person can ask "what
+  -- said so?" and be shown the photograph. Nullable only because a person may
+  -- one day add a task by hand.
   document_id  uuid REFERENCES documents(id) ON DELETE SET NULL,
   title        text NOT NULL,
   issuer       text,
   due_date     date,
-  -- Mirrors documents.due_time: set for appointments, null for deadlines.
+  -- Mirrors documents.due_time: set for an appointment, null for a deadline.
   due_time     time,
+  -- The one fact about a task that a person controls. Ticked is completed, not
+  -- ticked is open, and everything else a screen says (upcoming, overdue, where
+  -- the row sorts) is arithmetic done while drawing. Ticking is never locked in
+  -- either direction: untick a task whose date has passed and it is overdue
+  -- again by arithmetic, not by a transition anything had to run and could get
+  -- wrong.
   state        task_state NOT NULL DEFAULT 'open',
   completed_at timestamptz,
   created_at   timestamptz NOT NULL DEFAULT now(),
@@ -483,17 +349,31 @@ CREATE TABLE tasks (
 CREATE INDEX tasks_user_state_due_idx ON tasks (user_id, state, due_date);
 CREATE INDEX tasks_document_idx ON tasks (document_id) WHERE document_id IS NOT NULL;
 
+-- A reminder is a clock, and the clock checks the tick when it rings.
+--
+-- Ticking a task writes nothing here, and unticking writes nothing here. When a
+-- row's moment arrives, the dispatcher reads the task at that moment: still
+-- open means send and write 'sent', already done means send nothing and write
+-- 'skipped'. That is the product's only judgement about whether to nag, it is
+-- made at the only moment that matters, and it is made in the one place that
+-- sends.
+--
+-- The design this replaced flipped the waiting rows to 'cancelled' when a task
+-- was ticked and revived them when it was unticked, except the ones whose time
+-- had already passed. None of it was wrong. All of it was a second copy of "the
+-- task is done", and a copy needs a transaction to keep it honest and an undo
+-- rule to unwind it; that undo rule had grown its exception within a week of
+-- being written. Storing the fact once and reading it at the moment of use
+-- needs no undo rule, because there is nothing to undo. A person can tick at
+-- breakfast, untick at lunch and tick again at dinner, and none of her wavering
+-- is written down anywhere.
+--
+-- Rows rather than a rule evaluated at read time, because each one has its own
+-- fate to record, and a rule cannot remember what it did. When they are planned
+-- and how far ahead: src/lib/contract/reminders.ts.
 CREATE TABLE reminders (
   id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   task_id      uuid NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
-  -- Reminders are rows, not a rule evaluated at read time, because each one
-  -- has its own fate: sent, skipped, or failed. Nothing writes these rows when
-  -- a task is ticked or unticked. The dispatcher decides at the moment a row's
-  -- time arrives, by looking at the task's state right then: still open means
-  -- send, already done means write 'skipped' and stay silent. The person can
-  -- tick and untick as often as she likes and no bookkeeping happens here;
-  -- the one judgement lives at fire time, in one place.
-  -- See docs/architecture/adr-007-the-tick-is-the-only-state.md.
   scheduled_for timestamptz NOT NULL,
   channel      reminder_channel NOT NULL DEFAULT 'in_app',
   status       reminder_status NOT NULL DEFAULT 'scheduled',
@@ -509,16 +389,20 @@ CREATE INDEX reminders_task_idx ON reminders (task_id);
 -- ---------------------------------------------------------------------------
 -- Audit
 --
--- The admin dashboard promises that an operator manages accounts and watches
--- system health, and never sees letter content. This table is how that promise
--- is kept and shown: it records who did what to which record, and deliberately
--- has nowhere to put the contents of a letter.
+-- What happened to which record, and who did it. Signing in, confirming a
+-- letter and deactivating an account are the events worth being able to
+-- reconstruct after the fact, when the only other account of them is somebody's
+-- memory.
+--
+-- The table has nowhere to put the contents of a letter, and that is the point
+-- rather than an omission. An operator can be given everything in here and
+-- still never read a word of anyone's post.
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE audit_logs (
   id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   actor_id    uuid REFERENCES users(id) ON DELETE SET NULL,
-  action      text NOT NULL,        -- 'user.sign_in', 'document.confirm', 'admin.deactivate_user'
+  action      text NOT NULL,        -- 'user.sign_in', 'document.confirm', 'user.deactivate'
   target_type text,                 -- 'document', 'user', 'task'
   target_id   uuid,
   -- Metadata only. Never field values, never letter text, never amounts.
@@ -530,8 +414,9 @@ CREATE INDEX audit_logs_created_idx ON audit_logs (created_at DESC);
 CREATE INDEX audit_logs_actor_idx ON audit_logs (actor_id, created_at DESC);
 
 -- Every prompt sent to a model, so an accuracy claim can be reproduced and a
--- reading that went wrong can be debugged. Kept separate from audit_logs
--- because it has a different retention story and a different audience.
+-- reading that went wrong can be argued about with the evidence present. Kept
+-- apart from audit_logs because it has a different retention story and a
+-- different audience.
 CREATE TABLE ai_prompt_logs (
   id                uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   extraction_run_id uuid REFERENCES extraction_runs(id) ON DELETE SET NULL,
@@ -547,6 +432,10 @@ CREATE INDEX ai_prompt_logs_run_idx ON ai_prompt_logs (extraction_run_id);
 
 -- ---------------------------------------------------------------------------
 -- updated_at maintenance
+--
+-- A trigger rather than a habit. Three tables carry updated_at, and every
+-- query that forgets to set it leaves a row claiming it has not changed since
+-- the day it was made.
 -- ---------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION touch_updated_at() RETURNS trigger AS $$
@@ -559,149 +448,5 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER users_touch     BEFORE UPDATE ON users     FOR EACH ROW EXECUTE FUNCTION touch_updated_at();
 CREATE TRIGGER documents_touch BEFORE UPDATE ON documents FOR EACH ROW EXECUTE FUNCTION touch_updated_at();
 CREATE TRIGGER tasks_touch     BEFORE UPDATE ON tasks     FOR EACH ROW EXECUTE FUNCTION touch_updated_at();
-
--- ---------------------------------------------------------------------------
--- The searchable projection
---
--- A letter being placed against the archive is searched for by the reading
--- itself, with glob, grep and read, so the archive has to look like something
--- those three operate on. This is that shape.
---
--- It is a VIEW and not a table, and that is the entire point. A copy written
--- alongside the source drifts, and a drifted search index does not fail loudly:
--- it answers "nothing matches", confidently, about a world that has moved on.
--- A view cannot drift because it is not a copy, it is the query. When a
--- sequential scan over a few hundred documents stops being immaterial, this
--- becomes a materialised view refreshed inside the confirm transaction, and
--- nothing that reads it changes.
---
--- See docs/architecture/adr-006-matching-and-the-projection.md.
--- ---------------------------------------------------------------------------
-
--- Words to a path segment: lower case, one hyphen between runs of anything else.
-CREATE OR REPLACE FUNCTION slugify(value text) RETURNS text AS $$
-  SELECT btrim(regexp_replace(lower(coalesce(value, '')), '[^a-z0-9]+', '-', 'g'), '-');
-$$ LANGUAGE sql IMMUTABLE;
-
--- The same, after dropping a company suffix.
---
--- This is load-bearing rather than tidy. The first search anybody writes is by
--- who sent it, `glob('**/*agl-energy*')`, and the seed already contains the
--- problem: the same letter yields "AGL Energy" as its value and "AGL Energy
--- Limited" as the text it was read from. Slugged apart those are two folders,
--- that search finds half of them, and nothing announces the half it missed.
-CREATE OR REPLACE FUNCTION normalise_issuer(value text) RETURNS text AS $$
-  SELECT slugify(
-    regexp_replace(
-      coalesce(value, ''),
-      '[[:space:],.]+(pty\.?[[:space:]]*)?(ltd|limited|inc|incorporated|llc|plc|pty)\.?[[:space:]]*$',
-      '',
-      'gi'
-    )
-  );
-$$ LANGUAGE sql IMMUTABLE;
-
-CREATE VIEW document_search AS
-SELECT
-  d.id,
-  d.user_id,
-  d.status,
-
-  -- The path is the index. Two levels of directory mean a month can be
-  -- filtered without reading a byte, and the file name carries the two things
-  -- anybody actually searches by. The date is the DUE date: the calendar is
-  -- how a person holds their own archive, and a second date axis would mean
-  -- the searcher has to hold two. The upload timestamp is in the front matter
-  -- below, so it stays findable by content.
-  CASE WHEN d.due_date IS NULL THEN 'no-date/'
-       ELSE to_char(d.due_date, 'YYYY/MM/DD-') END
-    || coalesce(nullif(normalise_issuer(d.issuer), ''), 'unknown-sender')
-    || '-' || coalesce(nullif(slugify(d.document_type), ''), 'unread')
-    || '-' || left(d.id::text, 4) || '.md' AS path,
-
-  -- Front matter is what gets matched exactly. The fields read as lines because
-  -- that is both legible and greppable, and they use the contract's own keys
-  -- rather than the screen's labels: nobody reads this, so presentation names
-  -- would only be a fourth copy of FIELD_LABELS waiting to drift. Their order
-  -- is alphabetical for the same reason.
-  concat_ws(E'\n',
-    '---',
-    'id: ' || d.id::text,
-    'status: ' || d.status::text,
-    'uploaded: ' || to_char(d.uploaded_at AT TIME ZONE u.timezone, 'YYYY-MM-DD"T"HH24:MI'),
-    'pages: ' || coalesce(pg.n, 0)::text,
-    -- What became of this letter, as live truth. When the matching model reads
-    -- a candidate ("do these new photos belong to this letter?"), whether its
-    -- task is still open or was ticked off on some date is exactly what it
-    -- should know. Derived here rather than stored on documents: a stored
-    -- flag would need updating on every tick and untick, and a stale flag
-    -- does not error, it confidently lies. The tick stays the only state
-    -- (ADR 007); this line is a window onto it.
-    'task: ' || CASE
-      WHEN tk.id IS NULL THEN 'none'
-      WHEN tk.state = 'completed' THEN 'completed ' || to_char(tk.completed_at AT TIME ZONE u.timezone, 'YYYY-MM-DD')
-      WHEN tk.state = 'dismissed' THEN 'dismissed'
-      WHEN tk.due_date IS NULL THEN 'open, no date'
-      ELSE 'open, due ' || to_char(tk.due_date, 'YYYY-MM-DD')
-    END,
-    '---',
-    '',
-    '# ' || coalesce(d.document_type, 'Unread document')
-          || coalesce(' from ' || d.issuer, ''),
-    '',
-    fields.lines,
-    -- A heading with nothing under it is noise a search has to wade through,
-    -- so each section exists only when it has content.
-    CASE WHEN d.summary   IS NOT NULL THEN E'\n## What this is about\n'   || d.summary   END,
-    CASE WHEN extra.lines IS NOT NULL THEN E'\n## Also on the page\n'     || extra.lines END
-  ) AS body
-
-FROM documents d
-JOIN users u ON u.id = d.user_id
-
--- The most recent reading that worked. A document that has never been read
--- successfully still appears here, with nothing under the front matter, which
--- is correct: it exists, and it matches nothing.
-LEFT JOIN LATERAL (
-  SELECT r.id
-  FROM extraction_runs r
-  WHERE r.document_id = d.id AND r.status = 'succeeded'
-  ORDER BY r.attempt DESC
-  LIMIT 1
-) latest ON true
-
--- An uncertain value is written here as unreadable: storage keeps the hedge
--- for evaluation, but as far as anything downstream is concerned, including
--- this projection, a value the model was not sure of does not exist (ADR 008).
-LEFT JOIN LATERAL (
-  SELECT
-    string_agg(f.field_key || ': ' ||
-               CASE WHEN f.status = 'confirmed' THEN f.extracted_value
-                    ELSE '(unreadable)' END,
-               E'\n' ORDER BY f.field_key) AS lines
-  FROM extracted_fields f
-  WHERE f.extraction_run_id = latest.id
-) fields ON true
-
--- The letter's task, if confirming ever made one. At most one this semester.
-LEFT JOIN LATERAL (
-  SELECT t.id, t.state, t.due_date, t.completed_at
-  FROM tasks t
-  WHERE t.document_id = d.id
-  ORDER BY t.created_at DESC
-  LIMIT 1
-) tk ON true
-
-LEFT JOIN LATERAL (
-  SELECT string_agg(k || ': ' || v, E'\n' ORDER BY k) AS lines
-  FROM jsonb_each_text(d.open_payload) AS t(k, v)
-) extra ON true
-
-LEFT JOIN LATERAL (
-  SELECT count(*)::int AS n
-  FROM document_pages p
-  WHERE p.document_id = d.id
-    AND p.attempt = (SELECT max(attempt) FROM document_pages WHERE document_id = d.id)
-) pg ON true;
 
 COMMIT;

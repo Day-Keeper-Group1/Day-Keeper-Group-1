@@ -1,26 +1,44 @@
 /**
- * The reminder scheduling rule.
+ * The reminder ladder, and the clock that checks the tick when it rings.
  *
- * This rule used to live only inside the seed script, which the browser cannot
- * reach. It has to live here because two different people need the identical
- * answer: whoever writes the confirm handler (which creates the reminder rows)
- * and whoever builds the review screen (whose "What DayKeeper will do" card
- * shows the person the plan before they agree to it). Two copies of a schedule
- * is how the card ends up promising a reminder that never arrives.
+ * The ladder used to live only inside the seed script, which the browser cannot
+ * reach. It lives here because two different people need the identical answer:
+ * whoever writes the confirm handler, which creates the reminder rows, and
+ * whoever builds the screen whose "What DayKeeper will do" card shows the person
+ * the plan before they agree to it. Two copies of a schedule is how the card ends
+ * up promising a reminder that never arrives.
  *
- * The rule, read off the product prototype:
+ * ## The ladder
  *
- * - A deadline (a bill, a form, anything you act on BY a date) gets three
- *   reminders: seven days, three days and one day before, at 9 am.
- *   (Decided 18 August 2026: for a bill due the 18th they land on the 11th,
- *   the 15th and the 17th.)
- * - An appointment (anything you attend AT a time) gets one reminder, the day
- *   before, at 9 am. Nobody needs a nudge a week before the dentist, and the
- *   day itself is on the calendar.
+ * Everything gets the same three reminders: **seven days, three days and one
+ * day before**, at 9 am. For a bill due the 18th they land on the 11th, the
+ * 15th and the 17th, and a two o'clock appointment on the 18th gets the same
+ * three days.
  *
- * What makes something an appointment: it has a time of day (`due_time` is
- * present). That is a default decision recorded here so it can be argued with
- * at review, not silently in the seed.
+ * One ladder rather than one per kind of document. A document that names a
+ * time of day still shows that time on the calendar, but it is not a different
+ * sort of thing to be reminded about.
+ *
+ * ## The clock check
+ *
+ * Ticking a task writes nothing to reminders, and unticking writes nothing
+ * either. When a reminder's moment arrives, the dispatcher reads the task at
+ * that moment: still open means send it and write `sent`; already ticked means
+ * send nothing and write `skipped`. That is the product's only judgement about
+ * whether to nag, and it is made at the only moment when the answer is known.
+ *
+ * The alternative was bookkeeping. Ticking would have cancelled every waiting
+ * reminder in the same transaction, and unticking would have revived them,
+ * except the ones whose time had already passed. That is the same truth written
+ * twice in two tables, and every copy needs a transaction to keep it honest and
+ * an undo rule to unwind it. The undo rule needed an exception within a week of
+ * being written. Reading the tick at fire time stores the truth once and reads
+ * it at the moment of use, so a person can tick at breakfast, untick at lunch
+ * and tick again at dinner without the system keeping a ledger of her wavering.
+ *
+ * Rows are still planned and written at confirm time rather than worked out
+ * later, because each one has its own fate to record (`sent`, `skipped`,
+ * `failed`) and the calendar draws its dots from them.
  */
 
 import { APP_TIME_ZONE, addDays, zonedTimeToInstant } from "./dates";
@@ -58,11 +76,8 @@ export const PLAN_LINES = {
     `On your calendar: ${date}, ${time}`,
 } as const;
 
-/** Days before the due date, for something you act on by a date. */
-export const DEADLINE_REMINDER_OFFSET_DAYS = [7, 3, 1] as const;
-
-/** Days before the appointment, for something you attend at a time. */
-export const APPOINTMENT_REMINDER_OFFSET_DAYS = [1] as const;
+/** Days before the due date. Every document gets these three. */
+export const REMINDER_OFFSET_DAYS = [7, 3, 1] as const;
 
 export type PlannedReminder = {
   /** How many days before the due date this reminder lands. */
@@ -95,27 +110,21 @@ export type PlannedReminder = {
  */
 export function planReminders(
   dueDate: string,
-  options: { hasTime: boolean; timeZone?: string; today?: string },
+  options: { timeZone?: string; today?: string } = {},
 ): PlannedReminder[] {
   const timeZone = options.timeZone ?? APP_TIME_ZONE;
-  const offsets = options.hasTime
-    ? APPOINTMENT_REMINDER_OFFSET_DAYS
-    : DEADLINE_REMINDER_OFFSET_DAYS;
-
-  return offsets
-    .map((offsetDays) => {
-      const localDate = addDays(dueDate, -offsetDays);
-      return {
-        offsetDays,
+  return REMINDER_OFFSET_DAYS.map((offsetDays) => {
+    const localDate = addDays(dueDate, -offsetDays);
+    return {
+      offsetDays,
+      localDate,
+      localTime: `${String(REMINDER_HOUR_LOCAL).padStart(2, "0")}:00`,
+      scheduledFor: zonedTimeToInstant(
         localDate,
-        localTime: `${String(REMINDER_HOUR_LOCAL).padStart(2, "0")}:00`,
-        scheduledFor: zonedTimeToInstant(
-          localDate,
-          REMINDER_HOUR_LOCAL,
-          0,
-          timeZone,
-        ),
-      };
-    })
-    .filter((r) => options.today === undefined || r.localDate >= options.today);
+        REMINDER_HOUR_LOCAL,
+        0,
+        timeZone,
+      ),
+    };
+  }).filter((r) => options.today === undefined || r.localDate >= options.today);
 }

@@ -19,7 +19,7 @@ export type MockDocument = {
 export const MOCK_DOCUMENTS: MockDocument[] = [
   // Its extraction below has a hedged date and an unreadable reference, so
   // the summary carries neither: a value the model was not sure of never
-  // reaches a summary (ADR 008).
+  // reaches a summary (src/lib/contract/api.ts).
   {
     id: "doc_1",
     issuer: "Yarra Valley Water",
@@ -70,7 +70,7 @@ export function getDocumentById(id: string) {
  * A field as a screen sees it: two states only. Storage knows a third
  * (`uncertain`), but the server collapses it to `unreadable` on the way out:
  * a value the model was not sure of does not exist as far as any screen is
- * concerned, and nobody is asked about it. See ADR 008.
+ * concerned, and nobody is asked about it. See src/lib/contract/api.ts.
  */
 export type ExtractedField = {
   key: string;
@@ -171,16 +171,16 @@ export function getExtractionFields(documentId: string): ExtractedField[] {
 }
 
 /**
- * Tasks, and the one fact that describes them (ADR 007).
+ * Tasks, and the one fact that describes them (src/lib/contract/api.ts).
  *
  * `done` is the only thing a task stores about itself. Everything else this
  * file exports for a task — whether it reads as overdue, upcoming or
  * completed, what its row says on the right — is worked out from `done`,
  * `dueDate` and a reference date, exactly the way the real product derives it
  * at draw time rather than writing "overdue" anywhere. See
- * docs/architecture/adr-007-the-tick-is-the-only-state.md.
+ * src/lib/contract/api.ts.
  *
- * `dueDate: null` is the dateless task ADR 008 describes: a letter with a
+ * `dueDate: null` is the dateless task src/lib/contract/api.ts describes: a letter with a
  * clear action and no clear date still becomes a task, sits on the list
  * saying "No date", never reminds, never touches the calendar, and stays
  * until ticked.
@@ -236,8 +236,8 @@ export const MOCK_TASKS: MockTask[] = [
     dueDate: "2026-08-15",
     done: false,
   },
-  // Upcoming appointment: has a dueTime, so it gets one reminder the day
-  // before rather than the three-reminder deadline schedule. See
+  // Upcoming appointment: has a dueTime, so the calendar prints the time. The
+  // reminders are the same three every document gets. See
   // src/lib/contract/reminders.ts.
   {
     id: "task_patel",
@@ -280,10 +280,13 @@ export function taskStatus(task: MockTask, today: string = TODAY): TaskStatus {
 export function formatTaskWhen(task: MockTask, today: string = TODAY): string {
   const status = taskStatus(task, today);
   if (status === "no-date") return "No date";
-  if (status === "completed") return task.dueDate ? "Done · reminders off" : "Done";
+  if (status === "completed")
+    return task.dueDate ? "Done · reminders off" : "Done";
   if (!task.dueDate) return "No date";
   const short = formatDueDate(task.dueDate, "short");
-  const stamped = task.dueTime ? `${short}, ${formatDueTime(task.dueTime)}` : short;
+  const stamped = task.dueTime
+    ? `${short}, ${formatDueTime(task.dueTime)}`
+    : short;
   return status === "overdue" ? `was due ${stamped}` : stamped;
 }
 
@@ -318,9 +321,7 @@ export function marksForTask(task: MockTask): CalendarMark[] {
   const marks: CalendarMark[] = [
     { date: task.dueDate, kind: "due", taskId: task.id },
   ];
-  for (const reminder of planReminders(task.dueDate, {
-    hasTime: Boolean(task.dueTime),
-  })) {
+  for (const reminder of planReminders(task.dueDate, {})) {
     marks.push({ date: reminder.localDate, kind: "reminder", taskId: task.id });
   }
   return marks;

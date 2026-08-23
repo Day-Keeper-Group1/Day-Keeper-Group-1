@@ -45,7 +45,7 @@ export default function TasksPage() {
   // Mock-only state, local to this page: there is no backend yet (KAN board
   // tickets for the real API haven't landed), so ticking here does not
   // travel to the dashboard or the calendar. What it does demonstrate is
-  // ADR 007 itself: the tick is the only thing that changes, and everything
+  // src/lib/contract/api.ts itself: the tick is the only thing that changes, and everything
   // else on the row is worked out fresh from it.
   const [tasks, setTasks] = useState<MockTask[]>(MOCK_TASKS);
   const [selectedId, setSelectedId] = useState<string | null>(null);

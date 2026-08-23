@@ -11,10 +11,9 @@ import type { ExtractedField, MockDocument } from "@/lib/mock-data";
  *
  * There are no inputs here on purpose. A value the model was not sure of never
  * reaches this screen (it arrives as an absent value), so there is nothing to
- * interrogate the person about; and nothing here is editable, because the one
- * remedy for a wrong or missing reading is photographing the letter again.
- * The person's whole job on this screen is recognition: does this match the
- * letter? Yes is a tap; no is a retake. See ADR 008.
+ * interrogate the person about, and nothing here is editable. The person's
+ * whole job on this screen is recognition: does this match the letter? Yes is
+ * a tap, and that is the only control. See src/lib/contract/api.ts.
  */
 
 function PreviewPlaceholder() {

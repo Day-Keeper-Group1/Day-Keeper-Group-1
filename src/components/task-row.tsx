@@ -3,10 +3,15 @@
 import Link from "next/link";
 import { Check, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { formatTaskWhen, taskStatus, TODAY, type MockTask } from "@/lib/mock-data";
+import {
+  formatTaskWhen,
+  taskStatus,
+  TODAY,
+  type MockTask,
+} from "@/lib/mock-data";
 
 /**
- * One task, drawn the way ADR 007 describes: a tick a person can change in
+ * One task, drawn the way src/lib/contract/api.ts describes: a tick a person can change in
  * either direction, forever, and everything else (overdue, "was due",
  * strike-through) worked out from that tick and the due date at render time
  * rather than stored anywhere. Used on the dashboard, the tasks page and the
@@ -67,7 +72,9 @@ export function TaskRow({
         onClick={() => onToggle?.(task.id)}
         aria-pressed={done}
         aria-label={
-          done ? `Mark "${task.title}" as not done` : `Mark "${task.title}" as done`
+          done
+            ? `Mark "${task.title}" as not done`
+            : `Mark "${task.title}" as done`
         }
         className={cn(
           "flex size-7 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
