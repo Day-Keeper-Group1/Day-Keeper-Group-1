@@ -34,7 +34,7 @@ The next page is the whole database at once, laid out along the same journey as
 the previous part. Two absences are worth knowing before you look, because an
 absence is easy to read past.
 
-*The third column is empty.* The step where she checks the reading writes
+*Step three is on no badge.* The step where she checks the reading writes
 nothing. The screen shows, it never asks, so there is no answer to record. A
 design that asks questions needs somewhere to store the answers. This one asks
 none.
@@ -57,9 +57,9 @@ the database: there are no migrations, so editing it and running
   #block[
     #set text(font: sans, size: 9pt, fill: ink-dim)
     #set par(justify: false, leading: 0.55em)
-    The last two steps share a column because they write at the same moment and
-    neither writes the other. The reminder records what it decided, and the
-    tick records that she is done.
+    Ten tables, every column of each. The path a letter travels runs left to
+    right along the top row, and the grey row underneath never touches a
+    letter.
   ]
 ]
 

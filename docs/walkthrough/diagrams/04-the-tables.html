@@ -2,189 +2,323 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>The ten tables, and which step writes each</title>
+<title>The ten tables</title>
 <link rel="stylesheet" href="_style.css">
 <style>
-  .sheet { width: 2000px; }
-  .lede { max-width: 1500px; margin-bottom: 26px; }
+  /* A schema map wants more width than the portrait diagrams: it lands on the
+     PDF's one landscape page. Fixed pixel geometry, because the arrows are
+     drawn against these coordinates. */
+  .sheet { width: 2150px; }
 
-  .steps { display: grid; grid-template-columns: repeat(5, 1fr); gap: 20px; }
+  .canvas { position: relative; width: 2074px; height: 1104px; margin-top: 14px; }
 
-  .col { display: flex; flex-direction: column; }
+  svg.wires { position: absolute; inset: 0; width: 2074px; height: 1104px; }
+  svg.wires g { fill: none; stroke: var(--line); stroke-width: 2.5; }
+  svg.wires marker path { fill: var(--line); stroke: none; }
+  svg.wires text { fill: var(--dim); stroke: none; font-family: var(--sans); }
 
-  .shead {
-    background: var(--green); color: var(--green-ink);
-    border-radius: 9px 9px 0 0; padding: 12px 16px 13px;
-  }
-  .shead .n { font-size: 15px; font-weight: 700; letter-spacing: 0.7px; text-transform: uppercase; opacity: 0.75; }
-  .shead .t { font-size: 24px; font-weight: 700; letter-spacing: -0.2px; margin-top: 2px; }
-  .shead .d { font-size: 15.5px; line-height: 1.4; margin-top: 6px; opacity: 0.9; }
+  /* ---------- the journey strip ---------- */
+  .journey { position: absolute; left: 0; top: 0; width: 2074px; display: flex; gap: 14px; }
+  .step { flex: 1; background: var(--green); color: var(--green-ink); border-radius: 9px; padding: 10px 14px; }
+  .step.reads { background: var(--card); color: var(--ink); border: 2.5px solid var(--line); }
+  .step .n { font-size: 13px; font-weight: 700; opacity: 0.85; letter-spacing: 0.4px; }
+  .step.reads .n { color: var(--warn-ink); opacity: 1; }
+  .step .t { font-size: 16.5px; font-weight: 700; margin-top: 2px; }
+  .step .e { font-size: 13.5px; margin-top: 4px; font-family: var(--mono); opacity: 0.9; }
 
-  .body {
-    border: 2px solid var(--green); border-top: none; border-radius: 0 0 9px 9px;
-    padding: 16px 16px 18px; flex: 1; display: flex; flex-direction: column; gap: 12px;
-    background: var(--bg);
-  }
-  .body.quiet { border-color: var(--line); }
-  .shead.quiet { background: var(--soft); color: var(--green); }
-  .shead.quiet .n { opacity: 0.7; }
-  .shead.quiet .d { opacity: 1; color: var(--dim); }
+  /* ---------- a table ---------- */
+  .tbl { position: absolute; width: 218px; background: var(--card); border: 2.5px solid var(--line); border-radius: 9px; overflow: hidden; }
+  .tbl > h2 { height: 40px; background: var(--green); color: var(--green-ink); font-family: var(--mono); font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 6px; padding: 0 10px; }
+  .tbl > h2 .badges { margin-left: auto; display: flex; gap: 4px; }
+  .tbl > h2 b { background: var(--green-ink); color: var(--green); width: 20px; height: 20px; border-radius: 50%; font-size: 13px; display: flex; align-items: center; justify-content: center; }
+  .tbl ul { list-style: none; padding: 8px 0; }
+  .tbl li { height: 24px; line-height: 24px; padding: 0 10px; font-family: var(--mono); font-size: 14px; white-space: nowrap; }
+  .tbl li .fk { color: var(--dim); font-size: 12.5px; }
+  .tbl li.key { font-weight: 700; }
+  .tbl li.star { background: var(--warn-bg); color: var(--warn-ink); font-weight: 700; }
 
-  .tbl { background: var(--card); border: 2px solid var(--line); border-radius: 8px; padding: 11px 13px 12px; }
-  .tbl .nm { font-family: var(--mono); font-size: 17px; font-weight: 700; color: var(--green); }
-  .tbl .cols { font-size: 15px; color: var(--ink); line-height: 1.42; margin-top: 5px; }
-  .tbl .note { font-size: 15px; color: var(--dim); line-height: 1.42; margin-top: 6px; }
-  .tbl .fk { font-family: var(--mono); font-size: 14px; color: var(--line); margin-top: 7px; }
+  /* Supporting cast: present, but off the path a letter travels. */
+  .tbl.aside { opacity: 0.6; }
+  .tbl.aside > h2 { background: var(--line); }
 
-  .none { font-size: 16px; color: var(--dim); line-height: 1.45; font-style: italic; }
+  .note { position: absolute; width: 218px; font-size: 14.5px; line-height: 1.42; color: var(--dim); padding-top: 8px; }
+  .note code { font-family: var(--mono); font-size: 13.5px; }
 
-  .foot { margin-top: 26px; display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
-  .fbox { border: 2px solid var(--line); border-radius: 9px; padding: 15px 18px 16px; background: var(--card); }
-  .fbox .h { font-size: 20px; font-weight: 700; color: var(--green); margin-bottom: 8px; }
-  .fbox p { font-size: 16px; color: var(--dim); line-height: 1.48; }
-  .fbox p b { color: var(--ink); font-weight: 600; }
-  .fbox code { font-family: var(--mono); font-size: 15px; color: var(--ink); }
+  .legend { position: absolute; left: 0; bottom: 0; width: 2074px; display: flex; gap: 34px; align-items: center; font-size: 14.5px; color: var(--dim); }
+  .legend .b { background: var(--green); color: var(--green-ink); width: 20px; height: 20px; border-radius: 50%; font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
+  .legend span { display: inline-flex; align-items: center; gap: 8px; }
+  .legend .sw { display: inline-block; width: 16px; height: 16px; border-radius: 4px; border: 2px solid var(--line); }
+  .legend .sw.hi { background: var(--warn-bg); }
+  .legend .sw.dim { background: var(--line); }
+  .legend code { font-family: var(--mono); font-size: 13.5px; }
 </style>
 </head>
 <body>
 <div class="sheet">
   <h1>The ten tables, and which step writes each</h1>
-  <p class="lede">
-    A letter moves through the steps of the previous part, and each one writes a different part of the database. Nothing is written
-    twice, and nothing that can be worked out at the moment it is asked for is stored. The definition of every
-    column, with the reason it exists, is in <span class="mono">db/schema.sql</span>.
-  </p>
 
-  <div class="steps">
+  <div class="canvas">
 
-    <div class="col">
-      <div class="shead">
-        <div class="n">Step 1</div>
-        <div class="t">Photograph</div>
-        <div class="d">The pages arrive. Nothing has looked at them yet.</div>
+    <svg class="wires" viewBox="0 0 2074 1104" aria-hidden="true">
+      <defs>
+        <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z"/>
+        </marker>
+      </defs>
+      <g marker-end="url(#a)">
+        <path d="M 240 212 L 320 212"/>
+        <path d="M 542 212 L 622 212"/>
+        <path d="M 844 212 L 924 212"/>
+        <path d="M 1750 212 L 1830 212"/>
+        <path d="M 735 190 L 735 158 Q 735 146 747 146 L 1327 146 Q 1339 146 1339 158 L 1339 186"/>
+        <path d="M 433 190 L 433 124 Q 433 112 445 112 L 1629 112 Q 1641 112 1641 124 L 1641 186"/>
+      </g>
+      <text x="1037" y="105" font-size="15" text-anchor="middle">a task remembers the letter it came from</text>
+      <text x="1037" y="140" font-size="14" text-anchor="middle">the exact prompt, kept</text>
+    </svg>
+
+    <!-- ---------- the journey ---------- -->
+    <div class="journey">
+      <div class="step">
+        <div class="n">STEP 1</div>
+        <div class="t">She photographs the letter</div>
+        <div class="e">POST /api/documents</div>
       </div>
-      <div class="body">
-        <div class="tbl">
-          <div class="nm">documents</div>
-          <div class="cols">status, uploaded_at, issuer, document_type</div>
-          <div class="note">One row per letter, created at <span class="mono">processing</span> before anything is known about it.</div>
-          <div class="fk">&rarr; users</div>
-        </div>
-        <div class="tbl">
-          <div class="nm">document_pages</div>
-          <div class="cols">page_number, storage_key, mime_type</div>
-          <div class="note">One row per photograph. The bytes live in the object store; this row is how to find them again.</div>
-          <div class="fk">&rarr; documents</div>
-        </div>
+      <div class="step">
+        <div class="n">STEP 2</div>
+        <div class="t">The system reads it</div>
+        <div class="e">GET /api/home &nbsp;(polled)</div>
+      </div>
+      <div class="step reads">
+        <div class="n">STEP 3 &nbsp;&middot;&nbsp; WRITES NOTHING</div>
+        <div class="t">She checks it</div>
+        <div class="e">GET /api/documents/:id</div>
+      </div>
+      <div class="step">
+        <div class="n">STEP 4</div>
+        <div class="t">Her yes writes the rows</div>
+        <div class="e">POST /api/documents/:id/confirm</div>
+      </div>
+      <div class="step">
+        <div class="n">STEP 5</div>
+        <div class="t">A reminder rings</div>
+        <div class="e">the clock, at nine</div>
+      </div>
+      <div class="step">
+        <div class="n">STEP 6</div>
+        <div class="t">She ticks it</div>
+        <div class="e">POST /api/tasks/:id/complete</div>
       </div>
     </div>
 
-    <div class="col">
-      <div class="shead">
-        <div class="n">Step 2</div>
-        <div class="t">Read</div>
-        <div class="d">The one model call, and the record of what it was asked and what it said.</div>
-      </div>
-      <div class="body">
-        <div class="tbl">
-          <div class="nm">extraction_runs</div>
-          <div class="cols">status, model, started_at, finished_at</div>
-          <div class="note">One reading per letter. There is no second attempt, so there is no attempt number.</div>
-          <div class="fk">&rarr; documents</div>
-        </div>
-        <div class="tbl">
-          <div class="nm">extracted_fields</div>
-          <div class="cols">field_key, value, status</div>
-          <div class="note">Six rows, sometimes more. A field the model could not read is a row saying so, not a missing row.</div>
-          <div class="fk">&rarr; extraction_runs</div>
-        </div>
-        <div class="tbl">
-          <div class="nm">ai_prompt_logs</div>
-          <div class="cols">prompt, response, tokens</div>
-          <div class="note">What was sent and what came back, so an answer can be argued with months later.</div>
-          <div class="fk">&rarr; extraction_runs</div>
-        </div>
-      </div>
+    <!-- ---------- the letter's path, left to right ---------- -->
+
+    <div class="tbl" style="left:22px; top:190px">
+      <h2>documents<span class="badges"><b>1</b><b>2</b><b>4</b></span></h2>
+      <ul>
+        <li class="key">id</li>
+        <li>user_id <span class="fk">&rarr; users</span></li>
+        <li class="star">status</li>
+        <li>issuer</li>
+        <li>document_type</li>
+        <li class="star">due_date</li>
+        <li>due_time</li>
+        <li>amount_text</li>
+        <li>reference</li>
+        <li>open_payload</li>
+        <li>uploaded_at</li>
+        <li>confirmed_at</li>
+        <li>archived_at</li>
+        <li>updated_at</li>
+      </ul>
+    </div>
+    <div class="note" style="left:22px; top:584px">
+      One letter, however many sheets. The reading fills <code>issuer</code>
+      down to <code>reference</code> the moment it succeeds, and only from
+      confident values: a hedged date stays NULL here.
     </div>
 
-    <div class="col">
-      <div class="shead quiet">
-        <div class="n">Step 3</div>
-        <div class="t">Check</div>
-        <div class="d">She looks at the reading and decides whether it is her letter.</div>
-      </div>
-      <div class="body quiet">
-        <div class="none">
-          This step writes nothing at all.
-          <br><br>
-          The screen shows what was read and takes no answer except yes, so there is nothing for it to record.
-          A step that writes nothing is worth a column of its own here, because every design that asked her a
-          question needed somewhere to put the answer.
-        </div>
-      </div>
+    <div class="tbl" style="left:324px; top:190px">
+      <h2>document_pages<span class="badges"><b>1</b></span></h2>
+      <ul>
+        <li class="key">id</li>
+        <li>document_id <span class="fk">&rarr; documents</span></li>
+        <li class="star">page_number</li>
+        <li>storage_path</li>
+        <li>mime_type</li>
+        <li>byte_size</li>
+        <li>width_px</li>
+        <li>height_px</li>
+        <li>created_at</li>
+      </ul>
+    </div>
+    <div class="note" style="left:324px; top:464px">
+      One photographed sheet. The bytes live in the bucket and the row holds
+      the key. <code>page_number</code> is the order she took them, which is
+      the order the letter is shown in.
     </div>
 
-    <div class="col">
-      <div class="shead">
-        <div class="n">Step 4</div>
-        <div class="t">Confirm</div>
-        <div class="d">Her yes is the only thing that turns a reading into something that will act.</div>
-      </div>
-      <div class="body">
-        <div class="tbl">
-          <div class="nm">tasks</div>
-          <div class="cols">title, due_date, due_time, state</div>
-          <div class="note">The tick is a task's only state. Whether it is overdue is worked out from the clock, never stored.</div>
-          <div class="fk">&rarr; users, documents</div>
-        </div>
-        <div class="tbl">
-          <div class="nm">reminders</div>
-          <div class="cols">scheduled_for, channel, status</div>
-          <div class="note">Three rows, seven, three and one day before. Written now because each one has its own fate to record.</div>
-          <div class="fk">&rarr; tasks</div>
-        </div>
-      </div>
+    <div class="tbl" style="left:626px; top:190px">
+      <h2>extraction_runs<span class="badges"><b>2</b></span></h2>
+      <ul>
+        <li class="key">id</li>
+        <li>document_id <span class="fk">&rarr; documents</span></li>
+        <li>status</li>
+        <li>provider</li>
+        <li>model</li>
+        <li>contract_version</li>
+        <li>failure_detail</li>
+        <li class="star">raw_response</li>
+        <li>started_at</li>
+        <li>finished_at</li>
+        <li>duration_ms</li>
+      </ul>
+    </div>
+    <div class="note" style="left:626px; top:512px">
+      One reading per letter, held by a unique constraint. Failures are rows
+      too: a table holding only the readings that worked can be quoted to say
+      anything.
     </div>
 
-    <div class="col">
-      <div class="shead">
-        <div class="n">Step 5</div>
-        <div class="t">Remind, and tick</div>
-        <div class="d">A reminder rings and reads the tick. Both write, and neither writes the other.</div>
-      </div>
-      <div class="body">
-        <div class="tbl">
-          <div class="nm">reminders</div>
-          <div class="cols">status &rarr; sent, skipped, failed</div>
-          <div class="note">Written a second time, and only this column. Still open means send it; already ticked means send nothing and say so.</div>
-        </div>
-        <div class="tbl">
-          <div class="nm">tasks</div>
-          <div class="cols">state, completed_at</div>
-          <div class="note">Ticking writes here and nowhere else. No reminder is cancelled, because none needed to be.</div>
-        </div>
-      </div>
+    <div class="tbl" style="left:928px; top:190px">
+      <h2>extracted_fields<span class="badges"><b>2</b></span></h2>
+      <ul>
+        <li class="key">id</li>
+        <li>extraction_run_id</li>
+        <li>field_key</li>
+        <li class="star">extracted_value</li>
+        <li class="star">status</li>
+        <li>confidence</li>
+      </ul>
+    </div>
+    <div class="note" style="left:928px; top:392px">
+      Nobody edits a reading, so the reading is the only writer here. An
+      uncertain row keeps the model's value for the accuracy work, and every
+      screen treats it as no value at all.
     </div>
 
-  </div>
+    <div class="tbl" style="left:1230px; top:190px">
+      <h2>ai_prompt_logs<span class="badges"><b>2</b></span></h2>
+      <ul>
+        <li class="key">id</li>
+        <li>extraction_run_id</li>
+        <li>provider</li>
+        <li>model</li>
+        <li class="star">prompt</li>
+        <li>prompt_tokens</li>
+        <li>completion_tokens</li>
+        <li>created_at</li>
+      </ul>
+    </div>
+    <div class="note" style="left:1230px; top:440px">
+      Every prompt sent to a model, so an accuracy figure can be reproduced
+      and a wrong reading argued about with the evidence on the table.
+    </div>
 
-  <div class="foot">
-    <div class="fbox">
-      <div class="h">Three tables belong to no step</div>
-      <p>
-        <code>users</code> and <code>sessions</code> are there before a letter is, and
-        <code>audit_logs</code> records what was done to an account rather than what a letter said. The audit
-        table has nowhere to put the contents of a letter, and that is deliberate rather than an omission.
-      </p>
+    <div class="tbl" style="left:1532px; top:190px">
+      <h2>tasks<span class="badges"><b>4</b><b>6</b></span></h2>
+      <ul>
+        <li class="key">id</li>
+        <li>user_id <span class="fk">&rarr; users</span></li>
+        <li>document_id <span class="fk">&rarr; documents</span></li>
+        <li>title</li>
+        <li>issuer</li>
+        <li>due_date</li>
+        <li>due_time</li>
+        <li class="star">state</li>
+        <li>completed_at</li>
+        <li>created_at</li>
+        <li>updated_at</li>
+      </ul>
     </div>
-    <div class="fbox">
-      <div class="h">What is not here</div>
-      <p>
-        There is no table for a batch of mixed letters, none for deciding which photographs make a letter, and
-        none for joining a later upload to an earlier one. Those were the expensive parts of a larger design.
-        The rows above are what is left when an upload is one letter by construction.
-      </p>
+    <div class="note" style="left:1532px; top:512px">
+      Her yes writes this row. <code>state</code> is the tick, the one fact a
+      person controls. Overdue is never stored: it is arithmetic done while a
+      screen draws, from the tick and today's date in her zone.
     </div>
+
+    <div class="tbl" style="left:1834px; top:190px">
+      <h2>reminders<span class="badges"><b>4</b><b>5</b></span></h2>
+      <ul>
+        <li class="key">id</li>
+        <li>task_id <span class="fk">&rarr; tasks</span></li>
+        <li class="star">scheduled_for</li>
+        <li>channel</li>
+        <li class="star">status</li>
+        <li>sent_at</li>
+        <li>created_at</li>
+      </ul>
+    </div>
+    <div class="note" style="left:1834px; top:416px">
+      Rows, not a rule evaluated when somebody looks. Ticking writes nothing
+      here. When a row's moment arrives, the clock reads the task: still open
+      means send, already done means write <i>skipped</i>.
+    </div>
+
+    <!-- ---------- off the path ---------- -->
+
+    <div class="tbl aside" style="left:22px; top:744px">
+      <h2>users</h2>
+      <ul>
+        <li class="key">id</li>
+        <li>email</li>
+        <li>email_canonical</li>
+        <li>display_name</li>
+        <li>password_hash</li>
+        <li>role</li>
+        <li class="star">timezone</li>
+        <li>deactivated_at</li>
+        <li>created_at</li>
+        <li>updated_at</li>
+      </ul>
+    </div>
+    <div class="note" style="left:302px; top:744px; width:200px">
+      The timezone is why &ldquo;9 am&rdquo; means anything. Every date in
+      the product is a calendar day in somebody's zone.
+    </div>
+
+    <div class="tbl aside" style="left:626px; top:744px">
+      <h2>sessions</h2>
+      <ul>
+        <li class="key">id</li>
+        <li>user_id <span class="fk">&rarr; users</span></li>
+        <li>token_hash</li>
+        <li>expires_at</li>
+        <li>created_at</li>
+        <li>last_seen_at</li>
+        <li>user_agent</li>
+      </ul>
+    </div>
+    <div class="note" style="left:906px; top:744px; width:200px">
+      The cookie carries a token. This row is the session, so signing out or
+      deactivating an account ends it at once.
+    </div>
+
+    <div class="tbl aside" style="left:1230px; top:744px">
+      <h2>audit_logs</h2>
+      <ul>
+        <li class="key">id</li>
+        <li>actor_id <span class="fk">&rarr; users</span></li>
+        <li>action</li>
+        <li>target_type</li>
+        <li>target_id</li>
+        <li>detail</li>
+        <li>created_at</li>
+      </ul>
+    </div>
+    <div class="note" style="left:1510px; top:744px; width:200px">
+      Who did what, to which record. It has nowhere to put the contents of a
+      letter, and that is the point rather than an omission.
+    </div>
+
+    <div class="legend">
+      <span><i class="b">2</i> the step that writes this table</span>
+      <span><i class="sw hi"></i> the column the design turns on</span>
+      <span><i class="sw dim"></i> off the path a letter travels</span>
+      <span>step 3 appears on no badge: checking writes nothing</span>
+      <span>drawn from <code>db/schema.sql</code>, the only definition there is</span>
+    </div>
+
   </div>
 </div>
 </body>
