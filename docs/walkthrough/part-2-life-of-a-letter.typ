@@ -20,18 +20,6 @@ usually a step that was designed not to ask her anything.
    page.],
 )
 
-The screen says one letter at a time, and it means it. Every photograph taken
-here belongs to the same letter, and the system takes that as given rather than
-working it out later.
-
-#why[
-  *The cheapest way to know which letter a page belongs to is to ask nobody.*
-  She already knows, because she is holding the letter. Taking the pages
-  together is her saying so, and it costs her nothing she was not already
-  doing. The answer arrives free, from the one person in the system who cannot
-  be wrong about it.
-]
-
 The photographs go to an object store rather than into the database, and the row
 in #t("document_pages") holds the key to find them again. A photograph is large,
 it never changes, and it is served straight from the bucket to the browser

@@ -29,8 +29,7 @@ The bottom half of that diagram is the more useful one. Six questions that sound
 like they need judgement, and every one of them is a line of ordinary code:
 whether a task is overdue, whose letters get read back, when a reminder goes
 out, whether to send it, whether the upload can be read at all, and which letter
-a page belongs to. The last of those used to need a model. It does not any more,
-because she settles it by taking the photographs together.
+a page belongs to.
 
 #part("The ten tables")#anchor(<tables>)
 

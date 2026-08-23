@@ -63,20 +63,20 @@ error message never opens by describing something she did.
 
 #part("What this release is, and what it is not")
 
-This is the first release, and it is deliberately narrow. One upload is one
-letter. It may run to several pages, and every photograph in it belongs to that
-one letter, because she said so by taking them together.
+This is the first release, and it is deliberately narrow. *One upload is one
+letter*, which may run to several pages.
 
-That sentence is doing a lot of work. A larger design accepted a pile of mixed
-post at once, worked out where one letter ended and the next began, and joined a
-later upload to a letter already in the system. Each of those needed its own
-model, its own prompt, its own way of being wrong quietly. Removing them is what
-turns the rest of this document into something a small team finishes.
+A larger design was drawn first. It took a pile of mixed post at once, worked
+out where one letter ended and the next began, and joined a later upload to a
+letter already in the system. Each of those needed its own model and its own way
+of being wrong quietly, and together they were most of the engineering. That
+design is the one a funded team builds. This is the one five students finish in
+a semester, and the rest is written down and deferred rather than forgotten.
 
 What is left is one model call whose answer has a fixed shape, and after that a
-system made of tables, dates and a checkbox. The full list of what is in and
-what is deferred is #raw("docs/scope.md"), which every other document in this
-repository defers to.
+system made of tables, dates and a checkbox. The full list is
+#raw("docs/scope.md"), which every other document in this repository defers
+to.
 
 #part("The pieces")#anchor(<pieces>)
 
