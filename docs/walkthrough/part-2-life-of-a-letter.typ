@@ -28,9 +28,8 @@ working it out later.
   *The cheapest way to know which letter a page belongs to is to ask nobody.*
   She already knows, because she is holding the letter. Taking the pages
   together is her saying so, and it costs her nothing she was not already
-  doing. The alternative is a model looking at nine photographs and guessing
-  where one letter ends, which is a real problem with a real error rate, and
-  this release does not have it.
+  doing. The answer arrives free, from the one person in the system who cannot
+  be wrong about it.
 ]
 
 The photographs go to an object store rather than into the database, and the row

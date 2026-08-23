@@ -113,8 +113,8 @@ doing its job.
   ],
   arrow,
   piece("One application")[
-    The pages and the API are one Next.js project, deployed as one thing. There
-    is no second service to keep in step with the first.
+    The pages, the API and the database access are one Next.js project in
+    TypeScript, deployed as one thing.
   ],
   arrow,
   grid(
@@ -149,14 +149,13 @@ doing its job.
 
 #v(8pt)
 
-*One application rather than two.* The project description names React and
-Next.js in the same breath as Python and FastAPI, which reads as an invitation
-to build a front end talking to a Python API. The scaffold this project stands
-on was already a single Next.js application, and the decision was to keep it
-that way. A second service is a permanent tax: two dependency sets, two
-deployments, a network boundary to authenticate across, and a second set of
-types kept identical to the first by hand. The one honest argument for Python is
-that the AI ecosystem lives there, and it does not apply here, because calling a
-vision model is an HTTP request in any language.
+*One application, one language.* The pages, the route handlers and the database
+access are one Next.js project in TypeScript. The gain shows up in
+#raw("src/lib/contract/"): those types are the agreement between the browser and
+the server, and both sides import the same file, so changing the shape of a
+response is a compile error on both sides at once. Anything the browser must
+never see is marked #raw("server-only"), which turns a leak into a build error
+rather than a discovery. One dependency set, one deployment, one test run, and
+one place to look when something is wrong.
 
 

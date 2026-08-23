@@ -16,14 +16,13 @@ opposite of how a product like this is usually imagined.
 ]
 
 #why[
-  *Why a vision model rather than reading the text first.* A letter is designed
-  for a human eye. Its meaning is carried by position: a box drawn around the
-  number that matters, a heading in bold, and five payment methods printed side
-  by side, each with its own reference number and nothing but a column to say
-  which belongs to which. Text extraction keeps the characters and throws away
-  the arrangement, and the arrangement is where half the meaning was. Reading
-  the words first and then paying a second model to put the meaning back is
-  discarding the evidence and then buying a guess.
+  *Why the model is given the photographs.* A letter is designed for a human
+  eye, and half of what it means is carried by arrangement rather than by
+  words: a box drawn around the number that matters, a heading in bold, and
+  five payment methods printed side by side, each with its own reference number
+  and nothing but a column to say which belongs to which. A model that looks at
+  the page has all of that in front of it, and answers in one pass with the
+  arrangement still intact.
 ]
 
 The bottom half of that diagram is the more useful one. Six questions that sound

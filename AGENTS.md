@@ -29,17 +29,15 @@ DayKeeper (Group 1): an AI-powered life management system for people in vulnerab
 - Never commit secrets, API keys, or `.env` files. Personal API keys and personal paid cloud accounts are banned for this project.
 - Large binaries and generated output stay out of git (see `.gitignore`); small curated fixtures are fine.
 
-## One application, not two
+## One application, one language
 
-The project description names React/Next.js, Python and FastAPI in its skill set, which reads as an invitation to put a Python API behind a Next.js front end. This is one Next.js application instead: the interface, the route handlers and the database access live in the same project and deploy as one thing.
+The interface, the route handlers and the database access are one Next.js project in TypeScript, and they deploy as one thing.
 
-The description lists a skill set, not an architecture. Doing the work in route handlers does not fail it; a half-finished two-service system would.
+The gain is in [`src/lib/contract/`](src/lib/contract/). Those types are the agreement between the browser and the server, and both sides import the same file, so a change to the shape of a response is a compile error on both sides at once rather than a message that arrives in the wrong shape at runtime. Anything the browser must never see is marked `server-only`, which turns a leak into a build error rather than a discovery.
 
-The one honest argument for Python is that the AI ecosystem lives there, and it does not apply here. We send a vision model an image and a prompt over HTTP, which is a `fetch` in any language, and nothing in Module 1 needs numpy.
+One dependency set, one deployment, one test run, and one place to look when something is wrong. Four of the five of us have not shipped a web application before, and every one of those is worth more to a beginner than it is to an experienced team.
 
-A second service is not one decision, it is a permanent tax: two dependency sets, two deployments, a network boundary to authenticate across, CORS, and a second set of types that has to be kept identical to the first by hand. Four of the five of us have not shipped a web application before, and every one of those costs a beginner more than it costs an experienced team.
-
-What would reopen this: a reading takes about ten seconds, which a route handler answers immediately while the interface polls. If a reading ever takes minutes, the decision gets revisited and a queue appears.
+Extraction runs in a route handler because a reading takes about ten seconds: the request answers immediately and the interface polls. If a reading ever takes minutes, that gets revisited and a queue appears.
 
 ## The look
 
