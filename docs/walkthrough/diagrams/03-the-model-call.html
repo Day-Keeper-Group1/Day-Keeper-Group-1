@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Where the model is called</title>
+<link rel="stylesheet" href="_style.css">
+<style>
+  .sheet { width: 1500px; }
+  .lede { max-width: 1330px; margin-bottom: 22px; }
+
+  .call {
+    background: var(--card);
+    border: 2px solid var(--line);
+    border-radius: 11px;
+    padding: 18px 20px 18px;
+  }
+
+  .chead { margin-bottom: 16px; display: flex; align-items: baseline; gap: 14px; }
+  .chead .nm { font-size: 23px; font-weight: 700; color: var(--green); letter-spacing: -0.2px; }
+  .chead .tr { font-size: 16px; color: var(--dim); }
+
+  .flow { display: grid; grid-template-columns: 300px 40px 1fr 40px 300px; align-items: stretch; }
+  .flow .arrow { text-align: center; font-size: 32px; align-self: center; }
+
+  .io { display: flex; flex-direction: column; }
+  .io .cap {
+    font-size: 14px; font-weight: 700; letter-spacing: 0.6px;
+    text-transform: uppercase; color: var(--line); margin-bottom: 6px;
+  }
+  .io .box { padding: 14px 15px; flex: 1; }
+  .io .box .d { margin-top: 0; font-size: 16px; color: var(--ink); line-height: 1.42; }
+  .io .sub { font-size: 15px; color: var(--dim); line-height: 1.42; margin-top: 10px; }
+
+  .does { align-self: stretch; padding: 16px 18px 17px; }
+  .does .t { font-size: 17px; line-height: 1.3; }
+  .does ul { list-style: none; margin-top: 11px; display: flex; flex-direction: column; gap: 9px; }
+  .does li .h { font-family: var(--mono); font-size: 15px; font-weight: 700; color: var(--green-ink); line-height: 1.35; }
+  .does li .s { font-size: 15px; line-height: 1.38; color: var(--green-ink); opacity: 0.9; margin-top: 4px; }
+
+  .costs { display: flex; gap: 9px; flex-wrap: wrap; margin-top: 16px; }
+  .cost {
+    display: inline-block; font-size: 15px; font-weight: 600;
+    padding: 5px 11px; border-radius: 999px; white-space: nowrap;
+    background: var(--soft); color: var(--green);
+  }
+  .cost.hot { background: var(--warn-bg); color: var(--warn-ink); font-weight: 700; }
+
+  .why {
+    font-size: 15.5px; color: var(--dim); line-height: 1.45;
+    margin-top: 15px; padding-top: 13px; border-top: 1px solid var(--line);
+    max-width: 1200px;
+  }
+  .why b { color: var(--ink); font-weight: 600; }
+
+  .panel { border: 2px solid var(--line); border-radius: 11px; padding: 16px 19px 17px; margin-top: 22px; background: var(--soft); }
+  .panel .ph { display: flex; align-items: baseline; gap: 14px; margin-bottom: 13px; }
+  .panel .ph .h { font-size: 21px; font-weight: 700; color: var(--green); letter-spacing: -0.2px; }
+  .panel .ph .sub { font-size: 15.5px; color: var(--dim); }
+
+  .rows { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 20px; }
+  .row {
+    display: grid; grid-template-columns: 300px 26px 1fr; align-items: start;
+    background: var(--card); border: 1px solid var(--line); border-radius: 7px;
+    padding: 10px 14px;
+  }
+  .row .q { font-size: 15.5px; font-weight: 700; color: var(--ink); line-height: 1.35; }
+  .row .ar { font-size: 17px; color: var(--line); text-align: center; line-height: 1.35; }
+  .row .a { font-size: 15px; color: var(--dim); line-height: 1.38; }
+  .row .a code { font-family: var(--mono); font-size: 14.5px; color: var(--ink); }
+</style>
+</head>
+<body>
+<div class="sheet">
+  <h1>Where the model is called, and where it is not</h1>
+  <p class="lede">
+    One place in the whole product calls a model. Everything after it is ordinary code and ordinary SQL, which
+    is why the interesting engineering is concentrated in a single request and the rest of the system can be
+    read without thinking about a model at all.
+  </p>
+
+  <div class="call">
+    <div class="chead">
+      <span class="nm">The reading</span>
+      <span class="tr">Runs once per upload, on the pages of one letter.</span>
+    </div>
+
+    <div class="flow">
+      <div class="io">
+        <div class="cap">In</div>
+        <div class="box"><div class="d">every photograph in the upload, as images</div></div>
+        <div class="sub">All of them are pages of one letter. Which letter a page belongs to was settled by the
+          person who photographed it, not inferred here.</div>
+      </div>
+
+      <div class="arrow">&rarr;</div>
+
+      <div class="io">
+        <div class="cap">What it does</div>
+        <div class="box green does">
+          <div class="t">Looks at the pages and answers in a fixed shape</div>
+          <ul>
+            <li>
+              <div class="h">document_type &middot; issuer &middot; action_required</div>
+              <div class="s">what the letter is, who sent it, and the one thing it asks of her.</div>
+            </li>
+            <li>
+              <div class="h">due_date &middot; amount &middot; reference</div>
+              <div class="s">the three that turn a letter into something a calendar and a bank can act on,
+                plus an optional due_time when the page prints one.</div>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="arrow">&rarr;</div>
+
+      <div class="io">
+        <div class="cap">Out</div>
+        <div class="box"><div class="d">six fields, each with a status</div></div>
+        <div class="sub">Confirmed or unreadable. A value the model was not sure of is not offered as a guess,
+          and the screen says so in a sentence.</div>
+      </div>
+    </div>
+
+    <div class="costs">
+      <span class="cost hot">vision tokens, the expensive part of the product</span>
+      <span class="cost">the photographs are looked at once and once only</span>
+      <span class="cost">about ten seconds</span>
+    </div>
+
+    <div class="why">
+      <b>Why a vision model rather than reading the text first.</b>
+      A letter is designed for a human eye. Its meaning is carried by position, by a box drawn around the
+      number that matters, by a heading in bold, and by five payment methods printed side by side, each with
+      its own reference number and nothing but a column to say which belongs to which. Text extraction keeps
+      the characters and throws away the arrangement, and the arrangement is where half the meaning was.
+      Reading the words first and paying a second model to put the meaning back is discarding the evidence and
+      then buying a guess.
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="ph">
+      <span class="h">Not a model call</span>
+      <span class="sub">these look like judgement, and every one of them is ordinary code</span>
+    </div>
+    <div class="rows">
+      <div class="row">
+        <div class="q">Whether a task is overdue</div>
+        <div class="ar">&rarr;</div>
+        <div class="a">a date comparison in Melbourne time, made when it is asked for</div>
+      </div>
+      <div class="row">
+        <div class="q">Whose letters get read back</div>
+        <div class="ar">&rarr;</div>
+        <div class="a">a <code>WHERE user_id = ...</code> clause the model cannot set</div>
+      </div>
+      <div class="row">
+        <div class="q">When a reminder goes out</div>
+        <div class="ar">&rarr;</div>
+        <div class="a">seven, three and one day before, arithmetic on the due date</div>
+      </div>
+      <div class="row">
+        <div class="q">Whether to send that reminder</div>
+        <div class="ar">&rarr;</div>
+        <div class="a">read the tick at the moment it rings, and send nothing if it is set</div>
+      </div>
+      <div class="row">
+        <div class="q">Whether the upload can be read at all</div>
+        <div class="ar">&rarr;</div>
+        <div class="a">the file is an image, and it is not larger than the limit</div>
+      </div>
+      <div class="row">
+        <div class="q">Which letter a page belongs to</div>
+        <div class="ar">&rarr;</div>
+        <div class="a">the upload it arrived in, decided by the person before it was sent</div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

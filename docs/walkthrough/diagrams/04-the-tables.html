@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>The ten tables, and which step writes each</title>
+<link rel="stylesheet" href="_style.css">
+<style>
+  .sheet { width: 2000px; }
+  .lede { max-width: 1500px; margin-bottom: 26px; }
+
+  .steps { display: grid; grid-template-columns: repeat(5, 1fr); gap: 20px; }
+
+  .col { display: flex; flex-direction: column; }
+
+  .shead {
+    background: var(--green); color: var(--green-ink);
+    border-radius: 9px 9px 0 0; padding: 12px 16px 13px;
+  }
+  .shead .n { font-size: 15px; font-weight: 700; letter-spacing: 0.7px; text-transform: uppercase; opacity: 0.75; }
+  .shead .t { font-size: 24px; font-weight: 700; letter-spacing: -0.2px; margin-top: 2px; }
+  .shead .d { font-size: 15.5px; line-height: 1.4; margin-top: 6px; opacity: 0.9; }
+
+  .body {
+    border: 2px solid var(--green); border-top: none; border-radius: 0 0 9px 9px;
+    padding: 16px 16px 18px; flex: 1; display: flex; flex-direction: column; gap: 12px;
+    background: var(--bg);
+  }
+  .body.quiet { border-color: var(--line); }
+  .shead.quiet { background: var(--soft); color: var(--green); }
+  .shead.quiet .n { opacity: 0.7; }
+  .shead.quiet .d { opacity: 1; color: var(--dim); }
+
+  .tbl { background: var(--card); border: 2px solid var(--line); border-radius: 8px; padding: 11px 13px 12px; }
+  .tbl .nm { font-family: var(--mono); font-size: 17px; font-weight: 700; color: var(--green); }
+  .tbl .cols { font-size: 15px; color: var(--ink); line-height: 1.42; margin-top: 5px; }
+  .tbl .note { font-size: 15px; color: var(--dim); line-height: 1.42; margin-top: 6px; }
+  .tbl .fk { font-family: var(--mono); font-size: 14px; color: var(--line); margin-top: 7px; }
+
+  .none { font-size: 16px; color: var(--dim); line-height: 1.45; font-style: italic; }
+
+  .foot { margin-top: 26px; display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+  .fbox { border: 2px solid var(--line); border-radius: 9px; padding: 15px 18px 16px; background: var(--card); }
+  .fbox .h { font-size: 20px; font-weight: 700; color: var(--green); margin-bottom: 8px; }
+  .fbox p { font-size: 16px; color: var(--dim); line-height: 1.48; }
+  .fbox p b { color: var(--ink); font-weight: 600; }
+  .fbox code { font-family: var(--mono); font-size: 15px; color: var(--ink); }
+</style>
+</head>
+<body>
+<div class="sheet">
+  <h1>The ten tables, and which step writes each</h1>
+  <p class="lede">
+    A letter moves through the steps of the previous part, and each one writes a different part of the database. Nothing is written
+    twice, and nothing that can be worked out at the moment it is asked for is stored. The definition of every
+    column, with the reason it exists, is in <span class="mono">db/schema.sql</span>.
+  </p>
+
+  <div class="steps">
+
+    <div class="col">
+      <div class="shead">
+        <div class="n">Step 1</div>
+        <div class="t">Photograph</div>
+        <div class="d">The pages arrive. Nothing has looked at them yet.</div>
+      </div>
+      <div class="body">
+        <div class="tbl">
+          <div class="nm">documents</div>
+          <div class="cols">status, uploaded_at, issuer, document_type</div>
+          <div class="note">One row per letter, created at <span class="mono">processing</span> before anything is known about it.</div>
+          <div class="fk">&rarr; users</div>
+        </div>
+        <div class="tbl">
+          <div class="nm">document_pages</div>
+          <div class="cols">page_number, storage_key, mime_type</div>
+          <div class="note">One row per photograph. The bytes live in the object store; this row is how to find them again.</div>
+          <div class="fk">&rarr; documents</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="shead">
+        <div class="n">Step 2</div>
+        <div class="t">Read</div>
+        <div class="d">The one model call, and the record of what it was asked and what it said.</div>
+      </div>
+      <div class="body">
+        <div class="tbl">
+          <div class="nm">extraction_runs</div>
+          <div class="cols">status, model, started_at, finished_at</div>
+          <div class="note">One reading per letter. There is no second attempt, so there is no attempt number.</div>
+          <div class="fk">&rarr; documents</div>
+        </div>
+        <div class="tbl">
+          <div class="nm">extracted_fields</div>
+          <div class="cols">field_key, value, status</div>
+          <div class="note">Six rows, sometimes more. A field the model could not read is a row saying so, not a missing row.</div>
+          <div class="fk">&rarr; extraction_runs</div>
+        </div>
+        <div class="tbl">
+          <div class="nm">ai_prompt_logs</div>
+          <div class="cols">prompt, response, tokens</div>
+          <div class="note">What was sent and what came back, so an answer can be argued with months later.</div>
+          <div class="fk">&rarr; extraction_runs</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="shead quiet">
+        <div class="n">Step 3</div>
+        <div class="t">Check</div>
+        <div class="d">She looks at the reading and decides whether it is her letter.</div>
+      </div>
+      <div class="body quiet">
+        <div class="none">
+          This step writes nothing at all.
+          <br><br>
+          The screen shows what was read and takes no answer except yes, so there is nothing for it to record.
+          A step that writes nothing is worth a column of its own here, because every design that asked her a
+          question needed somewhere to put the answer.
+        </div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="shead">
+        <div class="n">Step 4</div>
+        <div class="t">Confirm</div>
+        <div class="d">Her yes is the only thing that turns a reading into something that will act.</div>
+      </div>
+      <div class="body">
+        <div class="tbl">
+          <div class="nm">tasks</div>
+          <div class="cols">title, due_date, due_time, state</div>
+          <div class="note">The tick is a task's only state. Whether it is overdue is worked out from the clock, never stored.</div>
+          <div class="fk">&rarr; users, documents</div>
+        </div>
+        <div class="tbl">
+          <div class="nm">reminders</div>
+          <div class="cols">scheduled_for, channel, status</div>
+          <div class="note">Three rows, seven, three and one day before. Written now because each one has its own fate to record.</div>
+          <div class="fk">&rarr; tasks</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="shead">
+        <div class="n">Step 5</div>
+        <div class="t">Remind, and tick</div>
+        <div class="d">A reminder rings and reads the tick. Both write, and neither writes the other.</div>
+      </div>
+      <div class="body">
+        <div class="tbl">
+          <div class="nm">reminders</div>
+          <div class="cols">status &rarr; sent, skipped, failed</div>
+          <div class="note">Written a second time, and only this column. Still open means send it; already ticked means send nothing and say so.</div>
+        </div>
+        <div class="tbl">
+          <div class="nm">tasks</div>
+          <div class="cols">state, completed_at</div>
+          <div class="note">Ticking writes here and nowhere else. No reminder is cancelled, because none needed to be.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="foot">
+    <div class="fbox">
+      <div class="h">Three tables belong to no step</div>
+      <p>
+        <code>users</code> and <code>sessions</code> are there before a letter is, and
+        <code>audit_logs</code> records what was done to an account rather than what a letter said. The audit
+        table has nowhere to put the contents of a letter, and that is deliberate rather than an omission.
+      </p>
+    </div>
+    <div class="fbox">
+      <div class="h">What is not here</div>
+      <p>
+        There is no table for a batch of mixed letters, none for deciding which photographs make a letter, and
+        none for joining a later upload to an earlier one. Those were the expensive parts of a larger design.
+        The rows above are what is left when an upload is one letter by construction.
+      </p>
+    </div>
+  </div>
+</div>
+</body>
+</html>

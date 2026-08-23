@@ -4,21 +4,21 @@ DayKeeper (Group 1): an AI-powered life management system for people in vulnerab
 
 ## Where things live
 
-- `docs/scope.md`: what this release builds, and what it deliberately does not. Where any other document describes behaviour that is not in it, that document is wrong.
-- `docs/start-here.md`: how to run the whole thing, what the seed contains, and where everything lives. Read this first.
-- `docs/api.md`: the API specification. **Not built yet**: this is the shape to build against, with the reasoning for the parts that look arbitrary.
-- `docs/theme.md`: the theme. The palette, the contrast measurements, and the rules that make this product readable by the people it is for. Read it before styling a screen.
-- `docs/project-description.md`: the official project description, verbatim. Our requirements baseline; when wording conflicts, this file wins on what the product is for, and `docs/scope.md` says which part of it we are building now.
-- `docs/prototype/user/daykeeper-sketch-live.html`: clickable prototype of the user flow (phone). The live one; user-flow design work happens here, and its `:root` block is where the theme's palette lives. See "The look" below.
-- `.agents/skills/daykeeper-jira/`: how this team's Jira board actually works, as a skill. Codex loads it when a ticket, the board or a sprint comes up; it needs the Atlassian MCP server, which `.codex/config.toml` already defines and the README explains how to authenticate. Optional: nothing in the build depends on it.
-- `db/schema.sql`: the database, and its only definition. No migrations: edit it and run `npm run db:reset`.
-- `docs/walkthrough/`: **the way in**. A walk through the product one action at a time, and under each
+- [`docs/scope.md`](docs/scope.md): what this release builds, and what it deliberately does not. Where any other document describes behaviour that is not in it, that document is wrong.
+- [`docs/start-here.md`](docs/start-here.md): how to run the whole thing, what the seed contains, and where everything lives. Read this first.
+- [`docs/api.md`](docs/api.md): the API specification. **Not built yet**: this is the shape to build against, with the reasoning for the parts that look arbitrary.
+- [`docs/theme.md`](docs/theme.md): the theme. The palette, the contrast measurements, and the rules that make this product readable by the people it is for. Read it before styling a screen.
+- [`docs/project-description.md`](docs/project-description.md): the official project description, verbatim. Our requirements baseline; when wording conflicts, this file wins on what the product is for, and [`docs/scope.md`](docs/scope.md) says which part of it we are building now.
+- [`docs/prototype/user/daykeeper-sketch-live.html`](docs/prototype/user/daykeeper-sketch-live.html): clickable prototype of the user flow (phone). The live one; user-flow design work happens here, and its `:root` block is where the theme's palette lives. See "The look" below.
+- [`.agents/skills/daykeeper-jira/`](.agents/skills/daykeeper-jira/): how this team's Jira board actually works, as a skill. Codex loads it when a ticket, the board or a sprint comes up; it needs the Atlassian MCP server, which [`.codex/config.toml`](.codex/config.toml) already defines and the README explains how to authenticate. Optional: nothing in the build depends on it.
+- [`db/schema.sql`](db/schema.sql): the database, and its only definition. No migrations: edit it and run `npm run db:reset`.
+- [`docs/walkthrough/`](docs/walkthrough/): **the way in**. A walk through the product one action at a time, and under each
   screen what the system does, which tables it writes, and why. Start here if you are new, or if you are
   about to change something and want to know what it is connected to. The PDF is built from the typst
-  sources beside it; `docs/walkthrough/README.md` says how to rebuild it and how the diagrams are made.
-- `src/lib/contract/`: the agreement, in TypeScript, with validators: the six fields, the shapes the browser receives, the date rules and the reminder ladder. Import these types; do not restate them.
-- `src/server/`: server-only code. `db.ts` for queries, `storage.ts` for the photographs themselves (an S3 bucket, MinIO locally), `extraction/` for the reader interface and its mock. `src/lib` is safe anywhere; `src/server` never reaches the browser.
-- `src/app/`: the interface. The pages still read from `src/lib/mock-data.ts`; wiring them to real endpoints is the work.
+  sources beside it; [`docs/walkthrough/README.md`](docs/walkthrough/README.md) says how to rebuild it and how the diagrams are made.
+- [`src/lib/contract/`](src/lib/contract/): the agreement, in TypeScript, with validators: the six fields, the shapes the browser receives, the date rules and the reminder ladder. Import these types; do not restate them.
+- [`src/server/`](src/server/): server-only code. [`db.ts`](src/server/db.ts) for queries, [`storage.ts`](src/server/storage.ts) for the photographs themselves (an S3 bucket, MinIO locally), [`extraction/`](src/server/extraction/) for the reader interface and its mock. `src/lib` is safe anywhere; `src/server` never reaches the browser.
+- [`src/app/`](src/app/): the interface. The pages still read from [`src/lib/mock-data.ts`](src/lib/mock-data.ts); wiring them to real endpoints is the work.
 
 ## Conventions
 
@@ -47,12 +47,12 @@ The theme is **Eucalypt & Wattle**, adopted 10 August 2026. **Read [`docs/theme.
 
 The short version, so you know when to go and read it:
 
-- The palette lives in `src/app/globals.css`, with shadcn's own names pointed at it. An ordinary `<Button>` is already eucalypt green; prefer `bg-primary`, `text-muted-foreground`, `border-border` and the DayKeeper additions (`text-warn` on `bg-warn-bg`, and so on) over typing a hex anywhere.
-- `docs/prototype/user/daykeeper-sketch-live.html` is the worked example. Open it in a browser to see what a screen is supposed to look like.
-- Body text clears **7:1, not 4.5:1**, nothing is blue, nothing is pure white or pure black, gold is never text, and colour is never the only signal. Each of those has a reason involving eyes over 70, and `docs/theme.md` gives it.
+- The palette lives in [`src/app/globals.css`](src/app/globals.css), with shadcn's own names pointed at it. An ordinary `<Button>` is already eucalypt green; prefer `bg-primary`, `text-muted-foreground`, `border-border` and the DayKeeper additions (`text-warn` on `bg-warn-bg`, and so on) over typing a hex anywhere.
+- [`docs/prototype/user/daykeeper-sketch-live.html`](docs/prototype/user/daykeeper-sketch-live.html) is the worked example. Open it in a browser to see what a screen is supposed to look like.
+- Body text clears **7:1, not 4.5:1**, nothing is blue, nothing is pure white or pure black, gold is never text, and colour is never the only signal. Each of those has a reason involving eyes over 70, and [`docs/theme.md`](docs/theme.md) gives it.
 - Body text is at least 18px and primary buttons at least 48px tall. The prototype's own type is still the older smaller scale, so build new screens at the larger size rather than matching the sketch.
 
-`tests/theme.test.ts` holds the two copies of the palette (the prototype and `docs/theme.md`) against `src/app/globals.css`, which is where it lives, and fails the build if a colour drifts or a blue appears.
+[`tests/theme.test.ts`](tests/theme.test.ts) holds the two copies of the palette (the prototype and [`docs/theme.md`](docs/theme.md)) against [`src/app/globals.css`](src/app/globals.css), which is where it lives, and fails the build if a colour drifts or a blue appears.
 
 ## Build and test
 
@@ -74,14 +74,14 @@ Git hooks install themselves through `npm ci` (husky): staged files are formatte
 
 Terminal output follows one rule: silence means success, anything printed is signal. When running scripts to read their output (as an AI agent does), prefer `npm run -s <script>`: it drops the three-line npm banner and nothing else. Do not set `loglevel=silent` anywhere permanent; it also swallows npm's own error reporting.
 
-Tests are Vitest, in `tests/`. `tests/contract.test.ts` needs no database and no network: it checks that the agreement between the reader and everything else still holds.
+Tests are Vitest, in `tests/`. [`tests/contract.test.ts`](tests/contract.test.ts) needs no database and no network: it checks that the agreement between the reader and everything else still holds.
 
-The pages have no working sign-in yet and read `src/lib/mock-data.ts`, so `npm run dev` shows the interface with fixture data. The seeded accounts (`margaret@example.com` and `operator@example.com`, password `daykeeper`) are already in the database and will work once somebody builds authentication.
+The pages have no working sign-in yet and read [`src/lib/mock-data.ts`](src/lib/mock-data.ts), so `npm run dev` shows the interface with fixture data. The seeded accounts (`margaret@example.com` and `operator@example.com`, password `daykeeper`) are already in the database and will work once somebody builds authentication.
 
 Two rules that are easy to break by accident. Both are written where they are enforced, with the reasoning attached, so read them there rather than trusting a summary:
 
-- **The six fields are a floor, not a ceiling**, and a field the reader could not read says so rather than going missing. `src/lib/contract/fields.ts` and `src/lib/contract/extraction.ts`.
-- **The review screen shows, it never asks.** `src/lib/contract/api.ts`.
+- **The six fields are a floor, not a ceiling**, and a field the reader could not read says so rather than going missing. [`src/lib/contract/fields.ts`](src/lib/contract/fields.ts) and [`src/lib/contract/extraction.ts`](src/lib/contract/extraction.ts).
+- **The review screen shows, it never asks.** [`src/lib/contract/api.ts`](src/lib/contract/api.ts).
 
 ## Worktrees: parallel agents without collisions
 
@@ -105,7 +105,7 @@ npm run db:reset         # schema + seed + bucket, all THIS worktree's own
 npm run dev              # serves on the port setup printed (it is in .env.local)
 ```
 
-The main checkout keeps the shared defaults (database `daykeeper`, port 3000); `worktree:setup` refuses to run there. Everything in `docs/start-here.md` applies unchanged otherwise.
+The main checkout keeps the shared defaults (database `daykeeper`, port 3000); `worktree:setup` refuses to run there. Everything in [`docs/start-here.md`](docs/start-here.md) applies unchanged otherwise.
 
 **Environment problems wear a code-bug mask.** Check the environment before touching code:
 
