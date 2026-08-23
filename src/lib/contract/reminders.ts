@@ -10,16 +10,14 @@
  *
  * ## The ladder
  *
- * - A deadline, a bill or a form or anything you act on BY a date, gets three
- *   reminders: **seven days, three days and one day before**, at 9 am. For a
- *   bill due the 18th they land on the 11th, the 15th and the 17th.
- * - An appointment, anything you attend AT a time, gets one, the day before, at
- *   9 am. Nobody needs a nudge a week before the dentist, and the day itself is
- *   already on the calendar.
+ * Everything gets the same three reminders: **seven days, three days and one
+ * day before**, at 9 am. For a bill due the 18th they land on the 11th, the
+ * 15th and the 17th, and a two o'clock appointment on the 18th gets the same
+ * three days.
  *
- * What makes something an appointment is that it has a time of day: `due_time`
- * is present (./fields.ts). That is a default recorded here so that it can be
- * argued with, rather than buried in the seed.
+ * One ladder rather than one per kind of document. A document that names a
+ * time of day still shows that time on the calendar, but it is not a different
+ * sort of thing to be reminded about.
  *
  * ## The clock check
  *
@@ -78,11 +76,8 @@ export const PLAN_LINES = {
     `On your calendar: ${date}, ${time}`,
 } as const;
 
-/** Days before the due date, for something you act on by a date. */
-export const DEADLINE_REMINDER_OFFSET_DAYS = [7, 3, 1] as const;
-
-/** Days before the appointment, for something you attend at a time. */
-export const APPOINTMENT_REMINDER_OFFSET_DAYS = [1] as const;
+/** Days before the due date. Every document gets these three. */
+export const REMINDER_OFFSET_DAYS = [7, 3, 1] as const;
 
 export type PlannedReminder = {
   /** How many days before the due date this reminder lands. */
@@ -115,27 +110,21 @@ export type PlannedReminder = {
  */
 export function planReminders(
   dueDate: string,
-  options: { hasTime: boolean; timeZone?: string; today?: string },
+  options: { timeZone?: string; today?: string } = {},
 ): PlannedReminder[] {
   const timeZone = options.timeZone ?? APP_TIME_ZONE;
-  const offsets = options.hasTime
-    ? APPOINTMENT_REMINDER_OFFSET_DAYS
-    : DEADLINE_REMINDER_OFFSET_DAYS;
-
-  return offsets
-    .map((offsetDays) => {
-      const localDate = addDays(dueDate, -offsetDays);
-      return {
-        offsetDays,
+  return REMINDER_OFFSET_DAYS.map((offsetDays) => {
+    const localDate = addDays(dueDate, -offsetDays);
+    return {
+      offsetDays,
+      localDate,
+      localTime: `${String(REMINDER_HOUR_LOCAL).padStart(2, "0")}:00`,
+      scheduledFor: zonedTimeToInstant(
         localDate,
-        localTime: `${String(REMINDER_HOUR_LOCAL).padStart(2, "0")}:00`,
-        scheduledFor: zonedTimeToInstant(
-          localDate,
-          REMINDER_HOUR_LOCAL,
-          0,
-          timeZone,
-        ),
-      };
-    })
-    .filter((r) => options.today === undefined || r.localDate >= options.today);
+        REMINDER_HOUR_LOCAL,
+        0,
+        timeZone,
+      ),
+    };
+  }).filter((r) => options.today === undefined || r.localDate >= options.today);
 }

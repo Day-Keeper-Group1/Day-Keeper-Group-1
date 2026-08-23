@@ -236,8 +236,8 @@ export const MOCK_TASKS: MockTask[] = [
     dueDate: "2026-08-15",
     done: false,
   },
-  // Upcoming appointment: has a dueTime, so it gets one reminder the day
-  // before rather than the three-reminder deadline schedule. See
+  // Upcoming appointment: has a dueTime, so the calendar prints the time. The
+  // reminders are the same three every document gets. See
   // src/lib/contract/reminders.ts.
   {
     id: "task_patel",
@@ -321,9 +321,7 @@ export function marksForTask(task: MockTask): CalendarMark[] {
   const marks: CalendarMark[] = [
     { date: task.dueDate, kind: "due", taskId: task.id },
   ];
-  for (const reminder of planReminders(task.dueDate, {
-    hasTime: Boolean(task.dueTime),
-  })) {
+  for (const reminder of planReminders(task.dueDate, {})) {
     marks.push({ date: reminder.localDate, kind: "reminder", taskId: task.id });
   }
   return marks;

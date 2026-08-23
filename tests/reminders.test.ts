@@ -10,8 +10,7 @@
 
 import { describe, expect, it } from "vitest";
 import {
-  APPOINTMENT_REMINDER_OFFSET_DAYS,
-  DEADLINE_REMINDER_OFFSET_DAYS,
+  REMINDER_OFFSET_DAYS,
   PLAN_LINES,
   REMINDER_HOUR_LOCAL,
   REMINDER_TIME_SPOKEN,
@@ -19,10 +18,10 @@ import {
 } from "@/lib/contract/reminders";
 
 describe("a deadline", () => {
-  const plan = planReminders("2026-08-15", { hasTime: false });
+  const plan = planReminders("2026-08-15", {});
 
   it("gets three reminders: seven, three and one day before", () => {
-    expect(DEADLINE_REMINDER_OFFSET_DAYS).toEqual([7, 3, 1]);
+    expect(REMINDER_OFFSET_DAYS).toEqual([7, 3, 1]);
     expect(plan.map((p) => p.offsetDays)).toEqual([7, 3, 1]);
     expect(plan.map((p) => p.localDate)).toEqual([
       "2026-08-08",
@@ -41,28 +40,15 @@ describe("a deadline", () => {
   });
 });
 
-describe("an appointment", () => {
-  const plan = planReminders("2026-09-04", { hasTime: true });
-
-  it("gets one reminder, the day before", () => {
-    expect(APPOINTMENT_REMINDER_OFFSET_DAYS).toEqual([1]);
-    expect(plan).toHaveLength(1);
-    expect(plan[0].localDate).toBe("2026-09-03");
-    expect(plan[0].localTime).toBe("09:00");
-  });
-});
-
 describe("the function itself", () => {
   it("is pure: same input, same plan", () => {
-    const a = planReminders("2026-08-15", { hasTime: false });
-    const b = planReminders("2026-08-15", { hasTime: false });
+    const a = planReminders("2026-08-15", {});
+    const b = planReminders("2026-08-15", {});
     expect(a).toEqual(b);
   });
 
   it("refuses a date that is not a date", () => {
-    expect(() => planReminders("15 Aug 2026", { hasTime: false })).toThrow(
-      TypeError,
-    );
+    expect(() => planReminders("15 Aug 2026", {})).toThrow(TypeError);
   });
 });
 
@@ -73,7 +59,6 @@ describe("a letter photographed close to its due date", () => {
   // same list and the card cannot promise what the calendar will not show.
   it("plans only the reminders still ahead of the person", () => {
     const plan = planReminders("2026-08-15", {
-      hasTime: false,
       today: "2026-08-13",
     });
     expect(plan.map((p) => p.localDate)).toEqual(["2026-08-14"]);
@@ -81,20 +66,17 @@ describe("a letter photographed close to its due date", () => {
 
   it("keeps a reminder falling today", () => {
     const plan = planReminders("2026-08-15", {
-      hasTime: false,
       today: "2026-08-14",
     });
     expect(plan).toHaveLength(1);
   });
 
   it("plans nothing at all once every offset has gone by", () => {
-    expect(
-      planReminders("2026-08-15", { hasTime: false, today: "2026-08-15" }),
-    ).toEqual([]);
+    expect(planReminders("2026-08-15", { today: "2026-08-15" })).toEqual([]);
   });
 
   it("still returns the past ones when no day is given, for the seed", () => {
-    expect(planReminders("2026-08-15", { hasTime: false })).toHaveLength(3);
+    expect(planReminders("2026-08-15", {})).toHaveLength(3);
   });
 });
 

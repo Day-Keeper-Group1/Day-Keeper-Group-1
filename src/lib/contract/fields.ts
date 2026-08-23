@@ -83,9 +83,9 @@ export const FIELD_DESCRIPTIONS: Record<ContractFieldKey, string> = {
  * `due_time` exists because an appointment happens AT a time, not just BY a
  * date, and the prototype shows "Fri 4 Sep, 10:30 am". The six-field floor is
  * unchanged: a provider that omits `due_time` is fine, and a provider that
- * returns it for a document with no printed time is wrong. Its presence is
- * also what marks a document as an appointment for reminder scheduling; see
- * ./reminders.ts.
+ * returns it for a document with no printed time is wrong. It changes what the
+ * calendar prints, not when the reminders go out: every document gets the same
+ * ladder (./reminders.ts).
  */
 export const OPTIONAL_FIELD_KEYS = ["due_time"] as const;
 

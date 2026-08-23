@@ -203,11 +203,10 @@ async function main() {
       uploadedDaysAgo: 4,
     });
 
-    // An appointment: the one kind of letter with a time of day. Having a
-    // due_time is what makes it one, and an appointment gets a single reminder
-    // the day before rather than the three a deadline gets. Both rules live in
-    // src/lib/contract/reminders.ts; this row exists so nobody has to imagine
-    // them.
+    // An appointment: the one kind of letter with a time of day. The time
+    // reaches the calendar, and the reminders are the same three every
+    // document gets (src/lib/contract/reminders.ts). This row exists so that
+    // a document with a due_time is in the seed at all.
     const gp = await confirmedLetter(db, margaretId, {
       issuer: "Dr A. Patel, GP clinic",
       documentType: "Medical letter",
@@ -353,7 +352,7 @@ async function confirmedLetter(
     documentType: string;
     action: string;
     dueDate: string;
-    /** 'HH:mm'. Present makes this an appointment: one reminder, not three. */
+    /** 'HH:mm'. Present when the letter prints a time. Reaches the calendar. */
     dueTime?: string;
     amount: string;
     reference: string;
@@ -424,7 +423,6 @@ async function confirmedLetter(
   // must call the same function: two copies of this rule is how the review
   // screen ends up promising a reminder that never arrives.
   for (const planned of planReminders(spec.dueDate, {
-    hasTime: Boolean(spec.dueTime),
     timeZone: APP_TIME_ZONE,
   })) {
     // A reminder whose time has passed is one that was sent, and the schema
