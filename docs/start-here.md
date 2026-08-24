@@ -180,7 +180,9 @@ docs/api.md               the API to build
 ```
 
 Why a thing is the way it is sits beside the thing itself, in a comment at the
-top of the file that implements it.
+top of the file that implements it. Keep it short. A few sentences on the
+decisions somebody would otherwise have to guess at, not an essay, and never a
+retelling of what the code below already says.
 
 ## Building against this
 
