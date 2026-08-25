@@ -1,19 +1,54 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { Bell, LogOut, Search, Settings, User } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Bell, LogOut, Search, Settings } from "lucide-react";
+
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import type { SessionUser } from "@/lib/contract/api";
 
-export function Topbar() {
+/**
+ * First and last initial, for the avatar.
+ *
+ * The stored display name is shown whole elsewhere on purpose: it holds
+ * "Margaret Whitfield" while the greeting wants "Margaret", and a preferred
+ * name is an open question rather than something to guess at by truncating.
+ */
+function initialsOf(displayName: string): string {
+  const parts = displayName.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0].slice(0, 1).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+export function Topbar({ user }: { user: SessionUser }) {
+  const router = useRouter();
+  const [signingOut, setSigningOut] = useState(false);
+
+  async function signOut() {
+    if (signingOut) return;
+    setSigningOut(true);
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } finally {
+      // Either way the safe place to be is the sign-in screen: if the request
+      // failed, the next server render will send us here regardless.
+      router.push("/login");
+      router.refresh();
+    }
+  }
+
   return (
     <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between gap-4 border-b border-border bg-background px-4 md:px-6">
       <div className="hidden max-w-sm flex-1 items-center md:flex">
@@ -42,17 +77,24 @@ export function Topbar() {
               <Button
                 variant="ghost"
                 className="flex items-center gap-2 px-2"
-                aria-label="Account menu"
+                aria-label={`Account menu for ${user.displayName}`}
               >
                 <Avatar className="size-7">
-                  <AvatarFallback>
-                    <User className="size-4" strokeWidth={1.75} />
+                  <AvatarFallback className="text-xs font-semibold">
+                    {initialsOf(user.displayName)}
                   </AvatarFallback>
                 </Avatar>
               </Button>
             }
           />
-          <DropdownMenuContent align="end" className="w-48">
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuLabel className="text-foreground">
+              {user.displayName}
+              <span className="block text-xs font-normal text-muted-foreground">
+                {user.email}
+              </span>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
             <DropdownMenuItem
               render={
                 <Link href="/settings">
@@ -64,13 +106,12 @@ export function Topbar() {
             <DropdownMenuSeparator />
             <DropdownMenuItem
               variant="destructive"
-              render={
-                <Link href="/">
-                  <LogOut className="size-4" strokeWidth={1.75} />
-                  Sign out
-                </Link>
-              }
-            />
+              disabled={signingOut}
+              onClick={signOut}
+            >
+              <LogOut className="size-4" strokeWidth={1.75} />
+              {signingOut ? "Signing out..." : "Sign out"}
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
