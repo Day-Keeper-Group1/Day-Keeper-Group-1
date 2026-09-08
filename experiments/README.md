@@ -6,4 +6,4 @@ One folder per question. Each has a `README.md` that states the question and wha
 
 | Folder | The question |
 |---|---|
-| [`kan-29-extraction-model-choice/`](kan-29-extraction-model-choice/) | Which letters does the reading step promise to read, and which model at which reasoning effort reads them. |
+| [`module-01-extraction/`](module-01-extraction/) | Which letters does the reading step promise to read, and which model at which reasoning effort reads them. |

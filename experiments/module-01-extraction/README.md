@@ -1,4 +1,4 @@
-# KAN-29: which letters, which model, which effort
+# Module 1, extraction: which letters, which model, which effort
 
 The reading step makes one model call per letter and gets back six fields. Before that call can be written into the product, two things have to be settled, and they have to be settled together: **which letters** the product promises to read, and **which model at which reasoning effort** reads them.
 
@@ -43,7 +43,7 @@ Every experiment ends in one file, `REPORT.md`, in its own folder. It has six se
 
 **3. What varied, what was held.** Point at the four variable files rather than restating them, and say what check shows everything else really was the same. Short.
 
-**4. Result.** The table from `npm run kan29:report`, pasted as is, and the list of every miss. Numbers and nothing else: no adjectives, no explanation, no sentence that starts with "this shows". If a reader disagrees with section 5, section 4 has to be something they can still accept.
+**4. Result.** The table from `npm run m1:report`, pasted as is, and the list of every miss. Numbers and nothing else: no adjectives, no explanation, no sentence that starts with "this shows". If a reader disagrees with section 5, section 4 has to be something they can still accept.
 
 **5. Reading the result.** What the numbers mean. Which cells were full, what pattern is or is not there, where the misses cluster and what kind of failure each cluster is. This is the section that is allowed to reason, and every claim in it should point back at a row in section 4.
 

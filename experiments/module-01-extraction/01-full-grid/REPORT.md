@@ -93,8 +93,8 @@ What the next experiment asks, more reads on the four cells or a narrower set of
 ## Reproducing this
 
 ```
-npm run kan29:score  01-full-grid
-npm run kan29:report 01-full-grid
+npm run m1:score  01-full-grid
+npm run m1:report 01-full-grid
 ```
 
-re-marks the replies in `runs/` and prints the two tables above without calling the model. `npm run kan29:matrix 01-full-grid` would make the calls again; it skips any that already succeeded.
+re-marks the replies in `runs/` and prints the two tables above without calling the model. `npm run m1:matrix 01-full-grid` would make the calls again; it skips any that already succeeded.

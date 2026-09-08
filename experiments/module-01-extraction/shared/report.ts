@@ -6,7 +6,7 @@
  * before its cost is worth looking at. Token columns are per letter, averaged
  * over the cell, straight from what Azure reported.
  *
- *   npm run kan29:report 01-full-grid
+ *   npm run m1:report 01-full-grid
  */
 
 import { readFileSync } from "node:fs";

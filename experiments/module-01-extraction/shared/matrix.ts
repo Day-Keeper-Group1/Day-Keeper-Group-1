@@ -8,9 +8,9 @@
  * works and whether the endpoint objects to the top effort, before spending
  * the rest.
  *
- *   npm run kan29:probe 01-full-grid
- *   npm run kan29:matrix 01-full-grid
- *   npm run kan29:matrix 01-full-grid -- --workers 2
+ *   npm run m1:probe 01-full-grid
+ *   npm run m1:matrix 01-full-grid
+ *   npm run m1:matrix 01-full-grid -- --workers 2
  *
  * With no folder named, the highest-numbered experiment is used.
  */

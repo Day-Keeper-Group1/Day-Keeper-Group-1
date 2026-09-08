@@ -1,4 +1,4 @@
-# AGENTS.md · kan-29-extraction-model-choice
+# AGENTS.md · module-01-extraction
 
 Read [`README.md`](README.md) first. It says what is being decided and why. This file says how the code that decides it is arranged, so that the next experiment is added by following the shape rather than by asking.
 
@@ -24,10 +24,10 @@ AZURE_OPENAI_API_KEY=...
 From the repository root, naming the experiment folder:
 
 ```
-npm run kan29:probe  01-full-grid     # three calls: is the key good, does the top effort work
-npm run kan29:matrix 01-full-grid     # every call the four files ask for
-npm run kan29:score  01-full-grid     # mark the replies; writes scores.json
-npm run kan29:report 01-full-grid     # the table, as markdown
+npm run m1:probe  01-full-grid     # three calls: is the key good, does the top effort work
+npm run m1:matrix 01-full-grid     # every call the four files ask for
+npm run m1:score  01-full-grid     # mark the replies; writes scores.json
+npm run m1:report 01-full-grid     # the table, as markdown
 ```
 
 Calls that already succeeded are skipped, so the matrix can be interrupted and run again, and a single failed call is retried the same way. Name no folder and the highest-numbered experiment is used. `-- --workers N` sets how many calls run at once; four is the default.

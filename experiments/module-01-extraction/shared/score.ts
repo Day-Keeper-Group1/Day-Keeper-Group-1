@@ -24,7 +24,7 @@
  * marked it `confirmed`. That is the one that reaches a person's screen, so it
  * is the number the report leads with.
  *
- *   npm run kan29:score 01-full-grid
+ *   npm run m1:score 01-full-grid
  */
 
 import { existsSync, readFileSync, writeFileSync } from "node:fs";

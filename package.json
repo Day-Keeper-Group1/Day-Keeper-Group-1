@@ -23,10 +23,10 @@
     "format": "prettier --write . --log-level warn",
     "format:check": "prettier --check . --log-level warn",
     "prepare": "husky",
-    "kan29:probe": "tsx experiments/kan-29-extraction-model-choice/shared/matrix.ts --probe",
-    "kan29:matrix": "tsx experiments/kan-29-extraction-model-choice/shared/matrix.ts",
-    "kan29:score": "tsx experiments/kan-29-extraction-model-choice/shared/score.ts",
-    "kan29:report": "tsx experiments/kan-29-extraction-model-choice/shared/report.ts"
+    "m1:probe": "tsx experiments/module-01-extraction/shared/matrix.ts --probe",
+    "m1:matrix": "tsx experiments/module-01-extraction/shared/matrix.ts",
+    "m1:score": "tsx experiments/module-01-extraction/shared/score.ts",
+    "m1:report": "tsx experiments/module-01-extraction/shared/report.ts"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx,mjs,cjs}": [

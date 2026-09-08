@@ -20,7 +20,13 @@
 
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { resolve } from "node:path";
-import { EFFORTS, KAN29_DIR, MODELS, type Effort, type Model } from "./config";
+import {
+  EFFORTS,
+  MODULE1_DIR,
+  MODELS,
+  type Effort,
+  type Model,
+} from "./config";
 
 export type Cell = { model: Model; effort: Effort };
 
@@ -45,14 +51,14 @@ function lines(file: string): string[] {
 }
 
 export function experimentNames(): string[] {
-  return readdirSync(KAN29_DIR)
+  return readdirSync(MODULE1_DIR)
     .filter((n) => /^\d\d-/.test(n))
-    .filter((n) => statSync(resolve(KAN29_DIR, n)).isDirectory())
+    .filter((n) => statSync(resolve(MODULE1_DIR, n)).isDirectory())
     .sort();
 }
 
 export function loadExperiment(name: string): Experiment {
-  const dir = resolve(KAN29_DIR, name);
+  const dir = resolve(MODULE1_DIR, name);
   if (!existsSync(dir)) {
     throw new Error(
       `no experiment "${name}". Found: ${experimentNames().join(", ") || "none"}`,
@@ -106,6 +112,6 @@ export function experimentFromArgv(argv: string[]): Experiment {
   if (named) return loadExperiment(named);
   const all = experimentNames();
   if (all.length === 0)
-    throw new Error(`no experiment folders in ${KAN29_DIR}`);
+    throw new Error(`no experiment folders in ${MODULE1_DIR}`);
   return loadExperiment(all[all.length - 1]);
 }

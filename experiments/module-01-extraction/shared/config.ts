@@ -34,8 +34,8 @@ export const EFFORTS = [
 ] as const;
 export type Effort = (typeof EFFORTS)[number];
 
-/** Scripts are run from the repository root via `npm run kan29:*`. */
-export const KAN29_DIR = resolve("experiments/kan-29-extraction-model-choice");
+/** Scripts are run from the repository root via `npm run m1:*`. */
+export const MODULE1_DIR = resolve("experiments/module-01-extraction");
 
 /** The project's letter dataset, shared with the API demo and the tests. */
 export const SAMPLES_DIR = resolve("data/synthetic-letters");
