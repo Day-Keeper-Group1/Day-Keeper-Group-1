@@ -1,0 +1,11 @@
+{
+  "model": "gpt-5.6-terra",
+  "effort": "max",
+  "pages": ["page-01.png"],
+  "image_detail": "auto",
+  "started_at": "2026-09-08T14:45:07.637Z",
+  "seconds": 42.57,
+  "ok": true,
+  "letter": "06-parking-infringement-notice",
+  "repeat": 1
+}

@@ -1,0 +1,6 @@
+# How many times each cell reads each letter.
+#
+# One. Which means this experiment cannot tell a real difference between two
+# cells from the ordinary variation of asking the same question twice.
+
+1
