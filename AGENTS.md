@@ -16,6 +16,7 @@ DayKeeper (Group 1): an AI-powered life management system for people in vulnerab
   screen what the system does, which tables it writes, and why. Start here if you are new, or if you are
   about to change something and want to know what it is connected to. The PDF is built from the typst
   sources beside it; [`docs/walkthrough/README.md`](docs/walkthrough/README.md) says how to rebuild it and how the diagrams are made.
+- [`experiments/`](experiments/): where a product decision was settled by measuring. One folder per question, with its raw results kept so the decision can be checked later. Each has its own `README.md` (the question) and `AGENTS.md` (how the code is arranged).
 - [`src/lib/contract/`](src/lib/contract/): the agreement, in TypeScript, with validators: the six fields, the shapes the browser receives, the date rules and the reminder ladder. Import these types; do not restate them.
 - [`src/server/`](src/server/): server-only code. [`db.ts`](src/server/db.ts) for queries, [`storage.ts`](src/server/storage.ts) for the photographs themselves (an S3 bucket, MinIO locally), [`extraction/`](src/server/extraction/) for the reader interface and its mock. `src/lib` is safe anywhere; `src/server` never reaches the browser.
 - [`src/app/`](src/app/): the interface. The pages still read from [`src/lib/mock-data.ts`](src/lib/mock-data.ts); wiring them to real endpoints is the work.
