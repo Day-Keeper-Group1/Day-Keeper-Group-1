@@ -1,0 +1,10 @@
+{
+  "model": "gpt-5.6-terra",
+  "effort": "max",
+  "sample_id": "15-insurance-key-facts-sheet",
+  "pages": ["page-01.png", "page-02.png"],
+  "image_detail": "auto",
+  "started_at": "2026-09-08T14:47:04.560Z",
+  "seconds": 79.426,
+  "ok": true
+}

@@ -1,0 +1,10 @@
+{
+  "model": "gpt-5.6-terra",
+  "effort": "max",
+  "sample_id": "12-failure-to-vote-notice",
+  "pages": ["page-01.png"],
+  "image_detail": "auto",
+  "started_at": "2026-09-08T14:46:21.456Z",
+  "seconds": 16.564,
+  "ok": true
+}

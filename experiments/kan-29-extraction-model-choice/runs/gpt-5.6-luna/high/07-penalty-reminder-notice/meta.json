@@ -1,0 +1,10 @@
+{
+  "model": "gpt-5.6-luna",
+  "effort": "high",
+  "sample_id": "07-penalty-reminder-notice",
+  "pages": ["page-01.png", "page-02.png"],
+  "image_detail": "auto",
+  "started_at": "2026-09-08T14:36:51.696Z",
+  "seconds": 9.931,
+  "ok": true
+}

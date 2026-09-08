@@ -1,0 +1,55 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "gpt-4o",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "medical statement of account",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Mr Andrew Reid",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "No action required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "due_date",
+      "value": "Not applicable",
+      "status": "confirmed",
+      "confidence": 0.97
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "709480",
+      "status": "confirmed",
+      "confidence": 0.99
+    }
+  ],
+  "open_payload": {
+    "account_date": "30/06/2026",
+    "terms": "14 days",
+    "total_charge": "$315.00",
+    "patient_rebate_scheme_benefit": "$129.50",
+    "health_fund_benefit": "$0.00",
+    "out_of_pocket_cost": "$185.50",
+    "payments_received": "-$315.00",
+    "balance_due": "$0.00",
+    "payment_status": "Paid in full",
+    "provider_number": "8484902F"
+  }
+}

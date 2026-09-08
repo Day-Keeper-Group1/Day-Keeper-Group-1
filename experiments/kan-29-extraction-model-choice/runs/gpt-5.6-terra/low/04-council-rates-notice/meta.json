@@ -1,0 +1,10 @@
+{
+  "model": "gpt-5.6-terra",
+  "effort": "low",
+  "sample_id": "04-council-rates-notice",
+  "pages": ["page-01.png", "page-02.png"],
+  "image_detail": "auto",
+  "started_at": "2026-09-08T14:42:23.021Z",
+  "seconds": 8.379,
+  "ok": true
+}

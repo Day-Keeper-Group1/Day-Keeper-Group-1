@@ -1,0 +1,10 @@
+{
+  "model": "gpt-5.6-terra",
+  "effort": "low",
+  "sample_id": "01-electricity-bill",
+  "pages": ["page-01.png", "page-02.png"],
+  "image_detail": "auto",
+  "started_at": "2026-09-08T14:33:55.756Z",
+  "seconds": 9.166,
+  "ok": true
+}
