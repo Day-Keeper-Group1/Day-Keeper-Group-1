@@ -56,11 +56,37 @@ export function GET() {
                   schema: {
                     type: "object",
                     properties: {
-                      provider: {
-                        type: "string",
-                        description: "Which reader answered: mock or azure.",
+                      call: {
+                        type: "object",
+                        description:
+                          "The call's own record, written by the code and not by the model.",
+                        properties: {
+                          provider: {
+                            type: "string",
+                            description:
+                              "Which reader answered: mock or azure.",
+                          },
+                          model: { type: "string", nullable: true },
+                          effort: {
+                            type: "string",
+                            nullable: true,
+                            description:
+                              "The reasoning effort; null for the mock.",
+                          },
+                          seconds: { type: "number" },
+                          usage: {
+                            type: "object",
+                            nullable: true,
+                            description:
+                              "Tokens as the provider reported them. output_tokens already includes reasoning_tokens.",
+                            properties: {
+                              input_tokens: { type: "integer" },
+                              reasoning_tokens: { type: "integer" },
+                              output_tokens: { type: "integer" },
+                            },
+                          },
+                        },
                       },
-                      model: { type: "string", nullable: true },
                       result: {
                         type: "object",
                         description:
@@ -102,8 +128,17 @@ export function GET() {
                     },
                   },
                   example: {
-                    provider: "azure",
-                    model: "gpt-5.6-luna",
+                    call: {
+                      provider: "azure",
+                      model: "gpt-5.6-luna",
+                      effort: "medium",
+                      seconds: 12.1,
+                      usage: {
+                        input_tokens: 25077,
+                        reasoning_tokens: 216,
+                        output_tokens: 589,
+                      },
+                    },
                     result: {
                       contract_version: "2.0",
                       provider: "azure",

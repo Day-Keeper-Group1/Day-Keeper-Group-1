@@ -1,10 +1,9 @@
 import { MAX_PAGE_BYTES, MAX_PAGES } from "@/lib/contract/api";
-import { safeParseExtractionResult } from "@/lib/contract/extraction";
 import { fail, json, route } from "@/server/api/respond";
 import {
   ExtractionFailure,
-  extractionProvider,
   type ExtractionInput,
+  readLetter,
 } from "@/server/extraction";
 
 /**
@@ -62,10 +61,8 @@ export const POST = route(async (request) => {
     });
   }
 
-  const provider = extractionProvider();
-  let raw: unknown;
   try {
-    raw = await provider.extract({ documentId: `dev-${Date.now()}`, pages });
+    return json(await readLetter({ documentId: `dev-${Date.now()}`, pages }));
   } catch (error) {
     if (error instanceof ExtractionFailure) {
       // A development tool may say exactly what went wrong.
@@ -73,18 +70,4 @@ export const POST = route(async (request) => {
     }
     throw error;
   }
-
-  const parsed = safeParseExtractionResult(raw);
-  if (!parsed.success) {
-    return fail(
-      "server_error",
-      `The reader answered, but not in the contract shape: ${parsed.error.issues[0]?.message ?? "invalid"}`,
-    );
-  }
-
-  return json({
-    provider: provider.name,
-    model: provider.model,
-    result: parsed.data,
-  });
 });

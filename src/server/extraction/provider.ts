@@ -55,6 +55,34 @@ export class ExtractionFailure extends Error {
   }
 }
 
+/**
+ * What one call consumed, as the provider reported it. Azure's `output_tokens`
+ * already includes `reasoning_tokens`; they are kept as reported rather than
+ * separated, so a number here can be compared with an experiment report
+ * directly. The order is the order the tokens happen in.
+ */
+export type TokenUsage = {
+  input_tokens: number;
+  reasoning_tokens: number;
+  output_tokens: number;
+};
+
+/**
+ * What a reader hands back: what it read, and what the reading cost.
+ *
+ * `payload` is untrusted until the contract validator has passed it. The rest
+ * is the call's own record, written by the provider rather than by the model,
+ * which is why the model's opinion of its own name is not asked for here.
+ */
+export type ExtractionOutcome = {
+  payload: unknown;
+  /** The reasoning effort the call was made at; null for a reader without one. */
+  effort: string | null;
+  /** Null when nothing was billed, as with the mock. */
+  usage: TokenUsage | null;
+  seconds: number;
+};
+
 export interface DocumentExtractionProvider {
   /** Stored on every run so accuracy figures can name what produced them. */
   readonly name: string;
@@ -64,11 +92,12 @@ export interface DocumentExtractionProvider {
   /**
    * Read a letter.
    *
-   * Resolves with a payload that still has to pass the contract validator, or
-   * rejects with an ExtractionFailure. Any other rejection is a bug in the
-   * provider, and the caller records it as a failed reading just the same.
+   * Resolves with the outcome, whose payload still has to pass the contract
+   * validator, or rejects with an ExtractionFailure. Any other rejection is a
+   * bug in the provider, and the caller records it as a failed reading just
+   * the same.
    */
-  extract(input: ExtractionInput): Promise<unknown>;
+  extract(input: ExtractionInput): Promise<ExtractionOutcome>;
 }
 
 export type { ExtractionResult };

@@ -22,6 +22,7 @@ import {
   type DocumentExtractionProvider,
   ExtractionFailure,
   type ExtractionInput,
+  type ExtractionOutcome,
 } from "./provider";
 
 // KAN-46: chosen in docs/extraction.md, entry dated 2026-09-09. Change there first.
@@ -54,7 +55,7 @@ export class AzureExtractionProvider implements DocumentExtractionProvider {
   readonly name = "azure";
   readonly model = AZURE_MODEL;
 
-  async extract(input: ExtractionInput): Promise<unknown> {
+  async extract(input: ExtractionInput): Promise<ExtractionOutcome> {
     const { AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_API_KEY } = env();
     if (!AZURE_OPENAI_ENDPOINT || !AZURE_OPENAI_API_KEY) {
       throw new ExtractionFailure(
@@ -75,7 +76,9 @@ export class AzureExtractionProvider implements DocumentExtractionProvider {
       apiKey: AZURE_OPENAI_API_KEY,
     });
 
+    const started = Date.now();
     let text: string;
+    let usage: ExtractionOutcome["usage"] = null;
     try {
       const response = await client.responses.create({
         model: AZURE_MODEL,
@@ -95,18 +98,30 @@ export class AzureExtractionProvider implements DocumentExtractionProvider {
         ],
       });
       text = response.output_text ?? "";
+      if (response.usage) {
+        usage = {
+          input_tokens: response.usage.input_tokens,
+          reasoning_tokens:
+            response.usage.output_tokens_details?.reasoning_tokens ?? 0,
+          output_tokens: response.usage.output_tokens,
+        };
+      }
     } catch (error) {
       throw new ExtractionFailure(
         `the Azure call failed: ${(error as Error).message}`,
       );
     }
+    const seconds = (Date.now() - started) / 1000;
 
+    let payload: unknown;
     try {
-      return JSON.parse(unfence(text));
+      payload = JSON.parse(unfence(text));
     } catch {
       throw new ExtractionFailure(
         "the model answered with something that is not JSON",
       );
     }
+
+    return { payload, effort: AZURE_EFFORT, usage, seconds };
   }
 }
