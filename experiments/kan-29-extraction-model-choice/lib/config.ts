@@ -1,0 +1,54 @@
+/**
+ * The knobs of the experiment, and the one client that talks to Azure.
+ *
+ * Two models, six reasoning efforts, and nothing else varies: same prompt,
+ * same images, same request shape for every call. That is what makes a
+ * difference between two cells attributable to the model or the effort rather
+ * than to something nobody controlled.
+ *
+ * The key is read from .env.local and never appears in this directory. See
+ * .env.example for the two variables.
+ */
+
+import { config } from "dotenv";
+import OpenAI from "openai";
+import { resolve } from "node:path";
+
+config({ path: ".env.local", quiet: true });
+
+export const MODELS = ["gpt-5.6-luna", "gpt-5.6-terra"] as const;
+export type Model = (typeof MODELS)[number];
+
+/**
+ * Every reasoning effort the GPT-5.6 family accepts, bottom to top. `none`
+ * means the model answers without a thinking pass at all.
+ */
+export const EFFORTS = [
+  "none",
+  "low",
+  "medium",
+  "high",
+  "xhigh",
+  "max",
+] as const;
+export type Effort = (typeof EFFORTS)[number];
+
+/** Scripts are run from the repository root via `npm run kan29:*`. */
+export const EXPERIMENT_DIR = resolve(
+  "experiments/kan-29-extraction-model-choice",
+);
+export const SAMPLES_DIR = resolve(EXPERIMENT_DIR, "samples");
+export const RUNS_DIR = resolve(EXPERIMENT_DIR, "runs");
+export const PROMPT_FILE = resolve(EXPERIMENT_DIR, "prompt.md");
+export const SCORES_FILE = resolve(EXPERIMENT_DIR, "scores.json");
+
+export function client(): OpenAI {
+  const baseURL = process.env.AZURE_OPENAI_ENDPOINT;
+  const apiKey = process.env.AZURE_OPENAI_API_KEY;
+  if (!baseURL || !apiKey) {
+    throw new Error(
+      "AZURE_OPENAI_ENDPOINT and AZURE_OPENAI_API_KEY must both be set in .env.local. See .env.example.",
+    );
+  }
+  return new OpenAI({ baseURL, apiKey });
+}

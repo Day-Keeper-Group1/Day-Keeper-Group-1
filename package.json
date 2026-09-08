@@ -22,7 +22,11 @@
     "test:watch": "vitest",
     "format": "prettier --write . --log-level warn",
     "format:check": "prettier --check . --log-level warn",
-    "prepare": "husky"
+    "prepare": "husky",
+    "kan29:probe": "tsx experiments/kan-29-extraction-model-choice/matrix.ts --probe",
+    "kan29:matrix": "tsx experiments/kan-29-extraction-model-choice/matrix.ts",
+    "kan29:score": "tsx experiments/kan-29-extraction-model-choice/score.ts",
+    "kan29:report": "tsx experiments/kan-29-extraction-model-choice/report.ts"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx,mjs,cjs}": [
@@ -41,6 +45,7 @@
     "clsx": "^2.1.1",
     "lucide-react": "^1.28.0",
     "next": "16.3.0",
+    "openai": "^7.10.0",
     "pg": "^8.22.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
