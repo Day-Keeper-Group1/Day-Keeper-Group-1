@@ -15,10 +15,6 @@ export function GET() {
     return fail("not_found", "Not found.");
   }
 
-  const fieldProperties = Object.fromEntries(
-    CONTRACT_FIELD_KEYS.map((key) => [key, { type: "string", nullable: true }]),
-  );
-
   return Response.json({
     openapi: "3.0.3",
     info: {
@@ -112,12 +108,46 @@ export function GET() {
                       contract_version: "2.0",
                       provider: "azure",
                       model: "gpt-5.6-luna",
-                      fields: Object.keys(fieldProperties).map((key) => ({
-                        key,
-                        value: "...",
-                        status: "confirmed",
-                        confidence: 0.9,
-                      })),
+                      // What the azure reader actually returned for
+                      // data/synthetic-letters/01-electricity-bill.
+                      fields: [
+                        {
+                          key: "document_type",
+                          value: "electricity bill",
+                          status: "confirmed",
+                          confidence: 0.95,
+                        },
+                        {
+                          key: "issuer",
+                          value: "Example Energy",
+                          status: "confirmed",
+                          confidence: 0.95,
+                        },
+                        {
+                          key: "action_required",
+                          value: "pay the amount due",
+                          status: "confirmed",
+                          confidence: 0.95,
+                        },
+                        {
+                          key: "due_date",
+                          value: "2026-08-24",
+                          status: "confirmed",
+                          confidence: 0.95,
+                        },
+                        {
+                          key: "amount",
+                          value: "$82.42",
+                          status: "confirmed",
+                          confidence: 0.95,
+                        },
+                        {
+                          key: "reference",
+                          value: "7960 963 636",
+                          status: "confirmed",
+                          confidence: 0.95,
+                        },
+                      ],
                       open_payload: {},
                     },
                   },
