@@ -57,11 +57,10 @@ services:
       MINIO_ROOT_USER: daykeeper
       MINIO_ROOT_PASSWORD: daykeeper_local_dev
     ports:
-      # 59000 and 59001 rather than 9000 and 9001, for the same reason the
-      # database is not on 5432: those two are popular and a collision on the
-      # first morning reads like the project is broken.
-      - "59000:9000"
-      - "59001:9001"
+      # Move the MinIO host ports to a less contested pair because Windows can
+      # refuse a bind on the default local ports after a network change.
+      - "59020:9000"
+      - "59021:9001"
     volumes:
       - daykeeper_storage:/data
     healthcheck:

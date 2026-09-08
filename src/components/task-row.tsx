@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Check, FileText } from "lucide-react";
+import { CalendarClock, Check, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   formatTaskWhen,
@@ -46,6 +46,7 @@ export function TaskRow({
   const status = taskStatus(task, today);
   const done = status === "completed";
   const overdue = status === "overdue";
+  const appointment = Boolean(task.dueTime);
   const when = formatTaskWhen(task, today);
 
   const titleText = (
@@ -62,7 +63,12 @@ export function TaskRow({
   return (
     <div
       className={cn(
-        "flex items-center gap-3 rounded-lg border border-border px-4 py-3",
+        "flex items-center gap-3 rounded-lg border px-4 py-3",
+        overdue
+          ? "border-danger/60 bg-danger-bg"
+          : appointment
+            ? "border-primary/40 bg-primary-soft/40"
+            : "border-border",
         className,
       )}
     >
@@ -106,6 +112,13 @@ export function TaskRow({
         )}
         <span className="flex items-center gap-1 text-xs text-muted-foreground">
           <span className="truncate">{task.issuer}</span>
+          {appointment ? (
+            <CalendarClock
+              className="size-3 shrink-0 text-primary"
+              strokeWidth={1.75}
+              aria-label="Appointment"
+            />
+          ) : null}
           {task.documentId ? (
             <FileText
               className="size-3 shrink-0"
@@ -122,8 +135,10 @@ export function TaskRow({
           done
             ? "font-medium text-success"
             : overdue
-              ? "font-semibold text-foreground"
-              : "text-muted-foreground",
+              ? "font-bold text-danger"
+              : appointment
+                ? "font-semibold text-primary"
+                : "text-muted-foreground",
         )}
       >
         {when}
