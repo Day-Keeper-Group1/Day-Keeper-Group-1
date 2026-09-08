@@ -12,7 +12,7 @@ not stable is not considered, however cheap.
 | Path | What |
 |---|---|
 | `prompt.md` | The prompt, in full. The six field definitions are the contract's, and `lib/prompt.ts` refuses to run if they drift from `src/lib/contract/fields.ts`. |
-| `samples/` | Fifteen synthetic letters as PNG pages, and `ground-truth.jsonl`, the answer key. |
+| `../../data/synthetic-letters/` | The letters, one folder each, with their pages and a `ground-truth.json`. Shared with the rest of the project, not owned by this experiment. The PNGs are in Git LFS, so `git lfs install` once before cloning or pulling. |
 | `run.ts` | One call. Writes the raw reply, the token usage and a small meta file per run. |
 | `matrix.ts` | Every model, every effort, every letter. Resumable. |
 | `score.ts` | The definition of correct, one function per field. |

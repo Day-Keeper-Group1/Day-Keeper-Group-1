@@ -37,7 +37,8 @@ export type Effort = (typeof EFFORTS)[number];
 export const EXPERIMENT_DIR = resolve(
   "experiments/kan-29-extraction-model-choice",
 );
-export const SAMPLES_DIR = resolve(EXPERIMENT_DIR, "samples");
+/** The project's letter dataset, shared with the API demo and the tests. */
+export const SAMPLES_DIR = resolve("data/synthetic-letters");
 export const RUNS_DIR = resolve(EXPERIMENT_DIR, "runs");
 export const PROMPT_FILE = resolve(EXPERIMENT_DIR, "prompt.md");
 export const SCORES_FILE = resolve(EXPERIMENT_DIR, "scores.json");
