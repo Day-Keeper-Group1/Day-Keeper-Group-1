@@ -55,4 +55,10 @@ The report closes with how to reproduce it: the score and report commands, and a
 
 Each experiment's table has one row per cell. **Letters all right** is the stability column: a cell has to be full there before its cost is worth looking at. **Wrong and confirmed** is the number that matters most: a field the model got wrong and marked `confirmed`, which is the only kind of mistake a person ever sees, because the product hides `uncertain` and `unreadable` fields from the screen.
 
-**Cost per letter** is Azure's published list price multiplied by the tokens Azure reported. What RACE pays per token is not known to the team, so it is an estimate at list, not an invoice; the price and exchange rate carry the date they were taken. **Seconds** were measured with several calls in flight at once and describe that condition, not one call on an idle connection.
+**Cost per letter** is Azure's published list price multiplied by the tokens Azure reported. What RACE pays per token is not known to the team, so it is an estimate at list, not an invoice. **Seconds** were measured with several calls in flight at once and describe that condition, not one call on an idle connection.
+
+## Where the prices come from
+
+Per-token prices are taken from LiteLLM's model price table, <https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json>, under the keys `azure/gpt-5.6-luna` and `azure/gpt-5.6-terra`. It is a maintained file that gets a commit when a price moves, which is why it is used rather than a price remembered or found in a forum post. The USD to AUD rate is from Frankfurter, <https://api.frankfurter.dev/v1/latest?base=USD&symbols=AUD>, which serves European Central Bank rates. Both are recorded in `shared/prices.ts` with the date and, for the price table, the commit they were read at.
+
+**Every report states two things about money, and `npm run m1:report` prints both under the table.** What the whole run cost, as one number, so a reader knows what an experiment of this size spends before proposing another. And the source of the prices, by name and URL, with the date they were read, so a dollar figure can always be traced to the table it was multiplied from. A report that quotes a cost without its source is not finished.

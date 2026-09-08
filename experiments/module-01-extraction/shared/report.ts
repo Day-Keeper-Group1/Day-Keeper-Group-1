@@ -6,12 +6,27 @@
  * before its cost is worth looking at. Token columns are per letter, averaged
  * over the cell, straight from what Azure reported.
  *
+ * Under the table: what the whole run cost, and where the prices came from.
+ * Every report carries both, so a reader never has to guess which price
+ * table a dollar figure was multiplied from.
+ *
  *   npm run m1:report 01-full-grid
  */
 
 import { readFileSync } from "node:fs";
+import type { Model } from "./config";
 import { experimentFromArgv } from "./experiment";
-import { FX_AS_OF, PRICES_AS_OF, USD_TO_AUD, usdFor } from "./prices";
+import {
+  FX_AS_OF,
+  FX_SOURCE,
+  FX_SOURCE_NAME,
+  PRICE_SOURCE,
+  PRICE_SOURCE_COMMIT,
+  PRICE_SOURCE_NAME,
+  PRICES_AS_OF,
+  USD_TO_AUD,
+  usdFor,
+} from "./prices";
 import { SCORED, type Score } from "./score";
 
 const experiment = experimentFromArgv(process.argv.slice(2));
@@ -25,45 +40,50 @@ const short = (model: string) => model.replace("gpt-5.6-", "");
 const cost = (usd: number) =>
   `$${usd.toFixed(4)} (A$${(usd * USD_TO_AUD).toFixed(4)})`;
 
-console.log(`## ${experiment.name}
-`);
+console.log(`## ${experiment.name}\n`);
 console.log(
   "| Model | Effort | Letters all right | Fields right | Wrong and confirmed | Input tokens | Output tokens | Reasoning tokens | Seconds | Cost per letter |",
 );
 console.log("|---|---|---|---|---|---|---|---|---|---|");
 
 for (const { model, effort } of experiment.cells) {
-  {
-    const cell = scores.filter((s) => s.model === model && s.effort === effort);
-    if (cell.length === 0) continue;
-    const letters = cell.filter((s) =>
-      SCORED.every((f) => s.correct[f]),
-    ).length;
-    const fields = cell.reduce(
-      (n, s) => n + SCORED.filter((f) => s.correct[f]).length,
-      0,
-    );
-    const wrongConfirmed = cell.reduce(
-      (n, s) => n + s.wrong_and_confirmed.length,
-      0,
-    );
-    const withUsage = cell.filter((s) => s.usage);
-    const usd = mean(withUsage.map((s) => usdFor(model, s.usage!)));
-    console.log(
-      `| ${short(model)} | ${effort} | ${letters}/${cell.length} | ${fields}/${cell.length * SCORED.length} | ${wrongConfirmed} | ` +
-        `${mean(withUsage.map((s) => s.usage!.input_tokens)).toFixed(0)} | ` +
-        `${mean(withUsage.map((s) => s.usage!.output_tokens)).toFixed(0)} | ` +
-        `${mean(withUsage.map((s) => s.usage!.reasoning_tokens)).toFixed(0)} | ` +
-        `${mean(cell.map((s) => s.seconds)).toFixed(1)} | ` +
-        `${cost(usd)} |`,
-    );
-  }
+  const cell = scores.filter((s) => s.model === model && s.effort === effort);
+  if (cell.length === 0) continue;
+  const letters = cell.filter((s) => SCORED.every((f) => s.correct[f])).length;
+  const fields = cell.reduce(
+    (n, s) => n + SCORED.filter((f) => s.correct[f]).length,
+    0,
+  );
+  const wrongConfirmed = cell.reduce(
+    (n, s) => n + s.wrong_and_confirmed.length,
+    0,
+  );
+  const withUsage = cell.filter((s) => s.usage);
+  const usd = mean(withUsage.map((s) => usdFor(model, s.usage!)));
+  console.log(
+    `| ${short(model)} | ${effort} | ${letters}/${cell.length} | ${fields}/${cell.length * SCORED.length} | ${wrongConfirmed} | ` +
+      `${mean(withUsage.map((s) => s.usage!.input_tokens)).toFixed(0)} | ` +
+      `${mean(withUsage.map((s) => s.usage!.output_tokens)).toFixed(0)} | ` +
+      `${mean(withUsage.map((s) => s.usage!.reasoning_tokens)).toFixed(0)} | ` +
+      `${mean(cell.map((s) => s.seconds)).toFixed(1)} | ` +
+      `${cost(usd)} |`,
+  );
 }
 
+const priced = scores.filter((s) => s.usage);
+const totalUsd = priced.reduce(
+  (sum, s) => sum + usdFor(s.model as Model, s.usage!),
+  0,
+);
+const total = `$${totalUsd.toFixed(2)} (A$${(totalUsd * USD_TO_AUD).toFixed(2)})`;
+
 console.log(
-  `\nCost is at Azure's public list price as of ${PRICES_AS_OF}, converted at ` +
-    `USD 1 = AUD ${USD_TO_AUD} (${FX_AS_OF}). What RACE pays per token is not ` +
-    `known to the team. Seconds were measured with four calls in flight.`,
+  `\n**This run: ${priced.length} calls, ${total} in total.**\n\n` +
+    `Cost is Azure's public list price multiplied by the tokens Azure reported per call. ` +
+    `Prices are from ${PRICE_SOURCE_NAME} (${PRICE_SOURCE}, commit ${PRICE_SOURCE_COMMIT}, ${PRICES_AS_OF}). ` +
+    `The exchange rate USD 1 = AUD ${USD_TO_AUD} is from ${FX_SOURCE_NAME} (${FX_SOURCE}, ${FX_AS_OF}). ` +
+    `What RACE pays per token is not known to the team, so this is an estimate at list, not an invoice. ` +
+    `Seconds were measured with four calls in flight.`,
 );
 
 const misses = scores.filter(

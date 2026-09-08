@@ -37,7 +37,11 @@ Everything else was identical across the 180 calls. The same 25,077 input tokens
 | terra | xhigh | **15/15** | 60/60 | 0 | 25077 | 733 | 496 | 13.3 | $0.0590 (A$0.0817) |
 | terra | max | 14/15 | 58/60 | 1 | 25077 | 4364 | 4181 | 50.4 | $0.1025 (A$0.1421) |
 
-180 calls, 180 valid replies. Cost is at Azure's public list price as of 7 September 2026, converted at USD 1 = AUD 1.3861 (8 September). What RACE pays per token is not known to the team. Seconds were measured with four calls in flight at once.
+180 calls, 180 valid replies.
+
+**This run: 180 calls, $6.20 (A$8.59) in total.**
+
+Cost is Azure's public list price multiplied by the tokens Azure reported per call. Prices are from LiteLLM's model price table (https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json, commit 9eaf15bc, 2026-09-07). The exchange rate USD 1 = AUD 1.3861 is from Frankfurter (European Central Bank rates) (https://api.frankfurter.dev/v1/latest?base=USD&symbols=AUD, 2026-09-08). What RACE pays per token is not known to the team, so this is an estimate at list, not an invoice. Seconds were measured with four calls in flight.
 
 Every miss:
 

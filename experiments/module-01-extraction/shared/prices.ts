@@ -26,9 +26,16 @@ export const PRICES: Record<
 };
 
 export const PRICES_AS_OF = "2026-09-07";
+export const PRICE_SOURCE =
+  "https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json";
+export const PRICE_SOURCE_NAME = "LiteLLM's model price table";
+export const PRICE_SOURCE_COMMIT = "9eaf15bc";
 
 export const USD_TO_AUD = 1.3861;
 export const FX_AS_OF = "2026-09-08";
+export const FX_SOURCE =
+  "https://api.frankfurter.dev/v1/latest?base=USD&symbols=AUD";
+export const FX_SOURCE_NAME = "Frankfurter (European Central Bank rates)";
 
 export function usdFor(
   model: Model,
