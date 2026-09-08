@@ -68,7 +68,19 @@ const envSchema = z.object({
    * end to end before anyone has an API key. Swapping this is the single switch
    * that turns the real reader on.
    */
-  AI_EXTRACTION_PROVIDER: z.enum(["mock", "openai", "bedrock"]).default("mock"),
+  AI_EXTRACTION_PROVIDER: z
+    .enum(["mock", "azure", "openai", "bedrock"])
+    .default("mock"),
+
+  /**
+   * The vision model, on RACE's Azure AI Foundry. Only read when
+   * AI_EXTRACTION_PROVIDER is `azure`; the reader itself says which is missing
+   * if either is, so a wrong value fails as a sentence and not a stack trace.
+   * The key is RMIT's, issued for this project: never in a commit, a chat, or
+   * this file's example.
+   */
+  AZURE_OPENAI_ENDPOINT: z.string().optional(),
+  AZURE_OPENAI_API_KEY: z.string().optional(),
 
   /**
    * How long a signed-in session lasts. Long, because asking someone with a

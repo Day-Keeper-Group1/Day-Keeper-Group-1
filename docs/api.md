@@ -915,3 +915,9 @@ would mean building the wrong thing twice.
   undecided. Refusing silently loses a photograph the person deliberately took,
   which is the failure the limits are exported to prevent
 - **rate limiting on sign-in**, before anything is public
+
+## Development only: try the reader
+
+Two URLs exist while `NODE_ENV` is not `production`, and answer `404` when it is. Neither is part of the product API above; they let the reading step be tried from a browser before it is wired into `POST /api/documents`.
+
+`GET /api-docs` is a Swagger page. `POST /api/dev/extract` takes one or more photographed pages of one letter as the multipart field `pages`, calls whichever reader `AI_EXTRACTION_PROVIDER` names, validates the answer against the extraction contract, and returns `{ provider, model, result }` where `result` is the contract shape. Nothing is stored and no sign-in is asked for. Its OpenAPI description is `GET /api/openapi.json`. Sample letters are in `data/synthetic-letters/`.
