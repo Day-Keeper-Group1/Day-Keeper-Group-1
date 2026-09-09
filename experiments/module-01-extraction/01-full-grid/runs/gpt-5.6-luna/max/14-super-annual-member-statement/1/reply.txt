@@ -1,0 +1,59 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "gpt-4o",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "annual superannuation member statement",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Wattlebank Super",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Keep this statement with your tax records",
+      "status": "confirmed",
+      "confidence": 0.97
+    },
+    {
+      "key": "due_date",
+      "value": "Not applicable",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "12 242 124",
+      "status": "confirmed",
+      "confidence": 0.99
+    }
+  ],
+  "open_payload": {
+    "statement_period": "1 July 2025 to 30 June 2026",
+    "prepared_date": "18 August 2026",
+    "member_name": "Mrs M A Wilson",
+    "member_address": "14 Bracken Rise, CALDERFIELD VIC 3999",
+    "account_type": "Account-based pension",
+    "date_joined": "2 April 2013",
+    "date_of_birth": "14 March 1948",
+    "abn": "12 018 283 974",
+    "usi": "12018283974122",
+    "closing_balance": "$123,400.00",
+    "minimum_annual_payment_2026_27": "$7,400",
+    "investment_option": "Conservative Balanced",
+    "beneficiary": "Helen Wilson (daughter)",
+    "statement_code": "SYN-0023"
+  }
+}

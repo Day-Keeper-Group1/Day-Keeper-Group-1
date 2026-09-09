@@ -22,7 +22,11 @@
     "test:watch": "vitest",
     "format": "prettier --write . --log-level warn",
     "format:check": "prettier --check . --log-level warn",
-    "prepare": "husky"
+    "prepare": "husky",
+    "m1:probe": "tsx experiments/module-01-extraction/shared/matrix.ts --probe",
+    "m1:matrix": "tsx experiments/module-01-extraction/shared/matrix.ts",
+    "m1:score": "tsx experiments/module-01-extraction/shared/score.ts",
+    "m1:report": "tsx experiments/module-01-extraction/shared/report.ts"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx,mjs,cjs}": [
@@ -41,6 +45,7 @@
     "clsx": "^2.1.1",
     "lucide-react": "^1.28.0",
     "next": "16.3.0",
+    "openai": "^7.10.0",
     "pg": "^8.22.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",

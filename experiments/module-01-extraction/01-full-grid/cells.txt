@@ -1,0 +1,18 @@
+# Which model at which reasoning effort. One "model effort" pair per line.
+# Written out rather than expressed as a grid, so an experiment can run two
+# cells as easily as twelve.
+#
+# The full grid: both models, every effort.
+
+gpt-5.6-luna   none
+gpt-5.6-luna   low
+gpt-5.6-luna   medium
+gpt-5.6-luna   high
+gpt-5.6-luna   xhigh
+gpt-5.6-luna   max
+gpt-5.6-terra  none
+gpt-5.6-terra  low
+gpt-5.6-terra  medium
+gpt-5.6-terra  high
+gpt-5.6-terra  xhigh
+gpt-5.6-terra  max

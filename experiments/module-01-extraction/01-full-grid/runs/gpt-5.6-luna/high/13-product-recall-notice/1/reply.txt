@@ -1,0 +1,63 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "gpt-5",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "product recall letter",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Kettleworth Appliances",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Stop using the heater and arrange for its collection",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "due_date",
+      "value": "Not applicable",
+      "status": "confirmed",
+      "confidence": 0.98
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "9512653343",
+      "status": "confirmed",
+      "confidence": 0.99
+    }
+  ],
+  "open_payload": {
+    "date_of_letter": "16 July 2026",
+    "recipient": "Mrs M A Wilson",
+    "address": "14 Bracken Rise, CALDERFIELD VIC 3999",
+    "product": "Kettleworth Portable Column Heater",
+    "affected_models": [
+      "KCH-2400WH",
+      "KCH-2400GR",
+      "KCH-2000WH",
+      "KCH-2000GR"
+    ],
+    "affected_serial_range": "5550001 to 5589999",
+    "sale_period": "01/03/2018 to 30/09/2021",
+    "purchase_registration_date": "18/06/2019",
+    "contact_phone": "(03) 5550 3966",
+    "contact_url": "www.kettleworth-appliances.example/recall",
+    "goodwill_payment": "$50.00",
+    "document_code": "SYN-0022",
+    "signed_by": "David Thompson, CEO"
+  }
+}
