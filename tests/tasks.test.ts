@@ -1,11 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@/server/db", () => ({ query: vi.fn() }));
+vi.mock("@/server/db", () => ({ query: vi.fn(), queryOne: vi.fn() }));
 
-import { query } from "@/server/db";
-import { listTasks } from "@/server/tasks";
+import { query, queryOne } from "@/server/db";
+import { completeTask, getTask, listTasks, reopenTask } from "@/server/tasks";
 
 const queryMock = vi.mocked(query);
+const queryOneMock = vi.mocked(queryOne);
 const NOW = new Date("2026-08-15T00:30:00.000Z");
 const USER_ID = "11111111-1111-1111-1111-111111111111";
 
@@ -182,5 +183,233 @@ describe("task list", () => {
 
     expect(melbourne[0].status).toBe("overdue");
     expect(losAngeles[0].status).toBe("upcoming");
+  });
+});
+
+describe("complete task", () => {
+  beforeEach(() => {
+    queryMock.mockReset();
+  });
+
+  it("updates only the owned task and does not write reminders", async () => {
+    queryMock.mockResolvedValue([
+      {
+        id: "task-one",
+        title: "Pay bill",
+        document_id: "document-one",
+        issuer: "Issuer",
+        due_date: "2026-08-20",
+        due_time: null,
+        state: "completed",
+        reminder_id: "reminder-one",
+        scheduled_for: new Date("2026-08-19T23:00:00.000Z"),
+        reminder_local_date: "2026-08-20",
+        reminder_local_time: "09:00",
+        reminder_channel: "in_app",
+        reminder_status: "scheduled",
+      },
+    ]);
+
+    const result = await completeTask(
+      "task-one",
+      USER_ID,
+      "Australia/Melbourne",
+      NOW,
+    );
+
+    const [sql, params] = queryMock.mock.calls[0];
+    expect(sql).toContain("UPDATE tasks");
+    expect(sql).toContain("state = 'completed'");
+    expect(sql).toContain("completed_at = COALESCE(completed_at, now())");
+    expect(sql).toContain("WHERE id = $1");
+    expect(sql).toContain("AND user_id = $2");
+    expect(sql).toContain("AND state <> 'dismissed'");
+    expect(sql).not.toMatch(/UPDATE reminders/);
+    expect(params).toEqual(["task-one", USER_ID, "Australia/Melbourne"]);
+    expect(result).toEqual({
+      id: "task-one",
+      title: "Pay bill",
+      documentId: "document-one",
+      issuer: "Issuer",
+      dueDate: "2026-08-20",
+      status: "completed",
+      reminders: [
+        {
+          id: "reminder-one",
+          scheduledFor: "2026-08-19T23:00:00.000Z",
+          localDate: "2026-08-20",
+          localTime: "09:00",
+          channel: "in_app",
+          status: "scheduled",
+        },
+      ],
+    });
+  });
+
+  it("returns null when the task is missing or belongs to another user", async () => {
+    queryMock.mockResolvedValue([]);
+
+    await expect(
+      completeTask("unknown-task", USER_ID, "Australia/Melbourne", NOW),
+    ).resolves.toBeNull();
+  });
+});
+
+describe("one task", () => {
+  beforeEach(() => {
+    queryMock.mockReset();
+    queryOneMock.mockReset();
+  });
+
+  it("returns the owned task with its fields and page count", async () => {
+    queryMock
+      .mockResolvedValueOnce([
+        {
+          id: "task-one",
+          title: "Pay bill",
+          document_id: "document-one",
+          issuer: "Issuer",
+          due_date: "2026-08-20",
+          due_time: null,
+          state: "open",
+          reminder_id: null,
+          scheduled_for: null,
+          reminder_local_date: null,
+          reminder_local_time: null,
+          reminder_channel: null,
+          reminder_status: null,
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          field_key: "document_type",
+          extracted_value: "Utility bill",
+          status: "confirmed",
+        },
+        {
+          field_key: "due_date",
+          extracted_value: "2026-08-20",
+          status: "confirmed",
+        },
+        {
+          field_key: "reference",
+          extracted_value: "hidden guess",
+          status: "uncertain",
+        },
+      ]);
+    queryOneMock.mockResolvedValue({ page_count: 2 });
+
+    const result = await getTask(
+      "task-one",
+      USER_ID,
+      "Australia/Melbourne",
+      NOW,
+    );
+
+    expect(queryMock.mock.calls[0][1]).toEqual([
+      "task-one",
+      USER_ID,
+      "Australia/Melbourne",
+    ]);
+    expect(queryMock.mock.calls[0][0]).toContain("AND t.user_id = $2");
+    expect(queryMock.mock.calls[0][0]).toContain(
+      "AND t.document_id IS NOT NULL",
+    );
+    expect(queryOneMock).toHaveBeenCalledWith(
+      expect.stringContaining("AND d.user_id = $2"),
+      ["document-one", USER_ID],
+    );
+    expect(result).toEqual({
+      id: "task-one",
+      title: "Pay bill",
+      documentId: "document-one",
+      issuer: "Issuer",
+      dueDate: "2026-08-20",
+      status: "upcoming",
+      reminders: [],
+      fields: [
+        {
+          key: "document_type",
+          label: "Document type",
+          value: "Utility bill",
+          status: "confirmed",
+        },
+        {
+          key: "due_date",
+          label: "Due date",
+          value: "20 Aug 2026",
+          status: "confirmed",
+        },
+        {
+          key: "reference",
+          label: "Reference",
+          value: null,
+          status: "unreadable",
+        },
+      ],
+      pageCount: 2,
+    });
+  });
+
+  it("returns null without reading document details when the task is unavailable", async () => {
+    queryMock.mockResolvedValue([]);
+
+    await expect(
+      getTask("missing", USER_ID, "Australia/Melbourne", NOW),
+    ).resolves.toBeNull();
+    expect(queryOneMock).not.toHaveBeenCalled();
+    expect(queryMock).toHaveBeenCalledOnce();
+  });
+});
+
+describe("reopen task", () => {
+  beforeEach(() => {
+    queryMock.mockReset();
+  });
+
+  it("reopens only the owned task and leaves reminders unchanged", async () => {
+    queryMock.mockResolvedValue([
+      {
+        id: "task-one",
+        title: "Pay bill",
+        document_id: "document-one",
+        issuer: "Issuer",
+        due_date: "2026-08-14",
+        due_time: null,
+        state: "open",
+        reminder_id: "reminder-one",
+        scheduled_for: new Date("2026-08-13T23:00:00.000Z"),
+        reminder_local_date: "2026-08-14",
+        reminder_local_time: "09:00",
+        reminder_channel: "in_app",
+        reminder_status: "skipped",
+      },
+    ]);
+
+    const result = await reopenTask(
+      "task-one",
+      USER_ID,
+      "Australia/Melbourne",
+      NOW,
+    );
+
+    const [sql, params] = queryMock.mock.calls[0];
+    expect(sql).toContain("UPDATE tasks");
+    expect(sql).toContain("state = 'open'");
+    expect(sql).toContain("completed_at = NULL");
+    expect(sql).toContain("WHERE id = $1");
+    expect(sql).toContain("AND user_id = $2");
+    expect(sql).not.toMatch(/UPDATE reminders/);
+    expect(params).toEqual(["task-one", USER_ID, "Australia/Melbourne"]);
+    expect(result?.status).toBe("overdue");
+    expect(result?.reminders[0].status).toBe("skipped");
+  });
+
+  it("returns null when the task is unavailable", async () => {
+    queryMock.mockResolvedValue([]);
+
+    await expect(
+      reopenTask("unknown-task", USER_ID, "Australia/Melbourne", NOW),
+    ).resolves.toBeNull();
   });
 });
