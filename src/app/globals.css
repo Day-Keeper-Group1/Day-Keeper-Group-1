@@ -56,6 +56,7 @@
   --color-line: var(--line);
   --color-primary-soft: var(--primary-soft);
   --color-primary-ink: var(--primary-ink);
+  --color-button-hover: var(--button-hover);
   --color-focus: var(--focus);
   --color-focus-ink: var(--focus-ink);
   --color-danger: var(--danger);
@@ -90,6 +91,7 @@
   --ink-dim: #454b41;
   --line: #8a8265;
   --primary: #17452c;
+  --button-hover: #123921;
   --primary-ink: #f7f4ea;
   --primary-soft: #d9e5d5;
   --focus: #191a12;
@@ -163,8 +165,195 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-size: var(--fs-body);
   }
   html {
     @apply font-sans;
   }
+
+  html[data-font-scale="large"] {
+    font-size: 112.5%;
+  }
+
+  html[data-font-scale="largest"] {
+    font-size: 125%;
+  }
+
+  html[data-colour-vision="protanopia"] {
+    --bg: #f4f1e8;
+    --bg-card: #fbfaf5;
+    --ink: #1c1a15;
+    --ink-dim: #45423a;
+    --line: #6d6655;
+    --primary: #56b4e9;
+    --button-hover: #e69f00;
+    --primary-soft: #d7eaf4;
+    --success: #007a6e;
+    --success-bg: #d5eee9;
+    --danger: #b34a00;
+    --danger-bg: #f9e5d8;
+    --warn-ink: #795300;
+    --warn-bg: #f5e8c8;
+    --dot-due: #b34a00;
+    --dot-rem: #795300;
+  }
+
+  html[data-colour-vision="deuteranopia"] {
+    --bg: #f4f1e8;
+    --bg-card: #fbfaf5;
+    --ink: #1c1a15;
+    --ink-dim: #45423a;
+    --line: #6d6655;
+    --primary: #005b9a;
+    --button-hover: #00796b;
+    --primary-soft: #d7eaf4;
+    --success: #007a6e;
+    --success-bg: #d5eee9;
+    --danger: #b34a00;
+    --danger-bg: #f9e5d8;
+    --warn-ink: #795300;
+    --warn-bg: #f5e8c8;
+    --dot-due: #b34a00;
+    --dot-rem: #795300;
+  }
+
+  html[data-colour-vision="tritanopia"] {
+    --bg: #f4f0e4;
+    --bg-card: #fbf8f0;
+    --ink: #1c1a15;
+    --ink-dim: #454b41;
+    --line: #6b694f;
+    --primary: #dc3220;
+    --button-hover: #4b0092;
+    --primary-soft: #d9e5d5;
+    --success: #146b43;
+    --success-bg: #d9ead8;
+    --danger: #9f3d24;
+    --danger-bg: #f8e2dc;
+    --warn-ink: #704c00;
+    --warn-bg: #f3e4bd;
+    --dot-due: #9f3d24;
+    --dot-rem: #704c00;
+  }
+
+  html[data-colour-vision="monochromacy"] {
+    --bg: #f1f1ef;
+    --bg-card: #fbfbfa;
+    --ink: #171717;
+    --ink-dim: #3e3e3e;
+    --line: #5c5c5c;
+    --primary: #121212;
+    --button-hover: #ffffff;
+    --primary-soft: #dedede;
+    --success: #2e2e2e;
+    --success-bg: #e4e4e4;
+    --danger: #252525;
+    --danger-bg: #e0e0e0;
+    --warn-ink: #303030;
+    --warn-bg: #e9e9e9;
+    --dot-due: #252525;
+    --dot-rem: #555555;
+  }
+
+  html[data-high-contrast="true"] {
+    --line: #4e563f;
+    --ink-dim: #30382d;
+    --border-w: 3px;
+  }
+
+  html[data-reduce-motion="true"] *,
+  html[data-reduce-motion="true"] *::before,
+  html[data-reduce-motion="true"] *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/*
+  Accessibility palettes must be unlayered. The canonical :root palette above
+  is also unlayered, and unlayered declarations take precedence over layered
+  declarations even when the accessibility selector is more specific.
+*/
+html[data-colour-vision="protanopia"] {
+  --bg: #f4f1e8;
+  --bg-card: #fbfaf5;
+  --ink: #1c1a15;
+  --ink-dim: #45423a;
+  --line: #6d6655;
+  --primary: #56b4e9;
+  --button-hover: #e69f00;
+  --primary-soft: #d7eaf4;
+  --success: #007a6e;
+  --success-bg: #d5eee9;
+  --danger: #b34a00;
+  --danger-bg: #f9e5d8;
+  --warn-ink: #795300;
+  --warn-bg: #f5e8c8;
+  --dot-due: #b34a00;
+  --dot-rem: #795300;
+}
+
+html[data-colour-vision="deuteranopia"] {
+  --bg: #f4f1e8;
+  --bg-card: #fbfaf5;
+  --ink: #1c1a15;
+  --ink-dim: #45423a;
+  --line: #6d6655;
+  --primary: #005b9a;
+  --button-hover: #00796b;
+  --primary-soft: #d7eaf4;
+  --success: #007a6e;
+  --success-bg: #d5eee9;
+  --danger: #b34a00;
+  --danger-bg: #f9e5d8;
+  --warn-ink: #795300;
+  --warn-bg: #f5e8c8;
+  --dot-due: #b34a00;
+  --dot-rem: #795300;
+}
+
+html[data-colour-vision="tritanopia"] {
+  --bg: #f4f0e4;
+  --bg-card: #fbf8f0;
+  --ink: #1c1a15;
+  --ink-dim: #454b41;
+  --line: #6b694f;
+  --primary: #dc3220;
+  --button-hover: #4b0092;
+  --primary-soft: #d9e5d5;
+  --success: #146b43;
+  --success-bg: #d9ead8;
+  --danger: #9f3d24;
+  --danger-bg: #f8e2dc;
+  --warn-ink: #704c00;
+  --warn-bg: #f3e4bd;
+  --dot-due: #9f3d24;
+  --dot-rem: #704c00;
+}
+
+html[data-colour-vision="monochromacy"] {
+  --bg: #f1f1ef;
+  --bg-card: #fbfbfa;
+  --ink: #171717;
+  --ink-dim: #3e3e3e;
+  --line: #5c5c5c;
+  --primary: #121212;
+  --button-hover: #ffffff;
+  --primary-soft: #dedede;
+  --success: #2e2e2e;
+  --success-bg: #e4e4e4;
+  --danger: #252525;
+  --danger-bg: #e0e0e0;
+  --warn-ink: #303030;
+  --warn-bg: #e9e9e9;
+  --dot-due: #252525;
+  --dot-rem: #555555;
+}
+
+html[data-high-contrast="true"] {
+  --line: #4e563f;
+  --ink-dim: #30382d;
+  --border-w: 3px;
 }
