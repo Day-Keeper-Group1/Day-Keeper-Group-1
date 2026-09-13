@@ -94,6 +94,7 @@ confirm that a letter with that id exists.
 
 | what | method and path |
 |---|---|
+| Create an account | `POST /api/auth/register` |
 | Sign in | `POST /api/auth/login` |
 | Sign out | `POST /api/auth/logout` |
 | Who is signed in | `GET /api/auth/me` |
@@ -110,12 +111,130 @@ confirm that a letter with that id exists.
 
 There is no calendar endpoint, on purpose. See "The calendar".
 
-Accounts come from the seed: this release signs people in and does not register
-them.
+A person can now create their own account. The seed still plants two, so a
+checkout has somebody to sign in as before anyone has registered.
 
 ---
 
 # Signing in
+
+## Create an account
+
+Creates a person, and signs them in in the same breath.
+
+**URL** : `/api/auth/register`
+
+**Method** : `POST`
+
+**Auth required** : NO
+
+**Data constraints**
+
+| field | rule |
+|---|---|
+| `email` | present, looks like an address, not already registered |
+| `password` | at least 8 characters, at most 200 |
+| `displayName` | present, not only whitespace |
+
+**Data example**
+
+```json
+{
+  "email": "margaret@example.com",
+  "password": "the pot plant by the door",
+  "displayName": "Margaret Whitfield"
+}
+```
+
+### Success Response
+
+**Code** : `201 CREATED`, and the `dk_session` cookie is set.
+
+**Content example**
+
+```json
+{
+  "id": "0f2b7d5c-1a44-4c9e-9a1f-2c7d3e5b8a10",
+  "email": "margaret@example.com",
+  "displayName": "Margaret Whitfield",
+  "role": "user",
+  "timeZone": "Australia/Melbourne"
+}
+```
+
+The same `SessionUser` sign-in returns, so a client can treat the two the same.
+
+### Error Responses
+
+**Condition** : A field is missing, or fails the rule beside it above.
+**Code** : `400 BAD REQUEST`
+
+**Content example**
+
+```json
+{
+  "error": {
+    "code": "invalid_request",
+    "message": "Please check the details below.",
+    "fields": { "password": "Please use at least 8 characters." }
+  }
+}
+```
+
+**Condition** : That address already has an account.
+**Code** : `409 CONFLICT`
+
+**Content example**
+
+```json
+{
+  "error": {
+    "code": "conflict",
+    "message": "There is already an account with that email address."
+  }
+}
+```
+
+### Notes
+
+**Why this was not in the original thirteen.** The first release signed people
+in and left accounts to the seed, because the demonstration only needed somebody
+to be Margaret. A deployment anybody can reach needs a front door, so this is
+that door. Nothing else about the release changed.
+
+**The password rule is length, and nothing else.** Eight characters to two
+hundred, no required digit, no required symbol.
+`validatePasswordStrength` in `src/server/auth/password.ts` is the only opinion,
+and it explains itself: character-class rules push people towards `Passw0rd!`
+and towards a note beside the computer, which for this reader is the worse
+outcome. A long plain phrase is what we want and what the rule allows.
+
+**The timezone is not asked for.** `users.timezone` defaults to
+`Australia/Melbourne` in `db/schema.sql`, and registration lets the default
+stand. It is a value she cannot be expected to know she has, and a settings
+screen can expose it later.
+
+**Uniqueness is the index's answer, not a query's.** The insert runs and a
+`23505` becomes the `409` above. Asking first and inserting second reads more
+naturally and is wrong: two registrations racing on the same address both pass
+the check and one of them then fails anyway, in a place nobody wrote a message
+for.
+
+**This endpoint can be used to find out whether an address has an account, and
+sign-in deliberately cannot.** The two answers are inconsistent on purpose.
+Sign-in gives one sentence for a wrong address and a wrong password, so it says
+nothing about who is registered. Registration has to say the address is taken,
+because a person who already has an account needs to be told to sign in
+instead. Every product with a front door makes this trade; the mitigations are
+rate limiting on both endpoints, which is an open item, and never confirming an
+address anywhere else.
+
+**She is signed in on success**, rather than being returned to the sign-in
+screen to type the same password again. The account and its audit entry are
+written in one transaction; the session is opened immediately after it commits,
+through the same `createSession` every other caller uses. Were that last step
+ever to fail, the account would exist and she would sign in normally, which is
+a better failure than a second copy of session-making living in this file.
 
 ## Sign in
 
