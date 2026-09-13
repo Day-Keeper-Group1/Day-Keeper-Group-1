@@ -57,9 +57,9 @@ const documented = paletteFromDoc(read(DOC));
 
 describe("the palette", () => {
   it("is defined in globals.css, which is where it lives", () => {
-    // Eighteen colours. If this number moves, the theme changed, and the two
+    // Nineteen colours. If this number moves, the theme changed, and the two
     // copies below plus the contrast table in docs/theme.md all need looking at.
-    expect(canonical.size).toBe(18);
+    expect(canonical.size).toBe(19);
     expect(canonical.get("primary")).toBe("#17452c");
   });
 

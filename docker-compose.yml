@@ -72,7 +72,7 @@ services:
   # A database viewer on http://localhost:8080, so nobody has to install a
   # client to look at the tables. Server: db, user/password/database: daykeeper.
   #
-  # MinIO brings its own viewer on http://localhost:59001, same credentials,
+  # MinIO brings its own viewer on http://localhost:59021, same credentials,
   # which is where to look when a photograph is meant to have been stored.
   adminer:
     image: adminer:5

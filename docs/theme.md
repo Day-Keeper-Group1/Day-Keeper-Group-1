@@ -56,7 +56,8 @@ colour is a state some readers cannot see.
 | `--line` | `#8a8265` | borders and rules. Deliberately dark enough to see: a person who cannot find the edge of an input does not know where to tap |
 | `--primary` | `#17452c` | the pressable things. A dim, yellow-leaning green: drift towards teal and it becomes a SaaS dashboard, towards grey and it becomes a uniform |
 | `--primary-ink` | `#f7f4ea` | text and icons on primary |
-| `--primary-soft` | `#d9e5d5` | quiet green fills: thumbnails, the capture panel, calendar arrows |
+| `--primary-soft` | `#d9e5d5` | quiet green fills: thumbnails, the capture panel, calendar arrows |
+| `--button-hover` | `#123921` | the pressable things while the pointer is on them. A step darker than `--primary` rather than an opacity of it, so each high-contrast palette can name its own. Text on it clears 11.7:1 |
 | `--focus` | `#191a12` | the focus ring itself. Near-black, and thick |
 | `--focus-ink` | `#ffd21f` | the gold lining inside the focus ring. Never text |
 | `--danger` | `#8c0d07` | destructive, and a check that turned an upload away. Never the overdue state: overdue is told in words, see `src/lib/contract/api.ts` |
