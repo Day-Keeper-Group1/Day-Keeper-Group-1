@@ -32,6 +32,7 @@ They are in [`data/synthetic-letters/`](../../data/synthetic-letters/), one fold
 | Folder | What it asked | What it found |
 |---|---|---|
 | [`01-full-grid/`](01-full-grid/REPORT.md) | On all fifteen letters, both models at all six efforts, one read each: which cells are stable? | Four cells scored full marks, at both ends of the effort scale for both models, with misses in between. That is more than one winner and less than a pattern, and one read per cell cannot say which. |
+| [`02-ten-repeats/`](02-ten-repeats/REPORT.md) | Same letters, same prompt, luna `medium` and `xhigh`, ten reads each: does a full cell stay full? | No. Eleven letters were right all twenty times; four flip between reads, each between the right answer and one particular wrong one. `xhigh` flips less than `medium` but still flips. 01's full marks were lucky reads. |
 
 ## The report
 
@@ -54,6 +55,8 @@ The report closes with how to reproduce it: the score and report commands, and a
 ## Reading a results table
 
 Each experiment's table has one row per cell. **Letters all right** is the stability column: a cell has to be full there before its cost is worth looking at. **Wrong and confirmed** is the number that matters most: a field the model got wrong and marked `confirmed`, which is the only kind of mistake a person ever sees, because the product hides `uncertain` and `unreadable` fields from the screen.
+
+Under it, **Every letter** turns the same scores round: one row per letter, one column per cell, `k/n` reads all right. That is the table to read when the question is which letters are stable rather than which cells, and it is the shape a per-letter-type accuracy figure takes. A letter read `n/n` times has not been proved correct; it has had its per-read miss rate bounded, at roughly `3/n` with 95 percent confidence (exactly, `1 - 0.05^(1/n)`). Ten reads all right bound it at 26 percent, a hundred at 3 percent. The report prints the bound for its own `n`.
 
 **Cost per letter** is Azure's published list price multiplied by the tokens Azure reported. What RACE pays per token is not known to the team, so it is an estimate at list, not an invoice. **Seconds** were measured with several calls in flight at once and describe that condition, not one call on an idle connection.
 

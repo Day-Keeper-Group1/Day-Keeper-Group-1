@@ -1,0 +1,67 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "gpt-4o",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "government letter",
+      "status": "confirmed",
+      "confidence": 0.98
+    },
+    {
+      "key": "issuer",
+      "value": "Public Payments Office",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Complete and return the enclosed form with the requested income details and schedule",
+      "status": "confirmed",
+      "confidence": 0.96
+    },
+    {
+      "key": "due_date",
+      "value": "2026-08-04",
+      "status": "confirmed",
+      "confidence": 0.91
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "PPO-5002-9891",
+      "status": "confirmed",
+      "confidence": 0.99
+    }
+  ],
+  "open_payload": {
+    "notice_date": "14 July 2026",
+    "recipient": "Mrs M A Wilson",
+    "income_stream": {
+      "product_provider": "Wattlebank Super",
+      "product_name": "Account-Based Pension",
+      "commenced": "1 September 2019",
+      "provider_reference": "PPO-7143-4935",
+      "review_period": "1 July 2025 to 30 June 2026"
+    },
+    "one_time_access_code": "VRJF86",
+    "submission_methods": [
+      "Online at public-payments-office.example/senddocuments",
+      "By telephone on (03) 5550 0257",
+      "By post to Reply Paid 2841, CALDERFIELD VIC 3999",
+      "In person at a service centre"
+    ],
+    "enclosures": [
+      "Income and assets form",
+      "Reply paid envelope"
+    ],
+    "consequences_of_noncompliance": "The pension can be suspended or cancelled, and concession card eligibility may stop",
+    "ongoing_reporting_requirement": "Report changes in circumstances within 14 days"
+  }
+}

@@ -37,6 +37,26 @@ Everything else was identical across the 180 calls. The same 25,077 input tokens
 | terra | xhigh | **15/15** | 60/60 | 0 | 25077 | 733 | 496 | 13.3 | $0.0590 (A$0.0817) |
 | terra | max | 14/15 | 58/60 | 1 | 25077 | 4364 | 4181 | 50.4 | $0.1025 (A$0.1421) |
 
+### Every letter
+
+| Letter | luna none | luna low | luna medium | luna high | luna xhigh | luna max | terra none | terra low | terra medium | terra high | terra xhigh | terra max | Wrong and confirmed |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 01-electricity-bill | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 0 |
+| 02-gas-bill | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 0 |
+| 03-water-bill | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 0 |
+| 04-council-rates-notice | **0/1** | **0/1** | 1/1 | 1/1 | 1/1 | 1/1 | **0/1** | 1/1 | **0/1** | **0/1** | 1/1 | 1/1 | 5 |
+| 05-animal-registration-overdue-notice | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 0 |
+| 06-parking-infringement-notice | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 0 |
+| 07-penalty-reminder-notice | **0/1** | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1 |
+| 08-welfare-information-request | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 0 |
+| 09-specialist-account-statement | **0/1** | **0/1** | 1/1 | **0/1** | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 2 |
+| 10-private-health-annual-statement | **0/1** | **0/1** | 1/1 | **0/1** | 1/1 | **0/1** | 1/1 | 1/1 | **0/1** | 1/1 | 1/1 | **0/1** | 6 |
+| 11-aged-care-monthly-statement | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 0 |
+| 12-failure-to-vote-notice | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 0 |
+| 13-product-recall-notice | **0/1** | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1 |
+| 14-super-annual-member-statement | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 1/1 | 0 |
+| 15-insurance-key-facts-sheet | **0/1** | **0/1** | 1/1 | 1/1 | 1/1 | 1/1 | **0/1** | 1/1 | 1/1 | **0/1** | 1/1 | 1/1 | 4 |
+
 180 calls, 180 valid replies.
 
 **This run: 180 calls, $6.20 (A$8.59) in total.**
@@ -45,29 +65,29 @@ Cost is Azure's public list price multiplied by the tokens Azure reported per ca
 
 Every miss:
 
-| Model | Effort | Letter | Field | Key | Model said | Status |
-|---|---|---|---|---|---|---|
-| luna | none | 04-council-rates-notice | reference | 79475 | 1876970490 | confirmed |
-| luna | none | 07-penalty-reminder-notice | reference | 7717145263 | 4797 2573 7796 | confirmed |
-| luna | none | 09-specialist-account-statement | due_date | none | 2026-07-14 | uncertain |
-| luna | none | 10-private-health-annual-statement | amount | none | $167.43 | confirmed |
-| luna | none | 13-product-recall-notice | reference | 9512653343 | 951265334343 | confirmed |
-| luna | none | 15-insurance-key-facts-sheet | reference | none | SYN-0025 | confirmed |
-| luna | low | 04-council-rates-notice | reference | 79475 | 1876970490 | confirmed |
-| luna | low | 09-specialist-account-statement | amount | none | $0.00 | confirmed |
-| luna | low | 10-private-health-annual-statement | amount | none | $167.43 | confirmed |
-| luna | low | 15-insurance-key-facts-sheet | reference | none | SYN-0025 | confirmed |
-| luna | high | 09-specialist-account-statement | amount | none | $0.00 | confirmed |
-| luna | high | 10-private-health-annual-statement | amount | none | $167.43 | confirmed |
-| luna | max | 10-private-health-annual-statement | amount | none | $167.43 | confirmed |
-| terra | none | 04-council-rates-notice | reference | 79475 | 8767 2131 9 | confirmed |
-| terra | none | 15-insurance-key-facts-sheet | reference | none | SYN-0025 | confirmed |
-| terra | medium | 04-council-rates-notice | reference | 79475 | 8767 2131 9 | confirmed |
-| terra | medium | 10-private-health-annual-statement | amount | none | $167.43 | confirmed |
-| terra | high | 04-council-rates-notice | reference | 79475 | 473482 | confirmed |
-| terra | high | 15-insurance-key-facts-sheet | reference | none | SYN-0025 | confirmed |
-| terra | max | 10-private-health-annual-statement | due_date | none | 2026-08-01 | uncertain |
-| terra | max | 10-private-health-annual-statement | amount | none | $167.43 | confirmed |
+| Model | Effort | Letter | Repeat | Field | Key | Model said | Status |
+|---|---|---|---|---|---|---|---|
+| luna | none | 04-council-rates-notice | 1 | reference | 79475 | 1876970490 | confirmed |
+| luna | none | 07-penalty-reminder-notice | 1 | reference | 7717145263 | 4797 2573 7796 | confirmed |
+| luna | none | 09-specialist-account-statement | 1 | due_date | null | 2026-07-14 | uncertain |
+| luna | none | 10-private-health-annual-statement | 1 | amount | null | $167.43 | confirmed |
+| luna | none | 13-product-recall-notice | 1 | reference | 9512653343 | 951265334343 | confirmed |
+| luna | none | 15-insurance-key-facts-sheet | 1 | reference | null | SYN-0025 | confirmed |
+| luna | low | 04-council-rates-notice | 1 | reference | 79475 | 1876970490 | confirmed |
+| luna | low | 09-specialist-account-statement | 1 | amount | null | $0.00 | confirmed |
+| luna | low | 10-private-health-annual-statement | 1 | amount | null | $167.43 | confirmed |
+| luna | low | 15-insurance-key-facts-sheet | 1 | reference | null | SYN-0025 | confirmed |
+| luna | high | 09-specialist-account-statement | 1 | amount | null | $0.00 | confirmed |
+| luna | high | 10-private-health-annual-statement | 1 | amount | null | $167.43 | confirmed |
+| luna | max | 10-private-health-annual-statement | 1 | amount | null | $167.43 | confirmed |
+| terra | none | 04-council-rates-notice | 1 | reference | 79475 | 8767 2131 9 | confirmed |
+| terra | none | 15-insurance-key-facts-sheet | 1 | reference | null | SYN-0025 | confirmed |
+| terra | medium | 04-council-rates-notice | 1 | reference | 79475 | 8767 2131 9 | confirmed |
+| terra | medium | 10-private-health-annual-statement | 1 | amount | null | $167.43 | confirmed |
+| terra | high | 04-council-rates-notice | 1 | reference | 79475 | 473482 | confirmed |
+| terra | high | 15-insurance-key-facts-sheet | 1 | reference | null | SYN-0025 | confirmed |
+| terra | max | 10-private-health-annual-statement | 1 | due_date | null | 2026-08-01 | uncertain |
+| terra | max | 10-private-health-annual-statement | 1 | amount | null | $167.43 | confirmed |
 
 ## 5. Reading the result
 

@@ -1,0 +1,61 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "gpt-4o",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "water bill",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Calderfield Water",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Pay the amount due",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "due_date",
+      "value": "2026-07-29",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "amount",
+      "value": "$227.70",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "40740 95528",
+      "status": "confirmed",
+      "confidence": 0.98
+    }
+  ],
+  "open_payload": {
+    "customer": "Mrs M A Wilson",
+    "service_address": "14 Bracken Rise, Calderfield, VIC 3999",
+    "tax_invoice": "754908949",
+    "date_of_issue": "08/07/26",
+    "meter_number": "KRV389288",
+    "water_usage": "27.000 kL",
+    "average_daily_use": "297L",
+    "average_daily_spend": "$2.65",
+    "payment_codes": {
+      "phone_and_internet_banking_biller_code": "9200111",
+      "phone_and_internet_banking_reference": "7238 7344 7930",
+      "kelsworth_post_payment_code": "9200065",
+      "kelsworth_post_reference": "6653 3336 4755",
+      "paystead_reference": "PPO-9428-7872"
+    },
+    "issuer_abn": "33 321 818 706"
+  }
+}

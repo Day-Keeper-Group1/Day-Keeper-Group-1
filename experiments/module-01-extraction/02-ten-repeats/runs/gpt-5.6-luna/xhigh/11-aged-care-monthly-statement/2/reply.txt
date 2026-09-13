@@ -1,0 +1,87 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "gpt-4o",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "aged care monthly statement",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Thornhurst Health",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "No action required",
+      "status": "confirmed",
+      "confidence": 0.97
+    },
+    {
+      "key": "due_date",
+      "value": "Not applicable",
+      "status": "confirmed",
+      "confidence": 0.98
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "AC87542",
+      "status": "confirmed",
+      "confidence": 0.99
+    }
+  ],
+  "open_payload": {
+    "document_title": "Support at Home monthly statement",
+    "service": "Support at Home",
+    "provider_type": "Registered Support at Home provider",
+    "client_name": "Margaret Anne Wilson",
+    "statement_provided_to": "Mrs M A Wilson",
+    "address": "14 Bracken Rise, CALDERFIELD VIC 3999",
+    "provider_id": "63087",
+    "location": "Calderfield VIC",
+    "statement_period": "1 July 2026 to 31 July 2026",
+    "statement_month": "July 2026",
+    "notice": "This is not an invoice – no payment is required.",
+    "review_note": "Please review this statement and discuss any concerns with your provider.",
+    "contact": {
+      "phone": "(03) 5550 3392",
+      "email": "enquiries@thornhurst-health.example",
+      "business_hours": "Monday to Friday 8:30am to 5:00pm"
+    },
+    "financial_summary": {
+      "support_at_home": {
+        "july_expenditure": "$1,155.25",
+        "available_balance_aug_sep": "$4,828.79"
+      },
+      "assistive_technology": {
+        "july_expenditure": "$850",
+        "committed_funds": "$1,200",
+        "remaining_budget": "$12,450",
+        "expiry": "15 November 2026"
+      },
+      "home_modification": {
+        "july_expenditure": "$4,860",
+        "committed_funds": "$2,300",
+        "remaining_budget": "$7,840",
+        "expiry": "15 November 2026"
+      },
+      "restorative_care": {
+        "previous_month_spending": "$1,842.50",
+        "july_expenditure": "$1,040",
+        "remaining_budget": "$3,117.50",
+        "funding_end": "27 September 2026"
+      }
+    },
+    "footer_code": "SYN-0018"
+  }
+}

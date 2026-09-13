@@ -1,0 +1,56 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "gpt-4o",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "aged care monthly statement",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Thornhurst Health",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Review the statement and discuss any concerns with your provider",
+      "status": "confirmed",
+      "confidence": 0.95
+    },
+    {
+      "key": "due_date",
+      "value": "Not applicable",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "AC87542",
+      "status": "confirmed",
+      "confidence": 0.99
+    }
+  ],
+  "open_payload": {
+    "client_name": "Margaret Anne Wilson",
+    "statement_period": "1 July 2026 to 31 July 2026",
+    "provider_id": "63087",
+    "location": "Calderfield VIC",
+    "document_reference": "SYN-0018",
+    "services_budget_jul_sep_2026": "$4,828.79",
+    "assistive_technology_remaining_budget": "$12,450",
+    "home_modifications_remaining_budget": "$7,840",
+    "restorative_care_remaining_balance": "$3,117.50",
+    "contact_phone": "(03) 5550 3392",
+    "contact_email": "enquiries@thornhurst-health.example"
+  }
+}

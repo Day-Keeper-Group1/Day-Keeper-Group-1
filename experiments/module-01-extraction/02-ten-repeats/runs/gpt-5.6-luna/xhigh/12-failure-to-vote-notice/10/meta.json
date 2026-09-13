@@ -1,0 +1,11 @@
+{
+  "model": "gpt-5.6-luna",
+  "effort": "xhigh",
+  "letter": "12-failure-to-vote-notice",
+  "repeat": 10,
+  "pages": ["page-01.png"],
+  "image_detail": "auto",
+  "started_at": "2026-09-13T23:36:16.823Z",
+  "seconds": 9.301,
+  "ok": true
+}

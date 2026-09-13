@@ -1,0 +1,53 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "gpt-4o",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "fine notice",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Calderfield City Council",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Pay the total amount now payable by the due date",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "due_date",
+      "value": "2026-08-20",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "amount",
+      "value": "$71.00",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "7717145263",
+      "status": "confirmed",
+      "confidence": 0.98
+    }
+  ],
+  "open_payload": {
+    "bpay_reference": "4797 2573 7796",
+    "bpay_biller_code": "9200104",
+    "original_due_date": "2026-07-21",
+    "infringement_date": "2026-06-23",
+    "infringement_location": "Marlow Street, Calderfield",
+    "vehicle_registration": "9XK-7QJ",
+    "vehicle": "TOYOTA SEDAN GREY",
+    "offence": "Parking for longer than indicated (offence code 701)"
+  }
+}

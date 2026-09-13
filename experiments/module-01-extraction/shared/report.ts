@@ -6,6 +6,15 @@
  * before its cost is worth looking at. Token columns are per letter, averaged
  * over the cell, straight from what Azure reported.
  *
+ * After it, "Every letter" turns the same scores sideways: one row per
+ * letter, one column per cell, so a letter that only fails in one cell does
+ * not hide inside a cell average. Each cell reads k/n scored reads correct,
+ * in bold when k falls short of n, with a final column totalling wrong and
+ * confirmed fields for that letter across every cell. Underneath, once the
+ * experiment repeats a letter more than once, one sentence turns a clean
+ * run of n out of n into an upper bound on the per-read miss rate a reader
+ * could still believe at 95% confidence.
+ *
  * Under the table: what the whole run cost, and where the prices came from.
  * Every report carries both, so a reader never has to guess which price
  * table a dollar figure was multiplied from.
@@ -70,6 +79,46 @@ for (const { model, effort } of experiment.cells) {
   );
 }
 
+console.log("\n### Every letter\n");
+const letterHeader = [
+  "Letter",
+  ...experiment.cells.map(({ model, effort }) => `${short(model)} ${effort}`),
+  "Wrong and confirmed",
+];
+console.log(`| ${letterHeader.join(" | ")} |`);
+console.log(`|${letterHeader.map(() => "---").join("|")}|`);
+
+let maxRepeats = 0;
+for (const letter of experiment.letters) {
+  const letterScores = scores.filter((s) => s.letter === letter);
+  if (letterScores.length === 0) continue;
+  const cellValues = experiment.cells.map(({ model, effort }) => {
+    const cellScores = letterScores.filter(
+      (s) => s.model === model && s.effort === effort,
+    );
+    const n = cellScores.length;
+    const k = cellScores.filter((s) =>
+      SCORED.every((f) => s.correct[f]),
+    ).length;
+    maxRepeats = Math.max(maxRepeats, n);
+    const value = `${k}/${n}`;
+    return k < n ? `**${value}**` : value;
+  });
+  const wrongConfirmed = letterScores.reduce(
+    (sum, s) => sum + s.wrong_and_confirmed.length,
+    0,
+  );
+  console.log(`| ${letter} | ${cellValues.join(" | ")} | ${wrongConfirmed} |`);
+}
+
+if (maxRepeats > 1) {
+  const bound = 100 * (1 - 0.05 ** (1 / maxRepeats));
+  console.log(
+    `\nA letter read ${maxRepeats}/${maxRepeats} times bounds its per-read miss rate at ` +
+      `${Math.round(bound)}% (95%, exact binomial).`,
+  );
+}
+
 const priced = scores.filter((s) => s.usage);
 const totalUsd = priced.reduce(
   (sum, s) => sum + usdFor(s.model as Model, s.usage!),
@@ -92,20 +141,20 @@ const misses = scores.filter(
 if (misses.length) {
   console.log("\n### Every miss\n");
   console.log(
-    "| Model | Effort | Letter | Field | Key | Model said | Status |",
+    "| Model | Effort | Letter | Repeat | Field | Key | Model said | Status |",
   );
-  console.log("|---|---|---|---|---|---|---|");
+  console.log("|---|---|---|---|---|---|---|---|");
   for (const s of misses) {
     if (!s.ok) {
       console.log(
-        `| ${short(s.model)} | ${s.effort} | ${s.letter} | (no valid reply) | | | |`,
+        `| ${short(s.model)} | ${s.effort} | ${s.letter} | ${s.repeat} | (no valid reply) | | | |`,
       );
       continue;
     }
     for (const f of SCORED) {
       if (s.correct[f]) continue;
       console.log(
-        `| ${short(s.model)} | ${s.effort} | ${s.letter} | ${f} | ${String(s.want[f])} | ${String(s.got[f])} | ${s.status[f] ?? ""} |`,
+        `| ${short(s.model)} | ${s.effort} | ${s.letter} | ${s.repeat} | ${f} | ${String(s.want[f])} | ${String(s.got[f])} | ${s.status[f] ?? ""} |`,
       );
     }
   }

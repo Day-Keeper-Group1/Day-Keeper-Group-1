@@ -1,0 +1,11 @@
+{
+  "model": "gpt-5.6-luna",
+  "effort": "xhigh",
+  "letter": "05-animal-registration-overdue-notice",
+  "repeat": 4,
+  "pages": ["page-01.png"],
+  "image_detail": "auto",
+  "started_at": "2026-09-13T23:32:04.688Z",
+  "seconds": 7.486,
+  "ok": true
+}

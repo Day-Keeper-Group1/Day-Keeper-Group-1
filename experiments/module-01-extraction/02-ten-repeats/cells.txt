@@ -1,0 +1,7 @@
+# Which model at which reasoning effort. One "model effort" pair per line.
+#
+# Only the two luna cells that scored full marks in 01-full-grid. terra is
+# ten times the price and is not what the reading step currently uses.
+
+gpt-5.6-luna   medium
+gpt-5.6-luna   xhigh

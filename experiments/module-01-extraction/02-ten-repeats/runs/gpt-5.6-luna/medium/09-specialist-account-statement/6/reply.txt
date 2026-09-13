@@ -1,0 +1,65 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "gpt-4o",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "medical statement of account",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Mr Andrew Reid",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "No action required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "due_date",
+      "value": "Not applicable",
+      "status": "confirmed",
+      "confidence": 0.97
+    },
+    {
+      "key": "amount",
+      "value": "$0.00",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "709480",
+      "status": "confirmed",
+      "confidence": 0.99
+    }
+  ],
+  "open_payload": {
+    "account_date": "30/06/2026",
+    "terms": "14 days",
+    "patient": "Mrs Margaret Anne Wilson",
+    "date_of_birth": "14/03/1948",
+    "patient_rebate_scheme_number": "4378 31830 2 / 9",
+    "referring_doctor": "Dr Susan Patel, Marnworth Medical Clinic",
+    "provider_number": "8484902F",
+    "total_charge": "$315.00",
+    "patient_rebate_scheme_benefit": "$129.50",
+    "health_fund_benefit": "$0.00",
+    "out_of_pocket_cost": "$185.50",
+    "payments_received": "-$315.00",
+    "payment_status": "Paid in full",
+    "bpay_biller_code": "9200128",
+    "bpay_reference": "8484 9007 5000",
+    "electronic_transfer_bsb": "009-436",
+    "electronic_transfer_account": "275 435 347",
+    "card_by_phone": "(03) 7010 3761",
+    "contact_phone": "(03) 5550 7979",
+    "abn": "63 783 183 619"
+  }
+}
