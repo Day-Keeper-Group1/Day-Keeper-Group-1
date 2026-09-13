@@ -1,0 +1,9 @@
+{
+  "sample_id": "SYN-0010",
+  "document_type": "welfare_information_request_notice",
+  "issuer": "Public Payments Office",
+  "action_required": "Complete the enclosed income and assets form for the income stream under review and return it",
+  "due_date": "2026-08-04",
+  "amount": null,
+  "reference": "PPO-5002-9891"
+}

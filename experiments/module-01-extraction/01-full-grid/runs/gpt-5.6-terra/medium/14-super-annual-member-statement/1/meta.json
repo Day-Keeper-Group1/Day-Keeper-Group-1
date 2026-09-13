@@ -1,0 +1,11 @@
+{
+  "model": "gpt-5.6-terra",
+  "effort": "medium",
+  "pages": ["page-01.png", "page-02.png", "page-03.png"],
+  "image_detail": "auto",
+  "started_at": "2026-09-08T14:43:22.272Z",
+  "seconds": 7.371,
+  "ok": true,
+  "letter": "14-super-annual-member-statement",
+  "repeat": 1
+}

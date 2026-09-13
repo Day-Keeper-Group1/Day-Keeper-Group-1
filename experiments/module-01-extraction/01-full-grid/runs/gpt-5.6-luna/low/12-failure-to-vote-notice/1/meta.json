@@ -1,0 +1,11 @@
+{
+  "model": "gpt-5.6-luna",
+  "effort": "low",
+  "pages": ["page-01.png"],
+  "image_detail": "auto",
+  "started_at": "2026-09-08T14:35:55.659Z",
+  "seconds": 9.298,
+  "ok": true,
+  "letter": "12-failure-to-vote-notice",
+  "repeat": 1
+}

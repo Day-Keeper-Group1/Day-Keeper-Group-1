@@ -1,0 +1,9 @@
+{
+  "sample_id": "SYN-0005",
+  "document_type": "animal_registration_overdue_notice",
+  "issuer": "Calderfield City Council",
+  "action_required": "Pay the overdue animal registration fee of $23.00 to Calderfield City Council by 28 May 2026, quoting animal number 44637",
+  "due_date": "2026-05-28",
+  "amount": 23.0,
+  "reference": "44637"
+}

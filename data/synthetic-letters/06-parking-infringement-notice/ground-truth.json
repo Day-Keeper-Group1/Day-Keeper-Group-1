@@ -1,0 +1,9 @@
+{
+  "sample_id": "SYN-0006",
+  "document_type": "parking_infringement_notice",
+  "issuer": "Calderfield City Council",
+  "action_required": "Pay the parking infringement penalty of $41.00 by the due date",
+  "due_date": "2026-07-21",
+  "amount": 41.0,
+  "reference": "7717145263"
+}

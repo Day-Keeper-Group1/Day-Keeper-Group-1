@@ -164,11 +164,11 @@ describe("the mock reader", () => {
   const provider = new MockExtractionProvider();
 
   it("produces something the contract accepts", async () => {
-    const raw = await provider.extract({
+    const { payload } = await provider.extract({
       documentId: "fixed-id-for-a-successful-read",
       pages: [{ pageNumber: 1, storagePath: "x.jpg", mimeType: "image/jpeg" }],
     });
-    const parsed = safeParseExtractionResult(raw);
+    const parsed = safeParseExtractionResult(payload);
     expect(parsed.success).toBe(true);
   }, 15_000);
 
@@ -181,7 +181,7 @@ describe("the mock reader", () => {
       provider.extract(input),
       provider.extract(input),
     ]);
-    expect(a).toEqual(b);
+    expect(a.payload).toEqual(b.payload);
   }, 20_000);
 
   it("sometimes cannot read a letter, so the failure path is real", async () => {

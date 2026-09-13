@@ -30,6 +30,7 @@ import {
   DocumentExtractionProvider,
   ExtractionFailure,
   type ExtractionInput,
+  type ExtractionOutcome,
 } from "./provider";
 
 /**
@@ -96,7 +97,8 @@ export class MockExtractionProvider implements DocumentExtractionProvider {
   readonly name = "mock";
   readonly model = "mock-specimen-v1";
 
-  async extract(input: ExtractionInput): Promise<unknown> {
+  async extract(input: ExtractionInput): Promise<ExtractionOutcome> {
+    const started = Date.now();
     const seed = input.documentId;
 
     // Two to seven seconds. A vision model reading photographs of a letter
@@ -217,16 +219,21 @@ export class MockExtractionProvider implements DocumentExtractionProvider {
     ];
 
     return {
-      contract_version: CONTRACT_VERSION,
-      provider: this.name,
-      model: this.model,
-      fields,
-      // Something outside the six, so the open payload is exercised rather than
-      // being a theory nobody has ever put anything into.
-      open_payload: {
-        page_count: input.pages.length,
-        detected_language: "en-AU",
+      payload: {
+        contract_version: CONTRACT_VERSION,
+        provider: this.name,
+        model: this.model,
+        fields,
+        // Something outside the six, so the open payload is exercised rather
+        // than being a theory nobody has ever put anything into.
+        open_payload: {
+          page_count: input.pages.length,
+          detected_language: "en-AU",
+        },
       },
+      effort: null,
+      usage: null,
+      seconds: (Date.now() - started) / 1000,
     };
   }
 }
