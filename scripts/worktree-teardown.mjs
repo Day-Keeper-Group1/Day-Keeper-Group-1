@@ -146,7 +146,7 @@ function main() {
     } catch {
       console.log(
         `  bucket ${bucket}: could not remove it (storage container not running, or it never existed).` +
-          `\n    if it is still there later: http://localhost:59001`,
+          `\n    if it is still there later: http://localhost:59021`,
       );
     }
   }
