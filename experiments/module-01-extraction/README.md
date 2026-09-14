@@ -27,6 +27,8 @@ An experiment is allowed to change exactly four things. Everything else is held 
 
 They are in [`data/synthetic-letters/`](../../data/synthetic-letters/), one folder each, with its pages and the answer key it is supposed to yield. They are synthetic: modelled on Australian correspondence a person in this position actually receives, with no real person, account or amount in them. The answer key was written when the letter was generated, not read back off the page, so a model and the key can disagree about what the page actually supports; where that happens it is recorded, not hidden.
 
+Which letters are in scope, which were taken out and why, is recorded in [`data/synthetic-letters/README.md`](../../data/synthetic-letters/README.md). Each experiment's `letters.txt` says which of them it actually read.
+
 ## The experiments
 
 | Folder | What it asked | What it found |

@@ -33,6 +33,7 @@ tick.
 
 - An upload holding more than one letter.
 - Joining a later upload to a letter already in the system.
+- A letter that asks for several payments on different dates, such as a council rates notice paid in four instalments. The release turns one letter into one task with one due date, so it cannot put every instalment on the calendar, and a reminder for only the first one would leave the rest to be missed.
 - Rejection and repair: no "this is not a letter", no blurry photo rejection, no retake
   prompt, no apology for handwriting a model cannot read. The checks in step 3 are the
   only ones.
