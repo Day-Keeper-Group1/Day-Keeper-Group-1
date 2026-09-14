@@ -2,9 +2,12 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { ExtractedField, MockDocument } from "@/lib/mock-data";
+import type {
+  DocumentDetail,
+  DocumentPageView,
+  ExtractedFieldView,
+} from "@/lib/contract/api";
 
 /**
  * The review screen shows, it never asks.
@@ -16,16 +19,49 @@ import type { ExtractedField, MockDocument } from "@/lib/mock-data";
  * a tap, and that is the only control. See src/lib/contract/api.ts.
  */
 
-function PreviewPlaceholder() {
-  return (
-    <div className="flex aspect-[3/4] items-center justify-center rounded-lg border border-dashed border-border bg-muted/30">
-      <div className="flex flex-col items-center gap-2 px-6 text-center">
-        <FileText className="size-8 text-muted-foreground" strokeWidth={1.5} />
-        <p className="text-sm text-muted-foreground">
-          Document preview isn&apos;t available yet in this prototype.
+/**
+ * The letter itself, page by page.
+ *
+ * Each photograph is loaded through `/api/documents/:id/pages/:n`, which checks
+ * who is asking and then redirects to a link storage has signed, so the browser
+ * follows the redirect and the signed link never sits in a payload long enough
+ * to go stale.
+ *
+ * The photographs are lazy for two reasons that arrive together. This screen
+ * draws them twice, once for each breakpoint, and only one of the two is ever
+ * on screen, so eager images would pull every page of the letter down twice
+ * over somebody's mobile data. And a letter may run to ten pages, of which the
+ * person sees the first before scrolling. Deferring also means the signed link
+ * is minted when the image is actually wanted, so it cannot expire while she is
+ * still working her way down the page.
+ */
+function Photographs({ pages }: { pages: DocumentPageView[] }) {
+  if (pages.length === 0) {
+    return (
+      <div className="flex aspect-[3/4] items-center justify-center rounded-lg border border-dashed border-border bg-muted/30">
+        <p className="px-6 text-center text-sm text-muted-foreground">
+          The photographs of this letter are not available.
         </p>
       </div>
-    </div>
+    );
+  }
+
+  return (
+    <ol className="space-y-3">
+      {pages.map((page) =>
+        page.url ? (
+          <li key={page.id}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={page.url}
+              alt={`Page ${page.pageNumber}`}
+              loading="lazy"
+              className="w-full max-w-full rounded-lg border border-border"
+            />
+          </li>
+        ) : null,
+      )}
+    </ol>
   );
 }
 
@@ -33,8 +69,8 @@ export function ReviewForm({
   document,
   fields,
 }: {
-  document: MockDocument;
-  fields: ExtractedField[];
+  document: DocumentDetail;
+  fields: ExtractedFieldView[];
 }) {
   const router = useRouter();
 
@@ -47,6 +83,8 @@ export function ReviewForm({
   const dateMissing = !readable.some((field) => field.key === "due_date");
 
   function handleConfirm() {
+    // Confirming is its own ticket, so for now this only takes the person back
+    // to the letter. Nothing here writes.
     router.push(`/documents/${document.id}`);
   }
 
@@ -54,7 +92,7 @@ export function ReviewForm({
     <div className="space-y-6">
       <div className="grid gap-6 md:grid-cols-2">
         <div className="hidden md:block">
-          <PreviewPlaceholder />
+          <Photographs pages={document.pages} />
         </div>
 
         <details className="rounded-lg border border-border md:hidden">
@@ -62,7 +100,7 @@ export function ReviewForm({
             View original document
           </summary>
           <div className="px-4 pb-4">
-            <PreviewPlaceholder />
+            <Photographs pages={document.pages} />
           </div>
         </details>
 

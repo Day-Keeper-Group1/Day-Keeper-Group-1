@@ -2,15 +2,28 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Camera, Upload, X } from "lucide-react";
+import { Camera, CircleAlert, Upload, X } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/layout/page-header";
-import { MAX_PAGES } from "@/lib/contract/api";
+import { MAX_PAGES, type ApiError } from "@/lib/contract/api";
 
 type Photo = {
   id: string;
   file: File;
   previewUrl: string | null;
+};
+
+/**
+ * What went wrong, as the person is told it.
+ *
+ * The endpoint writes both sentences (docs/api.md), so they are shown as they
+ * arrived rather than reworded here: `message` says what happened, and the
+ * optional `pages` detail says which photograph caused it.
+ */
+type UploadError = {
+  message: string;
+  pages?: string;
 };
 
 /**
@@ -25,6 +38,7 @@ export default function UploadDocumentPage() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<UploadError | null>(null);
 
   const atLimit = photos.length >= MAX_PAGES;
 
@@ -50,14 +64,48 @@ export default function UploadDocumentPage() {
     });
   }
 
-  function handleSubmit() {
-    if (photos.length === 0) return;
+  async function handleSubmit() {
+    if (photos.length === 0 || submitting) return;
     setSubmitting(true);
-    // No backend yet (see AGENTS.md: the API and the pages are the work
-    // still to build), so this is where a real POST /api/documents would
-    // go. The mock flow moves straight to the letters area, where the
-    // letter would appear while it is being read.
-    router.push("/documents");
+    setError(null);
+
+    // Every photograph goes under the same field name, in the order it was
+    // taken, because one upload is one letter and the order they arrive is the
+    // page order (docs/api.md). The Content-Type header is left alone on
+    // purpose: the browser has to write it itself so that it carries the
+    // multipart boundary.
+    const form = new FormData();
+    for (const photo of photos) form.append("pages", photo.file);
+
+    try {
+      const response = await fetch("/api/documents", {
+        method: "POST",
+        body: form,
+      });
+
+      if (!response.ok) {
+        const body = (await response
+          .json()
+          .catch(() => null)) as ApiError | null;
+        setError({
+          message:
+            body?.error?.message ??
+            "We could not save these photos just now. Please try again.",
+          pages: body?.error?.fields?.pages,
+        });
+        return;
+      }
+
+      // The letter exists now and sits at 'processing' while the reading runs,
+      // so the letters area is where it shows up next.
+      router.push("/documents");
+    } catch {
+      setError({
+        message: "We could not reach the server. Please check your connection.",
+      });
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -67,10 +115,23 @@ export default function UploadDocumentPage() {
         description="A letter, a bill, a doctor's note: anything with a date in it. One letter at a time, as many pages as it runs to."
       />
 
+      {error ? (
+        // An icon and a heading as well as the colour: theme.md's rule is that
+        // colour is never the only thing carrying a message.
+        <Alert variant="destructive">
+          <CircleAlert strokeWidth={1.75} />
+          <AlertTitle>We could not save these photos</AlertTitle>
+          <AlertDescription className="space-y-1">
+            <span className="block">{error.message}</span>
+            {error.pages ? <span className="block">{error.pages}</span> : null}
+          </AlertDescription>
+        </Alert>
+      ) : null}
+
       <input
         ref={inputRef}
         type="file"
-        accept="image/*,.pdf"
+        accept="image/*"
         capture="environment"
         className="sr-only"
         onChange={(event) => {
@@ -151,10 +212,10 @@ export default function UploadDocumentPage() {
           size="lg"
           className="w-full"
           disabled={photos.length === 0 || submitting}
-          onClick={handleSubmit}
+          onClick={() => void handleSubmit()}
         >
           <Upload className="size-4" strokeWidth={1.75} />
-          Read it
+          {submitting ? "Sending..." : "Read it"}
         </Button>
         <p className="text-center text-xs text-muted-foreground">
           Every photo you take here belongs to this one letter. They go
