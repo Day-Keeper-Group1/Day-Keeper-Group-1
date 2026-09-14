@@ -1,0 +1,8 @@
+# Which model at which reasoning effort. One "model effort" pair per line.
+#
+# The cheapest effort of each model. 02-ten-repeats showed effort is not the
+# lever for the letters that flip, and that the two models flip on different
+# letters, so a prompt change has to be tested on both.
+
+gpt-5.6-luna   medium
+gpt-5.6-terra  low
