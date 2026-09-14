@@ -1,0 +1,51 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "GPT-4o",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "Compulsory voting failure notice",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Ballot Administration Office",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Return form to Ballot Administration Office",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "due_date",
+      "value": "2026-07-14",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "NV2026-732810",
+      "status": "confirmed",
+      "confidence": 0.99
+    }
+  ],
+  "open_payload": {
+    "elector_id": "2700 3381",
+    "potential_infringement_penalty": "$102.00",
+    "election": "Calderfield City Council by-election",
+    "election_date": "14 March 2026",
+    "telephone": "1300 975 708",
+    "website": "www.ballot-administration-office.example"
+  }
+}

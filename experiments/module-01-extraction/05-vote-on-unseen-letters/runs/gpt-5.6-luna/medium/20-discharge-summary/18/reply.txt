@@ -1,0 +1,65 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "GPT-4o",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "Hospital discharge summary",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Bramworth Hospital",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Attend general practitioner review of medicines and blood pressure",
+      "status": "confirmed",
+      "confidence": 0.93
+    },
+    {
+      "key": "due_date",
+      "value": "2026-05-24",
+      "status": "uncertain",
+      "confidence": 0.75
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "6938509",
+      "status": "confirmed",
+      "confidence": 0.9
+    }
+  ],
+  "open_payload": {
+    "patient": "Mrs Margaret Anne Wilson",
+    "medical_record_number": "6938509",
+    "individual_healthcare_identifier": "8003606084723614",
+    "healthcare_provider_identifier_organisation": "8003626002691506",
+    "discharge_date": "2026-05-17",
+    "additional_actions": [
+      "Attend orthopaedic outpatient review (cast check); date to be advised by letter",
+      "Attend community physiotherapy — falls prevention on 2026-05-27 at 2:00 PM",
+      "Take perindopril arginine 5 mg, one tablet each morning",
+      "Take paracetamol 665 mg modified release, two tablets three times a day",
+      "Take oxycodone 5 mg, one capsule up to every 6 hours if severe pain for up to 5 days, then stop",
+      "Take alendronate 70 mg once a week",
+      "Take colecalciferol 25 microgram, one capsule daily",
+      "Do not restart ibuprofen"
+    ],
+    "follow_up_providers": [
+      "Dr Susan Patel, Marnworth Medical Clinic",
+      "Bramworth Hospital Specialist Clinics",
+      "Thornhurst Health Community Rehabilitation"
+    ]
+  }
+}

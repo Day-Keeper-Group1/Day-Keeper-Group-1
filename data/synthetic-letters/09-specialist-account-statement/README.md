@@ -32,7 +32,7 @@ Made up, not taken from any source: the surgeon Mr Andrew Reid and his rooms at 
 
 ### action_required
 
-**No action.** Page 1, directly below the shaded summary box, the letter says "Payment received with thanks. This account is paid in full." The next sentence says the claim "has been lodged with the Patient Rebate Scheme on your behalf". The account is paid and the claim has been made for her, so there is nothing left for her to do. The answer key has `null` for this field. The value starts with one of the contract's eight action words, and the experiments score that word.
+**No action.** Page 1, directly below the shaded summary box, the letter says "Payment received with thanks. This account is paid in full." The next sentence says the claim "has been lodged with the Patient Rebate Scheme on your behalf". The account is paid and the claim has been made for her, so there is nothing left for her to do. The value starts with one of the contract's eight action words, and the experiments score that word.
 
 ### due_date
 

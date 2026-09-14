@@ -1,0 +1,63 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "gpt-4o",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "medical discharge summary",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Bramworth Hospital",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Attend community physiotherapy",
+      "status": "confirmed",
+      "confidence": 0.9
+    },
+    {
+      "key": "due_date",
+      "value": "2026-05-27",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "6938509",
+      "status": "confirmed",
+      "confidence": 0.95
+    }
+  ],
+  "open_payload": {
+    "patient": "Mrs Margaret Anne Wilson",
+    "discharge_date": "17/05/2026",
+    "other_follow_up": [
+      "Orthopaedic outpatient review (cast check): date to be advised; letter will be sent",
+      "General practitioner review of medicines and blood pressure within 7 days of discharge"
+    ],
+    "community_physiotherapy": {
+      "appointment": "Wednesday 27 May 2026, 2:00 PM",
+      "provider": "Thornhurst Health Community Rehabilitation",
+      "contact": "(03) 5550 4188"
+    },
+    "medicines": [
+      "perindopril arginine 5 mg: one tablet each morning",
+      "paracetamol 665 mg modified release: two tablets three times a day",
+      "oxycodone 5 mg: one capsule up to every 6 hours if severe pain, for up to 5 days, then stop",
+      "alendronate 70 mg: one tablet once a week",
+      "colecalciferol 25 microgram: one capsule daily"
+    ]
+  }
+}

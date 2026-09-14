@@ -1,0 +1,60 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "GPT-4o",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "Aged care services approval letter",
+      "status": "confirmed",
+      "confidence": 0.98
+    },
+    {
+      "key": "issuer",
+      "value": "Bramworth Hospital Aged Care Assessment Service",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Contact a Support at Home provider",
+      "status": "confirmed",
+      "confidence": 0.9
+    },
+    {
+      "key": "due_date",
+      "value": "Not applicable",
+      "status": "confirmed",
+      "confidence": 0.94
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "RC532986",
+      "status": "confirmed",
+      "confidence": 0.98
+    }
+  ],
+  "open_payload": {
+    "recipient": "Margaret Anne Wilson",
+    "aged_care_id": "AC87542",
+    "notice_number": "ND-495302",
+    "notice_date": "2026-06-04",
+    "decision_date": "2026-06-02",
+    "approval": "Approved for government-funded aged care services",
+    "service_group": "home support",
+    "access_approval_date": "2026-05-28",
+    "ongoing_services": "Classification 3, in effect from 4 June 2026",
+    "priority_category": "high",
+    "short_term_services": "Restorative Care Pathway, 8 June 2026 to 27 September 2026",
+    "assistive_technology_and_home_modifications": "Up to $15,000.00 for assistive technology and up to $15,000.00 for home modifications; funding period ends 15 November 2026",
+    "internal_review": "May be requested within 28 days of notification if the recipient disagrees",
+    "condition": "No conditions on approval",
+    "enclosure": "Support plan"
+  }
+}

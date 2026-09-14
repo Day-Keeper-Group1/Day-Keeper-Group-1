@@ -1,0 +1,52 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "OpenAI GPT-4o",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "hospital discharge summary",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Bramworth Hospital",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Attend general practitioner review of medicines and blood pressure",
+      "status": "confirmed",
+      "confidence": 0.91
+    },
+    {
+      "key": "due_date",
+      "value": "2026-05-24",
+      "status": "uncertain",
+      "confidence": 0.7
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "6938509",
+      "status": "uncertain",
+      "confidence": 0.65
+    }
+  ],
+  "open_payload": {
+    "patient": "Mrs Margaret Anne Wilson",
+    "discharge_date": "17/05/2026",
+    "booked_appointment": "Community physiotherapy — falls prevention, Wednesday 27 May 2026, 2:00 PM",
+    "follow_up": [
+      "Orthopaedic outpatient review (cast check), date to be advised by letter",
+      "General practitioner review of medicines and blood pressure within 7 days of discharge"
+    ]
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "gpt-4o",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "driver licence renewal notice",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Driver and Vehicle Registry",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Pay Driver and Vehicle Registry; attend a photo point",
+      "status": "confirmed",
+      "confidence": 0.97
+    },
+    {
+      "key": "due_date",
+      "value": "2026-08-28",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "amount",
+      "value": "$96.50",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "812 46 305",
+      "status": "uncertain",
+      "confidence": 0.82
+    }
+  ],
+  "open_payload": {
+    "date_of_notice": "24 July 2026",
+    "licence_number": "05 502 615",
+    "licence_expiry": "28 August 2026",
+    "licence_category": "Car (C)",
+    "photograph_required": true,
+    "issuer_legal_entity": "Wenhurst Registry Services Pty Ltd"
+  }
+}

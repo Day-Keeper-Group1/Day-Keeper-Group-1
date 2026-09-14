@@ -1,0 +1,11 @@
+{
+  "model": "gpt-5.6-luna",
+  "effort": "medium",
+  "letter": "26-charity-appeal-letter",
+  "repeat": 43,
+  "pages": ["page-01.png"],
+  "image_detail": "auto",
+  "started_at": "2026-09-14T10:59:15.051Z",
+  "seconds": 5.552,
+  "ok": true
+}

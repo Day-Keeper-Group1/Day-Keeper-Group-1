@@ -1,0 +1,11 @@
+{
+  "model": "gpt-5.6-luna",
+  "effort": "medium",
+  "letter": "08-welfare-information-request",
+  "repeat": 28,
+  "pages": ["page-01.png"],
+  "image_detail": "auto",
+  "started_at": "2026-09-14T10:41:56.612Z",
+  "seconds": 7.297,
+  "ok": true
+}

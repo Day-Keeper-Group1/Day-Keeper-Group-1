@@ -1,0 +1,11 @@
+{
+  "model": "gpt-5.6-luna",
+  "effort": "medium",
+  "letter": "22-aged-care-notice-of-decision",
+  "repeat": 43,
+  "pages": ["page-01.png", "page-02.png", "page-03.png"],
+  "image_detail": "auto",
+  "started_at": "2026-09-14T10:55:25.791Z",
+  "seconds": 6.361,
+  "ok": true
+}

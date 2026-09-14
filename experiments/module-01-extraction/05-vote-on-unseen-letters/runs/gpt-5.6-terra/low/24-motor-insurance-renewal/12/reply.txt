@@ -1,0 +1,44 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "gpt-4.1",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "insurance renewal certificate",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Quillhaven Insurance",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "No action",
+      "status": "confirmed",
+      "confidence": 0.95
+    },
+    {
+      "key": "due_date",
+      "value": "Not applicable",
+      "status": "confirmed",
+      "confidence": 0.92
+    },
+    {
+      "key": "amount",
+      "value": "$684.35",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "MV 6749 5137",
+      "status": "confirmed",
+      "confidence": 0.96
+    }
+  ],
+  "open_payload": {}
+}

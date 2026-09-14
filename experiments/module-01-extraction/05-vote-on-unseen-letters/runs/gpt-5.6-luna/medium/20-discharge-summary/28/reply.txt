@@ -1,0 +1,57 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "GPT-4o",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "hospital discharge summary",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Bramworth Hospital",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Attend Dr Susan Patel for medicines and blood pressure review",
+      "status": "confirmed",
+      "confidence": 0.95
+    },
+    {
+      "key": "due_date",
+      "value": "2026-05-24",
+      "status": "uncertain",
+      "confidence": 0.78
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "6938509",
+      "status": "confirmed",
+      "confidence": 0.9
+    }
+  ],
+  "open_payload": {
+    "patient": "Mrs Margaret Anne Wilson",
+    "discharge_date": "17/05/2026",
+    "additional_actions": [
+      "Attend community physiotherapy falls prevention on 27/05/2026 at 2:00 PM",
+      "Await letter for orthopaedic outpatient cast check",
+      "Obtain prescription from GP for continued medicine supply",
+      "Do not restart ibuprofen"
+    ],
+    "health_service": "Thornhurst Health",
+    "medical_record_number": "6938509",
+    "hospital_provider_identifier": "8003626002691506",
+    "individual_healthcare_identifier": "8003606084723614"
+  }
+}

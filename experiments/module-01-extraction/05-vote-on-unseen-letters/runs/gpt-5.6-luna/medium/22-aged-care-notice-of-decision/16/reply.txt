@@ -1,0 +1,57 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "GPT-4o",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "aged care services approval letter",
+      "status": "confirmed",
+      "confidence": 0.98
+    },
+    {
+      "key": "issuer",
+      "value": "Bramworth Hospital Aged Care Assessment Service",
+      "status": "confirmed",
+      "confidence": 0.98
+    },
+    {
+      "key": "action_required",
+      "value": "Contact a Support at Home provider",
+      "status": "confirmed",
+      "confidence": 0.9
+    },
+    {
+      "key": "due_date",
+      "value": "Not applicable",
+      "status": "confirmed",
+      "confidence": 0.88
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "RC532986",
+      "status": "confirmed",
+      "confidence": 0.98
+    }
+  ],
+  "open_payload": {
+    "aged_care_id": "AC87542",
+    "notice_number": "ND-495302",
+    "date_of_notice": "2026-06-04",
+    "date_decision_made": "2026-06-02",
+    "access_approval_takes_effect": "2026-05-28",
+    "ongoing_services": "Classification 3, in effect from 4 June 2026",
+    "short_term_services": "Restorative Care Pathway, 8 June 2026 to 27 September 2026",
+    "assistive_technology_and_home_modifications": "Assistive technology, high tier, up to $15,000.00; home modifications, high tier, up to $15,000.00. Funding period ends 15 November 2026.",
+    "internal_review_deadline": "2026-07-02",
+    "quarterly_budget": "$5,491.43",
+    "annual_budget": "$21,965.70",
+    "restorative_care_pathway_funding": "$6,000.00 for each course of care"
+  }
+}

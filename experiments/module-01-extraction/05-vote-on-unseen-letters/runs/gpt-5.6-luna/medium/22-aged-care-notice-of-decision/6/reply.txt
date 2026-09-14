@@ -1,0 +1,52 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "GPT-4o",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "government-funded aged care services approval letter",
+      "status": "confirmed",
+      "confidence": 0.98
+    },
+    {
+      "key": "issuer",
+      "value": "Bramworth Hospital Aged Care Assessment Service",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Contact a Support at Home provider",
+      "status": "confirmed",
+      "confidence": 0.91
+    },
+    {
+      "key": "due_date",
+      "value": "Not applicable",
+      "status": "confirmed",
+      "confidence": 0.9
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "RC532986",
+      "status": "confirmed",
+      "confidence": 0.99
+    }
+  ],
+  "open_payload": {
+    "aged_care_id": "AC87542",
+    "notice_number": "ND-495302",
+    "decision": "Approved for government-funded aged care services",
+    "service_group": "home support",
+    "ongoing_services": "Classification 3",
+    "restorative_care_pathway": "8 June 2026 to 27 September 2026",
+    "issuer_phone": "(03) 7010 5596"
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "GPT-4o",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "hospital discharge summary",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Bramworth Hospital",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Attend general practitioner review of medicines and blood pressure",
+      "status": "confirmed",
+      "confidence": 0.95
+    },
+    {
+      "key": "due_date",
+      "value": "2026-05-24",
+      "status": "uncertain",
+      "confidence": 0.78
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "6938509",
+      "status": "confirmed",
+      "confidence": 0.96
+    }
+  ],
+  "open_payload": {
+    "patient": "Mrs Margaret Anne Wilson",
+    "discharge_date": "17/05/2026",
+    "additional_actions": [
+      "Stop using ibuprofen",
+      "Do not drive for two weeks after discharge or while taking oxycodone",
+      "Attend community physiotherapy for falls prevention on 27/05/2026 at 2:00 PM",
+      "Await letter for orthopaedic outpatient cast check"
+    ],
+    "medicines_on_discharge": [
+      "perindopril arginine 5 mg: one tablet each morning",
+      "paracetamol 665 mg modified release: two tablets three times a day",
+      "oxycodone 5 mg: one capsule up to every 6 hours if pain is severe, for up to 5 days, then stop",
+      "alendronate 70 mg: one tablet once a week",
+      "colecalciferol 25 microgram: one capsule daily"
+    ]
+  }
+}

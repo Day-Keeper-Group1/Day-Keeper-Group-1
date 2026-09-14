@@ -1,0 +1,11 @@
+{
+  "model": "gpt-5.6-terra",
+  "effort": "low",
+  "letter": "18-medicare-benefit-statement",
+  "repeat": 17,
+  "pages": ["page-01.png", "page-02.png"],
+  "image_detail": "auto",
+  "started_at": "2026-09-14T11:05:15.541Z",
+  "seconds": 3.56,
+  "ok": true
+}

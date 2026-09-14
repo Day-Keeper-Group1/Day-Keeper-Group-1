@@ -1,0 +1,34 @@
+# Which letters this experiment reads. One folder name per line, as it
+# appears in data/synthetic-letters/. Blank lines and # lines are ignored.
+#
+# The fourteen letters in scope that 04 read, then the eleven letters the
+# pipeline made that no experiment in this folder has read before. The
+# prompt was tuned on the first fourteen; the last eleven are the test of
+# whether it carries.
+
+01-electricity-bill
+02-gas-bill
+03-water-bill
+05-animal-registration-overdue-notice
+06-parking-infringement-notice
+07-penalty-reminder-notice
+08-welfare-information-request
+09-specialist-account-statement
+10-private-health-annual-statement
+11-aged-care-monthly-statement
+12-failure-to-vote-notice
+13-product-recall-notice
+14-super-annual-member-statement
+15-insurance-key-facts-sheet
+
+16-driver-licence-renewal-notice
+17-vehicle-registration-renewal-notice
+18-medicare-benefit-statement
+19-outpatient-appointment-letter
+20-discharge-summary
+21-dispensed-medicine-label
+22-aged-care-notice-of-decision
+23-home-insurance-renewal
+24-motor-insurance-renewal
+25-postal-collection-card
+26-charity-appeal-letter

@@ -1,0 +1,51 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "GPT-4o",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "insurance renewal",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Quillhaven Insurance",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Contact Quillhaven Insurance if you do not want to renew",
+      "status": "confirmed",
+      "confidence": 0.94
+    },
+    {
+      "key": "due_date",
+      "value": "2026-09-18",
+      "status": "confirmed",
+      "confidence": 0.98
+    },
+    {
+      "key": "amount",
+      "value": "$684.35",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "MV 6749 5137",
+      "status": "confirmed",
+      "confidence": 0.97
+    }
+  ],
+  "open_payload": {
+    "customer_number": "74 999 861",
+    "policy_type": "Comprehensive Motor Vehicle",
+    "vehicle": "2011 Toyota Corolla sedan",
+    "registration_number": "9XK-7QJ",
+    "new_period": "18 September 2026 to 18 September 2027",
+    "installments_start": "2026-10-18"
+  }
+}

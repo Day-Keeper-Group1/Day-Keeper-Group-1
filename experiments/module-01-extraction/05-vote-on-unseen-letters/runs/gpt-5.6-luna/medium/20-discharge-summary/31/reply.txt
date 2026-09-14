@@ -1,0 +1,60 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "ChatGPT",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "hospital discharge summary",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Bramworth Hospital",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Attend follow-up appointments and arrange GP review",
+      "status": "confirmed",
+      "confidence": 0.9
+    },
+    {
+      "key": "due_date",
+      "value": "2026-05-24",
+      "status": "uncertain",
+      "confidence": 0.72
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "6938509",
+      "status": "confirmed",
+      "confidence": 0.85
+    }
+  ],
+  "open_payload": {
+    "patient": "Mrs Margaret Anne Wilson",
+    "discharge_date": "17/05/2026",
+    "appointments": [
+      "Orthopaedic outpatient review (cast check), to be advised by letter",
+      "General practitioner review of medicines and blood pressure within 7 days of discharge",
+      "Community physiotherapy — falls prevention, Wednesday 27 May 2026 at 2:00 PM"
+    ],
+    "medical_record_number": "6938509",
+    "medicines": [
+      "perindopril arginine 5 mg",
+      "paracetamol 665 mg modified release",
+      "oxycodone 5 mg",
+      "alendronate 70 mg",
+      "colecalciferol 25 microgram"
+    ]
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "GPT-4o",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "driver licence renewal notice",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Driver and Vehicle Registry",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Pay Driver and Vehicle Registry",
+      "status": "confirmed",
+      "confidence": 0.96
+    },
+    {
+      "key": "due_date",
+      "value": "2026-08-28",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "amount",
+      "value": "$96.50",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "812 46 305",
+      "status": "uncertain",
+      "confidence": 0.65
+    }
+  ],
+  "open_payload": {
+    "licence_number": "05 502 615",
+    "customer_number": "812 46 305",
+    "additional_action": "Attend a customer service centre or photo point to have a new photograph taken after paying"
+  }
+}

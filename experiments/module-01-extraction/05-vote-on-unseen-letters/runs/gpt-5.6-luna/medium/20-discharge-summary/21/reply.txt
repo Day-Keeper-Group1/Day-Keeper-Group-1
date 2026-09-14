@@ -1,0 +1,71 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "ChatGPT",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "hospital discharge summary",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Bramworth Hospital",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Attend follow-up appointments; arrange GP review",
+      "status": "confirmed",
+      "confidence": 0.94
+    },
+    {
+      "key": "due_date",
+      "value": "2026-05-24",
+      "status": "uncertain",
+      "confidence": 0.72
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "6938509",
+      "status": "confirmed",
+      "confidence": 0.95
+    }
+  ],
+  "open_payload": {
+    "patient": "Mrs Margaret Anne Wilson",
+    "medical_record_number": "6938509",
+    "health_service": "Thornhurst Health",
+    "discharge_date": "17/05/2026",
+    "follow_up_appointments": [
+      {
+        "appointment": "Orthopaedic outpatient review (cast check)",
+        "when": "To be advised — a letter will be sent",
+        "booking_status": "To be arranged by the hospital"
+      },
+      {
+        "appointment": "General practitioner review of medicines and blood pressure",
+        "when": "Within 7 days of discharge",
+        "booking_status": "To be arranged by the patient"
+      },
+      {
+        "appointment": "Community physiotherapy — falls prevention",
+        "when": "Wednesday 27 May 2026, 2:00 PM",
+        "booking_status": "Booked"
+      }
+    ],
+    "other_actions": [
+      "Take medicines as directed",
+      "Do not restart ibuprofen",
+      "Do not drive for two weeks after discharge, and not at all while taking oxycodone"
+    ]
+  }
+}

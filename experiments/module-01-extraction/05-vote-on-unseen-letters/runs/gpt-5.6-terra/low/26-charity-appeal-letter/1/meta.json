@@ -1,0 +1,11 @@
+{
+  "model": "gpt-5.6-terra",
+  "effort": "low",
+  "letter": "26-charity-appeal-letter",
+  "repeat": 1,
+  "pages": ["page-01.png"],
+  "image_detail": "auto",
+  "started_at": "2026-09-14T11:08:00.924Z",
+  "seconds": 6.185,
+  "ok": true
+}

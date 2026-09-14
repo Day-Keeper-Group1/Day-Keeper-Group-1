@@ -1,0 +1,55 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "gpt-4o",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "aged care services approval letter",
+      "status": "confirmed",
+      "confidence": 0.98
+    },
+    {
+      "key": "issuer",
+      "value": "Bramworth Hospital Aged Care Assessment Service",
+      "status": "confirmed",
+      "confidence": 0.98
+    },
+    {
+      "key": "action_required",
+      "value": "Contact Bramworth Hospital Aged Care Assessment Service to request an internal review if you disagree",
+      "status": "confirmed",
+      "confidence": 0.9
+    },
+    {
+      "key": "due_date",
+      "value": "2026-07-02",
+      "status": "uncertain",
+      "confidence": 0.82
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "RC532986",
+      "status": "confirmed",
+      "confidence": 0.96
+    }
+  ],
+  "open_payload": {
+    "notice_number": "ND-495302",
+    "aged_care_id": "AC87542",
+    "date_of_notice": "4 June 2026",
+    "decision": "Approved for government-funded aged care services",
+    "service_group": "home support",
+    "access_approval_date": "28 May 2026",
+    "ongoing_services": "Classification 3, in effect from 4 June 2026",
+    "priority_category": "high",
+    "short_term_services": "Restorative Care Pathway, 8 June 2026 to 27 September 2026",
+    "internal_review_period": "within 28 days of notification"
+  }
+}

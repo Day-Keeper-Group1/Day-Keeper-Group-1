@@ -1,0 +1,50 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "gpt-4o",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "medical rebate statement",
+      "status": "confirmed",
+      "confidence": 0.98
+    },
+    {
+      "key": "issuer",
+      "value": "claimstead",
+      "status": "confirmed",
+      "confidence": 0.96
+    },
+    {
+      "key": "action_required",
+      "value": "No action",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "due_date",
+      "value": "Not applicable",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "37-364928",
+      "status": "confirmed",
+      "confidence": 0.95
+    }
+  ],
+  "open_payload": {
+    "rebate_card_number": "4378 31830 2",
+    "individual_reference_number": "9",
+    "statement_date": "11 August 2026",
+    "benefit_paid": "$292.40",
+    "claim_number": "37-364928"
+  }
+}

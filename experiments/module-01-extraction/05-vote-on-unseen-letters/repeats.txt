@@ -1,0 +1,4 @@
+# How many times each cell reads each letter, unless cells.txt says
+# otherwise for that cell. Twenty five trials of the scheme per letter.
+
+25

@@ -1,0 +1,9 @@
+{
+  "sample_id": "SYN-0012",
+  "document_type": "outpatient_appointment_letter",
+  "issuer": "Thornhurst Health",
+  "action_required": "Attend Orthopaedic Clinic",
+  "due_date": "2026-06-23",
+  "amount": null,
+  "reference": "UR 6938509"
+}

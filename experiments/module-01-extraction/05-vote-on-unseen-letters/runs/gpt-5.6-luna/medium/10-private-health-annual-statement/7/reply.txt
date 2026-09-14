@@ -1,0 +1,50 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "ChatGPT",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "health insurance annual statement",
+      "status": "confirmed",
+      "confidence": 0.98
+    },
+    {
+      "key": "issuer",
+      "value": "Tarnwell Health Fund",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "No action",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "due_date",
+      "value": "Not applicable",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.98
+    },
+    {
+      "key": "reference",
+      "value": "65921613",
+      "status": "confirmed",
+      "confidence": 0.98
+    }
+  ],
+  "open_payload": {
+    "member": "Mrs Margaret Anne Wilson",
+    "policy_name": "Tarnwell Everyday Hospital and Extras",
+    "monthly_amount_you_pay": "$167.43",
+    "next_deduction": "01/08/2026",
+    "statement_identifier": "QFYCGT5"
+  }
+}

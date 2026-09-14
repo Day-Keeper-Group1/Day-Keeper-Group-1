@@ -1,0 +1,52 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "GPT-4o",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "hospital discharge summary",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Bramworth Hospital",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Attend community physiotherapy and arrange GP review",
+      "status": "uncertain",
+      "confidence": 0.93
+    },
+    {
+      "key": "due_date",
+      "value": "2026-05-27",
+      "status": "uncertain",
+      "confidence": 0.86
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "6938509",
+      "status": "confirmed",
+      "confidence": 0.94
+    }
+  ],
+  "open_payload": {
+    "patient": "Mrs Margaret Anne Wilson",
+    "discharge_date": "17/05/2026",
+    "gp_review_due": "Within 7 days of discharge",
+    "community_physiotherapy_appointment": "Wednesday 27 May 2026, 2:00 PM",
+    "orthopaedic_outpatient_review": "To be advised; a letter will be sent",
+    "medical_record_number": "6938509",
+    "health_service": "Thornhurst Health"
+  }
+}

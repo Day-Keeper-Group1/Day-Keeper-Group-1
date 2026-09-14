@@ -1,0 +1,58 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "GPT-4o",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "hospital discharge summary",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Bramworth Hospital",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Attend follow-up appointments",
+      "status": "uncertain",
+      "confidence": 0.86
+    },
+    {
+      "key": "due_date",
+      "value": "2026-05-27",
+      "status": "uncertain",
+      "confidence": 0.76
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "6938509",
+      "status": "confirmed",
+      "confidence": 0.94
+    }
+  ],
+  "open_payload": {
+    "patient": "Mrs Margaret Anne Wilson",
+    "discharge_date": "17/05/2026",
+    "general_practitioner_review": "Within 7 days of discharge; to be arranged by the patient",
+    "community_physiotherapy": "Wednesday 27 May 2026, 2:00 PM",
+    "orthopaedic_outpatient_review": "To be advised; a letter will be sent",
+    "medicines": [
+      "perindopril arginine 5 mg",
+      "paracetamol 665 mg modified release",
+      "oxycodone 5 mg",
+      "alendronate 70 mg",
+      "colecalciferol 25 microgram"
+    ],
+    "ceased_medicine": "ibuprofen 200 mg"
+  }
+}
