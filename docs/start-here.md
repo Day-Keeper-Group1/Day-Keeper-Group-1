@@ -19,9 +19,11 @@ Three things, and deliberately only three:
 3. **A mock reader** that behaves like a real one will, so the whole flow can be
    built and demonstrated before anyone has model access.
 
-**The API and the pages are not here. That is the work.** `docs/api.md` is the
-specification for them: the endpoints, their shapes, their status codes and the
-reasoning. Build against it and the pieces will fit together.
+**The API and the pages follow `docs/api.md`.** Sign in, the letters
+(upload, list, open, page images, home) and the tasks endpoints exist and the
+screens read them; confirming a letter is the next piece. When you add an
+endpoint, add it to that file first: it is the specification, with the
+reasoning for the parts that look arbitrary.
 
 ## Running it
 
@@ -32,7 +34,7 @@ npm ci                    # exactly what package-lock.json says
 cp .env.example .env.local
 docker compose up -d      # Postgres on 55432, MinIO on 59020, viewers on 8080 and 59021
 docker compose ps         # wait until db says "healthy", usually a few seconds
-npm run db:reset          # build the schema, seed it, make the bucket
+npm run db:reset          # build the schema, make the bucket, seed both
 npm test                  # the contract tests
 ```
 
@@ -44,9 +46,9 @@ database are all `daykeeper`. That is the quickest way to see what the seed put
 in the tables.
 
 The storage viewer is at http://localhost:59021, user and password `daykeeper`
-and `daykeeper_local_dev`. Photographs land in the `daykeeper` bucket, and this
-is where to look when you want to know whether an upload really stored
-anything.
+and `daykeeper_local_dev`. Photographs land in the `daykeeper` bucket, the
+seeded ones included, and this is where to look when you want to know whether
+an upload really stored anything.
 
 ### If something goes wrong
 
@@ -70,10 +72,11 @@ service called `storage`.
 
 ### What the seed gives you
 
-Margaret's world at the moment she opens the app, with every state the interface
-has to draw already present, so you never have to manufacture one:
+Margaret's world at the moment she opens the app, with every settled state the
+interface has to draw already present, so you never have to manufacture one.
+The only state not seeded is a letter still being read: a seeded row would never
+finish, and photographing any letter shows the real thing for ten seconds.
 
-- a letter **still being read**
 - a letter **waiting to be checked**, where the reader was unsure of the due
   date and could not read the reference at all
 - letters **confirmed**: one overdue, one upcoming, one **appointment with a
@@ -94,16 +97,21 @@ also plants a **development session** for Margaret and prints its cookie
 browser and `requireUser()` knows who you are. It only ever exists in a local
 database; the seed refuses to run anywhere else.
 
-The seeded pages have no image bytes behind them: those rows describe
-photographs that were never taken, so the bucket starts empty.
+Every seeded page has a real photograph behind it. The seed uploads them as it
+writes the rows, borrowing the synthetic letters in `data/synthetic-letters`
+(Git LFS, so run `git lfs pull` if yours are small text files) and picking for
+each letter the fixture closest to what its fields say it is. So the letters
+render on a machine that has never uploaded anything, which is what showing the
+product needs, and every `document_pages.storage_path` names an object that is
+really there.
 
 ## Commands
 
 | | |
 |---|---|
-| `npm run db:reset` | rebuild the schema from `db/schema.sql`, seed it, empty the bucket |
+| `npm run db:reset` | rebuild the schema from `db/schema.sql`, empty the bucket, then seed both. In that order: the seed writes photographs, so emptying afterwards would delete them |
 | `npm run db:seed` | reseed without touching the schema |
-| `npm run storage:reset` | make the bucket exist and empty it, without touching the database |
+| `npm run storage:reset` | make the bucket exist and empty it, without touching the database. The seeded photographs go with it; `npm run db:reset` puts both sides back |
 | `npm test` | the contract tests |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run dev` | the application |

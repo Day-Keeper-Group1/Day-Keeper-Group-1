@@ -10,6 +10,10 @@ docs/prototype/
 # and breaks the shapes tests/schema-map.test.ts reads it by.
 docs/schema-map.html
 
+# The walkthrough's diagrams are the same kind again: hand-set HTML pages that
+# are screenshotted into the PDF, so a reflow moves nothing but the diff.
+docs/walkthrough/diagrams/
+
 # Documentation is hand-wrapped prose; a reflow is churn, not a fix.
 *.md
 

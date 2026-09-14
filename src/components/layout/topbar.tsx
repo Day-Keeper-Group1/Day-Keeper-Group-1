@@ -1,21 +1,23 @@
 "use client";
 
+// KAN-57: chrome only, the brand on phones and the account menu on both.
+
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Bell, LogOut, Search, Settings } from "lucide-react";
+import { LogOut, Settings } from "lucide-react";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
 import type { SessionUser } from "@/lib/contract/api";
 
 /**
@@ -51,65 +53,67 @@ export function Topbar({ user }: { user: SessionUser }) {
 
   return (
     <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between gap-4 border-b border-border bg-background px-4 md:px-6">
-      <div className="hidden max-w-sm flex-1 items-center md:flex">
-        <div className="relative w-full">
-          <Search
-            className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
-            strokeWidth={1.75}
-          />
-          <Input
-            type="search"
-            placeholder="Search documents and tasks"
-            className="pl-9"
-            disabled
-          />
-        </div>
-      </div>
+      {/* The sidebar carries the brand on a wide screen, so it appears here
+          only where there is no sidebar to carry it. */}
+      <Link
+        href="/dashboard"
+        className="flex min-h-12 items-center gap-2 md:hidden"
+      >
+        <span className="flex size-8 items-center justify-center rounded-md bg-primary text-base font-semibold text-primary-foreground">
+          D
+        </span>
+        <span className="text-base font-semibold text-foreground">
+          DayKeeper
+        </span>
+      </Link>
 
       <div className="ml-auto flex items-center gap-2">
-        <Button variant="ghost" size="icon" aria-label="Notifications">
-          <Bell className="size-5" strokeWidth={1.75} />
-        </Button>
-
         <DropdownMenu>
           <DropdownMenuTrigger
             render={
               <Button
                 variant="ghost"
-                className="flex items-center gap-2 px-2"
+                size="icon"
                 aria-label={`Account menu for ${user.displayName}`}
               >
-                <Avatar className="size-7">
-                  <AvatarFallback className="text-xs font-semibold">
+                <Avatar className="size-9">
+                  <AvatarFallback className="text-sm font-semibold">
                     {initialsOf(user.displayName)}
                   </AvatarFallback>
                 </Avatar>
               </Button>
             }
           />
-          <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel className="text-foreground">
-              {user.displayName}
-              <span className="block text-xs font-normal text-muted-foreground">
-                {user.email}
-              </span>
-            </DropdownMenuLabel>
+          <DropdownMenuContent align="end" className="w-64">
+            <DropdownMenuGroup>
+              <DropdownMenuLabel className="text-foreground">
+                {user.displayName}
+                <span className="block text-sm font-normal text-muted-foreground">
+                  {user.email}
+                </span>
+              </DropdownMenuLabel>
+            </DropdownMenuGroup>
             <DropdownMenuSeparator />
+            {/* Settings is a desktop surface this release: a phone gets the
+                three destinations and nothing else, so the entry is hidden
+                rather than removed, and the route still works if typed. */}
             <DropdownMenuItem
+              className="min-h-12 px-2 text-base max-md:hidden"
               render={
                 <Link href="/settings">
-                  <Settings className="size-4" strokeWidth={1.75} />
+                  <Settings className="size-5" strokeWidth={1.75} />
                   Settings
                 </Link>
               }
             />
-            <DropdownMenuSeparator />
+            <DropdownMenuSeparator className="max-md:hidden" />
             <DropdownMenuItem
+              className="min-h-12 px-2 text-base"
               variant="destructive"
               disabled={signingOut}
               onClick={signOut}
             >
-              <LogOut className="size-4" strokeWidth={1.75} />
+              <LogOut className="size-5" strokeWidth={1.75} />
               {signingOut ? "Signing out..." : "Sign out"}
             </DropdownMenuItem>
           </DropdownMenuContent>

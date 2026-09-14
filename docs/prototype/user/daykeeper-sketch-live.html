@@ -103,22 +103,32 @@
   /* task rows (confirmed things) */
   .row { display: flex; align-items: center; gap: 12px; padding: 12px 2px; border-top: 1px solid var(--line); font-size: 16px; }
   .row:first-of-type { border-top: 0; }
-  .dot { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--ink-dim); flex: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: transparent; font-size: 15px; }
+  .dot { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--ink-dim); flex: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: transparent; }
   .row.done .dot { background: var(--success); border-color: var(--success); color: var(--primary-ink); }
-  .row.done .txt { text-decoration: line-through; color: var(--ink-dim); }
+  .row.done .doing { text-decoration: line-through; color: var(--ink-dim); }
   .row.done .when { color: var(--success); font-weight: 600; }
   .row.late .when { color: var(--ink); font-weight: 700; }
   .ent .row { border-top: none; padding: 4px 0 10px; }
   /* the quiet door on Home, and the month folders behind it */
-  .all-letters { margin: 18px 2px 6px; padding: 12px 4px; color: var(--ink-dim); font-size: 15.5px; cursor: pointer; border-top: 1px solid var(--line); }
-  .folder-h { font-size: 13.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-dim); margin: 18px 2px 4px; }
-  .row .txt { flex: 1; min-width: 0; }
-  .row .when { color: var(--ink-dim); font-size: 13.5px; }
-  .doc-mark { font-size: 13px; color: var(--ink-dim); flex: none; }
+  .all-letters { display: flex; align-items: center; gap: 8px; margin: 18px 2px 6px; padding: 12px 4px; color: var(--ink-dim); font-size: 15.5px; cursor: pointer; border-top: 1px solid var(--line); }
+  .folder-h { display: flex; align-items: center; gap: 6px; font-size: 13.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-dim); margin: 18px 2px 4px; }
+  /* Two lines, always: what to do, then who and when. A row that let the
+     date sit beside the title when it fitted came out a different shape
+     each time, and the eye had to hunt for every date. */
+  .row .txt { flex: 1; min-width: 0; cursor: pointer; }
+  .row .doing { display: block; line-height: 1.35; }
+  .row .when { display: block; margin-top: 2px; color: var(--ink-dim); font-size: 13.5px; }
+  /* Home's task card, in groups: overdue or today, the next seven days,
+     and later, folded to three with the rest counted on the way to the
+     calendar. The calendar's own card groups by the month on screen. */
+  .group + .group { margin-top: 12px; }
+  .group-h { font-size: 13.5px; font-weight: 700; color: var(--ink-dim); }
+  .more { display: flex; align-items: center; gap: 6px; width: 100%; min-height: 48px; padding: 0 0 0 40px; background: none; border: none; border-top: 1px solid var(--line); font-family: inherit; font-size: 13.5px; font-weight: 700; color: var(--primary); cursor: pointer; text-align: left; }
 
   /* queue rows (letters sent to be read) */
   .item { display: flex; align-items: center; gap: 11px; padding: 11px 2px; border-top: 1px solid var(--line); font-size: 15px; }
   .item:first-of-type { border-top: 0; }
+  .folder-h + .item { border-top: 0; }
   .thumb { width: 34px; height: 44px; border-radius: 5px; background: var(--primary-soft); border: 1px solid var(--line); flex: none; }
   .item .txt { flex: 1; min-width: 0; }
   .item .st { font-size: 12.5px; margin-top: 2px; }
@@ -135,16 +145,42 @@
 
   /* photographing a letter */
   .cam { border: 2px dashed var(--line); background: var(--primary-soft); border-radius: var(--radius-card); padding: 34px 16px; text-align: center; color: var(--primary); margin-bottom: 14px; cursor: pointer; }
-  .cam .ico { font-size: 32px; margin-bottom: 6px; }
+  .cam .ico { display: flex; justify-content: center; margin-bottom: 6px; }
   .cam .t { font-size: 17px; font-weight: 700; }
   .cam .d { font-size: 13.5px; color: var(--ink-dim); margin-top: 4px; }
   .pages { display: flex; gap: 10px; flex-wrap: wrap; }
   .pg { width: 74px; height: 100px; background: var(--primary-soft); border: 1px solid var(--line); border-radius: var(--radius-btn); display: flex; align-items: center; justify-content: center; color: var(--ink-dim); font-size: 12.5px; }
+  /* A kept photograph: the sketch has no real image, so the tile carries a
+     stand-in page, a few grey lines and a sum, and opens the viewer. */
+  .pg.kept { cursor: pointer; overflow: hidden; background: var(--bg-card); padding: 0; }
+  .pg.kept svg { width: 100%; height: 100%; display: block; }
+
+  /* The photograph viewer, the way a phone's own photos open: the page
+     fills the width edge to edge and as much height as it needs, dark all
+     round, and the controls float over it rather than taking room from it.
+     "Photo 1 of 2" and Close sit in a bar at the top; tapping the left or
+     right third of the page turns it (a finger swipe on a real phone), and
+     two fingers zoom in to read a line. Separate from the sheet, so closing
+     the photograph lands back where she was. */
+  .viewer { position: absolute; inset: 0; background: rgba(12,12,16,.94); z-index: 12; display: none; flex-direction: column; color: var(--primary-ink); }
+  .viewer.show { display: flex; }
+  .viewer .vbar { display: flex; align-items: center; justify-content: space-between; padding: 10px 10px 10px 18px; flex: none; }
+  .viewer .vcap { font-size: 14.5px; font-weight: 600; }
+  .viewer .vclose { min-width: 48px; min-height: 48px; padding: 0 16px; background: none; color: var(--primary-ink); border: 2px solid var(--primary-ink); border-radius: 999px; font-size: 14.5px; font-weight: 700; cursor: pointer; font-family: inherit; }
+  .viewer .vbody { flex: 1; min-height: 0; display: flex; align-items: center; position: relative; }
+  .viewer .vpage { width: 100%; aspect-ratio: 74 / 100; max-height: 100%; background: var(--bg-card); }
+  .viewer .vpage svg { width: 100%; height: 100%; display: block; }
+  /* Where a tap turns the page: the outer thirds, invisible. */
+  .viewer .vturn { position: absolute; top: 0; bottom: 0; width: 33%; background: none; border: none; cursor: pointer; }
+  .viewer .vturn.prev { left: 0; }
+  .viewer .vturn.next { right: 0; }
+  .viewer .vhint { flex: none; text-align: center; font-size: 12.5px; opacity: .7; padding: 10px 18px 14px; }
   .pg.add { border: 2px dashed var(--line); background: var(--bg-card); color: var(--primary); font-weight: 600; cursor: pointer; }
   .btn { display: flex; align-items: center; justify-content: center; width: 100%; min-height: var(--btn-h); background: var(--primary); color: var(--primary-ink); border: none; padding: 15px; border-radius: var(--radius-btn); font-size: 16.5px; font-weight: 700; cursor: pointer; margin-top: 4px; font-family: inherit; }
   .btn.off { opacity: .45; cursor: default; }
   .btn.ghost { background: none; color: var(--ink-dim); font-weight: 500; font-size: 14.5px; padding: 10px; min-height: 0; }
   .tiny { font-size: 13px; color: var(--ink-dim); margin-top: 10px; line-height: 1.45; }
+  .tiny + .card { margin-top: 8px; }
 
   /* review */
   .fact { display: flex; align-items: baseline; gap: 10px; padding: 11px 2px; border-top: 1px solid var(--line); }
@@ -153,7 +189,7 @@
   .fact .v { font-size: 16.5px; font-weight: 600; }
   .plan-row { display: flex; align-items: center; gap: 11px; padding: 11px 2px; border-top: 1px solid var(--line); font-size: 15.5px; }
   .plan-row:first-of-type { border-top: 0; }
-  .plan-row .ico { flex: none; font-size: 17px; }
+  .plan-row .ico { flex: none; display: flex; color: var(--primary); }
   .plan-hold { background: var(--warn-bg); border-radius: var(--radius-card); padding: 11px 12px; font-size: 13.5px; color: var(--warn-ink); margin-top: 10px; line-height: 1.45; }
 
   /* calendar */
@@ -182,7 +218,7 @@
   .dd-day { font-size: 13px; color: var(--ink-dim); font-weight: 600; margin-bottom: 8px; }
   .sheet .ent + .ent { border-top: 1px solid var(--line); padding-top: 12px; margin-top: 12px; }
   .sheet .t { font-size: 16.5px; font-weight: 700; }
-  .sheet .remind { font-size: 14.5px; color: var(--ink-dim); margin-bottom: 3px; }
+  .sheet .remind { display: flex; align-items: center; gap: 6px; font-size: 14.5px; color: var(--ink-dim); margin-bottom: 3px; }
   .strip { margin-top: 12px; }
   .cap2 { font-size: 12.5px; color: var(--ink-dim); margin-bottom: 7px; }
 
@@ -195,12 +231,14 @@
   /* bottom nav */
   .nav { position: absolute; bottom: 0; left: 0; right: 0; background: var(--bg-card); border-top: var(--border-w) solid var(--line); display: flex; justify-content: space-around; align-items: center; padding: 8px 10px 14px; }
   .nav button { background: none; border: none; font-size: 12px; color: var(--ink-dim); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 3px; width: 76px; position: relative; font-family: inherit; }
-  .nav button .i { font-size: 21px; }
+  /* Line icons, the ones the finished app draws, heavier on the selected tab. */
+  .nav button .i { display: flex; height: 21px; }
+  .nav button.on .i svg { stroke-width: 2.25; }
   /* The selected tab is marked by weight and a bar, not by colour alone.
      Colour is never the only signal in this product; docs/theme.md says why. */
   .nav button.on { color: var(--ink); font-weight: 700; }
   .nav button.on::after { content: ""; display: block; width: 28px; height: 4px; border-radius: 2px; background: var(--primary); }
-  .nav .cambtn { background: var(--primary); color: var(--primary-ink); width: 58px; height: 58px; border-radius: 50%; font-size: 25px; display: flex; align-items: center; justify-content: center; margin-top: -26px; box-shadow: 0 6px 14px rgba(23,69,44,.35); border: 4px solid var(--bg); }
+  .nav .cambtn { background: var(--primary); color: var(--primary-ink); width: 58px; height: 58px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-top: -26px; box-shadow: 0 6px 14px rgba(23,69,44,.35); border: 4px solid var(--bg); }
   .badge { position: absolute; top: -4px; right: 14px; background: var(--primary); color: var(--primary-ink); font-size: 11px; font-weight: 700; border-radius: 999px; padding: 1px 6px; }
 
   .screen { display: none; }
@@ -272,7 +310,7 @@
           <div id="task-list-home"></div>
         </div>
 
-        <div class="all-letters" onclick="go('letters')">📁 All your letters →</div>
+        <div class="all-letters" onclick="go('letters')"><span data-icon="folder-open" data-size="18" data-weight="1.75"></span>All your letters →</div>
       </section>
 
       <!-- PHOTOGRAPH ONE LETTER -->
@@ -281,7 +319,7 @@
         <div class="sub">One letter at a time. If it runs to several pages, photograph every page.</div>
 
         <div class="cam" onclick="addPhoto()">
-          <div class="ico">📷</div>
+          <div class="ico" data-icon="camera" data-size="32" data-weight="1.75"></div>
           <div class="t">Tap to photograph</div>
           <div class="d" id="cam-d">the camera stays open, keep going</div>
         </div>
@@ -305,9 +343,12 @@
         <h1>Check what we found</h1>
         <div class="sub" id="review-sub">What we read, and what we'll do about it.</div>
 
+        <!-- The photographs sit under the facts, because checking is
+             comparing: what we read against what the letter says. -->
         <div class="card">
           <h2>What it says</h2>
           <div id="facts"></div>
+          <div id="review-photos"></div>
         </div>
 
         <div class="card">
@@ -360,14 +401,28 @@
 
       <!-- bottom nav -->
       <div class="nav" id="nav">
-        <button data-s="home" class="on"><span class="i">🏠</span>Home<span class="badge" id="nav-badge" style="display:none">0</span></button>
-        <button class="cambtn" data-s="camera">📷</button>
-        <button data-s="calendar"><span class="i">📅</span>Calendar</button>
+        <button data-s="home" class="on"><span class="i" data-icon="house" data-size="21" data-weight="1.75"></span>Home<span class="badge" id="nav-badge" style="display:none">0</span></button>
+        <button class="cambtn" data-s="camera" aria-label="Photograph your letter"><span data-icon="camera" data-size="25"></span></button>
+        <button data-s="calendar"><span class="i" data-icon="calendar-days" data-size="21" data-weight="1.75"></span>Calendar</button>
       </div>
 
       <!-- day sheet -->
       <div class="sheet-mask" id="sheet-mask" onclick="closeDay()"></div>
       <div class="sheet" id="sheet"></div>
+
+      <!-- photograph viewer -->
+      <div class="viewer" id="viewer">
+        <div class="vbar">
+          <div class="vcap" id="v-cap">Photo 1 of 1</div>
+          <button class="vclose" onclick="closePhoto()">Close</button>
+        </div>
+        <div class="vbody">
+          <div class="vpage" id="v-page"></div>
+          <button class="vturn prev" id="v-prev" onclick="movePhoto(-1)" aria-label="Previous photo"></button>
+          <button class="vturn next" id="v-next" onclick="movePhoto(1)" aria-label="Next photo"></button>
+        </div>
+        <div class="vhint" id="v-hint"></div>
+      </div>
 
     </div>
   </div>
@@ -376,6 +431,29 @@
 <div class="disclaimer">Wireframe sketch, for discussion. The release it walks through is docs/scope.md.</div>
 
 <script>
+  /* ---------- icons ----------
+     The finished app draws Lucide's line icons (lucide-react), so the sketch
+     draws the same ones, copied in because this file opens with no build
+     step. Each entry is the inside of a 24 by 24 svg; icon() wraps it at a
+     size and a stroke weight, and anything marked data-icon in the markup is
+     filled in when the page starts. */
+  const ICONS = {
+    'house': '<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+    'camera': '<path d="M13.997 4a2 2 0 0 1 1.76 1.05l.486.9A2 2 0 0 0 18.003 7H20a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1.997a2 2 0 0 0 1.759-1.048l.489-.904A2 2 0 0 1 10.004 4z"/><circle cx="12" cy="13" r="3"/>',
+    'calendar-days': '<path d="M8 2v3"/><path d="M16 2v3"/><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M8 13h.01"/><path d="M12 13h.01"/><path d="M16 13h.01"/><path d="M8 17h.01"/><path d="M12 17h.01"/><path d="M16 17h.01"/>',
+    'folder-open': '<path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/>',
+    'folder': '<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>',
+    'bell': '<path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/>',
+    'bell-off': '<path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M17 17H4a1 1 0 0 1-.74-1.673C4.59 13.956 6 12.499 6 8a6 6 0 0 1 .258-1.742"/><path d="m2 2 20 20"/><path d="M8.668 3.01A6 6 0 0 1 18 8c0 2.687.77 4.653 1.707 6.05"/>',
+    'check': '<path d="M20 6 9 17l-5-5"/>',
+    'file-text': '<path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>'
+  };
+
+  function icon(name, size, weight) {
+    return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="' + (weight || 2) +
+      '" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICONS[name] + '</svg>';
+  }
+
   /* ---------- the letters this sketch can read ----------
 
      One upload is one letter, so the sketch hands out this list one entry per
@@ -403,9 +481,9 @@
          src/lib/contract/reminders.ts. The plan card and the calendar marks
          below agree with it, which is the promise they keep everywhere. */
       plan: [
-        { ico: '🔔', t: 'Remind you: Wed 12 Aug, 9 am' },
-        { ico: '🔔', t: 'Remind you: Fri 14 Aug, 9 am' },
-        { ico: '📅', t: 'On your calendar: due Sat 15 Aug' }
+        { ico: 'bell', t: 'Remind you: Wed 12 Aug, 9 am' },
+        { ico: 'bell', t: 'Remind you: Fri 14 Aug, 9 am' },
+        { ico: 'calendar-days', t: 'On your calendar: due Sat 15 Aug' }
       ],
       task: { title: 'Pay AGL electricity bill', when: 'Sat 15 Aug', due: { mo: 8, d: 15 } },
       marks: [ { mo: 8, d: 12, l: 'reminder' }, { mo: 8, d: 14, l: 'reminder' }, { mo: 8, d: 15, l: 'AGL due' } ],
@@ -419,10 +497,10 @@
         { k: 'Reference', v: 'CLM 30991 442' }
       ],
       plan: [
-        { ico: '🔔', t: 'Remind you: Sat 15 Aug, 9 am' },
-        { ico: '🔔', t: 'Remind you: Wed 19 Aug, 9 am' },
-        { ico: '🔔', t: 'Remind you: Fri 21 Aug, 9 am' },
-        { ico: '📅', t: 'On your calendar: due Sat 22 Aug' }
+        { ico: 'bell', t: 'Remind you: Sat 15 Aug, 9 am' },
+        { ico: 'bell', t: 'Remind you: Wed 19 Aug, 9 am' },
+        { ico: 'bell', t: 'Remind you: Fri 21 Aug, 9 am' },
+        { ico: 'calendar-days', t: 'On your calendar: due Sat 22 Aug' }
       ],
       task: { title: 'Return Medicare form', when: 'Sat 22 Aug', due: { mo: 8, d: 22 } },
       marks: [ { mo: 8, d: 15, l: 'reminder' }, { mo: 8, d: 19, l: 'reminder' }, { mo: 8, d: 21, l: 'reminder' }, { mo: 8, d: 22, l: 'Medicare' } ],
@@ -437,10 +515,10 @@
         { k: 'Reference', v: '1AB 2CD' }
       ],
       plan: [
-        { ico: '🔔', t: 'Remind you: Tue 25 Aug, 9 am' },
-        { ico: '🔔', t: 'Remind you: Sat 29 Aug, 9 am' },
-        { ico: '🔔', t: 'Remind you: Mon 31 Aug, 9 am' },
-        { ico: '📅', t: 'On your calendar: due Tue 1 Sep' }
+        { ico: 'bell', t: 'Remind you: Tue 25 Aug, 9 am' },
+        { ico: 'bell', t: 'Remind you: Sat 29 Aug, 9 am' },
+        { ico: 'bell', t: 'Remind you: Mon 31 Aug, 9 am' },
+        { ico: 'calendar-days', t: 'On your calendar: due Tue 1 Sep' }
       ],
       task: { title: 'Renew car registration', when: 'Tue 1 Sep', due: { mo: 9, d: 1 } },
       marks: [ { mo: 8, d: 25, l: 'reminder' }, { mo: 8, d: 29, l: 'reminder' }, { mo: 8, d: 31, l: 'reminder' }, { mo: 9, d: 1, l: 'Rego due' } ],
@@ -455,8 +533,8 @@
         { k: 'When', v: 'Fri 4 Sep, 10:30 am' }
       ],
       plan: [
-        { ico: '🔔', t: 'Remind you: Thu 3 Sep, 9 am' },
-        { ico: '📅', t: 'On your calendar: Fri 4 Sep, 10:30 am' }
+        { ico: 'bell', t: 'Remind you: Thu 3 Sep, 9 am' },
+        { ico: 'calendar-days', t: 'On your calendar: Fri 4 Sep, 10:30 am' }
       ],
       task: { title: 'Appointment with Dr Patel', when: 'Fri 4 Sep', due: { mo: 9, d: 4 } },
       marks: [ { mo: 9, d: 3, l: 'reminder' }, { mo: 9, d: 4, l: 'Dr Patel' } ],
@@ -471,10 +549,10 @@
         { k: 'Reference', v: '88 3120 7' }
       ],
       plan: [
-        { ico: '🔔', t: 'Remind you: Mon 24 Aug, 9 am' },
-        { ico: '🔔', t: 'Remind you: Fri 28 Aug, 9 am' },
-        { ico: '🔔', t: 'Remind you: Sun 30 Aug, 9 am' },
-        { ico: '📅', t: 'On your calendar: due Mon 31 Aug' }
+        { ico: 'bell', t: 'Remind you: Mon 24 Aug, 9 am' },
+        { ico: 'bell', t: 'Remind you: Fri 28 Aug, 9 am' },
+        { ico: 'bell', t: 'Remind you: Sun 30 Aug, 9 am' },
+        { ico: 'calendar-days', t: 'On your calendar: due Mon 31 Aug' }
       ],
       task: { title: 'Pay council rates', when: 'Mon 31 Aug', due: { mo: 8, d: 31 } },
       marks: [ { mo: 8, d: 24, l: 'reminder' }, { mo: 8, d: 28, l: 'reminder' }, { mo: 8, d: 30, l: 'reminder' }, { mo: 8, d: 31, l: 'Rates due' } ],
@@ -491,7 +569,7 @@
         { k: 'Reference', v: 'Member 2214' }
       ],
       plan: [
-        { ico: '📄', t: "No date on this letter. It's saved; nothing goes on your calendar." }
+        { ico: 'file-text', t: "No date on this letter. It's saved; nothing goes on your calendar." }
       ],
       task: { title: 'Return community centre form', when: 'No date' },
       marks: [],
@@ -507,9 +585,10 @@
   let letters = [];      // every letter she has: {who, what, due, when, pages, facts}
   let nextRead = 0, photos = 0, uid = 0, current = null, selDay = null, calMo = 8, calYr = 2026;
   let timers = [], toastTimer = null;
+  let sheetTask = null;  // the task the sheet is open on, when it is not a day
 
   const INITIAL_TASKS = [
-    { id: 'w', title: 'Pay water bill', when: 'Wed 5 Aug', due: { mo: 8, d: 5 }, done: false, marks: [ { mo: 8, d: 5, l: 'Water due' } ],
+    { id: 'w', who: 'Yarra Valley Water', what: 'Water bill', title: 'Pay water bill', when: 'Wed 5 Aug', due: { mo: 8, d: 5 }, done: false, marks: [ { mo: 8, d: 5, l: 'Water due' } ],
       agenda: { day: 'Wednesday 5 August', line: 'Pay water bill', sub: '$89.20 · ref 5501 2280' },
       pages: 1,
       facts: [
@@ -519,7 +598,7 @@
         { k: 'Amount', v: '$89.20' },
         { k: 'Reference', v: '5501 2280' }
       ] },
-    { id: 'p', title: 'Return pension review form', when: 'Tue 11 Aug', due: { mo: 8, d: 11 }, done: false, marks: [ { mo: 8, d: 11, l: 'Form due' } ],
+    { id: 'p', who: 'Services Australia', what: 'Pension review form', title: 'Return pension review form', when: 'Tue 11 Aug', due: { mo: 8, d: 11 }, done: false, marks: [ { mo: 8, d: 11, l: 'Form due' } ],
       agenda: { day: 'Tuesday 11 August', line: 'Return pension review form', sub: 'Services Australia' },
       pages: 2,
       facts: [
@@ -612,8 +691,9 @@
        in src/lib/contract/api.ts. */
     document.getElementById('facts').innerHTML = L.facts.map(f =>
       '<div class="fact"><span class="k">' + f.k + '</span><span class="v">' + f.v + '</span></div>').join('');
+    document.getElementById('review-photos').innerHTML = photoStrip(it.pages, 'letter');
     document.getElementById('plan').innerHTML = L.plan.map(p =>
-      '<div class="plan-row"><span class="ico">' + p.ico + '</span>' + p.t + '</div>').join('');
+      '<div class="plan-row"><span class="ico">' + icon(p.ico, 17) + '</span>' + p.t + '</div>').join('');
     go('review');
   }
 
@@ -621,7 +701,7 @@
     if (!current) { go('calendar'); return; }
     const L = LETTERS[current.idx];
     queue = queue.filter(q => q.id !== current.id);
-    tasks.unshift({ id: 't' + current.id, title: L.task.title, when: L.task.when, due: L.task.due, done: false, marks: L.marks, agenda: L.agenda, pages: current.pages, facts: L.facts });
+    tasks.unshift({ id: 't' + current.id, who: L.who, what: L.what, title: L.task.title, when: L.task.when, due: L.task.due, done: false, marks: L.marks, agenda: L.agenda, pages: current.pages, facts: L.facts });
     letters.push({ who: L.who, what: L.what, due: L.task.due || null, when: L.task.due ? L.task.when : null, pages: current.pages, facts: L.facts });
     current = null;
     renderAll();
@@ -649,8 +729,51 @@
   function photoStrip(n, whose) {
     let h = '<div class="strip"><div class="cap2">' + n + (n === 1 ? ' photo' : ' photos') +
       ' · kept with this ' + whose + '</div><div class="pages">';
-    for (let i = 1; i <= n; i++) h += '<div class="pg">photo ' + i + '</div>';
+    for (let i = 1; i <= n; i++) h += '<div class="pg kept" onclick="openPhoto(' + i + ', ' + n + ')" role="button" aria-label="Photo ' + i + ' of ' + n + '">' + letterPage(i) + '</div>';
     return h + '</div></div>';
+  }
+
+  /* The stand-in for a photographed page: a letterhead, lines of text and,
+     on the first page, a sum. Nothing here is real; the real thing shows
+     the photograph she took. */
+  function letterPage(i) {
+    let h = '<svg viewBox="0 0 74 100" xmlns="http://www.w3.org/2000/svg">' +
+      '<rect width="74" height="100" fill="var(--bg-card)"/>' +
+      '<rect x="8" y="8" width="22" height="5" rx="1" fill="var(--primary)"/>';
+    const rows = i === 1 ? [20, 26, 32, 44, 50, 56, 70, 76] : [10, 16, 22, 28, 40, 46, 52, 64, 70, 76, 82];
+    rows.forEach((y, k) => { h += '<rect x="8" y="' + y + '" width="' + (k % 3 === 2 ? 34 : 58) + '" height="2.5" rx="1" fill="var(--line)" opacity=".45"/>'; });
+    if (i === 1) h += '<rect x="8" y="86" width="30" height="6" rx="1" fill="var(--ink)"/>';
+    return h + '</svg>';
+  }
+
+  /* ---------- the photograph viewer ---------- */
+  let viewing = { page: 1, count: 1 };
+
+  function openPhoto(page, count) {
+    viewing = { page: page, count: count };
+    drawPhoto();
+    document.getElementById('viewer').classList.add('show');
+  }
+
+  function movePhoto(step) {
+    const next = viewing.page + step;
+    if (next < 1 || next > viewing.count) return;
+    viewing.page = next;
+    drawPhoto();
+  }
+
+  function drawPhoto() {
+    document.getElementById('v-cap').textContent = 'Photo ' + viewing.page + ' of ' + viewing.count;
+    document.getElementById('v-page').innerHTML = letterPage(viewing.page);
+    document.getElementById('v-prev').style.display = viewing.page === 1 ? 'none' : 'block';
+    document.getElementById('v-next').style.display = viewing.page === viewing.count ? 'none' : 'block';
+    document.getElementById('v-hint').textContent = viewing.count > 1
+      ? 'Tap the sides to turn the page. Pinch to read closer.'
+      : 'Pinch to read closer.';
+  }
+
+  function closePhoto() {
+    document.getElementById('viewer').classList.remove('show');
   }
 
   /* Overdue is not stored. It is worked out here while drawing, from the tick
@@ -661,6 +784,12 @@
     return !t.done && t.due && (t.due.mo * 100 + t.due.d) < (TODAY_MO * 100 + TODAY_D);
   }
 
+  /* What a task's letter said under one name, or nothing. */
+  function factOf(t, k) {
+    const f = (t.facts || []).find(x => x.k === k);
+    return f ? f.v : null;
+  }
+
   function taskRow(t, inSheet) {
     const late = isLate(t);
     const stay = inSheet ? 'true' : 'false';
@@ -668,9 +797,62 @@
     /* A dateless task never had reminders, so its done face does not claim
        any were switched off. */
     const when = t.done ? (t.due ? 'Done · reminders off' : 'Done') : late ? 'was due ' + t.when : t.when;
-    return '<div class="row' + (t.done ? ' done' : late ? ' late' : '') + '"><span class="dot" onclick="toggleDone(\'' + t.id + '\', ' + stay + ')">✓</span>' +
-      '<span class="txt">' + t.title + '</span><span class="doc-mark">📄</span>' +
-      '<span class="when">' + when + '</span></div>';
+    /* The first line is what to do and the second is who asked and when, in
+       the letter's own words, as the finished row draws it
+       (src/components/task-row.tsx). A task whose letter gave neither shows
+       its title on the first line and the date alone on the second. */
+    const doing = factOf(t, 'What to do') || t.title;
+    const who = factOf(t, 'From');
+    return '<div class="row' + (t.done ? ' done' : late ? ' late' : '') + '"><span class="dot" onclick="toggleDone(\'' + t.id + '\', ' + stay + ')">' + icon('check', 15, 3) + '</span>' +
+      '<span class="txt" onclick="openTask(\'' + t.id + '\')"><span class="doing">' + doing + '</span>' +
+      '<span class="when">' + (who ? who + ' · ' : '') + when + '</span></span></div>';
+  }
+
+  /* One heading and its rows. An empty group is not drawn, unless it is told
+     what to say about the absence; `more` counts rows folded away, and the
+     line that says so goes to the calendar, where every task is listed. */
+  function taskGroup(heading, list, opts) {
+    const o = opts || {};
+    if (!list.length && !o.empty) return '';
+    let h = '<div class="group"><h3 class="group-h">' + heading + '</h3>';
+    h += list.length
+      ? list.map(t => taskRow(t)).join('')
+      : '<div class="row"><span class="txt" style="color:var(--ink-dim)">' + o.empty + '</span></div>';
+    if (o.more) h += '<button class="more" onclick="go(\'calendar\')">' + o.more + ' more in your calendar →</button>';
+    return h + '</div>';
+  }
+
+  /* Home's groups, as src/lib/home.ts cuts them: overdue and today first,
+     then the next seven days, then everything else, dateless and ticked
+     included. The first heading says "Needs doing" when an overdue task is
+     in it, because a bill from last week is not "Today". */
+  const LATER_SHOWN = 3;
+  function homeTasks(list) {
+    const key = due => due.mo * 100 + due.d;
+    const todayKey = TODAY_MO * 100 + TODAY_D;
+    const end = new Date(TODAY_YR, TODAY_MO - 1, TODAY_D + 7);
+    const weekEnd = (end.getMonth() + 1) * 100 + end.getDate();
+    const today = [], week = [], later = [];
+    list.forEach(t => {
+      if (isLate(t) || (t.due && key(t.due) === todayKey)) today.push(t);
+      else if (t.due && key(t.due) > todayKey && key(t.due) <= weekEnd) week.push(t);
+      else later.push(t);
+    });
+    return taskGroup(today.some(isLate) ? 'Needs doing' : 'Today', today) +
+      taskGroup('Next seven days', week) +
+      taskGroup('Later', later.slice(0, LATER_SHOWN), { more: Math.max(0, later.length - LATER_SHOWN) });
+  }
+
+  /* The calendar's card says what the grid says: the month on screen, with
+     the overdue pinned above and the dateless below whatever month shows, as
+     tasksForMonth in src/lib/calendar.ts. */
+  function calendarTasks(list) {
+    const overdue = list.filter(isLate);
+    const inMonth = list.filter(t => !isLate(t) && t.due && calYr === TODAY_YR && t.due.mo === calMo);
+    const undated = list.filter(t => !isLate(t) && !t.due);
+    return taskGroup('Still to do', overdue) +
+      taskGroup(MONTHS[calMo - 1], inMonth, { empty: 'Nothing due in ' + MONTHS[calMo - 1] }) +
+      taskGroup('No date', undated);
   }
 
   /* Due date ascending, dateless last. One sort gives the pinning for free:
@@ -686,9 +868,28 @@
     if (!t) return;
     t.done = !t.done;
     renderAll();
-    /* Ticked from the day sheet: redraw the sheet in place, so the tick is
-       seen to land without throwing her back to the month grid. */
+    /* Ticked from a sheet: redraw the sheet in place, so the tick is seen to
+       land without throwing her back to the list or the month grid. */
     if (fromSheet && selDay) openDay(selDay);
+    else if (fromSheet && sheetTask) openTask(sheetTask);
+  }
+
+  /* A task opens in the same sheet a letter does, from wherever its row is
+     drawn: the tick to tick it, what its letter said, and the photographs. The
+     words of the row open it; the dot beside them only ticks. */
+  function openTask(id) {
+    const t = tasks.find(x => x.id === id);
+    if (!t) return;
+    sheetTask = id;
+    let h = '<div class="dd-day">' + (t.who ? t.who + ' · ' + t.what : t.title) + '</div>';
+    h += '<div class="ent">' + taskRow(t, true);
+    (t.facts || []).forEach(f => { h += '<div class="fact"><span class="k">' + f.k + '</span><span class="v">' + f.v + '</span></div>'; });
+    h += photoStrip(t.pages || 1, 'task');
+    h += '</div>';
+    h += '<button class="btn ghost" onclick="closeDay()">Close</button>';
+    document.getElementById('sheet').innerHTML = h;
+    document.getElementById('sheet-mask').classList.add('show');
+    document.getElementById('sheet').classList.add('show');
   }
 
   function ctaTap() {
@@ -725,10 +926,10 @@
     b.style.display = ready ? 'inline-block' : 'none';
     b.textContent = ready;
 
-    /* tasks on home + calendar */
-    const trows = tasksInOrder().map(t => taskRow(t)).join('') || '<div class="row"><span class="txt" style="color:var(--ink-dim)">Nothing yet</span></div>';
-    document.getElementById('task-list-home').innerHTML = trows;
-    document.getElementById('task-list-cal').innerHTML = trows;
+    /* tasks on home; the calendar's card is drawn with its month, in renderCalendar */
+    document.getElementById('task-list-home').innerHTML = tasks.length
+      ? homeTasks(tasksInOrder())
+      : '<div class="row"><span class="txt" style="color:var(--ink-dim)">Nothing yet</span></div>';
 
     renderCalendar();
     renderLetters();
@@ -748,12 +949,12 @@
     withDate.forEach(l => {
       if (l.due.mo !== month) {
         month = l.due.mo;
-        h += '<div class="folder-h">📁 ' + MONTHS[month - 1] + ' 2026</div>';
+        h += '<div class="folder-h">' + icon('folder', 16) + MONTHS[month - 1] + ' 2026</div>';
       }
       h += letterRow(l);
     });
     if (dateless.length) {
-      h += '<div class="folder-h">📁 No date</div>';
+      h += '<div class="folder-h">' + icon('folder', 16) + 'No date</div>';
       dateless.forEach(l => { h += letterRow(l); });
     }
     document.getElementById('letters-list').innerHTML =
@@ -821,6 +1022,9 @@
     const trail = (7 - (offset + days) % 7) % 7;
     for (let i = 0; i < trail; i++) h += '<div class="d"></div>';
     document.getElementById('cal-grid').innerHTML = h;
+    document.getElementById('task-list-cal').innerHTML = tasks.length
+      ? calendarTasks(tasksInOrder())
+      : '<div class="row"><span class="txt" style="color:var(--ink-dim)">Nothing yet</span></div>';
   }
 
   function moveMonth(step) {
@@ -847,9 +1051,9 @@
         /* The clock checks the tick at the moment it rings; this line is that
            check, drawn. A reminder for a ticked-off task has nothing to say,
            and one whose morning has passed is history, not a plan. */
-        const line = t.done ? '🔕 No reminder, this is already done'
-                   : past   ? '🔔 A reminder went out this morning, 9 am'
-                   :          '🔔 A reminder goes out this morning, 9 am';
+        const line = t.done ? icon('bell-off', 16) + 'No reminder, this is already done'
+                   : past   ? icon('bell', 16) + 'A reminder went out this morning, 9 am'
+                   :          icon('bell', 16) + 'A reminder goes out this morning, 9 am';
         h += '<div class="ent"><div class="remind">' + line + '</div>' +
              '<div class="t">' + t.title + '</div><div class="cap2">due ' + t.when + '</div></div>';
         return;
@@ -870,6 +1074,7 @@
 
   function closeDay() {
     selDay = null;
+    sheetTask = null;
     document.getElementById('sheet-mask').classList.remove('show');
     document.getElementById('sheet').classList.remove('show');
     renderCalendar();
@@ -878,6 +1083,7 @@
   /* ---------- navigation ---------- */
   function go(name) {
     closeDay();
+    closePhoto();
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById('s-' + name).classList.add('active');
     document.querySelectorAll('.nav button').forEach(b => b.classList.toggle('on', b.dataset.s === name));
@@ -906,6 +1112,10 @@
     'sketch "today": ' +
     new Date(TODAY_YR, TODAY_MO - 1, TODAY_D).toLocaleDateString('en-AU',
       { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+
+  document.querySelectorAll('[data-icon]').forEach(el => {
+    el.innerHTML = icon(el.dataset.icon, Number(el.dataset.size) || 20, Number(el.dataset.weight) || 2);
+  });
 
   reset();
 </script>

@@ -11,20 +11,16 @@ import "server-only";
 
 import {
   deriveTaskStatus,
-  type ExtractedFieldView,
   type ReminderView,
   type TaskDetail,
   type TaskSummary,
 } from "@/lib/contract/api";
-import { formatDueDate } from "@/lib/contract/dates";
-import {
-  FIELD_LABELS,
-  OPTIONAL_FIELD_KEYS,
-  OPTIONAL_FIELD_LABELS,
-  isContractFieldKey,
-  type OptionalFieldKey,
-} from "@/lib/contract/fields";
 import { query, queryOne } from "@/server/db";
+// A task's fields are the fields of the letter it came from, and the letter
+// endpoints draw the same rows. Both word them in src/server/field-views.ts, so
+// the two cannot spell a label differently or disagree about what a hedged
+// value shows.
+import { mapField, type ExtractedFieldRow } from "@/server/field-views";
 
 type TaskListRow = {
   id: string;
@@ -41,36 +37,6 @@ type TaskListRow = {
   reminder_channel: ReminderView["channel"] | null;
   reminder_status: ReminderView["status"] | null;
 };
-
-type ExtractedFieldRow = {
-  field_key: string;
-  extracted_value: string | null;
-  status: "confirmed" | "uncertain" | "unreadable";
-};
-
-function fieldLabel(key: string): string {
-  if (isContractFieldKey(key)) return FIELD_LABELS[key];
-  if ((OPTIONAL_FIELD_KEYS as readonly string[]).includes(key)) {
-    return OPTIONAL_FIELD_LABELS[key as OptionalFieldKey];
-  }
-  const words = key.replaceAll("_", " ");
-  return words.charAt(0).toUpperCase() + words.slice(1);
-}
-
-function mapField(row: ExtractedFieldRow): ExtractedFieldView {
-  const confirmed = row.status === "confirmed";
-  const value = confirmed ? row.extracted_value : null;
-
-  return {
-    key: row.field_key,
-    label: fieldLabel(row.field_key),
-    value:
-      row.field_key === "due_date" && value
-        ? formatDueDate(value, "fact")
-        : value,
-    status: confirmed ? "confirmed" : "unreadable",
-  };
-}
 
 function mapTaskRows(
   rows: TaskListRow[],

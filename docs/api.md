@@ -791,8 +791,8 @@ smaller than every upcoming one.
 
 **Uncapped, and it has to stay uncapped**, because the calendar is drawn from it
 and a capped list draws a month whose marks stop partway through with no error
-anywhere. Do not serve the calendar from `HomePayload.tasks`, which is capped:
-the two would then disagree on screen, which is the exact failure
+anywhere. Do not serve the calendar from `HomePayload.tasks`, which drops completed
+tasks older than seven days: the two would then disagree on screen, which is the exact failure
 `GET /api/home` exists to prevent. A date-range parameter is the obvious answer
 once a person has enough tasks for this to hurt. **Open.**
 
@@ -967,15 +967,17 @@ is still being read, and both sit in `inbox`.
   shown when `inbox` is non-empty, which is not the same test as the counts: a
   queue holding only failures still shows the card.
 - `tasks`: **every open task, whatever its date, plus anything completed in the
-  last seven days**, by due date ascending with dateless tasks last, capped at
-  20. Open tasks are never filtered by date: an unpaid bill from three weeks ago
+  last seven days**, by due date ascending with dateless tasks last, not capped. Open tasks are never filtered by date: an unpaid bill from three weeks ago
   is the loudest thing this person owns, and the ascending sort already puts it
   first. (An earlier draft said "open tasks due today or later", which reads
   sensibly and quietly removes exactly that bill from the screen; the wording
   here is deliberate.) Completed rows are the only ones that age out: seven days
   from the tick, so a row does not vanish from under the finger that just ticked
   it, and a card headed "Coming up" does not become twenty struck-through rows
-  from last March. The cap of 20 is a default decision.
+  from last March. There was a cap of 20, and it removed the furthest tasks with
+  nothing on screen to say so. Home now shows overdue, today and the next seven
+  days whole, the first three of the rest, and a link to the calendar naming how
+  many more there are (`src/lib/home.ts`).
 
 ---
 

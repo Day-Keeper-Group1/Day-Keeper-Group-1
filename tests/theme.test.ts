@@ -135,3 +135,96 @@ describe("the copies of the palette", () => {
     expect(strays).toEqual([]);
   });
 });
+
+/**
+ * The prototype's type, made checkable.
+ *
+ * Screens drawn from the prototype set their sizes by name (`text-row`,
+ * `text-caption`), and each name is declared in globals.css beside the
+ * prototype rule it copies. These assertions read both files, so a size
+ * changed in one and not the other is caught here rather than on a phone.
+ */
+function namedSizesFrom(css: string): Map<string, number> {
+  const themeBlock = css.slice(
+    css.indexOf("@theme"),
+    css.indexOf(":root", css.indexOf("@theme")),
+  );
+  const found = new Map<string, number>();
+  for (const m of themeBlock.matchAll(
+    /--text-([a-z0-9]+)\s*:\s*([0-9.]+)rem\s*;/g,
+  )) {
+    found.set(m[1], Number(m[2]) * 16);
+  }
+  return found;
+}
+
+/** The font-size of the first rule in the prototype whose selector is exactly this. */
+function prototypeSize(selector: string): number {
+  const css = read(PROTOTYPE);
+  const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const rule = css.match(
+    new RegExp(`(?:^|\\n)\\s*${escaped}\\s*\\{([^}]*)\\}`),
+  );
+  expect(rule, `prototype rule ${selector}`).not.toBeNull();
+  const size = rule![1].match(/font-size:\s*([0-9.]+)px/);
+  expect(size, `font-size in ${selector}`).not.toBeNull();
+  return Number(size![1]);
+}
+
+describe("the type scale", () => {
+  const sizes = namedSizesFrom(read(GLOBALS));
+
+  const copies: Array<[string, string]> = [
+    ["title", "h1"],
+    ["sub", ".sub"],
+    ["label", ".card h2"],
+    ["cta", ".review-cta .big"],
+    ["caption", ".review-cta .small"],
+    ["row", ".row"],
+    ["item", ".item"],
+    ["cam", ".cam .t"],
+    ["button", ".btn"],
+    ["key", ".fact .k"],
+    ["plan", ".plan-row"],
+    ["day", ".cal .d"],
+    ["dow", ".cal .dow"],
+    ["nav", ".nav button"],
+  ];
+
+  for (const [name, selector] of copies) {
+    it(`text-${name} is the prototype's ${selector}`, () => {
+      expect(sizes.get(name), `--text-${name}`).toBeDefined();
+      expect(sizes.get(name)).toBe(prototypeSize(selector));
+    });
+  }
+
+  it("leaves Tailwind's own ramp alone for the pages not drawn from the prototype", () => {
+    for (const step of ["xs", "sm", "base", "lg", "xl", "2xl"]) {
+      expect(sizes.has(step), `--text-${step} is redefined`).toBe(false);
+    }
+  });
+
+  it("names a real font family", () => {
+    const css = read(GLOBALS);
+    const declared = css.match(/--font-sans:\s*([^;]+);/);
+    expect(declared).not.toBeNull();
+    expect(declared![1]).not.toMatch(/var\(--font-sans\)/);
+    expect(declared![1]).toMatch(/system-ui/);
+  });
+});
+
+describe("cn and the named sizes", () => {
+  it("keeps a named size beside a colour", async () => {
+    const { cn } = await import("@/lib/utils");
+    expect(cn("text-label", "text-warn")).toBe("text-label text-warn");
+    expect(cn("text-caption", "text-ink-dim")).toBe(
+      "text-caption text-ink-dim",
+    );
+  });
+
+  it("knows every size globals.css declares", async () => {
+    const { NAMED_TEXT_SIZES } = await import("@/lib/utils");
+    const declared = [...namedSizesFrom(read(GLOBALS)).keys()].sort();
+    expect([...NAMED_TEXT_SIZES].sort()).toEqual(declared);
+  });
+});
