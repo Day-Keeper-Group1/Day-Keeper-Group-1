@@ -20,6 +20,7 @@ import {
   marksByDay,
   monthCells,
   sheetLine,
+  tasksForMonth,
   type CalendarMark,
 } from "@/lib/calendar";
 import {
@@ -78,6 +79,44 @@ function dueCaption(task: TaskSummary): string | null {
     : `due ${date}`;
 }
 
+/**
+ * One heading inside the Tasks panel. Drawn empty only when told what to say
+ * about the absence, which the month heading is: a month with nothing due is
+ * news, whereas "no overdue tasks" is a row about nothing.
+ */
+function MonthTaskGroup({
+  heading,
+  tasks,
+  empty,
+  onToggle,
+}: {
+  heading: string;
+  tasks: TaskSummary[];
+  empty?: string;
+  onToggle: (task: TaskSummary) => void;
+}) {
+  if (tasks.length === 0 && !empty) return null;
+
+  return (
+    <section>
+      <h3 className="mb-1 text-base font-semibold text-ink-dim">{heading}</h3>
+      {tasks.length === 0 ? (
+        <p className="flex min-h-12 items-center text-lg text-ink-dim">
+          {empty}
+        </p>
+      ) : (
+        <ul className="divide-y divide-border">
+          {tasks.map((task) => (
+            <li key={task.id}>
+              <TaskRow task={task} onToggle={onToggle} />
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
 export function CalendarScreen({
   initial,
   today,
@@ -108,6 +147,10 @@ export function CalendarScreen({
 
   const byDay = useMemo(() => marksByDay(tasks), [tasks]);
   const cells = useMemo(() => monthCells(year, month), [year, month]);
+  const listed = useMemo(
+    () => tasksForMonth(tasks, year, month),
+    [tasks, year, month],
+  );
   const onTodaysMonth = year === todayYear && month === todayMonth;
   const selectedMarks = useMemo(
     () => (selected ? (byDay.get(selected) ?? []) : []),
@@ -285,18 +328,28 @@ export function CalendarScreen({
           </div>
         </Panel>
 
+        {/* The list says what the grid says: this month's tasks, with the
+            overdue pinned above and the dateless below whatever month shows.
+            src/lib/calendar.ts explains why it is not every task. */}
         <Panel title="Tasks">
-          {tasks.length === 0 ? (
-            <p className="py-3 text-base text-muted-foreground">Nothing yet</p>
-          ) : (
-            <ul className="divide-y divide-border">
-              {tasks.map((task) => (
-                <li key={task.id}>
-                  <TaskRow task={task} onToggle={onToggle} />
-                </li>
-              ))}
-            </ul>
-          )}
+          <div className="space-y-4">
+            <MonthTaskGroup
+              heading="Still to do"
+              tasks={listed.overdue}
+              onToggle={onToggle}
+            />
+            <MonthTaskGroup
+              heading={MONTH_NAMES[month - 1]}
+              tasks={listed.inMonth}
+              empty={`Nothing due in ${MONTH_NAMES[month - 1]}`}
+              onToggle={onToggle}
+            />
+            <MonthTaskGroup
+              heading="No date"
+              tasks={listed.undated}
+              onToggle={onToggle}
+            />
+          </div>
         </Panel>
       </div>
 

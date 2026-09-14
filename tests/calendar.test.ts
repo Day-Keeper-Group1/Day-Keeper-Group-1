@@ -10,7 +10,12 @@
 import { describe, expect, it } from "vitest";
 import type { ReminderView, TaskSummary } from "@/lib/contract/api";
 import { REMINDER_TIME_SPOKEN } from "@/lib/contract/reminders";
-import { marksByDay, monthCells, sheetLine } from "@/lib/calendar";
+import {
+  marksByDay,
+  monthCells,
+  sheetLine,
+  tasksForMonth,
+} from "@/lib/calendar";
 
 function reminder(localDate: string): ReminderView {
   return {
@@ -153,5 +158,37 @@ describe("sheetLine", () => {
     expect(sheetLine(mark, today)).toBe(
       `A reminder goes out this morning, ${REMINDER_TIME_SPOKEN}`,
     );
+  });
+});
+
+describe("tasksForMonth", () => {
+  const all = [
+    task({ id: "aug-late", dueDate: "2026-08-25", status: "overdue" }),
+    task({ id: "sep-1", dueDate: "2026-09-04" }),
+    task({ id: "sep-2", dueDate: "2026-09-26" }),
+    task({ id: "sep-done", dueDate: "2026-09-02", status: "completed" }),
+    task({ id: "oct", dueDate: "2026-10-06" }),
+    task({ id: "none", dueDate: null }),
+  ];
+
+  it("lists the month on screen, in the order given", () => {
+    expect(tasksForMonth(all, 2026, 9).inMonth.map((t) => t.id)).toEqual([
+      "sep-1",
+      "sep-2",
+      "sep-done",
+    ]);
+  });
+
+  it("pins the overdue and the dateless whatever month is showing", () => {
+    const oct = tasksForMonth(all, 2026, 10);
+    expect(oct.overdue.map((t) => t.id)).toEqual(["aug-late"]);
+    expect(oct.inMonth.map((t) => t.id)).toEqual(["oct"]);
+    expect(oct.undated.map((t) => t.id)).toEqual(["none"]);
+  });
+
+  it("does not list an overdue task twice when its own month is showing", () => {
+    const aug = tasksForMonth(all, 2026, 8);
+    expect(aug.overdue.map((t) => t.id)).toEqual(["aug-late"]);
+    expect(aug.inMonth).toEqual([]);
   });
 });

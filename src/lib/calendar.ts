@@ -115,3 +115,36 @@ export function sheetLine(mark: CalendarMark, today: string): string {
     ? `A reminder went out this morning, ${REMINDER_TIME_SPOKEN}`
     : `A reminder goes out this morning, ${REMINDER_TIME_SPOKEN}`;
 }
+
+/**
+ * The Tasks panel, scoped to the month on screen.
+ *
+ * A list beside a month grid that lists every task the person owns grows
+ * without limit and stops matching the grid it sits next to. This one says
+ * what the grid says: the tasks due in the month being looked at, in date
+ * order. Two things stay whatever month is showing. Overdue tasks are pinned
+ * above, because an unpaid August bill must not vanish when she turns to
+ * September; and dateless tasks sit below, because no month can claim them.
+ * A ticked task keeps its month, so it is seen where it was done.
+ *
+ * `month` is 1 to 12, as in monthCells. Order within each group is the order
+ * given, which the server already sorted by due date.
+ */
+export function tasksForMonth(
+  tasks: TaskSummary[],
+  year: number,
+  month: number,
+): { overdue: TaskSummary[]; inMonth: TaskSummary[]; undated: TaskSummary[] } {
+  const prefix = `${year}-${String(month).padStart(2, "0")}-`;
+  const overdue: TaskSummary[] = [];
+  const inMonth: TaskSummary[] = [];
+  const undated: TaskSummary[] = [];
+
+  for (const task of tasks) {
+    if (task.status === "overdue") overdue.push(task);
+    else if (task.dueDate === null) undated.push(task);
+    else if (task.dueDate.startsWith(prefix)) inMonth.push(task);
+  }
+
+  return { overdue, inMonth, undated };
+}
