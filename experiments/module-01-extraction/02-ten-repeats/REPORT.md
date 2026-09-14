@@ -14,8 +14,8 @@ Ten reads all correct bounds a letter's per-read miss rate at about 26 percent w
 
 - **Letters**: the same fifteen as 01-full-grid, unchanged.
 - **Prompt**: the same `prompt.md` as 01-full-grid, unchanged.
-- **Cells** (changed): luna `medium`, luna `xhigh`, luna `max`. The run was designed with the first two; `max` was added to `cells.txt` after those had run and been read, to see whether the top effort stops the letters that flipped. That order matters and is recorded here: the third cell was chosen knowing the first two results. terra was left out on cost, ten times the price per letter.
-- **Repeats** (changed): ten reads per cell per letter, 450 calls in all.
+- **Cells** (changed): luna `medium`, luna `xhigh`, luna `max`, terra `low`, terra `xhigh`. The run was designed with the first two luna cells. `max` was added to `cells.txt` after those had run and been read, to see whether the top effort stops the letters that flipped; the two terra cells, the ones that scored full marks in 01, were added after the luna results had been read, so that the model is a variable here and not only the effort. That order matters and is recorded here: the later cells were chosen knowing the earlier results.
+- **Repeats** (changed): ten reads per cell per letter, 750 calls in all.
 - Four calls in flight, same pages, same request shape as 01.
 
 ## Results
@@ -25,30 +25,32 @@ Ten reads all correct bounds a letter's per-read miss rate at about 26 percent w
 | luna | medium | 129/150 (86%) | 579/600 | 20 | 25080 | 570 | 173 | 7.3 | $0.0016 (A$0.0023) |
 | luna | xhigh | 140/150 (93%) | 590/600 | 9 | 25080 | 1502 | 1044 | 12.3 | $0.0028 (A$0.0039) |
 | luna | max | 143/150 (95%) | 592/600 | 7 | 25080 | 4460 | 3970 | 30.9 | $0.0064 (A$0.0088) |
+| terra | low | 142/150 (95%) | 592/600 | 8 | 25080 | 328 | 92 | 5.5 | $0.0141 (A$0.0196) |
+| terra | xhigh | 142/150 (95%) | 592/600 | 8 | 25080 | 767 | 510 | 10.2 | $0.0190 (A$0.0263) |
 
 ### Every letter
 
-| Letter | luna medium | luna xhigh | luna max | All reads | Wrong and confirmed |
-|---|---|---|---|---|---|
-| 01-electricity-bill | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 30/30 (100%) | 0 |
-| 02-gas-bill | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 30/30 (100%) | 0 |
-| 03-water-bill | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 30/30 (100%) | 0 |
-| 04-council-rates-notice | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 30/30 (100%) | 0 |
-| 05-animal-registration-overdue-notice | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 30/30 (100%) | 0 |
-| 06-parking-infringement-notice | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 30/30 (100%) | 0 |
-| 07-penalty-reminder-notice | **3/10 (30%)** | **7/10 (70%)** | **9/10 (90%)** | **19/30 (63%)** | 11 |
-| 08-welfare-information-request | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 30/30 (100%) | 0 |
-| 09-specialist-account-statement | **6/10 (60%)** | **9/10 (90%)** | **9/10 (90%)** | **24/30 (80%)** | 4 |
-| 10-private-health-annual-statement | **2/10 (20%)** | **5/10 (50%)** | **6/10 (60%)** | **13/30 (43%)** | 17 |
-| 11-aged-care-monthly-statement | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 30/30 (100%) | 0 |
-| 12-failure-to-vote-notice | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 30/30 (100%) | 0 |
-| 13-product-recall-notice | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 30/30 (100%) | 0 |
-| 14-super-annual-member-statement | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 30/30 (100%) | 0 |
-| 15-insurance-key-facts-sheet | **8/10 (80%)** | **9/10 (90%)** | **9/10 (90%)** | **26/30 (87%)** | 4 |
+| Letter | luna medium | luna xhigh | luna max | terra low | terra xhigh | All reads | Wrong and confirmed |
+|---|---|---|---|---|---|---|---|
+| 01-electricity-bill | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 50/50 (100%) | 0 |
+| 02-gas-bill | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 50/50 (100%) | 0 |
+| 03-water-bill | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 50/50 (100%) | 0 |
+| 04-council-rates-notice | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | **8/10 (80%)** | **8/10 (80%)** | **46/50 (92%)** | 4 |
+| 05-animal-registration-overdue-notice | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 50/50 (100%) | 0 |
+| 06-parking-infringement-notice | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 50/50 (100%) | 0 |
+| 07-penalty-reminder-notice | **3/10 (30%)** | **7/10 (70%)** | **9/10 (90%)** | 10/10 (100%) | 10/10 (100%) | **39/50 (78%)** | 11 |
+| 08-welfare-information-request | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 50/50 (100%) | 0 |
+| 09-specialist-account-statement | **6/10 (60%)** | **9/10 (90%)** | **9/10 (90%)** | 10/10 (100%) | 10/10 (100%) | **44/50 (88%)** | 4 |
+| 10-private-health-annual-statement | **2/10 (20%)** | **5/10 (50%)** | **6/10 (60%)** | **8/10 (80%)** | **8/10 (80%)** | **29/50 (58%)** | 21 |
+| 11-aged-care-monthly-statement | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 50/50 (100%) | 0 |
+| 12-failure-to-vote-notice | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 50/50 (100%) | 0 |
+| 13-product-recall-notice | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 50/50 (100%) | 0 |
+| 14-super-annual-member-statement | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 50/50 (100%) | 0 |
+| 15-insurance-key-facts-sheet | **8/10 (80%)** | **9/10 (90%)** | **9/10 (90%)** | **6/10 (60%)** | **6/10 (60%)** | **38/50 (76%)** | 12 |
 
 A letter read 10/10 times bounds its per-read miss rate at 26% (95%, exact binomial).
 
-450 calls, 450 valid replies.
+750 calls, 750 valid replies.
 
 **This run: 450 calls, $1.62 (A$2.24) in total.**
 
@@ -97,6 +99,22 @@ Cost is Azure's public list price multiplied by the tokens Azure reported per ca
 | luna | max | 10-private-health-annual-statement | 8 | amount | null | $167.43 | confirmed |
 | luna | max | 10-private-health-annual-statement | 10 | amount | null | $167.43 | confirmed |
 | luna | max | 15-insurance-key-facts-sheet | 2 | reference | null | SYN-0025 | confirmed |
+| terra | low | 04-council-rates-notice | 4 | reference | 79475 | 8767 2131 9 | confirmed |
+| terra | low | 04-council-rates-notice | 10 | reference | 79475 | 8767 2131 9 | confirmed |
+| terra | low | 10-private-health-annual-statement | 2 | amount | null | $167.43 | confirmed |
+| terra | low | 10-private-health-annual-statement | 9 | amount | null | $167.43 | confirmed |
+| terra | low | 15-insurance-key-facts-sheet | 5 | reference | null | SYN-0025 | confirmed |
+| terra | low | 15-insurance-key-facts-sheet | 6 | reference | null | SYN-0025 | confirmed |
+| terra | low | 15-insurance-key-facts-sheet | 9 | reference | null | SYN-0025 | confirmed |
+| terra | low | 15-insurance-key-facts-sheet | 10 | reference | null | SYN-0025 | confirmed |
+| terra | xhigh | 04-council-rates-notice | 6 | reference | 79475 | 1876970490 | confirmed |
+| terra | xhigh | 04-council-rates-notice | 7 | reference | 79475 | 1876970490 | confirmed |
+| terra | xhigh | 10-private-health-annual-statement | 7 | amount | null | $167.43 | confirmed |
+| terra | xhigh | 10-private-health-annual-statement | 9 | amount | null | $167.43 | confirmed |
+| terra | xhigh | 15-insurance-key-facts-sheet | 3 | reference | null | SYN-0025 | confirmed |
+| terra | xhigh | 15-insurance-key-facts-sheet | 4 | reference | null | SYN–0025 | confirmed |
+| terra | xhigh | 15-insurance-key-facts-sheet | 5 | reference | null | SYN-0025 | confirmed |
+| terra | xhigh | 15-insurance-key-facts-sheet | 9 | reference | null | SYN-0025 | confirmed |
 
 ## Discussion
 
