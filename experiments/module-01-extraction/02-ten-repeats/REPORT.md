@@ -118,7 +118,23 @@ Cost is Azure's public list price multiplied by the tokens Azure reported per ca
 
 ## Discussion
 
-Not yet written. The numbers above have been produced and marked; what they settle and where the next run looks is written after they have been read together by the people deciding the next run, not in the same sitting as the run.
+**01's full marks were lucky reads.** Every cell that scored 15/15 on one read misses on ten: luna `medium` 129/150, `xhigh` 140/150, `max` 143/150, terra `low` and `xhigh` 142/150 each. Whether a cell is stable is exactly what one read could not show, and ten reads did.
+
+**Counted letter by letter, ten are stable everywhere and five are not.** `01`, `02`, `03`, `05`, `06`, `08`, `11`, `12`, `13`, `14` were right in all fifty reads across the five cells. `04` is 30/30 on luna and 8/10 on each terra cell; `07` and `09` are the mirror image, 20/20 on terra and flipping on every luna cell. `10` and `15` flip on every cell of both models. So no cell reads all fifteen, and the two models fail on different letters.
+
+**Effort is not the lever.** terra `low` and terra `xhigh` are identical to the read: the same letters, the same number of misses, the same wrong answers. On luna, more effort flips less (07 went 3, 7, 9 out of ten from `medium` to `max`) but cures nothing, at four times the cost and time. Which letters a cell gets wrong is a property of the model, not of how long it thinks.
+
+**There is no per-type pattern to route on.** `04` and `07` are the same kind of page, several numbers that could be the reference, and the two models fail on opposite ones. With one letter per type, that is all the data can say; a router that sends letter types to the model that reads them best would need several letters of each type before it could be told from chance.
+
+**The misses have a mechanism, and it is on the page, not in the model.** Every `confirmed` miss is one of four answers, each printed on the page under a label that literally matches the field name in the prompt, while the right answer sits under a label that does not. On `04` the answer key's `79475` is labelled *Property ID*; the three wrong answers are all labelled *Reference No* in the payment panel. On `07` the key's `7717145263` is labelled *Infringement no.*; the wrong `4797 2573 7796` is labelled *Ref* under BPAY. On `10` the wrong `$167.43` is the line *Monthly amount you pay*; the right answer, no payment required, comes from a sentence of prose. The prompt defines `reference` by what it is called ("the reference, account, or customer number the person must quote"), and on these pages that has several literal matches. Which match a model picks is where the two models differ, and where a read flips.
+
+**Two of the five are not the model's problem.** `15` returns `SYN-0025`, the synthetic pipeline's stamp in the page corner; the fix is in the data. `09` returns `$0.00` where the contract wants `No payment required`; that is the contract's rule, and whether `$0.00` should count as right is a decision for the contract, not for the model.
+
+**terra `low` is neither rejected nor chosen.** It is the fastest cell (5.5 s), ties the best accuracy, and costs about eight times luna `medium` per letter at production prices (A$0.069 against A$0.008, from 01). Whether the speed is worth that is a product decision.
+
+**Thirty six of the thirty nine field misses were `confirmed`;** the three `uncertain` due dates would not have reached a screen. Cost per letter in this table is a cache price, 668 of the 750 calls hit Azure's prompt cache; quote 01's figures for production.
+
+**Where the next run looks:** the prompt, which has never been varied. If the field definitions say what the number is for rather than what it is called, the literal matches lose their pull; the ten stable letters are the regression test for any such change.
 
 ## Reproducing this
 
