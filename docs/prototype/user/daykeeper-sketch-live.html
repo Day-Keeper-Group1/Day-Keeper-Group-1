@@ -103,22 +103,32 @@
   /* task rows (confirmed things) */
   .row { display: flex; align-items: center; gap: 12px; padding: 12px 2px; border-top: 1px solid var(--line); font-size: 16px; }
   .row:first-of-type { border-top: 0; }
-  .dot { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--ink-dim); flex: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: transparent; font-size: 15px; }
+  .dot { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--ink-dim); flex: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: transparent; }
   .row.done .dot { background: var(--success); border-color: var(--success); color: var(--primary-ink); }
-  .row.done .txt { text-decoration: line-through; color: var(--ink-dim); }
+  .row.done .doing { text-decoration: line-through; color: var(--ink-dim); }
   .row.done .when { color: var(--success); font-weight: 600; }
   .row.late .when { color: var(--ink); font-weight: 700; }
   .ent .row { border-top: none; padding: 4px 0 10px; }
   /* the quiet door on Home, and the month folders behind it */
-  .all-letters { margin: 18px 2px 6px; padding: 12px 4px; color: var(--ink-dim); font-size: 15.5px; cursor: pointer; border-top: 1px solid var(--line); }
-  .folder-h { font-size: 13.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-dim); margin: 18px 2px 4px; }
+  .all-letters { display: flex; align-items: center; gap: 8px; margin: 18px 2px 6px; padding: 12px 4px; color: var(--ink-dim); font-size: 15.5px; cursor: pointer; border-top: 1px solid var(--line); }
+  .folder-h { display: flex; align-items: center; gap: 6px; font-size: 13.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-dim); margin: 18px 2px 4px; }
+  /* Two lines, always: what to do, then who and when. A row that let the
+     date sit beside the title when it fitted came out a different shape
+     each time, and the eye had to hunt for every date. */
   .row .txt { flex: 1; min-width: 0; }
-  .row .when { color: var(--ink-dim); font-size: 13.5px; }
-  .doc-mark { font-size: 13px; color: var(--ink-dim); flex: none; }
+  .row .doing { display: block; line-height: 1.35; }
+  .row .when { display: block; margin-top: 2px; color: var(--ink-dim); font-size: 13.5px; }
+  /* Home's task card, in groups: overdue or today, the next seven days,
+     and later, folded to three with the rest counted on the way to the
+     calendar. The calendar's own card groups by the month on screen. */
+  .group + .group { margin-top: 12px; }
+  .group-h { font-size: 13.5px; font-weight: 700; color: var(--ink-dim); }
+  .more { display: flex; align-items: center; gap: 6px; width: 100%; min-height: 48px; padding: 0 0 0 40px; background: none; border: none; border-top: 1px solid var(--line); font-family: inherit; font-size: 13.5px; font-weight: 700; color: var(--primary); cursor: pointer; text-align: left; }
 
   /* queue rows (letters sent to be read) */
   .item { display: flex; align-items: center; gap: 11px; padding: 11px 2px; border-top: 1px solid var(--line); font-size: 15px; }
   .item:first-of-type { border-top: 0; }
+  .folder-h + .item { border-top: 0; }
   .thumb { width: 34px; height: 44px; border-radius: 5px; background: var(--primary-soft); border: 1px solid var(--line); flex: none; }
   .item .txt { flex: 1; min-width: 0; }
   .item .st { font-size: 12.5px; margin-top: 2px; }
@@ -135,7 +145,7 @@
 
   /* photographing a letter */
   .cam { border: 2px dashed var(--line); background: var(--primary-soft); border-radius: var(--radius-card); padding: 34px 16px; text-align: center; color: var(--primary); margin-bottom: 14px; cursor: pointer; }
-  .cam .ico { font-size: 32px; margin-bottom: 6px; }
+  .cam .ico { display: flex; justify-content: center; margin-bottom: 6px; }
   .cam .t { font-size: 17px; font-weight: 700; }
   .cam .d { font-size: 13.5px; color: var(--ink-dim); margin-top: 4px; }
   .pages { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -145,6 +155,7 @@
   .btn.off { opacity: .45; cursor: default; }
   .btn.ghost { background: none; color: var(--ink-dim); font-weight: 500; font-size: 14.5px; padding: 10px; min-height: 0; }
   .tiny { font-size: 13px; color: var(--ink-dim); margin-top: 10px; line-height: 1.45; }
+  .tiny + .card { margin-top: 8px; }
 
   /* review */
   .fact { display: flex; align-items: baseline; gap: 10px; padding: 11px 2px; border-top: 1px solid var(--line); }
@@ -153,7 +164,7 @@
   .fact .v { font-size: 16.5px; font-weight: 600; }
   .plan-row { display: flex; align-items: center; gap: 11px; padding: 11px 2px; border-top: 1px solid var(--line); font-size: 15.5px; }
   .plan-row:first-of-type { border-top: 0; }
-  .plan-row .ico { flex: none; font-size: 17px; }
+  .plan-row .ico { flex: none; display: flex; color: var(--primary); }
   .plan-hold { background: var(--warn-bg); border-radius: var(--radius-card); padding: 11px 12px; font-size: 13.5px; color: var(--warn-ink); margin-top: 10px; line-height: 1.45; }
 
   /* calendar */
@@ -182,7 +193,7 @@
   .dd-day { font-size: 13px; color: var(--ink-dim); font-weight: 600; margin-bottom: 8px; }
   .sheet .ent + .ent { border-top: 1px solid var(--line); padding-top: 12px; margin-top: 12px; }
   .sheet .t { font-size: 16.5px; font-weight: 700; }
-  .sheet .remind { font-size: 14.5px; color: var(--ink-dim); margin-bottom: 3px; }
+  .sheet .remind { display: flex; align-items: center; gap: 6px; font-size: 14.5px; color: var(--ink-dim); margin-bottom: 3px; }
   .strip { margin-top: 12px; }
   .cap2 { font-size: 12.5px; color: var(--ink-dim); margin-bottom: 7px; }
 
@@ -195,12 +206,14 @@
   /* bottom nav */
   .nav { position: absolute; bottom: 0; left: 0; right: 0; background: var(--bg-card); border-top: var(--border-w) solid var(--line); display: flex; justify-content: space-around; align-items: center; padding: 8px 10px 14px; }
   .nav button { background: none; border: none; font-size: 12px; color: var(--ink-dim); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 3px; width: 76px; position: relative; font-family: inherit; }
-  .nav button .i { font-size: 21px; }
+  /* Line icons, the ones the finished app draws, heavier on the selected tab. */
+  .nav button .i { display: flex; height: 21px; }
+  .nav button.on .i svg { stroke-width: 2.25; }
   /* The selected tab is marked by weight and a bar, not by colour alone.
      Colour is never the only signal in this product; docs/theme.md says why. */
   .nav button.on { color: var(--ink); font-weight: 700; }
   .nav button.on::after { content: ""; display: block; width: 28px; height: 4px; border-radius: 2px; background: var(--primary); }
-  .nav .cambtn { background: var(--primary); color: var(--primary-ink); width: 58px; height: 58px; border-radius: 50%; font-size: 25px; display: flex; align-items: center; justify-content: center; margin-top: -26px; box-shadow: 0 6px 14px rgba(23,69,44,.35); border: 4px solid var(--bg); }
+  .nav .cambtn { background: var(--primary); color: var(--primary-ink); width: 58px; height: 58px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-top: -26px; box-shadow: 0 6px 14px rgba(23,69,44,.35); border: 4px solid var(--bg); }
   .badge { position: absolute; top: -4px; right: 14px; background: var(--primary); color: var(--primary-ink); font-size: 11px; font-weight: 700; border-radius: 999px; padding: 1px 6px; }
 
   .screen { display: none; }
@@ -272,7 +285,7 @@
           <div id="task-list-home"></div>
         </div>
 
-        <div class="all-letters" onclick="go('letters')">📁 All your letters →</div>
+        <div class="all-letters" onclick="go('letters')"><span data-icon="folder-open" data-size="18" data-weight="1.75"></span>All your letters →</div>
       </section>
 
       <!-- PHOTOGRAPH ONE LETTER -->
@@ -281,7 +294,7 @@
         <div class="sub">One letter at a time. If it runs to several pages, photograph every page.</div>
 
         <div class="cam" onclick="addPhoto()">
-          <div class="ico">📷</div>
+          <div class="ico" data-icon="camera" data-size="32" data-weight="1.75"></div>
           <div class="t">Tap to photograph</div>
           <div class="d" id="cam-d">the camera stays open, keep going</div>
         </div>
@@ -360,9 +373,9 @@
 
       <!-- bottom nav -->
       <div class="nav" id="nav">
-        <button data-s="home" class="on"><span class="i">🏠</span>Home<span class="badge" id="nav-badge" style="display:none">0</span></button>
-        <button class="cambtn" data-s="camera">📷</button>
-        <button data-s="calendar"><span class="i">📅</span>Calendar</button>
+        <button data-s="home" class="on"><span class="i" data-icon="house" data-size="21" data-weight="1.75"></span>Home<span class="badge" id="nav-badge" style="display:none">0</span></button>
+        <button class="cambtn" data-s="camera" aria-label="Photograph your letter"><span data-icon="camera" data-size="25"></span></button>
+        <button data-s="calendar"><span class="i" data-icon="calendar-days" data-size="21" data-weight="1.75"></span>Calendar</button>
       </div>
 
       <!-- day sheet -->
@@ -376,6 +389,29 @@
 <div class="disclaimer">Wireframe sketch, for discussion. The release it walks through is docs/scope.md.</div>
 
 <script>
+  /* ---------- icons ----------
+     The finished app draws Lucide's line icons (lucide-react), so the sketch
+     draws the same ones, copied in because this file opens with no build
+     step. Each entry is the inside of a 24 by 24 svg; icon() wraps it at a
+     size and a stroke weight, and anything marked data-icon in the markup is
+     filled in when the page starts. */
+  const ICONS = {
+    'house': '<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+    'camera': '<path d="M13.997 4a2 2 0 0 1 1.76 1.05l.486.9A2 2 0 0 0 18.003 7H20a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1.997a2 2 0 0 0 1.759-1.048l.489-.904A2 2 0 0 1 10.004 4z"/><circle cx="12" cy="13" r="3"/>',
+    'calendar-days': '<path d="M8 2v3"/><path d="M16 2v3"/><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M8 13h.01"/><path d="M12 13h.01"/><path d="M16 13h.01"/><path d="M8 17h.01"/><path d="M12 17h.01"/><path d="M16 17h.01"/>',
+    'folder-open': '<path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/>',
+    'folder': '<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>',
+    'bell': '<path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/>',
+    'bell-off': '<path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M17 17H4a1 1 0 0 1-.74-1.673C4.59 13.956 6 12.499 6 8a6 6 0 0 1 .258-1.742"/><path d="m2 2 20 20"/><path d="M8.668 3.01A6 6 0 0 1 18 8c0 2.687.77 4.653 1.707 6.05"/>',
+    'check': '<path d="M20 6 9 17l-5-5"/>',
+    'file-text': '<path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>'
+  };
+
+  function icon(name, size, weight) {
+    return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="' + (weight || 2) +
+      '" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICONS[name] + '</svg>';
+  }
+
   /* ---------- the letters this sketch can read ----------
 
      One upload is one letter, so the sketch hands out this list one entry per
@@ -403,9 +439,9 @@
          src/lib/contract/reminders.ts. The plan card and the calendar marks
          below agree with it, which is the promise they keep everywhere. */
       plan: [
-        { ico: '🔔', t: 'Remind you: Wed 12 Aug, 9 am' },
-        { ico: '🔔', t: 'Remind you: Fri 14 Aug, 9 am' },
-        { ico: '📅', t: 'On your calendar: due Sat 15 Aug' }
+        { ico: 'bell', t: 'Remind you: Wed 12 Aug, 9 am' },
+        { ico: 'bell', t: 'Remind you: Fri 14 Aug, 9 am' },
+        { ico: 'calendar-days', t: 'On your calendar: due Sat 15 Aug' }
       ],
       task: { title: 'Pay AGL electricity bill', when: 'Sat 15 Aug', due: { mo: 8, d: 15 } },
       marks: [ { mo: 8, d: 12, l: 'reminder' }, { mo: 8, d: 14, l: 'reminder' }, { mo: 8, d: 15, l: 'AGL due' } ],
@@ -419,10 +455,10 @@
         { k: 'Reference', v: 'CLM 30991 442' }
       ],
       plan: [
-        { ico: '🔔', t: 'Remind you: Sat 15 Aug, 9 am' },
-        { ico: '🔔', t: 'Remind you: Wed 19 Aug, 9 am' },
-        { ico: '🔔', t: 'Remind you: Fri 21 Aug, 9 am' },
-        { ico: '📅', t: 'On your calendar: due Sat 22 Aug' }
+        { ico: 'bell', t: 'Remind you: Sat 15 Aug, 9 am' },
+        { ico: 'bell', t: 'Remind you: Wed 19 Aug, 9 am' },
+        { ico: 'bell', t: 'Remind you: Fri 21 Aug, 9 am' },
+        { ico: 'calendar-days', t: 'On your calendar: due Sat 22 Aug' }
       ],
       task: { title: 'Return Medicare form', when: 'Sat 22 Aug', due: { mo: 8, d: 22 } },
       marks: [ { mo: 8, d: 15, l: 'reminder' }, { mo: 8, d: 19, l: 'reminder' }, { mo: 8, d: 21, l: 'reminder' }, { mo: 8, d: 22, l: 'Medicare' } ],
@@ -437,10 +473,10 @@
         { k: 'Reference', v: '1AB 2CD' }
       ],
       plan: [
-        { ico: '🔔', t: 'Remind you: Tue 25 Aug, 9 am' },
-        { ico: '🔔', t: 'Remind you: Sat 29 Aug, 9 am' },
-        { ico: '🔔', t: 'Remind you: Mon 31 Aug, 9 am' },
-        { ico: '📅', t: 'On your calendar: due Tue 1 Sep' }
+        { ico: 'bell', t: 'Remind you: Tue 25 Aug, 9 am' },
+        { ico: 'bell', t: 'Remind you: Sat 29 Aug, 9 am' },
+        { ico: 'bell', t: 'Remind you: Mon 31 Aug, 9 am' },
+        { ico: 'calendar-days', t: 'On your calendar: due Tue 1 Sep' }
       ],
       task: { title: 'Renew car registration', when: 'Tue 1 Sep', due: { mo: 9, d: 1 } },
       marks: [ { mo: 8, d: 25, l: 'reminder' }, { mo: 8, d: 29, l: 'reminder' }, { mo: 8, d: 31, l: 'reminder' }, { mo: 9, d: 1, l: 'Rego due' } ],
@@ -455,8 +491,8 @@
         { k: 'When', v: 'Fri 4 Sep, 10:30 am' }
       ],
       plan: [
-        { ico: '🔔', t: 'Remind you: Thu 3 Sep, 9 am' },
-        { ico: '📅', t: 'On your calendar: Fri 4 Sep, 10:30 am' }
+        { ico: 'bell', t: 'Remind you: Thu 3 Sep, 9 am' },
+        { ico: 'calendar-days', t: 'On your calendar: Fri 4 Sep, 10:30 am' }
       ],
       task: { title: 'Appointment with Dr Patel', when: 'Fri 4 Sep', due: { mo: 9, d: 4 } },
       marks: [ { mo: 9, d: 3, l: 'reminder' }, { mo: 9, d: 4, l: 'Dr Patel' } ],
@@ -471,10 +507,10 @@
         { k: 'Reference', v: '88 3120 7' }
       ],
       plan: [
-        { ico: '🔔', t: 'Remind you: Mon 24 Aug, 9 am' },
-        { ico: '🔔', t: 'Remind you: Fri 28 Aug, 9 am' },
-        { ico: '🔔', t: 'Remind you: Sun 30 Aug, 9 am' },
-        { ico: '📅', t: 'On your calendar: due Mon 31 Aug' }
+        { ico: 'bell', t: 'Remind you: Mon 24 Aug, 9 am' },
+        { ico: 'bell', t: 'Remind you: Fri 28 Aug, 9 am' },
+        { ico: 'bell', t: 'Remind you: Sun 30 Aug, 9 am' },
+        { ico: 'calendar-days', t: 'On your calendar: due Mon 31 Aug' }
       ],
       task: { title: 'Pay council rates', when: 'Mon 31 Aug', due: { mo: 8, d: 31 } },
       marks: [ { mo: 8, d: 24, l: 'reminder' }, { mo: 8, d: 28, l: 'reminder' }, { mo: 8, d: 30, l: 'reminder' }, { mo: 8, d: 31, l: 'Rates due' } ],
@@ -491,7 +527,7 @@
         { k: 'Reference', v: 'Member 2214' }
       ],
       plan: [
-        { ico: '📄', t: "No date on this letter. It's saved; nothing goes on your calendar." }
+        { ico: 'file-text', t: "No date on this letter. It's saved; nothing goes on your calendar." }
       ],
       task: { title: 'Return community centre form', when: 'No date' },
       marks: [],
@@ -613,7 +649,7 @@
     document.getElementById('facts').innerHTML = L.facts.map(f =>
       '<div class="fact"><span class="k">' + f.k + '</span><span class="v">' + f.v + '</span></div>').join('');
     document.getElementById('plan').innerHTML = L.plan.map(p =>
-      '<div class="plan-row"><span class="ico">' + p.ico + '</span>' + p.t + '</div>').join('');
+      '<div class="plan-row"><span class="ico">' + icon(p.ico, 17) + '</span>' + p.t + '</div>').join('');
     go('review');
   }
 
@@ -661,6 +697,12 @@
     return !t.done && t.due && (t.due.mo * 100 + t.due.d) < (TODAY_MO * 100 + TODAY_D);
   }
 
+  /* What a task's letter said under one name, or nothing. */
+  function factOf(t, k) {
+    const f = (t.facts || []).find(x => x.k === k);
+    return f ? f.v : null;
+  }
+
   function taskRow(t, inSheet) {
     const late = isLate(t);
     const stay = inSheet ? 'true' : 'false';
@@ -668,9 +710,62 @@
     /* A dateless task never had reminders, so its done face does not claim
        any were switched off. */
     const when = t.done ? (t.due ? 'Done · reminders off' : 'Done') : late ? 'was due ' + t.when : t.when;
-    return '<div class="row' + (t.done ? ' done' : late ? ' late' : '') + '"><span class="dot" onclick="toggleDone(\'' + t.id + '\', ' + stay + ')">✓</span>' +
-      '<span class="txt">' + t.title + '</span><span class="doc-mark">📄</span>' +
-      '<span class="when">' + when + '</span></div>';
+    /* The first line is what to do and the second is who asked and when, in
+       the letter's own words, as the finished row draws it
+       (src/components/task-row.tsx). A task whose letter gave neither shows
+       its title on the first line and the date alone on the second. */
+    const doing = factOf(t, 'What to do') || t.title;
+    const who = factOf(t, 'From');
+    return '<div class="row' + (t.done ? ' done' : late ? ' late' : '') + '"><span class="dot" onclick="toggleDone(\'' + t.id + '\', ' + stay + ')">' + icon('check', 15, 3) + '</span>' +
+      '<span class="txt"><span class="doing">' + doing + '</span>' +
+      '<span class="when">' + (who ? who + ' · ' : '') + when + '</span></span></div>';
+  }
+
+  /* One heading and its rows. An empty group is not drawn, unless it is told
+     what to say about the absence; `more` counts rows folded away, and the
+     line that says so goes to the calendar, where every task is listed. */
+  function taskGroup(heading, list, opts) {
+    const o = opts || {};
+    if (!list.length && !o.empty) return '';
+    let h = '<div class="group"><h3 class="group-h">' + heading + '</h3>';
+    h += list.length
+      ? list.map(t => taskRow(t)).join('')
+      : '<div class="row"><span class="txt" style="color:var(--ink-dim)">' + o.empty + '</span></div>';
+    if (o.more) h += '<button class="more" onclick="go(\'calendar\')">' + o.more + ' more in your calendar →</button>';
+    return h + '</div>';
+  }
+
+  /* Home's groups, as src/lib/home.ts cuts them: overdue and today first,
+     then the next seven days, then everything else, dateless and ticked
+     included. The first heading says "Needs doing" when an overdue task is
+     in it, because a bill from last week is not "Today". */
+  const LATER_SHOWN = 3;
+  function homeTasks(list) {
+    const key = due => due.mo * 100 + due.d;
+    const todayKey = TODAY_MO * 100 + TODAY_D;
+    const end = new Date(TODAY_YR, TODAY_MO - 1, TODAY_D + 7);
+    const weekEnd = (end.getMonth() + 1) * 100 + end.getDate();
+    const today = [], week = [], later = [];
+    list.forEach(t => {
+      if (isLate(t) || (t.due && key(t.due) === todayKey)) today.push(t);
+      else if (t.due && key(t.due) > todayKey && key(t.due) <= weekEnd) week.push(t);
+      else later.push(t);
+    });
+    return taskGroup(today.some(isLate) ? 'Needs doing' : 'Today', today) +
+      taskGroup('Next seven days', week) +
+      taskGroup('Later', later.slice(0, LATER_SHOWN), { more: Math.max(0, later.length - LATER_SHOWN) });
+  }
+
+  /* The calendar's card says what the grid says: the month on screen, with
+     the overdue pinned above and the dateless below whatever month shows, as
+     tasksForMonth in src/lib/calendar.ts. */
+  function calendarTasks(list) {
+    const overdue = list.filter(isLate);
+    const inMonth = list.filter(t => !isLate(t) && t.due && calYr === TODAY_YR && t.due.mo === calMo);
+    const undated = list.filter(t => !isLate(t) && !t.due);
+    return taskGroup('Still to do', overdue) +
+      taskGroup(MONTHS[calMo - 1], inMonth, { empty: 'Nothing due in ' + MONTHS[calMo - 1] }) +
+      taskGroup('No date', undated);
   }
 
   /* Due date ascending, dateless last. One sort gives the pinning for free:
@@ -725,10 +820,10 @@
     b.style.display = ready ? 'inline-block' : 'none';
     b.textContent = ready;
 
-    /* tasks on home + calendar */
-    const trows = tasksInOrder().map(t => taskRow(t)).join('') || '<div class="row"><span class="txt" style="color:var(--ink-dim)">Nothing yet</span></div>';
-    document.getElementById('task-list-home').innerHTML = trows;
-    document.getElementById('task-list-cal').innerHTML = trows;
+    /* tasks on home; the calendar's card is drawn with its month, in renderCalendar */
+    document.getElementById('task-list-home').innerHTML = tasks.length
+      ? homeTasks(tasksInOrder())
+      : '<div class="row"><span class="txt" style="color:var(--ink-dim)">Nothing yet</span></div>';
 
     renderCalendar();
     renderLetters();
@@ -748,12 +843,12 @@
     withDate.forEach(l => {
       if (l.due.mo !== month) {
         month = l.due.mo;
-        h += '<div class="folder-h">📁 ' + MONTHS[month - 1] + ' 2026</div>';
+        h += '<div class="folder-h">' + icon('folder', 16) + MONTHS[month - 1] + ' 2026</div>';
       }
       h += letterRow(l);
     });
     if (dateless.length) {
-      h += '<div class="folder-h">📁 No date</div>';
+      h += '<div class="folder-h">' + icon('folder', 16) + 'No date</div>';
       dateless.forEach(l => { h += letterRow(l); });
     }
     document.getElementById('letters-list').innerHTML =
@@ -821,6 +916,9 @@
     const trail = (7 - (offset + days) % 7) % 7;
     for (let i = 0; i < trail; i++) h += '<div class="d"></div>';
     document.getElementById('cal-grid').innerHTML = h;
+    document.getElementById('task-list-cal').innerHTML = tasks.length
+      ? calendarTasks(tasksInOrder())
+      : '<div class="row"><span class="txt" style="color:var(--ink-dim)">Nothing yet</span></div>';
   }
 
   function moveMonth(step) {
@@ -847,9 +945,9 @@
         /* The clock checks the tick at the moment it rings; this line is that
            check, drawn. A reminder for a ticked-off task has nothing to say,
            and one whose morning has passed is history, not a plan. */
-        const line = t.done ? '🔕 No reminder, this is already done'
-                   : past   ? '🔔 A reminder went out this morning, 9 am'
-                   :          '🔔 A reminder goes out this morning, 9 am';
+        const line = t.done ? icon('bell-off', 16) + 'No reminder, this is already done'
+                   : past   ? icon('bell', 16) + 'A reminder went out this morning, 9 am'
+                   :          icon('bell', 16) + 'A reminder goes out this morning, 9 am';
         h += '<div class="ent"><div class="remind">' + line + '</div>' +
              '<div class="t">' + t.title + '</div><div class="cap2">due ' + t.when + '</div></div>';
         return;
@@ -906,6 +1004,10 @@
     'sketch "today": ' +
     new Date(TODAY_YR, TODAY_MO - 1, TODAY_D).toLocaleDateString('en-AU',
       { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+
+  document.querySelectorAll('[data-icon]').forEach(el => {
+    el.innerHTML = icon(el.dataset.icon, Number(el.dataset.size) || 20, Number(el.dataset.weight) || 2);
+  });
 
   reset();
 </script>
