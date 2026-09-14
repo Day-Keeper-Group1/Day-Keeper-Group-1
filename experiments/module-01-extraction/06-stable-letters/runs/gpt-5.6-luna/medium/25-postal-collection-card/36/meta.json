@@ -1,0 +1,11 @@
+{
+  "model": "gpt-5.6-luna",
+  "effort": "medium",
+  "letter": "25-postal-collection-card",
+  "repeat": 36,
+  "pages": ["page-01.png", "page-02.png"],
+  "image_detail": "auto",
+  "started_at": "2026-09-14T19:42:03.253Z",
+  "seconds": 8.326,
+  "ok": true
+}

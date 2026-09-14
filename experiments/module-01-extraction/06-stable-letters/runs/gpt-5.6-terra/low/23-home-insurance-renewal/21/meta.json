@@ -1,0 +1,11 @@
+{
+  "model": "gpt-5.6-terra",
+  "effort": "low",
+  "letter": "23-home-insurance-renewal",
+  "repeat": 21,
+  "pages": ["page-01.png", "page-02.png"],
+  "image_detail": "auto",
+  "started_at": "2026-09-14T19:48:55.583Z",
+  "seconds": 11.272,
+  "ok": true
+}
