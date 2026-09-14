@@ -1,0 +1,52 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "gpt-4o",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "hospital discharge summary",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Bramworth Hospital",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Attend community physiotherapy and arrange GP review",
+      "status": "confirmed",
+      "confidence": 0.95
+    },
+    {
+      "key": "due_date",
+      "value": "2026-05-27",
+      "status": "uncertain",
+      "confidence": 0.78
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "6938509",
+      "status": "confirmed",
+      "confidence": 0.88
+    }
+  ],
+  "open_payload": {
+    "patient": "Mrs Margaret Anne Wilson",
+    "discharge_date": "17/05/2026",
+    "additional_due_date": "Within 7 days of discharge",
+    "booked_appointment": "Community physiotherapy — falls prevention, Wednesday 27 May 2026, 2:00 PM",
+    "follow_up": "Orthopaedic outpatient review (cast check): to be advised by letter",
+    "medical_record_number": "6938509",
+    "individual_healthcare_identifier": "8003606084723614"
+  }
+}

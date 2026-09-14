@@ -1,0 +1,50 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "ChatGPT",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "vehicle registration renewal notice",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Driver and Vehicle Registry",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Pay Driver and Vehicle Registry",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "due_date",
+      "value": "2026-09-17",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "amount",
+      "value": "$479.40",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "812 466 305",
+      "status": "confirmed",
+      "confidence": 0.91
+    }
+  ],
+  "open_payload": {
+    "registration_number": "9XK·7QJ",
+    "bpay_biller_code": "9200089",
+    "bpay_reference": "5042 8918 7856",
+    "concession_application_date": "2026-09-12",
+    "suggested_payment_date": "2026-09-15"
+  }
+}

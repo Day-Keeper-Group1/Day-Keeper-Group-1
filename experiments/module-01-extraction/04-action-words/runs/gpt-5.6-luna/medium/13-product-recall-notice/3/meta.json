@@ -1,0 +1,11 @@
+{
+  "model": "gpt-5.6-luna",
+  "effort": "medium",
+  "letter": "13-product-recall-notice",
+  "repeat": 3,
+  "pages": ["page-01.png", "page-02.png"],
+  "image_detail": "auto",
+  "started_at": "2026-09-14T10:00:08.411Z",
+  "seconds": 5.871,
+  "ok": true
+}

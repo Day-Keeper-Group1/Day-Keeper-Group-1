@@ -1,0 +1,54 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "GPT-4.1",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "insurance renewal",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Quillhaven Insurance",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "No action",
+      "status": "confirmed",
+      "confidence": 0.9
+    },
+    {
+      "key": "due_date",
+      "value": "Not applicable",
+      "status": "confirmed",
+      "confidence": 0.88
+    },
+    {
+      "key": "amount",
+      "value": "$684.35",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "MV 6749 5137",
+      "status": "confirmed",
+      "confidence": 0.99
+    }
+  ],
+  "open_payload": {
+    "customer_number": "74 999 861",
+    "cover_expiry": "18 September 2026",
+    "new_period_start": "18 September 2026",
+    "first_new_installment_date": "18 October 2026",
+    "policy_type": "Comprehensive Motor Vehicle",
+    "registration_number": "9XK·7QJ",
+    "vehicle": "2011 Toyota Corolla sedan",
+    "agreed_value": "$8,400.00",
+    "excess_each_claim": "$695.00"
+  }
+}

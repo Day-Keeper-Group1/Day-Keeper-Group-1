@@ -1,0 +1,68 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "GPT-4o",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "hospital discharge summary",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Bramworth Hospital",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Attend general practitioner review of medicines and blood pressure",
+      "status": "confirmed",
+      "confidence": 0.93
+    },
+    {
+      "key": "due_date",
+      "value": "2026-05-24",
+      "status": "confirmed",
+      "confidence": 0.88
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "6938509",
+      "status": "confirmed",
+      "confidence": 0.9
+    }
+  ],
+  "open_payload": {
+    "patient": "Mrs Margaret Anne Wilson",
+    "discharge_date": "2026-05-17",
+    "other_follow_up": [
+      {
+        "appointment": "Community physiotherapy — falls prevention",
+        "date": "2026-05-27",
+        "time": "2:00 PM",
+        "status": "Booked"
+      },
+      {
+        "appointment": "Orthopaedic outpatient review (cast check)",
+        "date": "To be advised",
+        "status": "To be arranged by the hospital"
+      }
+    ],
+    "medication_instructions": [
+      "Take perindopril arginine 5 mg, one tablet each morning",
+      "Take paracetamol 665 mg modified release, two tablets three times a day",
+      "Take oxycodone 5 mg, one capsule up to every 6 hours if pain is severe, for up to 5 days, then stop",
+      "Take alendronate 70 mg, one tablet once a week",
+      "Take colecalciferol 25 microgram, one capsule daily",
+      "Do not restart ibuprofen 200 mg"
+    ]
+  }
+}

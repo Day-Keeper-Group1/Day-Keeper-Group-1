@@ -1,0 +1,57 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "gpt-4o",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "penalty reminder notice",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Calderfield City Council",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Pay the total amount now payable",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "due_date",
+      "value": "2026-08-20",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "amount",
+      "value": "$71.00",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "7717145263",
+      "status": "confirmed",
+      "confidence": 0.98
+    }
+  ],
+  "open_payload": {
+    "penalty_reminder_notice_date": "30 July 2026",
+    "original_due_date": "21 July 2026",
+    "biller_code": "9200104",
+    "payment_reference": "4797 2573 7796",
+    "offence": "Parking for longer than indicated (offence code 701)",
+    "date_of_offence": "23/06/2026",
+    "time_of_offence": "12:41 PM",
+    "location_of_offence": "Marlow Street, Calderfield",
+    "registration_number": "9XK-7QJ",
+    "vehicle": "TOYOTA SEDAN GREY",
+    "legislation": "Road Safety Road Rules 2017 r 205(1)",
+    "issuing_officer_number": "8160"
+  }
+}

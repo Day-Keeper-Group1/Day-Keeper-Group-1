@@ -68,7 +68,7 @@ export const FIELD_DESCRIPTIONS: Record<ContractFieldKey, string> = {
   issuer:
     "The organisation that sent it, as printed on the page. Prefer the name a person would recognise over a legal entity name.",
   action_required:
-    "What the person has to do, as a short imperative phrase: pay the amount due, return the completed form, attend the appointment. If the document requires nothing, say so plainly.",
+    "What the person has to do. Start with one of these words, then name who or what in a few words: Pay, Attend, Return form, Collect, Take medicine, Stop using, Contact, No action. For example: Pay Example Energy; Attend Orthopaedic Clinic; Return form to Public Payments Office; Collect parcel from Calderfield Post Office; Take medicine perindopril each morning; Stop using heater; Contact a Support at Home provider. If the document asks for nothing, write No action.",
   due_date:
     "The date the action is due, as ISO 8601 (YYYY-MM-DD). If the page shows an ambiguous format, resolve it in favour of Australian day-first convention and mark the field uncertain.",
   amount:
@@ -134,6 +134,50 @@ export const NO_PAYMENT_REQUIRED = "No payment required";
  * amount. Hiding a row never means dropping the data.
  */
 export const NOT_APPLICABLE = "Not applicable";
+
+/**
+ * The words an `action_required` value may start with.
+ *
+ * A task title has room for about thirty characters on a phone, and the person
+ * reading it decides one thing from it: whether to act now. So the field is a
+ * verb from this list followed by a few words naming who or what: "Pay Example
+ * Energy", "Attend Orthopaedic Clinic", "Stop using heater". The verb is what
+ * the evaluation scores and what a screen can group by; the words after it
+ * are free. The list was settled on 14 September 2026 against every letter
+ * type the synthetic pipeline produces; a letter that fits none of them is a
+ * reason to extend the list here, not to write a sentence.
+ *
+ * Two-word entries are matched as a whole, so "Return form" is one verb and
+ * "Return" alone is not.
+ */
+export const ACTION_WORDS = [
+  "Pay",
+  "Attend",
+  "Return form",
+  "Collect",
+  "Take medicine",
+  "Stop using",
+  "Contact",
+  "No action",
+] as const;
+
+export type ActionWord = (typeof ACTION_WORDS)[number];
+
+/** The one value that means "this document asks the person to do nothing". */
+export const NO_ACTION = "No action";
+
+/**
+ * The action word a value starts with, or null when it starts with none.
+ * Case and repeated spaces are ignored; the words after it are not looked at.
+ */
+export function actionWordOf(value: string): ActionWord | null {
+  const v = value.trim().replace(/\s+/g, " ").toLowerCase();
+  for (const word of ACTION_WORDS) {
+    const w = word.toLowerCase();
+    if (v === w || v.startsWith(w + " ")) return word;
+  }
+  return null;
+}
 
 /**
  * There is deliberately no table of "please check this" hints here. The screen

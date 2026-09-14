@@ -1,0 +1,11 @@
+{
+  "model": "gpt-5.6-terra",
+  "effort": "xhigh",
+  "letter": "02-gas-bill",
+  "repeat": 10,
+  "pages": ["page-01.png", "page-02.png"],
+  "image_detail": "auto",
+  "started_at": "2026-09-14T01:00:36.452Z",
+  "seconds": 6.46,
+  "ok": true
+}

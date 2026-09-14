@@ -1,0 +1,65 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "gpt-4o",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "product safety recall letter",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Kettleworth Appliances",
+      "status": "confirmed",
+      "confidence": 0.98
+    },
+    {
+      "key": "action_required",
+      "value": "Stop using the heater and arrange for its collection",
+      "status": "confirmed",
+      "confidence": 0.98
+    },
+    {
+      "key": "due_date",
+      "value": "Not applicable",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "9512653343",
+      "status": "confirmed",
+      "confidence": 0.99
+    }
+  ],
+  "open_payload": {
+    "legal_issuer_name": "Kettleworth Appliances Pty Ltd",
+    "issue_date": "16 July 2026",
+    "product": "Kettleworth Portable Column Heater",
+    "model_numbers": [
+      "KCH-2400WH",
+      "KCH-2400GR",
+      "KCH-2000WH",
+      "KCH-2000GR"
+    ],
+    "affected_serial_range": "5550001 to 5589999",
+    "sales_period": "01/03/2018 to 30/09/2021",
+    "product_registration_date": "18/06/2019",
+    "contact_phone": "(03) 5550 3966",
+    "website": "www.kettleworth-appliances.example/recall",
+    "goodwill_payment": "$50.00",
+    "resolution_options": [
+      "full refund of the purchase price",
+      "replacement heater of the current model"
+    ],
+    "document_code": "SYN-0022"
+  }
+}

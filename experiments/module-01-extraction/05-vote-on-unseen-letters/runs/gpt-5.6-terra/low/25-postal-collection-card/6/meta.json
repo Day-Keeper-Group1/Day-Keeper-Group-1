@@ -1,0 +1,11 @@
+{
+  "model": "gpt-5.6-terra",
+  "effort": "low",
+  "letter": "25-postal-collection-card",
+  "repeat": 6,
+  "pages": ["page-01.png", "page-02.png"],
+  "image_detail": "auto",
+  "started_at": "2026-09-14T11:07:43.687Z",
+  "seconds": 3.769,
+  "ok": true
+}

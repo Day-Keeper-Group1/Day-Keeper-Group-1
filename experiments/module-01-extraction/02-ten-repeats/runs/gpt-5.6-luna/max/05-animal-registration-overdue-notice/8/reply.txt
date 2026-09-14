@@ -1,0 +1,68 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "gpt-4o",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "animal registration renewal overdue notice",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Calderfield City Council",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Pay the $23.00 registration fee to renew the animal registration",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "due_date",
+      "value": "2026-05-28",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "amount",
+      "value": "$23.00",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "44637",
+      "status": "confirmed",
+      "confidence": 0.99
+    }
+  ],
+  "open_payload": {
+    "recipient": "Mrs M A Wilson, 14 Bracken Rise, CALDERFIELD VIC 3999",
+    "animal_name": "Biscuit",
+    "animal_type": "Cat",
+    "desexed": "Yes",
+    "date_of_birth": "22/11/2015",
+    "breed": "Domestic Short Hair",
+    "colour_or_marks": "Black and white",
+    "sex": "Female",
+    "microchip_number": "999014100441675",
+    "lifetime_tag_number": "96951",
+    "date_of_issue": "14 May 2026",
+    "renewal_notice_issued": "9 March 2026",
+    "registration_expired": "10 April 2026",
+    "registration_year_ending": "9 April 2027",
+    "fee_breakdown": {
+      "registration_fee": "$46.00",
+      "pensioner_concession": "-$23.00"
+    },
+    "legislation": "Domestic Animals Act 1994",
+    "contact_phone": "1300 975 710",
+    "email": "animals@calderfield-city-council.example",
+    "website": "www.calderfield-city-council.example",
+    "document_code": "SYN-0005"
+  }
+}

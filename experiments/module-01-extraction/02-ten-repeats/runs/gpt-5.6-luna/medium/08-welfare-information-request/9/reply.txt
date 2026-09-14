@@ -1,0 +1,64 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "gpt-4o",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "government income review letter",
+      "status": "confirmed",
+      "confidence": 0.98
+    },
+    {
+      "key": "issuer",
+      "value": "Public Payments Office",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Complete and return the enclosed income and assets form with the requested details and latest schedule",
+      "status": "confirmed",
+      "confidence": 0.98
+    },
+    {
+      "key": "due_date",
+      "value": "2026-08-04",
+      "status": "confirmed",
+      "confidence": 0.94
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "PPO-5002-9891",
+      "status": "confirmed",
+      "confidence": 0.99
+    }
+  ],
+  "open_payload": {
+    "notice_date": "14 July 2026",
+    "date_of_birth": "14 March 1948",
+    "income_stream": {
+      "product_provider": "Wattlebank Super",
+      "product_name": "Account-Based Pension",
+      "commenced": "1 September 2019",
+      "provider_reference": "PPO-7143-4935",
+      "period_reviewed": "1 July 2025 to 30 June 2026"
+    },
+    "one_time_access_code": "VRJF86",
+    "legal_basis": "Section 196 of the Social Security (Administration) Act 1999",
+    "response_methods": [
+      "Online",
+      "By telephone",
+      "By post",
+      "In person"
+    ],
+    "consequences_of_non_response": "Pension may be suspended or cancelled, and concession card qualification may cease",
+    "sender_signatory": "Karen Mitchell, Service Officer"
+  }
+}

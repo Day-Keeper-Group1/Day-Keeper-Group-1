@@ -1,0 +1,56 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "GPT-4o",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "government income and assets review letter",
+      "status": "confirmed",
+      "confidence": 0.98
+    },
+    {
+      "key": "issuer",
+      "value": "Public Payments Office",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Complete and return the enclosed form with the requested income details",
+      "status": "confirmed",
+      "confidence": 0.98
+    },
+    {
+      "key": "due_date",
+      "value": "2026-08-04",
+      "status": "confirmed",
+      "confidence": 0.93
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "PPO-5002-9891",
+      "status": "confirmed",
+      "confidence": 0.99
+    }
+  ],
+  "open_payload": {
+    "letter_date": "14 July 2026",
+    "date_of_birth": "14 March 1948",
+    "income_stream": "Wattlebank Super Account-Based Pension",
+    "provider_reference": "PPO-7143-4935",
+    "review_period": "1 July 2025 to 30 June 2026",
+    "one_time_access_code": "VRJF86",
+    "telephone": "(03) 5550 0257",
+    "enclosures": [
+      "Income and assets form",
+      "Reply paid envelope"
+    ]
+  }
+}

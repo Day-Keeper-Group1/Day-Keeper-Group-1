@@ -1,0 +1,11 @@
+{
+  "model": "gpt-5.6-terra",
+  "effort": "low",
+  "letter": "24-motor-insurance-renewal",
+  "repeat": 16,
+  "pages": ["page-01.png", "page-02.png"],
+  "image_detail": "auto",
+  "started_at": "2026-09-14T11:07:30.266Z",
+  "seconds": 6.473,
+  "ok": true
+}

@@ -1,0 +1,11 @@
+{
+  "model": "gpt-5.6-luna",
+  "effort": "xhigh",
+  "letter": "10-private-health-annual-statement",
+  "repeat": 2,
+  "pages": ["page-01.png", "page-02.png", "page-03.png"],
+  "image_detail": "auto",
+  "started_at": "2026-09-13T23:34:31.692Z",
+  "seconds": 8.516,
+  "ok": true
+}

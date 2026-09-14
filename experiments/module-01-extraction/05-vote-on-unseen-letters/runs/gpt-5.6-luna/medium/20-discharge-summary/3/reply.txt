@@ -1,0 +1,60 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "ChatGPT",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "hospital discharge summary",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Bramworth Hospital",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Attend GP review and community physiotherapy",
+      "status": "confirmed",
+      "confidence": 0.92
+    },
+    {
+      "key": "due_date",
+      "value": "2026-05-24",
+      "status": "uncertain",
+      "confidence": 0.78
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "6938509",
+      "status": "confirmed",
+      "confidence": 0.93
+    }
+  ],
+  "open_payload": {
+    "patient": "Mrs Margaret Anne Wilson",
+    "medical_record_number": "6938509",
+    "individual_healthcare_identifier": "8003606084723614",
+    "health_service": "Thornhurst Health",
+    "discharge_date": "17/05/2026",
+    "community_physiotherapy_appointment": "Wednesday 27 May 2026, 2:00 PM",
+    "diagnosis": "Closed fracture of the left distal radius",
+    "medicines_on_discharge": [
+      "perindopril arginine 5 mg",
+      "paracetamol 665 mg modified release",
+      "oxycodone 5 mg",
+      "alendronate 70 mg",
+      "colecalciferol 25 microgram"
+    ],
+    "ceased_medicine": "ibuprofen 200 mg"
+  }
+}

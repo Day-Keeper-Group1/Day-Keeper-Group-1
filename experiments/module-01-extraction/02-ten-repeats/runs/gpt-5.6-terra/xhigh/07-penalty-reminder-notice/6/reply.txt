@@ -1,0 +1,53 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "gpt-4.1",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "penalty reminder notice",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Calderfield City Council",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "pay the total amount now payable",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "due_date",
+      "value": "2026-08-20",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "amount",
+      "value": "$71.00",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "7717145263",
+      "status": "confirmed",
+      "confidence": 0.99
+    }
+  ],
+  "open_payload": {
+    "penalty_reminder_notice_date": "30 July 2026",
+    "original_due_date": "21 July 2026",
+    "offence_date": "23/06/2026",
+    "offence": "Parking for longer than indicated (offence code 701)",
+    "offence_location": "Marlow Street, Calderfield",
+    "vehicle_registration": "9XK-7QJ",
+    "bpAY_biller_code": "9200104",
+    "bpAY_reference": "4797 2573 7796"
+  }
+}

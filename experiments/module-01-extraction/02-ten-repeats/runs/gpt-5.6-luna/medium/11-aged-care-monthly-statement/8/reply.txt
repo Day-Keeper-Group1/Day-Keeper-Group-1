@@ -1,0 +1,53 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "GPT-4.1",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "Support at Home monthly statement",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Thornhurst Health",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Review the statement and discuss any concerns with your provider",
+      "status": "confirmed",
+      "confidence": 0.94
+    },
+    {
+      "key": "due_date",
+      "value": "Not applicable",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "AC87542",
+      "status": "confirmed",
+      "confidence": 0.99
+    }
+  ],
+  "open_payload": {
+    "client_name": "Margaret Anne Wilson",
+    "provider_id": "63087",
+    "statement_period": "1 July 2026 to 31 July 2026",
+    "services_budget_remaining": "$4,828.79",
+    "assistive_technology_remaining_budget": "$12,450",
+    "home_modifications_remaining_budget": "$7,840",
+    "restorative_care_remaining_balance": "$3,117.50",
+    "document_code": "SYN-0018"
+  }
+}

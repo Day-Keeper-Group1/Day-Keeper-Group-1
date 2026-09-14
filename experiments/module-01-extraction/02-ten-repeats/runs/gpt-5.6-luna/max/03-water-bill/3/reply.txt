@@ -1,0 +1,61 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "gpt-4o",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "water utility bill",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Calderfield Water",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Pay the amount due",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "due_date",
+      "value": "2026-07-29",
+      "status": "confirmed",
+      "confidence": 1.0
+    },
+    {
+      "key": "amount",
+      "value": "$227.70",
+      "status": "confirmed",
+      "confidence": 1.0
+    },
+    {
+      "key": "reference",
+      "value": "40740 95528",
+      "status": "confirmed",
+      "confidence": 0.99
+    }
+  ],
+  "open_payload": {
+    "recipient": "Mrs M A Wilson",
+    "service_address": "14 Bracken Rise, Calderfield, VIC, 3999",
+    "tax_invoice": "754908949",
+    "date_of_issue": "08/07/26",
+    "issuer_abn": "33 321 818 706",
+    "outstanding_balance": "$3.86CR",
+    "current_charges": "$231.56",
+    "meter_number": "KRV389288",
+    "water_usage": "27.000 kL",
+    "payment_references": {
+      "biller_code": "9200111",
+      "banking_reference": "7238 7344 7930",
+      "post_payment_code": "9200065",
+      "post_reference": "6653 3336 4755",
+      "paystay_reference": "PPO-9428-7872"
+    }
+  }
+}

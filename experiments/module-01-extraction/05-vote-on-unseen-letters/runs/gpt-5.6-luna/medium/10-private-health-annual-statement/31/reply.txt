@@ -1,0 +1,50 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "gpt-4o",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "annual health insurance statement",
+      "status": "confirmed",
+      "confidence": 0.98
+    },
+    {
+      "key": "issuer",
+      "value": "Tarnwell Health Fund",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "No action",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "due_date",
+      "value": "Not applicable",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "65921613",
+      "status": "confirmed",
+      "confidence": 0.95
+    }
+  ],
+  "open_payload": {
+    "policy_name": "Tarnwell Everyday Hospital and Extras",
+    "statement_identifier": "QFYCGT5",
+    "date_statement_updated": "01/July/2026",
+    "monthly_amount_you_pay": "$167.43",
+    "next_direct_debit": "01/08/2026"
+  }
+}

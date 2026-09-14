@@ -14,6 +14,8 @@
 
 import { z } from "zod";
 import {
+  ACTION_WORDS,
+  actionWordOf,
   CONTRACT_FIELD_KEYS,
   KNOWN_FIELD_KEYS,
   type ContractFieldKey,
@@ -130,6 +132,19 @@ export const extractionResultSchema = z
         });
       }
       seen.add(field.key);
+    }
+
+    const action = result.fields.find((f) => f.key === "action_required");
+    if (
+      action &&
+      action.value !== null &&
+      actionWordOf(action.value) === null
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        message: `action_required must start with one of: ${ACTION_WORDS.join(", ")}; got "${action.value}"`,
+        path: ["fields"],
+      });
     }
 
     const missing = CONTRACT_FIELD_KEYS.filter((key) => !seen.has(key));

@@ -2,23 +2,34 @@
  * Mark every run against the answer key.
  *
  * This file is the experiment's definition of "correct", so it is the part
- * worth reading. Four fields are scored:
+ * worth reading. Five fields are scored:
  *
  *   due_date   the ISO string must match exactly. A letter with no due date
- *              must be reported as "Not applicable".
+ *              must be reported as "Not applicable". A date the page only
+ *              implies through a period ("within 14 days") is not a printed
+ *              date, and the key for such a letter is null.
  *   amount     the number must match, and the currency symbol must be there,
  *              because the contract says "including the currency symbol". A
  *              letter that asks for no money must be reported as
  *              "No payment required".
  *   reference  must match after collapsing runs of whitespace and ignoring
- *              case. The contract says keep the spacing as printed, so "UR
- *              6938509" is not "6938509".
+ *              case. The contract says keep the spacing as printed, and the
+ *              key holds the number as printed without the label word beside
+ *              it: "6429746 DFD", not "Ref #6429746 DFD". Letters printed as
+ *              part of the number stay: "HB 1193 8188", and "UR 6938509"
+ *              where the page prints that whole string under a barcode.
  *   issuer     one must contain the other once punctuation and case are
  *              removed, because the contract prefers "Example Energy" over
  *              "Example Energy Pty Ltd" and both are right.
+ *   action_required
+ *              must start with the same action word as the key; the words
+ *              after it are not compared. See actionCorrect below.
  *
- * document_type and action_required are free text and are not scored; they
- * are copied into scores.json so a person can read them.
+ * document_type is free text and is not scored; it is copied into
+ * scores.json so a person can read it.
+ *
+ * A key's `also_accepted` values (see samples.ts) count as right for their
+ * field under the same rule as the main value.
  *
  * A field is "wrong and confirmed" when the value is wrong and the model
  * marked it `confirmed`. That is the one that reaches a person's screen, so it
@@ -34,6 +45,7 @@ import {
   type ExtractionResult,
 } from "../../../src/lib/contract/extraction";
 import {
+  actionWordOf,
   NO_PAYMENT_REQUIRED,
   NOT_APPLICABLE,
 } from "../../../src/lib/contract/fields";
@@ -41,7 +53,13 @@ import { experimentFromArgv, type Experiment } from "./experiment";
 import { groundTruth, type GroundTruth } from "./samples";
 import { jobsOf, runDir, type RunMeta } from "./run";
 
-export const SCORED = ["due_date", "amount", "reference", "issuer"] as const;
+export const SCORED = [
+  "due_date",
+  "amount",
+  "reference",
+  "issuer",
+  "action_required",
+] as const;
 export type ScoredField = (typeof SCORED)[number];
 
 export type Score = {
@@ -100,6 +118,18 @@ export function referenceCorrect(
   return collapse(got) === collapse(want);
 }
 
+/**
+ * action_required is right when it starts with the same action word as the
+ * key. The words after the verb ("Pay Example Energy" against "Pay Example
+ * Energy Pty Ltd") are not compared: the verb is what the product groups and
+ * scores by, and the rest is free text. See ACTION_WORDS in the contract.
+ */
+export function actionCorrect(got: string | null, want: string): boolean {
+  if (got === null) return false;
+  const w = actionWordOf(want);
+  return w !== null && actionWordOf(got) === w;
+}
+
 export function issuerCorrect(got: string | null, want: string): boolean {
   if (got === null) return false;
   const g = loose(got);
@@ -142,11 +172,35 @@ function scoreOne(
     status[f.key] = f.status;
   }
 
+  const { also_accepted: alts = {}, ...plainKey } = key;
+  const anyOf = <W>(
+    fn: (got: string | null, want: W) => boolean,
+    value: string | null,
+    want: W,
+    more: W[] | undefined,
+  ) => fn(value, want) || (more ?? []).some((w) => fn(value, w));
+
   const correct: Record<ScoredField, boolean> = {
-    due_date: dueDateCorrect(got.due_date ?? null, key.due_date),
-    amount: amountCorrect(got.amount ?? null, key.amount),
-    reference: referenceCorrect(got.reference ?? null, key.reference),
-    issuer: issuerCorrect(got.issuer ?? null, key.issuer),
+    due_date: anyOf(
+      dueDateCorrect,
+      got.due_date ?? null,
+      key.due_date,
+      alts.due_date,
+    ),
+    amount: anyOf(amountCorrect, got.amount ?? null, key.amount, alts.amount),
+    reference: anyOf(
+      referenceCorrect,
+      got.reference ?? null,
+      key.reference,
+      alts.reference,
+    ),
+    issuer: anyOf(issuerCorrect, got.issuer ?? null, key.issuer, alts.issuer),
+    action_required: anyOf(
+      actionCorrect,
+      got.action_required ?? null,
+      key.action_required,
+      alts.action_required,
+    ),
   };
 
   const u = usage as {
@@ -173,7 +227,7 @@ function scoreOne(
       : null,
     got,
     status,
-    want: { ...key },
+    want: { ...plainKey },
     correct,
     wrong_and_confirmed: SCORED.filter(
       (f) => !correct[f] && status[f] === "confirmed",

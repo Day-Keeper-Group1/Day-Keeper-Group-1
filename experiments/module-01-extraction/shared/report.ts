@@ -6,6 +6,16 @@
  * before its cost is worth looking at. Token columns are per letter, averaged
  * over the cell, straight from what Azure reported.
  *
+ * After it, "Every letter" turns the same scores sideways: one row per
+ * letter, one column per cell, so a letter that only fails in one cell does
+ * not hide inside a cell average. Each cell reads k/n scored reads correct
+ * with the percentage beside it, and "All reads" pools the cells,
+ * in bold when k falls short of n, with a final column totalling wrong and
+ * confirmed fields for that letter across every cell. Underneath, once the
+ * experiment repeats a letter more than once, one sentence turns a clean
+ * run of n out of n into an upper bound on the per-read miss rate a reader
+ * could still believe at 95% confidence.
+ *
  * Under the table: what the whole run cost, and where the prices came from.
  * Every report carries both, so a reader never has to guess which price
  * table a dollar figure was multiplied from.
@@ -37,6 +47,8 @@ const scores = JSON.parse(
 const mean = (xs: number[]) =>
   xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0;
 const short = (model: string) => model.replace("gpt-5.6-", "");
+const pct = (k: number, n: number) =>
+  n ? `${k}/${n} (${Math.round((100 * k) / n)}%)` : "0/0";
 const cost = (usd: number) =>
   `$${usd.toFixed(4)} (A$${(usd * USD_TO_AUD).toFixed(4)})`;
 
@@ -61,12 +73,60 @@ for (const { model, effort } of experiment.cells) {
   const withUsage = cell.filter((s) => s.usage);
   const usd = mean(withUsage.map((s) => usdFor(model, s.usage!)));
   console.log(
-    `| ${short(model)} | ${effort} | ${letters}/${cell.length} | ${fields}/${cell.length * SCORED.length} | ${wrongConfirmed} | ` +
+    `| ${short(model)} | ${effort} | ${pct(letters, cell.length)} | ${fields}/${cell.length * SCORED.length} | ${wrongConfirmed} | ` +
       `${mean(withUsage.map((s) => s.usage!.input_tokens)).toFixed(0)} | ` +
       `${mean(withUsage.map((s) => s.usage!.output_tokens)).toFixed(0)} | ` +
       `${mean(withUsage.map((s) => s.usage!.reasoning_tokens)).toFixed(0)} | ` +
       `${mean(cell.map((s) => s.seconds)).toFixed(1)} | ` +
       `${cost(usd)} |`,
+  );
+}
+
+console.log("\n### Every letter\n");
+const letterHeader = [
+  "Letter",
+  ...experiment.cells.map(({ model, effort }) => `${short(model)} ${effort}`),
+  "All reads",
+  "Wrong and confirmed",
+];
+console.log(`| ${letterHeader.join(" | ")} |`);
+console.log(`|${letterHeader.map(() => "---").join("|")}|`);
+
+let maxRepeats = 0;
+for (const letter of experiment.letters) {
+  const letterScores = scores.filter((s) => s.letter === letter);
+  if (letterScores.length === 0) continue;
+  const cellValues = experiment.cells.map(({ model, effort }) => {
+    const cellScores = letterScores.filter(
+      (s) => s.model === model && s.effort === effort,
+    );
+    const n = cellScores.length;
+    const k = cellScores.filter((s) =>
+      SCORED.every((f) => s.correct[f]),
+    ).length;
+    maxRepeats = Math.max(maxRepeats, n);
+    const value = pct(k, n);
+    return k < n ? `**${value}**` : value;
+  });
+  const allN = letterScores.length;
+  const allK = letterScores.filter((s) =>
+    SCORED.every((f) => s.correct[f]),
+  ).length;
+  const allReads = allK < allN ? `**${pct(allK, allN)}**` : pct(allK, allN);
+  const wrongConfirmed = letterScores.reduce(
+    (sum, s) => sum + s.wrong_and_confirmed.length,
+    0,
+  );
+  console.log(
+    `| ${letter} | ${cellValues.join(" | ")} | ${allReads} | ${wrongConfirmed} |`,
+  );
+}
+
+if (maxRepeats > 1) {
+  const bound = 100 * (1 - 0.05 ** (1 / maxRepeats));
+  console.log(
+    `\nA letter read ${maxRepeats}/${maxRepeats} times bounds its per-read miss rate at ` +
+      `${Math.round(bound)}% (95%, exact binomial).`,
   );
 }
 
@@ -92,20 +152,20 @@ const misses = scores.filter(
 if (misses.length) {
   console.log("\n### Every miss\n");
   console.log(
-    "| Model | Effort | Letter | Field | Key | Model said | Status |",
+    "| Model | Effort | Letter | Repeat | Field | Key | Model said | Status |",
   );
-  console.log("|---|---|---|---|---|---|---|");
+  console.log("|---|---|---|---|---|---|---|---|");
   for (const s of misses) {
     if (!s.ok) {
       console.log(
-        `| ${short(s.model)} | ${s.effort} | ${s.letter} | (no valid reply) | | | |`,
+        `| ${short(s.model)} | ${s.effort} | ${s.letter} | ${s.repeat} | (no valid reply) | | | |`,
       );
       continue;
     }
     for (const f of SCORED) {
       if (s.correct[f]) continue;
       console.log(
-        `| ${short(s.model)} | ${s.effort} | ${s.letter} | ${f} | ${String(s.want[f])} | ${String(s.got[f])} | ${s.status[f] ?? ""} |`,
+        `| ${short(s.model)} | ${s.effort} | ${s.letter} | ${s.repeat} | ${f} | ${String(s.want[f])} | ${String(s.got[f])} | ${s.status[f] ?? ""} |`,
       );
     }
   }

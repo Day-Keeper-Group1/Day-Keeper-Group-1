@@ -1,0 +1,44 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "ChatGPT",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "annual superannuation member statement",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Wattlebank Super",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "No action required",
+      "status": "confirmed",
+      "confidence": 0.97
+    },
+    {
+      "key": "due_date",
+      "value": "Not applicable",
+      "status": "confirmed",
+      "confidence": 0.98
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.98
+    },
+    {
+      "key": "reference",
+      "value": "12 242 124",
+      "status": "confirmed",
+      "confidence": 0.99
+    }
+  ],
+  "open_payload": {}
+}

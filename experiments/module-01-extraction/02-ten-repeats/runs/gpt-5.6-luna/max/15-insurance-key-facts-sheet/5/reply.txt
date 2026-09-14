@@ -1,0 +1,55 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "gpt-4o",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "home building insurance key facts sheet",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Quillhaven Insurance",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Read the Product Disclosure Statement (PDS) and all policy documentation",
+      "status": "confirmed",
+      "confidence": 0.95
+    },
+    {
+      "key": "due_date",
+      "value": "Not applicable",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "Not applicable",
+      "status": "confirmed",
+      "confidence": 0.94
+    }
+  ],
+  "open_payload": {
+    "policy_name": "Quillhaven Home Advantage - Home Building",
+    "prepared_on": "8 August 2026",
+    "document_code": "SYN-0025",
+    "standard_excess": "$750.00",
+    "cooling_off_period": "21 days",
+    "contact_phone": "(03) 7010 8804",
+    "website": "www.quillhaven-insurance.example",
+    "provided_distributed_by": "Quillhaven Insurance",
+    "underwritten_by": "Quillhaven Insurance",
+    "notice": "This is not an insurance contract"
+  }
+}

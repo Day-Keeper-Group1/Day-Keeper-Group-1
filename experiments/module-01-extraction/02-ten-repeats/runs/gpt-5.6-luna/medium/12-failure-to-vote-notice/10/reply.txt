@@ -1,0 +1,51 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "gpt-4o",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "government letter about failure to vote",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Ballot Administration Office",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Complete, sign and return this notice",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "due_date",
+      "value": "2026-07-14",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "NV2026-732810",
+      "status": "confirmed",
+      "confidence": 0.99
+    }
+  ],
+  "open_payload": {
+    "elector_id": "2700 3381",
+    "date_issued": "16 June 2026",
+    "potential_infringement_penalty": "$102.00",
+    "election": "Calderfield City Council by-election",
+    "return_address": "Ballot Administration Office, PO Box 4471, CALDERFIELD VIC 3999",
+    "telephone": "1300 975 708"
+  }
+}

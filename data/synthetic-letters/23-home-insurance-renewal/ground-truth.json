@@ -1,0 +1,12 @@
+{
+  "sample_id": "SYN-0019",
+  "document_type": "home_insurance_renewal",
+  "issuer": "Quillhaven Insurance",
+  "action_required": "Pay Quillhaven Insurance",
+  "due_date": "2026-09-04",
+  "amount": 2486.1,
+  "reference": "HB 1193 8188",
+  "also_accepted": {
+    "reference": ["70 976 319"]
+  }
+}

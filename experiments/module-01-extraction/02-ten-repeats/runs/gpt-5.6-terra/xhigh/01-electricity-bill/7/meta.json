@@ -1,0 +1,11 @@
+{
+  "model": "gpt-5.6-terra",
+  "effort": "xhigh",
+  "letter": "01-electricity-bill",
+  "repeat": 7,
+  "pages": ["page-01.png", "page-02.png"],
+  "image_detail": "auto",
+  "started_at": "2026-09-14T01:00:11.228Z",
+  "seconds": 6.387,
+  "ok": true
+}

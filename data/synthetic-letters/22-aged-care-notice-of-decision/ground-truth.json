@@ -1,0 +1,12 @@
+{
+  "sample_id": "SYN-0017",
+  "document_type": "aged_care_notice_of_decision",
+  "issuer": "Bramworth Hospital",
+  "action_required": "Contact a Support at Home provider",
+  "due_date": null,
+  "amount": null,
+  "reference": "AC87542",
+  "also_accepted": {
+    "reference": ["RC532986"]
+  }
+}

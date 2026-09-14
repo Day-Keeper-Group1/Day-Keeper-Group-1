@@ -1,0 +1,11 @@
+{
+  "model": "gpt-5.6-luna",
+  "effort": "medium",
+  "letter": "16-driver-licence-renewal-notice",
+  "repeat": 19,
+  "pages": ["page-01.png"],
+  "image_detail": "auto",
+  "started_at": "2026-09-14T10:49:10.928Z",
+  "seconds": 5.717,
+  "ok": true
+}

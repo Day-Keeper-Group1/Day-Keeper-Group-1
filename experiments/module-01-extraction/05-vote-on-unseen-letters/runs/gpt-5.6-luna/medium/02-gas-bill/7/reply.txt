@@ -1,0 +1,56 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "gpt-4o",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "natural gas utility bill",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Example Energy",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Pay Example Energy",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "due_date",
+      "value": "2026-07-28",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "amount",
+      "value": "$257.36",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "5832 875 169",
+      "status": "confirmed",
+      "confidence": 0.99
+    }
+  ],
+  "open_payload": {
+    "customer": "Mrs M A Wilson",
+    "supply_address": "14 Bracken Rise, Calderfield VIC 3999",
+    "billing_period": "1 May 2026 – 30 Jun 2026",
+    "account_number": "5832 875 169",
+    "mirn": "59122670931",
+    "bill_issue_date": "09/07/2026",
+    "payment_code": "9200104",
+    "post_payment_reference": "8580 8754 1787",
+    "gas_distributor": "Silverbank Gas Networks",
+    "issuer_legal_name": "Example Energy Pty Ltd",
+    "abn": "87 483 733 155"
+  }
+}

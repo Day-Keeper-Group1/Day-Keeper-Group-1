@@ -1,0 +1,52 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "ChatGPT",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "insurance renewal",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Quillhaven Insurance",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "No action",
+      "status": "confirmed",
+      "confidence": 0.93
+    },
+    {
+      "key": "due_date",
+      "value": "Not applicable",
+      "status": "confirmed",
+      "confidence": 0.9
+    },
+    {
+      "key": "amount",
+      "value": "$684.35",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "MV 6749 5137",
+      "status": "confirmed",
+      "confidence": 0.98
+    }
+  ],
+  "open_payload": {
+    "customer_number": "74 999 861",
+    "cover_expiry": "18 September 2026",
+    "renewal_period": "18 September 2026 to 18 September 2027",
+    "vehicle": "2011 Toyota Corolla sedan",
+    "registration_number": "9XK-7QJ",
+    "payment_method": "Direct debit",
+    "first_new_installment_date": "18 October 2026"
+  }
+}

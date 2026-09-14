@@ -1,0 +1,54 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "gpt-4o",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "government aged care approval letter",
+      "status": "confirmed",
+      "confidence": 0.98
+    },
+    {
+      "key": "issuer",
+      "value": "Bramworth Hospital Aged Care Assessment Service",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Contact a Support at Home provider",
+      "status": "confirmed",
+      "confidence": 0.88
+    },
+    {
+      "key": "due_date",
+      "value": "Not applicable",
+      "status": "confirmed",
+      "confidence": 0.96
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "RC532986",
+      "status": "confirmed",
+      "confidence": 0.98
+    }
+  ],
+  "open_payload": {
+    "aged_care_id": "AC87542",
+    "notice_number": "ND-495302",
+    "notice_date": "2026-06-04",
+    "decision_date": "2026-06-02",
+    "access_approval_date": "2026-05-28",
+    "ongoing_services": "Classification 3, in effect from 4 June 2026",
+    "priority_category": "high",
+    "short_term_services": "Restorative Care Pathway, 8 June 2026 to 27 September 2026",
+    "internal_review_deadline": "28 days from notification of the decision"
+  }
+}

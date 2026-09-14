@@ -1,0 +1,40 @@
+# 24 · Motor insurance renewal
+
+Sample `SYN-0019B`, printed in small type at the bottom right of each page. Two pages. A yearly renewal certificate from a fictional insurer, Quillhaven Insurance, to Mrs M A Wilson, for her comprehensive car insurance. It tells her the policy renews by itself. It also tells her that her monthly instalments carry on into the new period. The answer key is [`ground-truth.json`](ground-truth.json).
+
+## Where it comes from
+
+No government body or regulator publishes a sample or a blank template for an insurance renewal notice, so this certificate did not follow one. The one real document its layout was read from is a court statement published by the corporate regulator, which reproduces the renewal certificates of a real insurer. It gave the wording of the labels and the order of the blocks. Everything else was built up from what the law and the industry code say a renewal notice must contain, and no real insurer's notice was copied.
+
+- **ASIC v RACQ Insurance Limited, concise statement, 22 September 2025** (Australian Securities and Investments Commission). The renewal certificates reproduced inside this court document are the only real ones the layout of this letter was read from. They gave the labels "Policyholder and payment information", "Direct debit information", "Last period premium", "This period premium" and "Total amount payable" word for word, and the order the blocks come in. They also show that a renewal notice built around a direct debit block is an ordinary form of the document, and that the premium breakdown table has the same four rows on a car policy as on a home policy. <https://download.asic.gov.au/media/s2ro4xl5/25-211mr-asic-v-racq-insurance-limited-concise-statement-22-sept-2025.pdf>
+- **General Insurance Code of Practice, October 2023 update** (Insurance Council of Australia). Paragraph 49 is why page 1 tells her the policy renews by itself, that she can tell them if she would prefer it not to, and that she should check the amounts she is insured for. Paragraph 50 is why page 2 sets the new premium beside the premium for the period now ending and explains why the figure moved. Only those requirements about what a renewal notice must contain were taken. None of the code's sentences were copied, and the fictional insurer never claims to belong to it. <https://insurancecouncil.com.au/wp-content/uploads/2023/11/2023-COP_UPDATE_October_FINAL.pdf>
+- **Insurance Contracts Act 1984 (Commonwealth), section 58** (Federal Register of Legislation). The section makes the insurer tell the customer the day and the time the cover expires, and whether it is prepared to renew. That is why page 1 says "Your current cover expires at 4:00pm on 18 September 2026. We are prepared to renew your cover on the terms set out in this notice." The section number is not printed on the letter, because real renewal notices do not print it either. <https://www.legislation.gov.au/C2004A02944/latest/text>
+- **Insurance duty** (State Revenue Office Victoria). Victorian insurance duty is 10 percent, charged on the premium including GST. That is how the GST and stamp duty lines on page 2 are worked out from the premium, and why the table has four rows. A Victorian policy carries no emergency services levy line, because that levy is collected with council rates instead. <https://www.sro.vic.gov.au/insurance-duty>
+
+Made up, not taken from any source: the company name Quillhaven Insurance with its logo, its colours, its phone number, its website and its ABN; the customer Mrs M A Wilson and her address; the policy number and the customer number; the car, its registration number, its agreed value of \$8,400.00 and its \$695.00 excess. The premium figures are invented, \$565.58 for the new period and \$588.73 for the period now ending, with the GST and stamp duty lines worked out from them at the Victorian rates. The fall of 3.9 percent was chosen on purpose. The spec card had said that renewal premiums rise by 8 to 20 percent, and the real documents gave that no support, two of them having gone down, so the guess was dropped. The expiry time of 4:00pm is ours: the law makes the notice give a time but does not say which time, and no published source gives one. The date the new instalments start, 18 October 2026, is invented too, because in real life it follows the day she set up when she first arranged the direct debit. The letter leaves out the colour of the car and the vehicle identification number on purpose. It also leaves out the amount of each monthly instalment, which is what real certificates of this kind do. It has no "How to pay" section, no payment slip and no barcode, because the premium is taken by direct debit. All of the prose was written for this letter.
+
+## The six fields
+
+### document_type
+
+**Motor insurance renewal.** Page 1, under the letterhead, the large heading "Renewal Certificate of Insurance", with "Date of this notice: 7 August 2026" under it. In the "Policyholder and payment information" band, "Policy type" reads "Comprehensive Motor Vehicle", and the "Your policy" table lists a vehicle, a registration number and a garaging address. The answer key stores it as `motor_insurance_renewal`. This field is free text and the experiments do not score it.
+
+### issuer
+
+**Quillhaven Insurance.** Page 1, top left, the logo and the wordmark beside it read "Quillhaven Insurance". The same name is printed in the footer at the bottom left of both pages. It is the insurer that issues the certificate and renews the cover, and no other organisation is named anywhere on the letter.
+
+### action_required
+
+**No action.** Page 1, the "When your cover expires" band, the second paragraph says "This policy renews automatically unless you tell us otherwise." The grey "Direct debit information" box higher up the page says "Your monthly instalment is drawn from the account you nominated with us, on the same day each month" and "Instalments carry on into the new period of insurance shown below unless you contact us before the expiry date." The letter has no "How to pay" section, no payment slip and no barcode. The two things it offers her are both hers to take or leave, contacting them if she would prefer the policy not to renew, and checking that the amounts she is insured for are still right for her. The value starts with one of the contract's eight action words, and the experiments score that word.
+
+### due_date
+
+**Not applicable.** No due date, pay-by date or reply-by date is printed on the letter. None of the dates it does print is a date for her to act by: the date of the notice on page 1, the moment the current cover expires, the period the new cover runs for in the "Your policy" band, and the day the instalments for the new period start. Nothing on the letter asks her to do anything, and no payment is asked for, so there is no date by which she must act. The answer key has `null` for this field.
+
+### amount
+
+**No payment required.** Nothing on the letter asks her for a payment. Page 1, the grey "Direct debit information" box, says the monthly instalment is drawn from the account she nominated and that the instalments carry on into the new period. Page 2 sets out what the cover costs in a table headed "Premium breakdown", whose bottom row reads "Total amount payable" with \$712.36 under "Last period premium" and \$684.35 under "This period premium", and the line under the table reads "Your total premium has decreased by 3.9% compared with the period now ending." The premium is collected by the monthly direct debit, and the letter asks her to pay nothing. The answer key has `null` for this field.
+
+### reference
+
+**MV 6749 5137.** Page 1, the "Policyholder and payment information" band, middle column, "Policy number" with "MV 6749 5137" in bold under it. The number is printed once on the letter. The contract asks for the reference, account or customer number the person must quote. This certificate covers one policy, and the policy number is the number that policy is kept under, with the letters "MV" printed as part of the value.

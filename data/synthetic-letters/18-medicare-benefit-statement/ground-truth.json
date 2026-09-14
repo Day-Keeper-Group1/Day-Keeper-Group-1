@@ -1,0 +1,9 @@
+{
+  "sample_id": "SYN-0011",
+  "document_type": "medicare_benefit_statement",
+  "issuer": "Patient Rebate Scheme",
+  "action_required": "No action",
+  "due_date": null,
+  "amount": null,
+  "reference": "4378 31830 2"
+}

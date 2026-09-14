@@ -25,7 +25,7 @@ import {
   type ExtractionOutcome,
 } from "./provider";
 
-// KAN-46: chosen in docs/extraction.md, entry dated 2026-09-09. Change there first.
+// KAN-46: chosen in docs/extraction.md, entry dated 2026-09-14. Change there first.
 export const AZURE_MODEL = "gpt-5.6-luna";
 export const AZURE_EFFORT = "medium";
 

@@ -1,0 +1,62 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "gpt-4o",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "water utility bill",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Calderfield Water",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Pay the amount due",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "due_date",
+      "value": "2026-07-29",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "amount",
+      "value": "$227.70",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "40740 95528",
+      "status": "confirmed",
+      "confidence": 0.99
+    }
+  ],
+  "open_payload": {
+    "customer_name": "Mrs M A Wilson",
+    "service_address": "14 Bracken Rise, Calderfield, VIC, 3999",
+    "tax_invoice": "754908949",
+    "date_of_issue": "08/07/26",
+    "meter_number": "KRV389288",
+    "usage": "27.000 kL",
+    "total_charges": "$231.56",
+    "previous_bill": "$206.14",
+    "payments_received": "-$210.00",
+    "balance": "$3.86CR",
+    "current_charges": "$231.56",
+    "payment_references": {
+      "banking_ref": "7238 7344 7930",
+      "post_ref": "6653 3336 4755",
+      "paystay_reference": "PPO-9428-7872"
+    },
+    "issuer_abn": "33 321 818 706"
+  }
+}

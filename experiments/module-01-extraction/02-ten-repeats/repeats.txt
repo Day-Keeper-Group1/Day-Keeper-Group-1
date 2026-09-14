@@ -1,0 +1,8 @@
+# How many times each cell reads each letter.
+#
+# Ten. Enough to separate a letter the model reads the same way every time
+# from one it only happened to get right once. Ten reads all correct bounds
+# the per-read miss rate at about 26% (95%); this is screening, not
+# certification.
+
+10

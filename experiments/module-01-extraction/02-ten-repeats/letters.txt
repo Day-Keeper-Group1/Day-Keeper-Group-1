@@ -1,0 +1,22 @@
+# Which letters this experiment reads. One folder name per line, as it
+# appears in data/synthetic-letters/. Blank lines and # lines are ignored.
+#
+# All fifteen. They are the set the project keeps: the ones a letter has to
+# look like to be in scope. Narrowing this list is what a later experiment
+# changes.
+
+01-electricity-bill
+02-gas-bill
+03-water-bill
+04-council-rates-notice
+05-animal-registration-overdue-notice
+06-parking-infringement-notice
+07-penalty-reminder-notice
+08-welfare-information-request
+09-specialist-account-statement
+10-private-health-annual-statement
+11-aged-care-monthly-statement
+12-failure-to-vote-notice
+13-product-recall-notice
+14-super-annual-member-statement
+15-insurance-key-facts-sheet

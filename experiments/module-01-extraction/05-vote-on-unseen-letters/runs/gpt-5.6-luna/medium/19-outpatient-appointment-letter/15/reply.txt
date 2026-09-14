@@ -1,0 +1,56 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "gpt-4o",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "medical appointment letter",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Thornhurst Health Specialist Clinics",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Attend Orthopaedic Clinic",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "due_date",
+      "value": "2026-06-23",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "UR 6938509",
+      "status": "confirmed",
+      "confidence": 0.96
+    }
+  ],
+  "open_payload": {
+    "appointment_time": "10:45AM",
+    "appointment_location": "Bramworth Hospital Specialist Clinics, 120 Fernlea Street, Calderfield, 3999, Ground Floor, Building C",
+    "bring": [
+      "This letter",
+      "Your Medicare Card",
+      "A complete list of current medicines you are taking",
+      "Relevant test results or scans",
+      "Your General Practitioner’s name, address and phone number",
+      "Your Advance Care Directive (if you have one)"
+    ],
+    "cancellation_contact": "(03) 7010 0187"
+  }
+}

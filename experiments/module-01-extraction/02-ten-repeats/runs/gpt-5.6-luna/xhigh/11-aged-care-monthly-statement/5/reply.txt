@@ -1,0 +1,93 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "gpt-4o",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "Support at Home monthly statement",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Thornhurst Health",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "No action required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "due_date",
+      "value": "Not applicable",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 1.0
+    },
+    {
+      "key": "reference",
+      "value": "AC87542",
+      "status": "confirmed",
+      "confidence": 0.98
+    }
+  ],
+  "open_payload": {
+    "service_name": "Home and Community Services",
+    "statement_month": "July 2026",
+    "statement_period": "1 July 2026 to 31 July 2026",
+    "recipient": "Mrs M A Wilson",
+    "client_name": "Margaret Anne Wilson",
+    "address": "14 Bracken Rise, CALDERFIELD VIC 3999",
+    "my_aged_care_id": "AC87542",
+    "provider_id": "63087",
+    "location": "Calderfield VIC",
+    "contact_phone": "(03) 5550 3392",
+    "contact_email": "enquiries@thornhurst-health.example",
+    "statement_note": "This is not an invoice – no payment is required.",
+    "support_at_home": {
+      "quarterly_budget": "$5,634.20",
+      "unspent_funds": "$349.84",
+      "available_budget_on_1_july_2026": "$5,984.04",
+      "services_delivered": "$1,170.25",
+      "charges_from_past_months": "-$15.00",
+      "remaining_balance_as_of_31_july_2026": "$4,828.79"
+    },
+    "assistive_technology": {
+      "budget": "$15,000.00",
+      "spending_from_past_months": "-$500.00",
+      "available_budget_on_1_july_2026": "$14,500.00",
+      "delivered": "-$850.00",
+      "remaining_balance_on_31_july_2026": "$13,650.00",
+      "committed_funds": "-$1,200.00",
+      "remaining_balance_for_allocation_period": "$12,450.00",
+      "expiry": "15 November 2026"
+    },
+    "home_modifications": {
+      "budget": "$15,000.00",
+      "delivered": "-$4,860.00",
+      "remaining_balance_on_31_july_2026": "$10,140.00",
+      "committed_funds": "-$2,300.00",
+      "remaining_balance_for_allocation_period": "$7,840.00",
+      "expiry": "15 November 2026"
+    },
+    "restorative_care": {
+      "funding_started": "8 June 2026",
+      "funding_ends": "27 September 2026",
+      "budget": "$6000.00",
+      "spending_from_past_months": "-$1842.50",
+      "available_budget_on_1_july_2026": "$4157.50",
+      "services_delivered": "$800.00",
+      "restorative_care_management": "$240.00",
+      "remaining_balance_as_of_31_july_2026": "$3117.50"
+    }
+  }
+}

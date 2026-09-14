@@ -1,0 +1,11 @@
+{
+  "model": "gpt-5.6-terra",
+  "effort": "low",
+  "letter": "22-aged-care-notice-of-decision",
+  "repeat": 5,
+  "pages": ["page-01.png", "page-02.png", "page-03.png"],
+  "image_detail": "auto",
+  "started_at": "2026-09-14T11:06:34.099Z",
+  "seconds": 5.686,
+  "ok": true
+}

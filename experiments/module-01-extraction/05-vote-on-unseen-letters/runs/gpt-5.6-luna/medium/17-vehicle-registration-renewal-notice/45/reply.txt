@@ -1,0 +1,55 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "GPT-4.1",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "vehicle registration renewal notice",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Driver and Vehicle Registry",
+      "status": "confirmed",
+      "confidence": 0.98
+    },
+    {
+      "key": "action_required",
+      "value": "Pay Driver and Vehicle Registry",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "due_date",
+      "value": "2026-09-17",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "amount",
+      "value": "$479.40",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "812 466 305",
+      "status": "confirmed",
+      "confidence": 0.92
+    }
+  ],
+  "open_payload": {
+    "registration_number": "9XK·7QJ",
+    "registration_expires": "17 September 2026",
+    "date_of_notice": "6 August 2026",
+    "vehicle": "2011 Toyota Sedan",
+    "concession_application_deadline": "2026-09-12",
+    "recommended_payment_date": "2026-09-15",
+    "biller_code": "9200089",
+    "payment_reference": "5042 8918 7856",
+    "issuer_legal_entity": "Wenhurst Registry Services Pty Ltd",
+    "registration_period": "12 months"
+  }
+}

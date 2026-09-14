@@ -1,0 +1,60 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "gpt-4o",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "Patient rebate statement",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "claimstead",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "No action",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "due_date",
+      "value": "Not applicable",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "37-364928",
+      "status": "confirmed",
+      "confidence": 0.99
+    }
+  ],
+  "open_payload": {
+    "rebate_card_number": "4378 31830 2",
+    "individual_reference_number": "9",
+    "statement_date": "11 August 2026",
+    "card_valid_to": "08/2028",
+    "claim_received": "28/07/2026",
+    "services_period": "1 June 2026 to 31 July 2026",
+    "total_charged": "$598.15",
+    "total_benefit_paid": "$292.40",
+    "total_cost_to_claimant": "$305.75",
+    "payment_methods": [
+      "EFT to Claimant",
+      "Bulk Bill"
+    ],
+    "threshold": "$861.20",
+    "counted_so_far_this_calendar_year": "$458.30"
+  }
+}

@@ -1,0 +1,44 @@
+# 22 · Aged care notice of decision
+
+Sample `SYN-0017`, printed in small type at the bottom left of each page. Three pages. A notice of decision from the aged care assessment service of a fictional hospital, Bramworth Hospital, to Mrs M A Wilson, telling her that her application for government funded aged care services has been approved and what happens next. The answer key is [`ground-truth.json`](ground-truth.json).
+
+## Where it comes from
+
+This letter did not follow an official sample or an annotated example document. It was built up from published guidance, the law and official data, without one.
+
+The federal government publishes the rules for this letter, but it has not published a blank template or a marked up example of one. So the order of the blocks on the page was worked out from the list of things the law says this notice must contain, and the wording came from official guidance:
+
+- **Support at Home program manual, version 4.2, December 2025** (Department of Health, Disability and Ageing). Section 6.6 gave the title of the letter word for word: "Outcome of your application for government-funded aged care services". The same manual gave the assessment steps behind the opening sentence, the line saying the support plan is enclosed, and the quarterly and yearly budget figures for Classification 3 in the shaded box on page 1, which come from its table of classification budgets in force from 1 November 2025. <https://www.health.gov.au/sites/default/files/2025-12/support-at-home-program-manual-a-guide-for-registered-providers.pdf>
+- **Request for an Internal Review of a Decision form** (My Aged Care). This blank government form gave the whole review section on page 3: the 28 days, that a review costs nothing, that a person can fill in the form or simply write to the decision maker, and the letter confirming the request within 14 days. It also gave the "My Aged Care ID No" line on page 1, because that is the number the form asks a person to quote. The real postal address and the real email address printed on the form were not copied. <https://www.myagedcare.gov.au/sites/default/files/documents/request-for-internal-review-of-decision-form.pdf>
+- **Support at Home program: A guide for older people, families and carers, October 2025** (Department of Health, Disability and Ageing). This is the government booklet written for older people. It gave the voice of the letter: short sentences, "you" and "your", and plain words in place of administrative terms. No figures were taken from it. <https://www.health.gov.au/sites/default/files/2025-10/support-at-home-program-booklet-for-older-people-families-and-carers.pdf>
+- **Support at Home monthly statement template, October 2025** (Department of Health, Disability and Ageing). Used the other way round. The monthly statement in this dataset is built from this official template, and this letter has to agree with it, because the two describe the same approval for the same person. The assistive technology and home modifications tier and limit, the amount funded for each Restorative Care Pathway course, the pathway start and end dates, and her My Aged Care ID are the same on both. <https://www.health.gov.au/sites/default/files/2025-10/support-at-home-monthly-statement-template.pdf>
+- **Aged Care Act 2024** (Commonwealth, Federal Register of Legislation). The law that says what an approval notice must tell a person: the reasons for the decision, the review rights, the day the approval takes effect, the service group and the classification, the service types and services approved, and any conditions. It also sets the 28 days for asking for an internal review, the confirming letter within 14 days, and the right to go to a tribunal afterwards. The letter does not quote it. <https://www.legislation.gov.au/C2024A00104/latest/text>
+- **Aged Care Rules 2025** (Commonwealth, Federal Register of Legislation). They hold the classification levels, the Restorative Care Pathway and how long a course of it runs, and the four priority categories, one of which is printed as "high" on page 1. The letter does not quote them. <https://www.legislation.gov.au/F2025L01173/latest/downloads>
+
+Made up, not taken from any source: the whole layout, since there is no published sample to follow; the sender Bramworth Hospital and its Aged Care Assessment Service, taken from the project's settled list of made up organisations, which holds no aged care assessment body of its own; the PO Box, the phone numbers, the email address and the website; the delegate Ms Karen Fletcher; the recipient Mrs Margaret Anne Wilson with her address and her date of birth; and every identifying number on the page, which is to say the My Aged Care ID, the notice number and the referral code. The three paragraphs of reasons on page 2 are ours as well: the law requires reasons, and no sample of them has been published, so their length and their wording were chosen. Two of the dates were chosen rather than found: the decision is dated two days before the letter, and the approval is backdated to the day of the assessment. The law allows both, and fixes neither. The assistive technology and home modifications tier was set to the high tier, at up to \$15,000.00, so that this letter and the monthly statement describe the same approval. The colours, the headings and the look of the page follow the plain style of Australian federal government letters, not any real letter. Some things were deliberately left off: the letter prints no coat of arms, no "Australian Government" wording and no department name; the person who made the decision is called "the decision-maker", which is what the Act itself calls that role; the national advocacy and translating services are described by what they do instead of being named; and the day the 28 days runs out is not printed, because a real letter of this kind gives the number of days and not a date.
+
+## The six fields
+
+### document_type
+
+**Aged care notice of decision.** Page 1, the large heading under the address block, reads "Outcome of your application for government-funded aged care services". The identification table below it has rows labelled "Notice number" and "Date the decision was made". Page 2 has a section headed "REASONS FOR THIS DECISION", and page 3 one headed "IF YOU DO NOT AGREE WITH THIS DECISION". The answer key stores it as `aged_care_notice_of_decision`. This field is free text and the experiments do not score it.
+
+### issuer
+
+**Bramworth Hospital.** Page 1, top left, in large bold type, with "Aged Care Assessment Service" in smaller type under it. The same letterhead is printed at the top of pages 2 and 3. Page 3 signs off with "Ms Karen Fletcher", "Aged Care Assessment Delegate", "Bramworth Hospital Aged Care Assessment Service". The hospital's assessment service made the decision and sent the letter.
+
+### action_required
+
+**Contact a Support at Home provider.** Page 2, the "WHAT HAPPENS NOW" list. The first item says she has been placed in the Support at Home Priority System "with the status seeking services". The second item says "Your referral code is RC532986. Give this code to the provider you choose. They will use it to start your services." The third item says "Call us on (03) 7010 5596 if you need help choosing a provider." Her services begin once she has chosen a provider and given that provider the code. The value starts with one of the contract's eight action words, and the experiments score that word.
+
+### due_date
+
+**Not applicable.** The letter prints no date by which she must do anything. Page 2, "WHAT HAPPENS NOW", sets no date for choosing a provider or for handing over the referral code. Page 3, "IF YOU DO NOT AGREE WITH THIS DECISION", counts days rather than printing a date: "You must ask within 28 days of the date you were notified of this decision." That same section ends in bold with "If you agree with this decision, you do not need to reply to this letter." The answer key has `null` for this field.
+
+### amount
+
+**No payment required.** The letter asks for no payment. There is no payment section, no bank details and no payment slip on any of the three pages. Page 1, the shaded box under the approval table, sets out the money the government puts towards her services, and its last line, in italics, reads "These amounts are what the government will pay towards your services. They are not amounts you owe." The answer key has `null` for this field.
+
+### reference
+
+**AC87542.** Page 1, the identification table under the title, third row, "My Aged Care ID No" with "AC87542" beside it. It is printed once, on page 1. The contract asks for the reference, account or customer number the person must quote, and this is the number the sender identifies her by: it sits in the block that names her, beside her full name and her date of birth.

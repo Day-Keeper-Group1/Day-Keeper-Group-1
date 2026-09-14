@@ -1,0 +1,11 @@
+{
+  "model": "gpt-5.6-luna",
+  "effort": "medium",
+  "letter": "06-parking-infringement-notice",
+  "repeat": 10,
+  "pages": ["page-01.png"],
+  "image_detail": "auto",
+  "started_at": "2026-09-13T23:27:22.940Z",
+  "seconds": 5.809,
+  "ok": true
+}

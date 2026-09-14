@@ -1,0 +1,45 @@
+# 10 · Private health annual statement
+
+Sample `SYN-0015`, printed in small type at the bottom left of each page. Three pages. A yearly statement of private health insurance cover from a fictional health fund, Tarnwell Health Fund, to Mrs M A Wilson, dated 2 July 2026. Page 1 is a covering letter. Pages 2 and 3 are the Private Health Information Statement for her policy. The answer key is [`ground-truth.json`](ground-truth.json).
+
+## Where it comes from
+
+This letter was built up from the law, without a sample of the current form. No official sample of today's Private Health Information Statement was found. The government did publish an annotated blank example of the older form, the Standard Information Statement, which the current statement replaced on 1 April 2019. The look of pages 2 and 3 was taken from that old example. Its fields and wording were not used, because they are no longer what the law asks for. No real health fund's letter or statement was used as a template.
+
+So the letter was built up from these sources:
+
+- **Private Health Insurance Act 2007, section 93-20** (Federal Register of Legislation). It says a health fund must give every adult it insures a Private Health Information Statement at least once every 12 months. This is the reason the letter exists. It is also why page 1 says "We send this to every adult member once a year." <https://www.legislation.gov.au/C2007A00031/latest/text>
+- **Private Health Insurance (Complying Product) Rules 2015, Compilation 62, Schedules 1, 2 and 3** (Federal Register of Legislation). This is the version in force from 1 July 2026. These Rules list everything the statement must show, and pages 2 and 3 follow their order. They also fix the exact words of many lines. Examples are "before any rebate, loading or discount", "only one person", "Victoria" beside "Available in", "This policy includes cover for", the three waiting period lines, the excess sentence, "No co-payments", "does not operate a preferred provider scheme", and the date written as "01/July/2026" beside "Date statement updated". The two paragraphs in the grey box on page 2 follow sentences the Rules require. Each of them has one wording change, described in the paragraph below this list. <https://www.legislation.gov.au/F2015L01021/latest/text>
+- **Private Health Insurance Code of Conduct, version 6, August 2023** (Private Healthcare Australia and Members Health Fund Alliance). This is an industry code, not a law. It says a fund must give written notice before a change that makes cover worse. The notice is at least 30 days, or at least 60 days for a major change. The letter is dated 2 July 2026, which is 61 days before the new optical limit starts on 1 September 2026. The link goes to a public copy of the earlier version 5. <https://membershealth.com.au/wp-content/uploads/2021/12/1.-PHA-Code-of-Conduct-V5.pdf>
+- **Guide to the Private Health Insurance Standard Information Statement, General Policy** (privatehealth.gov.au). This is the government's annotated blank example of the older statement. It gave the look of pages 2 and 3: the strip of labelled rows at the top of page 2, hospital cover placed before extras, the five columns of the extras table on page 3, and the footer at the bottom of page 3. No field and no wording was taken from it. The link goes to the page on the same website that explains the current statements. <https://www.privatehealth.gov.au/health_insurance/howitworks/phis_guide.htm>
+- **Australian Government Private Health Insurance Rebate** (privatehealth.gov.au). The rebate rate of 32.158% on page 1. It is the rate in July 2026 for a member aged 70 or over on the base income tier. <https://www.privatehealth.gov.au/health_insurance/surcharges_incentives/insurance_rebate.htm>
+- **2026 Private Health Insurance Premiums** (federal Minister for Health, 17 February 2026). The average premium change of 4.41% across all insurers, and its start date of 1 April 2026. Both are in the grey box on page 1. <https://www.health.gov.au/ministers/the-hon-mark-butler-mp/media/2026-private-health-insurance-premiums>
+- **Premium changes** (ahm, a private health insurer). A public page that explains premium changes to customers. It gave the idea behind the paragraph in the "HOW YOU PAY" box on page 1. The idea is that a fund changes a direct debit amount itself, and a member who pays by BPAY has to change the amount they send. The sentences on the letter were written new and were not copied from that page. <https://ahm.com.au/health-insurance/explained/premium-changes>
+
+Made up, not taken from any source: the fund name Tarnwell Health Fund, the policy name Tarnwell Everyday Hospital and Extras, the line "Health cover for Victorians since 1962", and the member with her address, date of birth and join date. All the identifying numbers are made up too: the membership number, the ABN, the phone number, the website, the BPAY biller code and reference, and the statement identifier QFYCGT5. The ABN and the BPAY reference fail their check digit tests. The biller code is outside the range that is handed out. The website ends in .example, which can never be a real address. No published rule says how a statement identifier is built, so its mix of letters and digits is our choice. The monthly premium of \$246.80, the \$500 excess, the choice of hospital treatments that are covered, every limit and example benefit in the extras table, and the optical limit change from \$250 to \$200 are made up as well. The name Patient Rebate Scheme is made up. It takes the place of Medicare in two sentences whose words the Rules otherwise fix. These are the "Tax surcharge" row and the first paragraph of the grey box, both on page 2. A third fixed sentence names the government's comparison website, and the letter describes that website instead of naming it. So those three sentences are not exactly the words of the law. The complaints line on page 1 describes an ombudsman service without naming it or giving a phone number. The opening paragraph and the "HOW YOU PAY" paragraph were written for this letter. The teal colour, the header and the layout of page 1 are ours. The look of pages 2 and 3 is a best guess worked out from the older example. In real life the covering letter and the statement often arrive as two separate documents in one envelope. Here they are one document of three pages.
+
+## The six fields
+
+### document_type
+
+**Private health insurance annual statement.** Page 1, left side below the address, the heading "Your annual statement". The first paragraph under it says "Enclosed is the yearly summary of the cover you hold with us." Page 2 opens with the heading "Private Health Information Statement". The answer key stores it as `private_health_annual_statement`. This field is free text and the experiments do not score it.
+
+### issuer
+
+**Tarnwell Health Fund.** Page 1, top left, the name in large dark teal type, with "Health cover for Victorians since 1962" under it. The same header is at the top of pages 2 and 3. Page 2, first row of the table under "Private Health Information Statement", says "Health insurer" and "Tarnwell Health Fund". Page 3, under "Extras cover (general treatment)", says "Tarnwell Health Fund does not operate a preferred provider scheme." It is the fund that holds her cover and sends the statement. The letter speaks of "the cover you hold with us".
+
+### action_required
+
+**No action.** The letter asks her for nothing. Page 1, the second paragraph of the letter, says "Nothing on these pages needs a reply. Your cover carries on and your payments carry on exactly as they are." In the "HOW YOU PAY" box on page 1, her payment method is "Direct debit". The same box says the fund adjusts the figure itself, "so nothing is required at your end." The value starts with one of the contract's eight action words, and the experiments score that word.
+
+### due_date
+
+**Not applicable.** The letter asks her to do nothing, so there is no date to do it by. Page 1 says "Nothing on these pages needs a reply." None of the three pages has a line labelled due date, pay by or reply by.
+
+### amount
+
+**No payment required.** Page 1, the second paragraph of the letter, says "Your cover carries on and your payments carry on exactly as they are." The grey box under "WHAT YOUR COVER COSTS" shows her regular premium as "Monthly amount you pay \$167.43". The same box says "Your cover is paid to 31 July 2026." The box under "HOW YOU PAY" gives her payment method as "Direct debit" and says "Deducted from your nominated bank account on the 1st of each month." The fund takes the premium from her account itself. The letter does not ask her to send any money. It has no balance owing and no payment slip.
+
+### reference
+
+**65921613.** Page 1, top right table, first row, "Membership number". It is printed only once in the letter. The contract asks for the reference, account or customer number the person must quote. The number this letter identifies her membership by is the membership number.

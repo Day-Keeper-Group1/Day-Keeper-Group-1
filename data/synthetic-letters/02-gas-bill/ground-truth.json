@@ -2,7 +2,7 @@
   "sample_id": "SYN-0002",
   "document_type": "gas_bill",
   "issuer": "Example Energy Pty Ltd",
-  "action_required": "Pay the total amount due",
+  "action_required": "Pay Example Energy",
   "due_date": "2026-07-28",
   "amount": 257.36,
   "reference": "5832 875 169"

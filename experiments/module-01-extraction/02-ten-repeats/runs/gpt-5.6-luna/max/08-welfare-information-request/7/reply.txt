@@ -1,0 +1,73 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "ChatGPT",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "government income and assets review letter",
+      "status": "confirmed",
+      "confidence": 0.98
+    },
+    {
+      "key": "issuer",
+      "value": "Public Payments Office",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Complete and submit the enclosed form with the requested income details and latest schedule",
+      "status": "confirmed",
+      "confidence": 0.97
+    },
+    {
+      "key": "due_date",
+      "value": "2026-08-04",
+      "status": "confirmed",
+      "confidence": 0.94
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "PPO-5002-9891",
+      "status": "confirmed",
+      "confidence": 0.99
+    }
+  ],
+  "open_payload": {
+    "notice_date": "14 July 2026",
+    "recipient": "Mrs M A Wilson",
+    "date_of_birth": "14 March 1948",
+    "income_stream": {
+      "product_provider": "Wattlebank Super",
+      "product_name": "Account-Based Pension",
+      "commenced": "1 September 2019",
+      "provider_reference": "PPO-7143-4935",
+      "period_reviewed": "1 July 2025 to 30 June 2026"
+    },
+    "information_requested": [
+      "Account balance on the last day of the period under review",
+      "Gross amount paid over the period",
+      "Payment chosen to receive for the year ahead",
+      "Latest schedule from Wattlebank Super, or the closing date if the account has closed"
+    ],
+    "response_period": "21 days from the notice date",
+    "online_submission": "public-payments-office.example/senddocuments",
+    "telephone": "(03) 5550 0257",
+    "one_time_access_code": "VRJF86",
+    "postal_address": "Reply Paid 2841, CALDERFIELD VIC 3999",
+    "enclosed": [
+      "Income and assets form",
+      "Reply paid envelope"
+    ],
+    "ongoing_reporting_duty": "Report any change in circumstances within 14 days",
+    "legal_basis": "Section 196 of the Social Security (Administration) Act 1999",
+    "signatory": "Karen Mitchell, Service Officer"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "sample_id": "SYN-0024",
+  "document_type": "charity_appeal_letter",
+  "issuer": "Pentmere Foundation",
+  "action_required": "No action",
+  "due_date": null,
+  "amount": null,
+  "reference": "772-578-249",
+  "also_accepted": {
+    "action_required": ["Return form to Pentmere Foundation"],
+    "due_date": ["2026-09-30"]
+  }
+}

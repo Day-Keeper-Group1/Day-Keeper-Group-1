@@ -1,0 +1,81 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "gpt-4o",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "Product recall letter",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Kettleworth Appliances",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Stop using the heater and arrange for it to be collected",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "due_date",
+      "value": "Not applicable",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "9512653343",
+      "status": "confirmed",
+      "confidence": 0.99
+    }
+  ],
+  "open_payload": {
+    "letter_date": "16 July 2026",
+    "recipient": "Mrs M A Wilson",
+    "address": "14 Bracken Rise, CALDERFIELD VIC 3999",
+    "issuer_legal_name": "Kettleworth Appliances Pty Ltd",
+    "abn": "13 512 653 343",
+    "contact_phone": "(03) 5550 3966",
+    "website": "www.kettleworth-appliances.example/recall",
+    "product": "Kettleworth Portable Column Heater",
+    "affected_models": [
+      {
+        "colour": "White",
+        "model_number": "KCH-2400WH"
+      },
+      {
+        "colour": "Graphite",
+        "model_number": "KCH-2400GR"
+      },
+      {
+        "colour": "White",
+        "model_number": "KCH-2000WH"
+      },
+      {
+        "colour": "Graphite",
+        "model_number": "KCH-2000GR"
+      }
+    ],
+    "affected_serial_number_range": "5550001 to 5589999",
+    "sold_between": "01/03/2018 and 30/09/2021",
+    "product_registered_on": "18/06/2019",
+    "goodwill_payment": "$50.00",
+    "remedy_options": [
+      "full refund of the purchase price",
+      "replacement heater of the current model"
+    ],
+    "document_code": "SYN-0022",
+    "signatory": "David Thompson, CEO"
+  }
+}

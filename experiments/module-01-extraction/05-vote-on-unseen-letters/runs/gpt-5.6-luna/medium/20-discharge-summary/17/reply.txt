@@ -1,0 +1,54 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "GPT-4o",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "Medical discharge summary",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Bramworth Hospital",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Contact Dr Susan Patel for medication and blood pressure review",
+      "status": "confirmed",
+      "confidence": 0.91
+    },
+    {
+      "key": "due_date",
+      "value": "2026-05-24",
+      "status": "uncertain",
+      "confidence": 0.82
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "6938509",
+      "status": "confirmed",
+      "confidence": 0.95
+    }
+  ],
+  "open_payload": {
+    "patient": "Mrs Margaret Anne Wilson",
+    "discharge_date": "17/05/2026",
+    "other_follow_up": [
+      "Orthopaedic outpatient review (cast check): to be advised by letter",
+      "Community physiotherapy — falls prevention: Wednesday 27 May 2026, 2:00 PM"
+    ],
+    "gp_review_instruction": "Within 7 days of discharge; to be arranged by the patient",
+    "gp_provider": "Dr Susan Patel, Marnworth Medical Clinic",
+    "gp_phone": "(03) 7010 9150"
+  }
+}

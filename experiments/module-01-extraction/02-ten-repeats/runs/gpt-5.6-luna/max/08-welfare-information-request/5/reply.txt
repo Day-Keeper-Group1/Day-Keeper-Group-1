@@ -1,0 +1,82 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "gpt-4o",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "Government income and assets review letter",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Public Payments Office",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Complete and submit the enclosed income and assets form with the requested pension details and latest schedule",
+      "status": "confirmed",
+      "confidence": 0.98
+    },
+    {
+      "key": "due_date",
+      "value": "2026-08-04",
+      "status": "uncertain",
+      "confidence": 0.88
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "PPO-5002-9891",
+      "status": "confirmed",
+      "confidence": 0.99
+    }
+  ],
+  "open_payload": {
+    "brand": "paystead",
+    "letter_date": "14 July 2026",
+    "deadline_statement": "Provide the details within 21 days from the date at the top of the notice",
+    "recipient": "Mrs M A Wilson",
+    "address": "14 Bracken Rise, CALDERFIELD VIC 3999",
+    "date_of_birth": "14 March 1948",
+    "income_stream": {
+      "product_provider": "Wattlebank Super",
+      "product_name": "Account-Based Pension",
+      "commenced": "1 September 2019",
+      "provider_reference": "PPO-7143-4935",
+      "review_period": "1 July 2025 to 30 June 2026"
+    },
+    "requested_details": [
+      "Account balance on the last day of the period being reviewed",
+      "Gross amount paid over that period",
+      "Payment chosen to receive for the year ahead"
+    ],
+    "supporting_document": "Latest schedule from Wattlebank Super; if the account has closed, provide the closing date instead",
+    "submission_methods": {
+      "online": "public-payments-office.example/senddocuments",
+      "telephone": "(03) 5550 0257",
+      "telephone_hours": "Monday to Friday, 8 am to 5 pm",
+      "post": "Reply Paid 2841, CALDERFIELD VIC 3999",
+      "in_person": "Take the form and this notice to a service centre"
+    },
+    "one_time_access_code": "VRJF86",
+    "consequence_if_late": "Pension can be suspended or cancelled, and qualification for a concession card may stop",
+    "ongoing_reporting_duty": "Report any change in circumstances within 14 days of it happening",
+    "legal_basis": "Section 196 of the Social Security (Administration) Act 1999",
+    "enclosures": [
+      "Income and assets form",
+      "Reply paid envelope"
+    ],
+    "document_code": "RVW452.2607",
+    "document_identifier": "SYN-0010",
+    "review_rights": "Ask for an explanation or review within 13 weeks of being told about the decision"
+  }
+}

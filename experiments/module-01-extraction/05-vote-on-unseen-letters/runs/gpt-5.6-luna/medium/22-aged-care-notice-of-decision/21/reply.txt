@@ -1,0 +1,55 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "gpt-4o",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "government-funded aged care approval letter",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Bramworth Hospital Aged Care Assessment Service",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Contact a Support at Home provider",
+      "status": "confirmed",
+      "confidence": 0.91
+    },
+    {
+      "key": "due_date",
+      "value": "Not applicable",
+      "status": "confirmed",
+      "confidence": 0.9
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "RC532986",
+      "status": "confirmed",
+      "confidence": 0.99
+    }
+  ],
+  "open_payload": {
+    "recipient": "Margaret Anne Wilson",
+    "notice_number": "ND-495302",
+    "aged_care_id": "AC87542",
+    "notice_date": "2026-06-04",
+    "decision_date": "2026-06-02",
+    "approval": "Approved for government-funded aged care services",
+    "service_group": "home support",
+    "ongoing_services": "Classification 3, in effect from 2026-06-04",
+    "short_term_services": "Restorative Care Pathway, 2026-06-08 to 2026-09-27",
+    "review_deadline": "Request an internal review within 28 days of notification"
+  }
+}

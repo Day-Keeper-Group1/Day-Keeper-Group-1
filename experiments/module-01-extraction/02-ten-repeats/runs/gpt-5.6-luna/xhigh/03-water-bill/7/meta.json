@@ -1,0 +1,11 @@
+{
+  "model": "gpt-5.6-luna",
+  "effort": "xhigh",
+  "letter": "03-water-bill",
+  "repeat": 7,
+  "pages": ["page-01.png", "page-02.png"],
+  "image_detail": "auto",
+  "started_at": "2026-09-13T23:31:09.468Z",
+  "seconds": 7.601,
+  "ok": true
+}

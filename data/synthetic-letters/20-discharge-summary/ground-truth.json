@@ -1,0 +1,9 @@
+{
+  "sample_id": "SYN-0013",
+  "document_type": "discharge_summary",
+  "issuer": "Bramworth Hospital",
+  "action_required": "Attend general practitioner",
+  "due_date": null,
+  "amount": null,
+  "reference": "6938509"
+}

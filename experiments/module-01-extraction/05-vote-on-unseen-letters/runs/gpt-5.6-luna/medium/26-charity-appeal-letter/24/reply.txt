@@ -1,0 +1,58 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "GPT-4o",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "charity donation appeal letter",
+      "status": "confirmed",
+      "confidence": 0.98
+    },
+    {
+      "key": "issuer",
+      "value": "Pentmere Foundation",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Return form to Pentmere Foundation",
+      "status": "confirmed",
+      "confidence": 0.97
+    },
+    {
+      "key": "due_date",
+      "value": "2026-09-30",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.88
+    },
+    {
+      "key": "reference",
+      "value": "772-578-249",
+      "status": "confirmed",
+      "confidence": 0.99
+    }
+  ],
+  "open_payload": {
+    "letter_date": "14 August 2026",
+    "phone": "(03) 7010 6888",
+    "website": "www.pentmere-foundation.example",
+    "ABN": "82 822 475 291",
+    "suggested_donations": [
+      "$35",
+      "$50",
+      "$100"
+    ],
+    "return_instruction": "Please return this slip by 30/09/2026 in the reply paid envelope provided.",
+    "tax_information": "Donations of $2 or more are tax deductible.",
+    "contact_name": "Susan Barrett",
+    "contact_title": "Coordinator"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "model": "gpt-5.6-terra",
+  "effort": "low",
+  "letter": "05-animal-registration-overdue-notice",
+  "repeat": 4,
+  "pages": ["page-01.png"],
+  "image_detail": "auto",
+  "started_at": "2026-09-14T11:00:25.875Z",
+  "seconds": 4.417,
+  "ok": true
+}

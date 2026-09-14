@@ -1,0 +1,12 @@
+{
+  "sample_id": "SYN-0019B",
+  "document_type": "motor_insurance_renewal",
+  "issuer": "Quillhaven Insurance",
+  "action_required": "No action",
+  "due_date": null,
+  "amount": null,
+  "reference": "MV 6749 5137",
+  "also_accepted": {
+    "reference": ["74 999 861"]
+  }
+}

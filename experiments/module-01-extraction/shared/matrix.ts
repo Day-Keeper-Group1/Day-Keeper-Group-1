@@ -39,9 +39,12 @@ async function main() {
   const workers = Number(flag("--workers") ?? 4);
 
   const all = jobsOf(experiment);
+  const repeats = experiment.cells.map((c) => c.repeats ?? experiment.repeats);
+  const repeatText =
+    new Set(repeats).size === 1 ? `${repeats[0]}` : repeats.join("/");
   console.log(
     `${experiment.name}: ${experiment.cells.length} cells x ` +
-      `${experiment.letters.length} letters x ${experiment.repeats} repeat(s) ` +
+      `${experiment.letters.length} letters x ${repeatText} repeat(s) ` +
       `= ${all.length} calls`,
   );
 

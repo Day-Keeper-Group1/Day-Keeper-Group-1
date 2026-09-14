@@ -17,14 +17,20 @@ import {
   isFullyConfident,
   safeParseExtractionResult,
 } from "@/lib/contract/extraction";
-import { CONTRACT_FIELD_KEYS, FIELD_LABELS } from "@/lib/contract/fields";
-import { deriveTaskStatus } from "@/lib/contract/api";
+import {
+  actionWordOf,
+  CONTRACT_FIELD_KEYS,
+  FIELD_DESCRIPTIONS,
+  FIELD_LABELS,
+} from "@/lib/contract/fields";
+import { deriveTaskStatus, taskTitle } from "@/lib/contract/api";
 import { MockExtractionProvider } from "@/server/extraction/mock-provider";
 
 function validField(key: string) {
   return {
     key,
-    value: "something",
+    // action_required must start with an action word; anything else is free.
+    value: key === "action_required" ? "Pay something" : "something",
     status: "confirmed" as const,
     confidence: 0.9,
   };
@@ -100,6 +106,62 @@ describe("the six fields", () => {
     expect(extraFieldsOf(withTime).map((f) => f.key)).toEqual([
       "bpay_biller_code",
     ]);
+  });
+});
+
+describe("action_required", () => {
+  it("accepts a value that starts with an action word, whatever follows", () => {
+    for (const value of [
+      "Pay Example Energy",
+      "return form to Services Australia",
+      "No action",
+      "Stop using heater",
+    ]) {
+      const result = validResult({
+        fields: CONTRACT_FIELD_KEYS.map((k) =>
+          k === "action_required" ? { ...validField(k), value } : validField(k),
+        ),
+      });
+      expect(safeParseExtractionResult(result).success, value).toBe(true);
+    }
+  });
+
+  it("rejects a sentence that starts with none of them, naming the list", () => {
+    const result = validResult({
+      fields: CONTRACT_FIELD_KEYS.map((k) =>
+        k === "action_required"
+          ? { ...validField(k), value: "Please pay the amount due" }
+          : validField(k),
+      ),
+    });
+    const parsed = safeParseExtractionResult(result);
+    expect(parsed.success).toBe(false);
+    expect(JSON.stringify(parsed.error?.issues)).toContain("Return form");
+  });
+
+  it("gives only examples in its own description that pass its own check", () => {
+    // The description is copied into the reader's prompt, so an example that
+    // starts with none of the words teaches the model to write a value the
+    // validator then rejects.
+    const examples =
+      FIELD_DESCRIPTIONS.action_required
+        .match(/For example: (.*?)\. If the document/)?.[1]
+        ?.split("; ") ?? [];
+    expect(examples.length).toBeGreaterThan(0);
+    for (const example of examples) {
+      expect(actionWordOf(example), example).not.toBeNull();
+    }
+  });
+
+  it("still lets an unreadable action_required carry no value", () => {
+    const result = validResult({
+      fields: CONTRACT_FIELD_KEYS.map((k) =>
+        k === "action_required"
+          ? { key: k, value: null, status: "unreadable" as const }
+          : validField(k),
+      ),
+    });
+    expect(safeParseExtractionResult(result).success).toBe(true);
   });
 });
 
@@ -233,6 +295,40 @@ describe("when a task counts as overdue", () => {
     const melbourneSmallHours = new Date("2026-08-15T15:00:00Z");
     expect(deriveTaskStatus("open", "2026-08-15", melbourneSmallHours)).toBe(
       "overdue",
+    );
+  });
+});
+
+describe("taskTitle", () => {
+  it("uses the action alone when it already names the issuer", () => {
+    expect(
+      taskTitle({
+        action: "Pay Telstra",
+        issuer: "Telstra",
+        documentType: null,
+      }),
+    ).toBe("Pay Telstra");
+  });
+
+  it("adds the issuer in brackets when the action does not name it", () => {
+    expect(
+      taskTitle({
+        action: "Attend GP appointment",
+        issuer: "Dr A. Patel, GP clinic",
+        documentType: null,
+      }),
+    ).toBe("Attend GP appointment (Dr A. Patel, GP clinic)");
+  });
+
+  it("never produces empty brackets", () => {
+    expect(
+      taskTitle({ action: null, issuer: "Telstra", documentType: "Bill" }),
+    ).toBe("Letter from Telstra");
+    expect(taskTitle({ action: " ", issuer: null, documentType: "Bill" })).toBe(
+      "Bill",
+    );
+    expect(taskTitle({ action: null, issuer: null, documentType: null })).toBe(
+      "Letter",
     );
   });
 });

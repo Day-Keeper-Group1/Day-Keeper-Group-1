@@ -1,0 +1,74 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "GPT-5",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "hospital discharge summary",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Bramworth Hospital",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Attend general practitioner review and community physiotherapy",
+      "status": "confirmed",
+      "confidence": 0.9
+    },
+    {
+      "key": "due_date",
+      "value": "2026-05-27",
+      "status": "uncertain",
+      "confidence": 0.7
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "6938509",
+      "status": "confirmed",
+      "confidence": 0.85
+    }
+  ],
+  "open_payload": {
+    "patient": "Mrs Margaret Anne Wilson",
+    "health_service": "Thornhurst Health",
+    "medical_record_number": "6938509",
+    "individual_healthcare_identifier": "8003606084723614",
+    "healthcare_provider_identifier_organisation": "8003626002691506",
+    "discharge_date": "2026-05-17",
+    "follow_up_appointments": [
+      {
+        "appointment": "Orthopaedic outpatient review (cast check)",
+        "when": "To be advised — a letter will be sent",
+        "booking_status": "To be arranged by the hospital",
+        "provider": "Bramworth Hospital Specialist Clinics",
+        "contact": "(03) 7010 0187"
+      },
+      {
+        "appointment": "General practitioner review of medicines and blood pressure",
+        "when": "Within 7 days of discharge",
+        "booking_status": "To be arranged by the patient",
+        "provider": "Dr Susan Patel, Marnworth Medical Clinic",
+        "contact": "(03) 7010 9150"
+      },
+      {
+        "appointment": "Community physiotherapy — falls prevention",
+        "when": "Wednesday 27 May 2026, 2:00 PM",
+        "booking_status": "Booked",
+        "provider": "Ms Michelle Taylor, Thornhurst Health Community Rehabilitation",
+        "contact": "(03) 5550 4188"
+      }
+    ]
+  }
+}

@@ -1,0 +1,6 @@
+# How many times each cell reads each letter.
+#
+# Ten, the same as 02-ten-repeats, so the per-letter table here can be read
+# beside that one and the difference is the prompt.
+
+10

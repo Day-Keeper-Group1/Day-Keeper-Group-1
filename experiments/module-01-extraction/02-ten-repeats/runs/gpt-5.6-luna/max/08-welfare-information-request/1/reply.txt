@@ -1,0 +1,73 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "gpt-4o",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "government letter",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Public Payments Office",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Complete and submit the enclosed income and assets form with the requested details and latest schedule",
+      "status": "confirmed",
+      "confidence": 0.98
+    },
+    {
+      "key": "due_date",
+      "value": "2026-08-04",
+      "status": "confirmed",
+      "confidence": 0.92
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "PPO-5002-9891",
+      "status": "confirmed",
+      "confidence": 0.99
+    }
+  ],
+  "open_payload": {
+    "brand": "paystead",
+    "notice_date": "14 July 2026",
+    "recipient": "Mrs M A Wilson",
+    "address": "14 Bracken Rise, CALDERFIELD VIC 3999",
+    "date_of_birth": "14 March 1948",
+    "income_stream_under_review": {
+      "product_provider": "Wattlebank Super",
+      "product_name": "Account-Based Pension",
+      "commenced": "1 September 2019",
+      "provider_reference": "PPO-7143-4935",
+      "review_period": "1 July 2025 to 30 June 2026"
+    },
+    "deadline_basis": "You have 21 days from the date at the top of this notice to give us these details.",
+    "one_time_access_code": "VRJF86",
+    "submission_methods": [
+      "Online: public-payments-office.example/senddocuments",
+      "By telephone: (03) 5550 0257, Monday to Friday, 8 am to 5 pm",
+      "By post: Reply Paid 2841, CALDERFIELD VIC 3999",
+      "In person: a service centre"
+    ],
+    "enclosed": [
+      "Income and assets form",
+      "Reply paid envelope"
+    ],
+    "consequence_if_late": "The pension can be suspended or cancelled, and the recipient can stop qualifying for a concession card.",
+    "ongoing_reporting_duty": "Report any change in circumstances within 14 days of it happening.",
+    "statutory_basis": "Section 196 of the Social Security (Administration) Act 1999",
+    "signatory": "Karen Mitchell, Service Officer"
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "gpt-4o",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "medical discharge summary",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Bramworth Hospital",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Attend Thornhurst Health Community Rehabilitation for falls-prevention physiotherapy",
+      "status": "uncertain",
+      "confidence": 0.82
+    },
+    {
+      "key": "due_date",
+      "value": "2026-05-27",
+      "status": "confirmed",
+      "confidence": 0.98
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "6938509",
+      "status": "confirmed",
+      "confidence": 0.9
+    }
+  ],
+  "open_payload": {
+    "patient": "Mrs Margaret Anne Wilson",
+    "discharge_date": "17/05/2026",
+    "booked_appointment": "Community physiotherapy — falls prevention",
+    "appointment_time": "2:00 PM",
+    "appointment_provider": "Ms Michelle Taylor, Thornhurst Health Community Rehabilitation",
+    "appointment_contact": "(03) 5550 4188",
+    "other_follow_up": [
+      "Orthopaedic outpatient review (cast check): to be advised; letter will be sent",
+      "General practitioner review of medicines and blood pressure within 7 days of discharge"
+    ],
+    "medicines": [
+      "perindopril arginine 5 mg — take ONE tablet each morning",
+      "paracetamol 665 mg modified release — take TWO tablets THREE times a day",
+      "oxycodone 5 mg — take ONE capsule up to every 6 hours if pain is severe, for up to 5 days, then stop",
+      "alendronate 70 mg — take ONE tablet once a week",
+      "colecalciferol 25 microgram — take ONE capsule daily",
+      "ibuprofen 200 mg — stopped; do not restart"
+    ],
+    "medical_record_number": "6938509",
+    "individual_healthcare_identifier": "8003606084723614",
+    "healthcare_provider_identifier_organisation": "8003626002691506"
+  }
+}

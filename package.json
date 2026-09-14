@@ -26,7 +26,8 @@
     "m1:probe": "tsx experiments/module-01-extraction/shared/matrix.ts --probe",
     "m1:matrix": "tsx experiments/module-01-extraction/shared/matrix.ts",
     "m1:score": "tsx experiments/module-01-extraction/shared/score.ts",
-    "m1:report": "tsx experiments/module-01-extraction/shared/report.ts"
+    "m1:report": "tsx experiments/module-01-extraction/shared/report.ts",
+    "m1:vote": "tsx experiments/module-01-extraction/shared/vote.ts"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx,mjs,cjs}": [

@@ -1,0 +1,51 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "gpt-4.1",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "Valuation and Rates Notice",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Calderfield City Council",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Pay the amount due",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "due_date",
+      "value": "2026-09-30",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "amount",
+      "value": "$535.09",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "79475",
+      "status": "confirmed",
+      "confidence": 0.98
+    }
+  ],
+  "open_payload": {
+    "total_annual_amount": "$2,131.09",
+    "online_payment_reference": "473482",
+    "bank_payment_reference": "1876970490",
+    "post_payment_reference": "8767 2131 9",
+    "biller_code": "9200096",
+    "payment_code": "9200058"
+  }
+}

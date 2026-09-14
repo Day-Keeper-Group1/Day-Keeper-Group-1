@@ -1,0 +1,71 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "gpt-4o",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "property rates notice",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Calderfield City Council",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Pay the first instalment",
+      "status": "confirmed",
+      "confidence": 0.98
+    },
+    {
+      "key": "due_date",
+      "value": "2026-09-30",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "amount",
+      "value": "$535.09",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "79475",
+      "status": "confirmed",
+      "confidence": 0.96
+    }
+  ],
+  "open_payload": {
+    "date_of_issue": "27 July 2026",
+    "property_address": "14 Bracken Rise, CALDERFIELD VIC 3999",
+    "annual_total": "$2,131.09",
+    "online_payment_reference": "473482",
+    "phone_and_internet_banking_biller_code": "9200096",
+    "phone_and_internet_banking_reference": "1876970490",
+    "post_payment_code": "9200058",
+    "post_payment_reference": "8767 2131 9",
+    "payment_schedule": [
+      {
+        "date": "30/09/2026",
+        "amount": "$535.09"
+      },
+      {
+        "date": "30/11/2026",
+        "amount": "$532.00"
+      },
+      {
+        "date": "28/02/2027",
+        "amount": "$532.00"
+      },
+      {
+        "date": "31/05/2027",
+        "amount": "$532.00"
+      }
+    ]
+  }
+}

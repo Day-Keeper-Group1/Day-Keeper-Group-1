@@ -1,0 +1,52 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "GPT-4o",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "missed delivery card",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Kelsworth Post",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Collect item from Calderfield Post Office",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "due_date",
+      "value": null,
+      "status": "unreadable",
+      "confidence": 0.96
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.98
+    },
+    {
+      "key": "reference",
+      "value": "RS431545614AU",
+      "status": "confirmed",
+      "confidence": 0.99
+    }
+  ],
+  "open_payload": {
+    "attempted_date": "11/8",
+    "collection_location": "Calderfield Post Office, 62 Fernlea Street, Calderfield",
+    "collection_hours": "Mon-Fri 9am-5pm; Sat 9am-12pm",
+    "reason_not_delivered": "A signature was required",
+    "collection_deadline_text": "Items not collected within 10 business days will be returned to sender.",
+    "proof_required": "Bring this card and proof of identity.",
+    "tracking_url": "www.kelsworth-post.example/track"
+  }
+}
