@@ -1,142 +1,140 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+// KAN-57: soft-deleted route, kept working against the real endpoints.
+
+import { useEffect, useMemo, useState } from "react";
 import { ListChecks, Search } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
-import { PageHeader } from "@/components/layout/page-header";
-import { StatusBadge } from "@/components/status-badge";
+import { ScreenHeader } from "@/components/screen";
 import { TaskRow } from "@/components/task-row";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  formatTaskWhen,
-  MOCK_DOCUMENTS,
-  MOCK_TASKS,
-  taskStatus,
-  tasksInOrder,
-  TODAY,
-  type MockTask,
-  type TaskStatus,
-} from "@/lib/mock-data";
+import type { ApiError, TaskSummary } from "@/lib/contract/api";
+import { toggleTaskDone } from "@/lib/task-actions";
 
-type TaskFilter = "all" | "needs-review" | TaskStatus;
+/**
+ * The flat task list.
+ *
+ * It has no navigation entry any more: the prototype's three destinations are
+ * Home, Photograph and Calendar, and tasks are read where they belong to
+ * something (Home's Your tasks, the calendar's day sheet). The route stays
+ * because it is linked from older notes and still answers, so this page is
+ * kept honest against the real endpoints rather than left compiling against
+ * fixtures. It is deliberately plain.
+ */
+
+type TaskFilter = "all" | "overdue" | "upcoming" | "no-date" | "completed";
 
 const FILTERS: { label: string; value: TaskFilter }[] = [
   { label: "All", value: "all" },
-  { label: "Needs review", value: "needs-review" },
   { label: "Overdue", value: "overdue" },
   { label: "Upcoming", value: "upcoming" },
   { label: "No date", value: "no-date" },
   { label: "Completed", value: "completed" },
 ];
 
-const SECTIONS: { title: string; status: TaskStatus }[] = [
-  { title: "Overdue", status: "overdue" },
-  { title: "Upcoming", status: "upcoming" },
-  { title: "No date", status: "no-date" },
-  { title: "Completed", status: "completed" },
+const SECTIONS: { title: string; value: Exclude<TaskFilter, "all"> }[] = [
+  { title: "Overdue", value: "overdue" },
+  { title: "Upcoming", value: "upcoming" },
+  { title: "No date", value: "no-date" },
+  { title: "Completed", value: "completed" },
 ];
 
+/** Which section a task belongs in. `status` is the server's, never guessed. */
+function sectionOf(task: TaskSummary): Exclude<TaskFilter, "all"> {
+  if (task.status === "completed") return "completed";
+  if (task.status === "overdue") return "overdue";
+  return task.dueDate ? "upcoming" : "no-date";
+}
+
 export default function TasksPage() {
-  const searchParams = useSearchParams();
-  const requestedFilter = searchParams.get("filter");
-  const initialFilter: TaskFilter =
-    requestedFilter === "needs-review" ||
-    requestedFilter === "overdue" ||
-    requestedFilter === "upcoming" ||
-    requestedFilter === "no-date" ||
-    requestedFilter === "completed"
-      ? requestedFilter
-      : "all";
-
-  // Mock-only state, local to this page: there is no backend yet (KAN board
-  // tickets for the real API haven't landed), so ticking here does not
-  // travel to the dashboard or the calendar. What it does demonstrate is
-  // src/lib/contract/api.ts itself: the tick is the only thing that changes, and everything
-  // else on the row is worked out fresh from it.
-  const [tasks, setTasks] = useState<MockTask[]>(MOCK_TASKS);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [filter, setFilter] = useState<TaskFilter>(initialFilter);
+  const [tasks, setTasks] = useState<TaskSummary[] | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [filter, setFilter] = useState<TaskFilter>("all");
   const [query, setQuery] = useState("");
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
-  const [lastCompletedId, setLastCompletedId] = useState<string | null>(null);
 
-  function toggleDone(id: string) {
-    setTasks((prev) =>
-      prev.map((task) =>
-        task.id === id ? { ...task, done: !task.done } : task,
-      ),
-    );
-    const task = tasks.find((item) => item.id === id);
-    if (task && !task.done) setLastCompletedId(id);
-    else setLastCompletedId(null);
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      try {
+        const response = await fetch("/api/tasks");
+        const body: unknown = await response.json();
+        if (!response.ok) {
+          throw new Error((body as ApiError).error.message);
+        }
+        if (!cancelled) setTasks(body as TaskSummary[]);
+      } catch (error) {
+        if (!cancelled) {
+          setLoadError(
+            error instanceof Error
+              ? error.message
+              : "We could not load your tasks just now.",
+          );
+        }
+      }
+    }
+
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  /**
+   * The tick is the only thing that changes, and the server answers with the
+   * whole row, so the answer replaces the row rather than the page patching a
+   * copy and hoping the two agree.
+   */
+  async function onToggle(task: TaskSummary) {
+    try {
+      const updated = await toggleTaskDone(task);
+      setTasks((previous) =>
+        (previous ?? []).map((item) =>
+          item.id === updated.id ? updated : item,
+        ),
+      );
+    } catch (error) {
+      setLoadError(
+        error instanceof Error
+          ? error.message
+          : "We could not save that just now.",
+      );
+    }
   }
 
-  const normalizedQuery = query.trim().toLowerCase();
-  const matchingTasks = useMemo(
-    () =>
-      tasks.filter(
-        (task) =>
-          !normalizedQuery ||
-          [task.title, task.issuer].some((value) =>
-            value.toLowerCase().includes(normalizedQuery),
-          ),
-      ),
-    [tasks, normalizedQuery],
-  );
-  const ordered = useMemo(() => {
-    const sorted = tasksInOrder(matchingTasks);
-    if (sortDirection === "asc") return sorted;
-
-    const dated = sorted.filter((task) => task.dueDate !== null).reverse();
-    const withoutDate = sorted.filter((task) => task.dueDate === null);
-    return [...dated, ...withoutDate];
-  }, [matchingTasks, sortDirection]);
-
-  const sections = useMemo(
-    () =>
-      SECTIONS.filter(
-        (section) => filter === "all" || filter === section.status,
-      ).map((section) => ({
-        ...section,
-        tasks: ordered.filter(
-          (task) => taskStatus(task, TODAY) === section.status,
+  const needle = query.trim().toLowerCase();
+  const sections = useMemo(() => {
+    const matching = (tasks ?? []).filter(
+      (task) =>
+        !needle ||
+        [task.title, task.issuer ?? ""].some((value) =>
+          value.toLowerCase().includes(needle),
         ),
-      })),
-    [ordered, filter],
-  );
+    );
+
+    return SECTIONS.filter(
+      (section) => filter === "all" || filter === section.value,
+    ).map((section) => ({
+      ...section,
+      tasks: matching.filter((task) => sectionOf(task) === section.value),
+    }));
+  }, [tasks, needle, filter]);
 
   const hasAnyTask = sections.some((section) => section.tasks.length > 0);
-  const needsReview = MOCK_DOCUMENTS.filter(
-    (document) =>
-      document.status === "needs-review" &&
-      (!normalizedQuery ||
-        [document.issuer, document.documentType].some((value) =>
-          value.toLowerCase().includes(normalizedQuery),
-        )),
-  );
-  const showNeedsReview = filter === "all" || filter === "needs-review";
-  const hasAnyContent =
-    hasAnyTask || (showNeedsReview && needsReview.length > 0);
-  const selectedTask = tasks.find((task) => task.id === selectedId) ?? null;
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Tasks"
-        description="Everything DayKeeper thinks you need to do."
+      <ScreenHeader
+        title="Your tasks"
+        subtitle="Everything from your letters, in one list."
       />
+
+      {loadError ? (
+        <p role="status" className="text-base font-semibold text-danger">
+          {loadError}
+        </p>
+      ) : null}
 
       <Tabs
         value={filter}
@@ -151,112 +149,36 @@ export default function TasksPage() {
         </TabsList>
       </Tabs>
 
-      <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
-        <label className="relative block">
-          <span className="sr-only">Search tasks</span>
-          <Search
-            aria-hidden="true"
-            className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-          />
-          <Input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search tasks or organisations"
-            className="pl-9"
-          />
-        </label>
-        <label className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span>Sort by due date</span>
-          <select
-            value={sortDirection}
-            onChange={(event) =>
-              setSortDirection(event.target.value as "asc" | "desc")
-            }
-            className="h-10 rounded-md border border-input bg-background px-3 text-sm font-medium text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-          >
-            <option value="asc">Soonest first</option>
-            <option value="desc">Latest first</option>
-          </select>
-        </label>
-      </div>
+      <label className="relative block">
+        <span className="sr-only">Search tasks</span>
+        <Search
+          aria-hidden="true"
+          className="pointer-events-none absolute top-1/2 left-3 size-5 -translate-y-1/2 text-muted-foreground"
+        />
+        <Input
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Search tasks or organisations"
+          className="h-12 pl-10 text-base"
+        />
+      </label>
 
-      {lastCompletedId ? (
-        <div
-          role="status"
-          className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-success/40 bg-success-bg px-4 py-3"
-        >
-          <p className="text-sm font-medium text-foreground">
-            Task marked as complete.
-          </p>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => {
-              setTasks((prev) =>
-                prev.map((task) =>
-                  task.id === lastCompletedId ? { ...task, done: false } : task,
-                ),
-              );
-              setLastCompletedId(null);
-            }}
-          >
-            Undo
-          </Button>
-        </div>
-      ) : null}
-
-      {!hasAnyContent ? (
+      {tasks === null ? (
+        <p className="text-base text-muted-foreground">Loading your tasks…</p>
+      ) : !hasAnyTask ? (
         <EmptyState icon={ListChecks} title="No tasks here" />
       ) : (
         <div className="space-y-8">
-          {showNeedsReview && needsReview.length > 0 ? (
-            <section className="space-y-3">
-              <h2 className="text-sm font-medium text-foreground">
-                Needs review
-              </h2>
-              <ul className="space-y-2">
-                {needsReview.map((document) => (
-                  <li key={document.id}>
-                    <Link
-                      href={`/documents/${document.id}/review`}
-                      className="flex items-center justify-between rounded-lg border border-border px-4 py-3 transition-colors hover:bg-muted/60"
-                    >
-                      <span>
-                        <span className="block text-sm font-medium text-foreground">
-                          {document.issuer}
-                        </span>
-                        <span className="block text-xs text-muted-foreground">
-                          {document.documentType}
-                        </span>
-                      </span>
-                      <StatusBadge status={document.status} />
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ) : null}
-
           {sections.map((section) =>
             section.tasks.length === 0 ? null : (
-              <section key={section.status} className="space-y-3">
-                <h2 className="text-sm font-medium text-foreground">
+              <section key={section.value} className="space-y-2">
+                <h2 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
                   {section.title}
                 </h2>
-                <ul
-                  className={
-                    section.status === "completed"
-                      ? "space-y-2 opacity-70"
-                      : "space-y-2"
-                  }
-                >
+                <ul className="space-y-2">
                   {section.tasks.map((task) => (
                     <li key={task.id}>
-                      <TaskRow
-                        task={task}
-                        onToggle={toggleDone}
-                        onOpen={() => setSelectedId(task.id)}
-                      />
+                      <TaskRow task={task} onToggle={onToggle} />
                     </li>
                   ))}
                 </ul>
@@ -265,43 +187,6 @@ export default function TasksPage() {
           )}
         </div>
       )}
-
-      <Sheet
-        open={Boolean(selectedTask)}
-        onOpenChange={(open) => !open && setSelectedId(null)}
-      >
-        <SheetContent>
-          {selectedTask ? (
-            <>
-              <SheetHeader>
-                <SheetTitle>{selectedTask.title}</SheetTitle>
-                <SheetDescription>{selectedTask.issuer}</SheetDescription>
-              </SheetHeader>
-              <div className="space-y-4 px-4">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">When</span>
-                  <span className="text-foreground">
-                    {formatTaskWhen(selectedTask, TODAY)}
-                  </span>
-                </div>
-                {selectedTask.documentId ? (
-                  <Link
-                    href={`/documents/${selectedTask.documentId}`}
-                    className="text-sm font-medium text-primary hover:underline"
-                  >
-                    View source document
-                  </Link>
-                ) : null}
-              </div>
-              <SheetFooter>
-                <Button onClick={() => toggleDone(selectedTask.id)}>
-                  {selectedTask.done ? "Mark as not done" : "Mark as complete"}
-                </Button>
-              </SheetFooter>
-            </>
-          ) : null}
-        </SheetContent>
-      </Sheet>
     </div>
   );
 }

@@ -14,7 +14,7 @@
     "worktree:setup": "node scripts/worktree-setup.mjs",
     "worktree:teardown": "node scripts/worktree-teardown.mjs",
     "typecheck": "next typegen && tsc --noEmit",
-    "db:reset": "tsx db/reset.ts && tsx db/seed.ts && tsx scripts/storage-reset.ts",
+    "db:reset": "tsx db/reset.ts && tsx scripts/storage-reset.ts && tsx db/seed.ts",
     "db:schema": "tsx db/reset.ts",
     "db:seed": "tsx db/seed.ts",
     "storage:reset": "tsx scripts/storage-reset.ts",

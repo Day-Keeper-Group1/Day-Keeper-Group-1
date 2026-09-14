@@ -20,7 +20,7 @@ DayKeeper (Group 1): an AI-powered life management system for people in vulnerab
 - [`experiments/`](experiments/): where a product decision was settled by measuring. One folder per question, with its raw results kept so the decision can be checked later. Each has its own `README.md` (the question) and `AGENTS.md` (how the code is arranged).
 - [`src/lib/contract/`](src/lib/contract/): the agreement, in TypeScript, with validators: the six fields, the shapes the browser receives, the date rules and the reminder ladder. Import these types; do not restate them.
 - [`src/server/`](src/server/): server-only code. [`db.ts`](src/server/db.ts) for queries, [`storage.ts`](src/server/storage.ts) for the photographs themselves (an S3 bucket, MinIO locally), [`extraction/`](src/server/extraction/) for the reader interface and its mock. `src/lib` is safe anywhere; `src/server` never reaches the browser.
-- [`src/app/`](src/app/): the interface. The pages still read from [`src/lib/mock-data.ts`](src/lib/mock-data.ts); wiring them to real endpoints is the work.
+- [`src/app/`](src/app/): the interface, one page tree for phone and desktop, laid out from the phone prototype and given more room on a wide screen. Pages read the endpoints in [`docs/api.md`](docs/api.md) or call `src/server/` directly from server components; nothing reads fixture data.
 
 ## Conventions
 
@@ -50,7 +50,7 @@ The short version, so you know when to go and read it:
 - The palette lives in [`src/app/globals.css`](src/app/globals.css), with shadcn's own names pointed at it. An ordinary `<Button>` is already eucalypt green; prefer `bg-primary`, `text-muted-foreground`, `border-border` and the DayKeeper additions (`text-warn` on `bg-warn-bg`, and so on) over typing a hex anywhere.
 - [`docs/prototype/user/daykeeper-sketch-live.html`](docs/prototype/user/daykeeper-sketch-live.html) is the worked example. Open it in a browser to see what a screen is supposed to look like.
 - Body text clears **7:1, not 4.5:1**, nothing is blue, nothing is pure white or pure black, gold is never text, and colour is never the only signal. Each of those has a reason involving eyes over 70, and [`docs/theme.md`](docs/theme.md) gives it.
-- Body text is at least 18px and primary buttons at least 48px tall. The prototype's own type is still the older smaller scale, so build new screens at the larger size rather than matching the sketch.
+- Type follows the prototype's own sizes, by name (`text-title`, `text-row`, `text-caption` and the rest in `src/app/globals.css`), and primary buttons are at least 48px tall. The pages not drawn from the prototype (sign in, register, settings, accessibility) keep Tailwind's ramp. [`docs/theme.md`](docs/theme.md), "Type", says why the earlier 18px floor went.
 
 [`tests/theme.test.ts`](tests/theme.test.ts) holds the two copies of the palette (the prototype and [`docs/theme.md`](docs/theme.md)) against [`src/app/globals.css`](src/app/globals.css), which is where it lives, and fails the build if a colour drifts or a blue appears.
 
@@ -60,7 +60,7 @@ The short version, so you know when to go and read it:
 npm ci                    # installs exactly what package-lock.json says; never rewrites it
 cp .env.example .env.local
 docker compose up -d      # Postgres on 55432, MinIO on 59020; viewers on 8080 and 59021
-npm run db:reset          # rebuild the schema from db/schema.sql, seed it, empty the bucket
+npm run db:reset          # rebuild the schema from db/schema.sql, empty the bucket, then seed both
 npm run dev               # http://localhost:3000
 npm test                  # the contract tests
 npm run typecheck
@@ -76,7 +76,7 @@ Terminal output follows one rule: silence means success, anything printed is sig
 
 Tests are Vitest, in `tests/`. [`tests/contract.test.ts`](tests/contract.test.ts) needs no database and no network: it checks that the agreement between the reader and everything else still holds.
 
-The pages have no working sign-in yet and read [`src/lib/mock-data.ts`](src/lib/mock-data.ts), so `npm run dev` shows the interface with fixture data. The seeded accounts (`margaret@example.com` and `operator@example.com`, password `daykeeper`) are already in the database and will work once somebody builds authentication.
+Sign in with a seeded account (`margaret@example.com` or `operator@example.com`, password `daykeeper`); `npm run dev` then shows the interface over the seed's letters and tasks. Uploading a letter runs the reader named by `AI_EXTRACTION_PROVIDER` (the mock by default).
 
 Two rules that are easy to break by accident. Both are written where they are enforced, with the reasoning attached, so read them there rather than trusting a summary:
 
