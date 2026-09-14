@@ -115,7 +115,7 @@
   /* Two lines, always: what to do, then who and when. A row that let the
      date sit beside the title when it fitted came out a different shape
      each time, and the eye had to hunt for every date. */
-  .row .txt { flex: 1; min-width: 0; }
+  .row .txt { flex: 1; min-width: 0; cursor: pointer; }
   .row .doing { display: block; line-height: 1.35; }
   .row .when { display: block; margin-top: 2px; color: var(--ink-dim); font-size: 13.5px; }
   /* Home's task card, in groups: overdue or today, the next seven days,
@@ -318,9 +318,12 @@
         <h1>Check what we found</h1>
         <div class="sub" id="review-sub">What we read, and what we'll do about it.</div>
 
+        <!-- The photographs sit under the facts, because checking is
+             comparing: what we read against what the letter says. -->
         <div class="card">
           <h2>What it says</h2>
           <div id="facts"></div>
+          <div id="review-photos"></div>
         </div>
 
         <div class="card">
@@ -543,9 +546,10 @@
   let letters = [];      // every letter she has: {who, what, due, when, pages, facts}
   let nextRead = 0, photos = 0, uid = 0, current = null, selDay = null, calMo = 8, calYr = 2026;
   let timers = [], toastTimer = null;
+  let sheetTask = null;  // the task the sheet is open on, when it is not a day
 
   const INITIAL_TASKS = [
-    { id: 'w', title: 'Pay water bill', when: 'Wed 5 Aug', due: { mo: 8, d: 5 }, done: false, marks: [ { mo: 8, d: 5, l: 'Water due' } ],
+    { id: 'w', who: 'Yarra Valley Water', what: 'Water bill', title: 'Pay water bill', when: 'Wed 5 Aug', due: { mo: 8, d: 5 }, done: false, marks: [ { mo: 8, d: 5, l: 'Water due' } ],
       agenda: { day: 'Wednesday 5 August', line: 'Pay water bill', sub: '$89.20 · ref 5501 2280' },
       pages: 1,
       facts: [
@@ -555,7 +559,7 @@
         { k: 'Amount', v: '$89.20' },
         { k: 'Reference', v: '5501 2280' }
       ] },
-    { id: 'p', title: 'Return pension review form', when: 'Tue 11 Aug', due: { mo: 8, d: 11 }, done: false, marks: [ { mo: 8, d: 11, l: 'Form due' } ],
+    { id: 'p', who: 'Services Australia', what: 'Pension review form', title: 'Return pension review form', when: 'Tue 11 Aug', due: { mo: 8, d: 11 }, done: false, marks: [ { mo: 8, d: 11, l: 'Form due' } ],
       agenda: { day: 'Tuesday 11 August', line: 'Return pension review form', sub: 'Services Australia' },
       pages: 2,
       facts: [
@@ -648,6 +652,7 @@
        in src/lib/contract/api.ts. */
     document.getElementById('facts').innerHTML = L.facts.map(f =>
       '<div class="fact"><span class="k">' + f.k + '</span><span class="v">' + f.v + '</span></div>').join('');
+    document.getElementById('review-photos').innerHTML = photoStrip(it.pages, 'letter');
     document.getElementById('plan').innerHTML = L.plan.map(p =>
       '<div class="plan-row"><span class="ico">' + icon(p.ico, 17) + '</span>' + p.t + '</div>').join('');
     go('review');
@@ -657,7 +662,7 @@
     if (!current) { go('calendar'); return; }
     const L = LETTERS[current.idx];
     queue = queue.filter(q => q.id !== current.id);
-    tasks.unshift({ id: 't' + current.id, title: L.task.title, when: L.task.when, due: L.task.due, done: false, marks: L.marks, agenda: L.agenda, pages: current.pages, facts: L.facts });
+    tasks.unshift({ id: 't' + current.id, who: L.who, what: L.what, title: L.task.title, when: L.task.when, due: L.task.due, done: false, marks: L.marks, agenda: L.agenda, pages: current.pages, facts: L.facts });
     letters.push({ who: L.who, what: L.what, due: L.task.due || null, when: L.task.due ? L.task.when : null, pages: current.pages, facts: L.facts });
     current = null;
     renderAll();
@@ -717,7 +722,7 @@
     const doing = factOf(t, 'What to do') || t.title;
     const who = factOf(t, 'From');
     return '<div class="row' + (t.done ? ' done' : late ? ' late' : '') + '"><span class="dot" onclick="toggleDone(\'' + t.id + '\', ' + stay + ')">' + icon('check', 15, 3) + '</span>' +
-      '<span class="txt"><span class="doing">' + doing + '</span>' +
+      '<span class="txt" onclick="openTask(\'' + t.id + '\')"><span class="doing">' + doing + '</span>' +
       '<span class="when">' + (who ? who + ' · ' : '') + when + '</span></span></div>';
   }
 
@@ -781,9 +786,28 @@
     if (!t) return;
     t.done = !t.done;
     renderAll();
-    /* Ticked from the day sheet: redraw the sheet in place, so the tick is
-       seen to land without throwing her back to the month grid. */
+    /* Ticked from a sheet: redraw the sheet in place, so the tick is seen to
+       land without throwing her back to the list or the month grid. */
     if (fromSheet && selDay) openDay(selDay);
+    else if (fromSheet && sheetTask) openTask(sheetTask);
+  }
+
+  /* A task opens in the same sheet a letter does, from wherever its row is
+     drawn: the tick to tick it, what its letter said, and the photographs. The
+     words of the row open it; the dot beside them only ticks. */
+  function openTask(id) {
+    const t = tasks.find(x => x.id === id);
+    if (!t) return;
+    sheetTask = id;
+    let h = '<div class="dd-day">' + (t.who ? t.who + ' · ' + t.what : t.title) + '</div>';
+    h += '<div class="ent">' + taskRow(t, true);
+    (t.facts || []).forEach(f => { h += '<div class="fact"><span class="k">' + f.k + '</span><span class="v">' + f.v + '</span></div>'; });
+    h += photoStrip(t.pages || 1, 'task');
+    h += '</div>';
+    h += '<button class="btn ghost" onclick="closeDay()">Close</button>';
+    document.getElementById('sheet').innerHTML = h;
+    document.getElementById('sheet-mask').classList.add('show');
+    document.getElementById('sheet').classList.add('show');
   }
 
   function ctaTap() {
@@ -968,6 +992,7 @@
 
   function closeDay() {
     selDay = null;
+    sheetTask = null;
     document.getElementById('sheet-mask').classList.remove('show');
     document.getElementById('sheet').classList.remove('show');
     renderCalendar();
