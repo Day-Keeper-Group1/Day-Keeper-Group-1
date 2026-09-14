@@ -8,14 +8,32 @@
  *
  * Everything is synthetic. No real person, account number or amount appears
  * here, and none may be added: the project cannot lawfully hold real
- * correspondence.
+ * correspondence. The photographs are the synthetic letters in
+ * data/synthetic-letters, which the pipeline that made them wrote from
+ * invented accounts.
+ *
+ * This writes objects as well as rows. `npm run db:reset` therefore runs
+ * schema, then storage, then this: the bucket has to be empty before the seed
+ * fills it, and the old order emptied it afterwards, which deleted every
+ * photograph the seed had just uploaded. Run `npm run db:seed` on its own and
+ * the bucket keeps the previous run's objects alongside the new ones; that is
+ * what `npm run db:reset` clears.
  *
  *   npm run db:seed
  */
 
 import { randomUUID } from "node:crypto";
+import { readFileSync, readdirSync } from "node:fs";
+import { resolve } from "node:path";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { Client } from "pg";
 import { config } from "dotenv";
+import {
+  ScriptStorage,
+  ensureBucket,
+  storageFromEnv,
+  storageUnreachableMessage,
+} from "../scripts/lib/storage-client";
 import { hashPassword } from "../src/server/auth/password";
 import { hashSessionToken } from "../src/server/auth/token";
 import { APP_TIME_ZONE, addDays, todayInZone } from "../src/lib/contract/dates";
@@ -63,6 +81,37 @@ export const DEV_SESSION_TOKEN = "dk-dev-session-margaret-do-not-ship";
 const SEED_PROVIDER = "mock";
 const SEED_MODEL = "mock-specimen-v1";
 
+/** Where the fixture letters live, relative to the repository root. */
+const LETTERS_DIR = "data/synthetic-letters";
+
+/**
+ * Which fixture letter each seeded letter was photographed from.
+ *
+ * The rows and the bucket have to agree. Every screen draws a letter from
+ * `document_pages.storage_path`, so a row whose object was never written is a
+ * broken image in front of whoever is being shown the product. Each letter
+ * borrows the folder closest to what its fields say it is, so the photograph on
+ * screen looks like the kind of letter the card describes.
+ *
+ * The wording will not match: the folders carry their own invented issuers and
+ * amounts, and the seeded fields are the ones the interface needs. Only the
+ * kind of letter matches, which is what a photograph on a card conveys.
+ *
+ * A letter with more pages than its folder has sheets cycles through the folder
+ * again. Only Services Australia does, whose notice is one sheet.
+ */
+const PAGE_SOURCES = {
+  aglBill: "01-electricity-bill",
+  stillReading: "06-parking-infringement-notice",
+  servicesAustralia: "08-welfare-information-request",
+  waterBill: "03-water-bill",
+  medical: "09-specialist-account-statement",
+  telstraBill: "02-gas-bill",
+} as const;
+
+/** PNG's first eight bytes, which readPageImage() holds each fixture to. */
+const PNG_MAGIC = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+
 /**
  * Dates relative to today IN MELBOURNE, so the seed never goes stale and
  * "overdue" stays overdue.
@@ -78,6 +127,12 @@ function isoDaysFromNow(days: number): string {
 }
 
 async function main() {
+  const storage = storageFromEnv();
+  // On a fresh machine the bucket may not exist yet, and `npm run db:seed`
+  // alone skips the script that makes it. Cheap, and the seed cannot write a
+  // photograph without it.
+  await ensureBucket(storage);
+
   const db = new Client({ connectionString: DATABASE_URL });
   await db.connect();
 
@@ -130,7 +185,7 @@ async function main() {
                'AGL Energy', 'Utility bill', '$347.60')`,
       [agl, margaretId],
     );
-    await insertPages(db, margaretId, agl, 1);
+    await insertPages(db, storage, margaretId, agl, 1, PAGE_SOURCES.aglBill);
     const aglRun = randomUUID();
     await db.query(
       `INSERT INTO extraction_runs
@@ -162,7 +217,14 @@ async function main() {
        VALUES ($1, $2, 'processing', now() - interval '20 seconds')`,
       [stillReading, margaretId],
     );
-    await insertPages(db, margaretId, stillReading, 1);
+    await insertPages(
+      db,
+      storage,
+      margaretId,
+      stillReading,
+      1,
+      PAGE_SOURCES.stillReading,
+    );
     await db.query(
       `INSERT INTO extraction_runs
          (document_id, status, provider, model, contract_version)
@@ -179,8 +241,9 @@ async function main() {
     // Overdue: the date has passed and nobody has ticked it off. It sorts to
     // the top of the home list, by due date ascending and nothing else.
     // Two pages, because a form is rarely a single sheet and a letter with
-    // several photographs is the only way to see the letters area work.
-    const centrelink = await confirmedLetter(db, margaretId, {
+    // several photographs is the only way to see the letters area work. Both
+    // photographs are the same sheet: its fixture is one page (PAGE_SOURCES).
+    const centrelink = await confirmedLetter(db, storage, margaretId, {
       issuer: "Services Australia",
       documentType: "Government letter",
       action: "Return the completed form",
@@ -188,11 +251,12 @@ async function main() {
       amount: NO_PAYMENT_REQUIRED,
       reference: "CRN 2201 8845",
       pages: 2,
+      pageSource: PAGE_SOURCES.servicesAustralia,
       uploadedDaysAgo: 9,
     });
 
     // Upcoming: the ordinary case.
-    const water = await confirmedLetter(db, margaretId, {
+    const water = await confirmedLetter(db, storage, margaretId, {
       issuer: "Yarra Valley Water",
       documentType: "Utility bill",
       action: "Pay the amount due",
@@ -200,6 +264,7 @@ async function main() {
       amount: "$89.20",
       reference: "5501 2280",
       pages: 1,
+      pageSource: PAGE_SOURCES.waterBill,
       uploadedDaysAgo: 4,
     });
 
@@ -207,7 +272,7 @@ async function main() {
     // reaches the calendar, and the reminders are the same three every
     // document gets (src/lib/contract/reminders.ts). This row exists so that
     // a document with a due_time is in the seed at all.
-    const gp = await confirmedLetter(db, margaretId, {
+    const gp = await confirmedLetter(db, storage, margaretId, {
       issuer: "Dr A. Patel, GP clinic",
       documentType: "Medical letter",
       action: "Attend the appointment",
@@ -216,6 +281,7 @@ async function main() {
       amount: NO_PAYMENT_REQUIRED,
       reference: "Clinic ref 8871",
       pages: 1,
+      pageSource: PAGE_SOURCES.medical,
       uploadedDaysAgo: 1,
     });
 
@@ -226,7 +292,7 @@ async function main() {
     // to remove, and this is the row that shows the mechanism working. The
     // mechanism itself is explained in db/schema.sql, above the reminders
     // table.
-    const telstra = await confirmedLetter(db, margaretId, {
+    const telstra = await confirmedLetter(db, storage, margaretId, {
       issuer: "Telstra",
       documentType: "Utility bill",
       action: "Pay the amount due",
@@ -234,6 +300,7 @@ async function main() {
       amount: "$79.00",
       reference: "4417 9902",
       pages: 1,
+      pageSource: PAGE_SOURCES.telstraBill,
       uploadedDaysAgo: 30,
     });
     await db.query(
@@ -281,8 +348,9 @@ Seeded.
     appointment with a time of day, and one done early, whose later reminders
     rang into a finished task and were skipped
 
-The page images are not on disk: these rows describe photographs that were
-never taken. Upload something through the app to see a real one.
+Every page above has a real photograph in the bucket, borrowed from
+data/synthetic-letters. Upload something through the app to add one of your
+own.
 `);
   } catch (error) {
     await db.query("ROLLBACK");
@@ -308,30 +376,85 @@ async function insertFields(
 }
 
 /**
- * The photographs of one letter, as rows. The bytes are not written anywhere,
- * only the key they would sit under.
+ * The page files of one fixture letter, in page order.
+ */
+function pageFiles(folder: string): string[] {
+  const dir = resolve(process.cwd(), LETTERS_DIR, folder);
+  const files = readdirSync(dir)
+    .filter((name) => /^page-\d+\.png$/.test(name))
+    .sort()
+    .map((name) => resolve(dir, name));
+
+  if (files.length === 0) {
+    throw new Error(`No page images in ${dir}.`);
+  }
+  return files;
+}
+
+/**
+ * One page file, as bytes, with the single failure worth naming caught here:
+ * a clone made without Git LFS holds a small text pointer where each image
+ * should be, and uploading that puts 130 bytes of text behind every letter.
+ */
+function readPageImage(file: string): Buffer {
+  const bytes = readFileSync(file);
+  if (!bytes.subarray(0, PNG_MAGIC.length).equals(PNG_MAGIC)) {
+    throw new Error(
+      `${file} is not a PNG.\n\n` +
+        `The synthetic letters are stored with Git LFS, and this is the\n` +
+        `pointer file that stands in for one. Run 'git lfs pull' and seed again.`,
+    );
+  }
+  return bytes;
+}
+
+/**
+ * The photographs of one letter: the bytes into the bucket, and one row per
+ * page saying where they went.
  *
- * That key is spelled out here rather than imported, because
- * `uploadObjectKey()` lives in a `server-only` module that a script running
- * outside Next cannot import. Its shape and the reasons for it are in
- * src/server/storage.ts; if it changes, this line changes with it.
+ * Both halves happen here because a row and its object are one fact. The seed
+ * used to write only the row, and every seeded letter drew as a broken image
+ * the moment the screens started loading pages from `storage_path`.
+ *
+ * The key is spelled out rather than imported, because `uploadObjectKey()`
+ * lives in a `server-only` module that a script running outside Next cannot
+ * import. Its shape and the reasons for it are in src/server/storage.ts; if it
+ * changes, this line changes with it. So does the pairing of `.png` with
+ * `image/png`: that module's EXTENSIONS table is what keeps a key's extension
+ * and the object's content type describing the same thing.
+ *
+ * The bytes go up inside the seed's transaction. A rollback leaves them behind,
+ * which costs nothing: `db:reset` empties the bucket before it seeds.
  */
 async function insertPages(
   db: Client,
+  storage: ScriptStorage,
   userId: string,
   documentId: string,
   pages: number,
+  source: string,
 ) {
+  const files = pageFiles(source);
+
   for (let pageNumber = 1; pageNumber <= pages; pageNumber++) {
+    // Cycle when the letter has more pages than the folder has sheets.
+    const bytes = readPageImage(files[(pageNumber - 1) % files.length]);
+    const storagePath = `uploads/${userId}/${documentId}/${pageNumber}.png`;
+
+    await storage.s3.send(
+      new PutObjectCommand({
+        Bucket: storage.bucket,
+        Key: storagePath,
+        Body: bytes,
+        ContentType: "image/png",
+      }),
+    );
+
     await db.query(
       `INSERT INTO document_pages
          (document_id, page_number, storage_path, mime_type, byte_size)
-       VALUES ($1, $2, $3, 'image/jpeg', 1500000)`,
-      [
-        documentId,
-        pageNumber,
-        `uploads/${userId}/${documentId}/${pageNumber}.jpg`,
-      ],
+       VALUES ($1, $2, $3, 'image/png', $4)`,
+      [documentId, pageNumber, storagePath, bytes.byteLength],
     );
   }
 }
@@ -346,6 +469,7 @@ async function insertPages(
  */
 async function confirmedLetter(
   db: Client,
+  storage: ScriptStorage,
   userId: string,
   spec: {
     issuer: string;
@@ -357,6 +481,8 @@ async function confirmedLetter(
     amount: string;
     reference: string;
     pages: number;
+    /** Which folder under data/synthetic-letters it was photographed from. */
+    pageSource: string;
     uploadedDaysAgo: number;
   },
 ): Promise<string> {
@@ -381,7 +507,14 @@ async function confirmedLetter(
     ],
   );
 
-  await insertPages(db, userId, documentId, spec.pages);
+  await insertPages(
+    db,
+    storage,
+    userId,
+    documentId,
+    spec.pages,
+    spec.pageSource,
+  );
 
   const runId = randomUUID();
   await db.query(
@@ -445,6 +578,15 @@ async function confirmedLetter(
 }
 
 main().catch((error) => {
+  const code = (error as { code?: string }).code;
+  if (code === "ECONNREFUSED" || code === "ENOTFOUND") {
+    // Storage and the database are both behind docker compose, and the seed
+    // now needs them both, so the hint is the same one storage-reset gives.
+    console.error(
+      storageUnreachableMessage(process.env.STORAGE_ENDPOINT ?? ""),
+    );
+    process.exit(1);
+  }
   console.error(error);
   process.exit(1);
 });

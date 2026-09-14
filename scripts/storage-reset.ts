@@ -10,36 +10,38 @@
  * It also creates the bucket on a fresh machine, so that nobody has to open the
  * storage console and click New Bucket before the first upload works.
  *
+ * Order matters, and `npm run db:reset` now runs schema, then this, then the
+ * seed. The seed writes the seeded letters' photographs into the bucket, so
+ * emptying it afterwards deleted them the moment they arrived and left every
+ * letter on screen as a broken image. Empty first, fill second, which is the
+ * order the database half has always used.
+ *
+ * A consequence worth knowing: run `npm run storage:reset` on its own and the
+ * rows that survive it point at objects that are gone. `npm run db:reset` puts
+ * both sides back.
+ *
  * This script talks to storage directly rather than through
  * `src/server/storage.ts`, for the same reason `db/reset.ts` does not use
  * `src/server/db.ts`: those modules are `server-only`, which throws outside
- * Next.js.
+ * Next.js. The client itself is in `scripts/lib/storage-client.ts`, shared with
+ * the seed.
  *
  *   npm run storage:reset
  */
 
-import {
-  CreateBucketCommand,
-  DeleteObjectsCommand,
-  ListObjectsV2Command,
-  S3Client,
-} from "@aws-sdk/client-s3";
+import { DeleteObjectsCommand, ListObjectsV2Command } from "@aws-sdk/client-s3";
 import { config } from "dotenv";
+import {
+  ensureBucket,
+  storageFromEnv,
+  storageUnreachableMessage,
+} from "./lib/storage-client";
 
 config({ path: ".env.local", quiet: true });
 config({ path: ".env", quiet: true });
 
-const endpoint = process.env.STORAGE_ENDPOINT;
-const bucket = process.env.STORAGE_BUCKET ?? "daykeeper";
-const accessKeyId = process.env.STORAGE_ACCESS_KEY;
-const secretAccessKey = process.env.STORAGE_SECRET_KEY;
-
-if (!endpoint || !accessKeyId || !secretAccessKey) {
-  console.error(
-    "Storage is not configured. Copy .env.example to .env.local first.",
-  );
-  process.exit(1);
-}
+const storage = storageFromEnv();
+const { s3, bucket, endpoint } = storage;
 
 /**
  * The same guard `db/reset.ts` has, and for the same reason: this empties a
@@ -54,25 +56,6 @@ if (!isLocal && process.env.DK_ALLOW_REMOTE_RESET !== "yes") {
       `This deletes every object in it. If you really mean it, set DK_ALLOW_REMOTE_RESET=yes.`,
   );
   process.exit(1);
-}
-
-const s3 = new S3Client({
-  endpoint,
-  region: "us-east-1",
-  forcePathStyle: true,
-  credentials: { accessKeyId, secretAccessKey },
-});
-
-async function ensureBucket(): Promise<void> {
-  try {
-    await s3.send(new CreateBucketCommand({ Bucket: bucket }));
-  } catch (error) {
-    // Already ours is the normal case after the first run.
-    const name = (error as { name?: string }).name;
-    if (name !== "BucketAlreadyOwnedByYou" && name !== "BucketAlreadyExists") {
-      throw error;
-    }
-  }
 }
 
 async function emptyBucket(): Promise<number> {
@@ -104,7 +87,7 @@ async function emptyBucket(): Promise<number> {
 }
 
 async function main() {
-  await ensureBucket();
+  await ensureBucket(storage);
   const removed = await emptyBucket();
   console.log(
     removed === 0
@@ -116,10 +99,7 @@ async function main() {
 main().catch((error) => {
   const code = (error as { code?: string }).code;
   if (code === "ECONNREFUSED" || code === "ENOTFOUND") {
-    console.error(
-      `Cannot reach storage at ${endpoint}.\n\n` +
-        `Start it with: docker compose up -d`,
-    );
+    console.error(storageUnreachableMessage(endpoint));
     process.exit(1);
   }
   console.error(error);
