@@ -67,9 +67,6 @@ type DocumentRow = {
  */
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-/** The home screen's task list is capped, and this is the cap. docs/api.md. */
-const HOME_TASK_LIMIT = 20;
-
 /**
  * How long a ticked off task stays on the home screen. Long enough that a row
  * does not vanish from under the finger that just ticked it, short enough that
@@ -417,13 +414,13 @@ export async function getHome(
 
   // Every open task whatever its date, because an unpaid bill from three weeks
   // ago is the loudest thing this person owns and the ascending sort already
-  // puts it first. Completed rows are the only ones that age out. listTasks()
-  // has already ordered them by due date with the dateless last, so the cap
-  // takes the twenty that matter most rather than an arbitrary twenty.
+  // puts it first. Completed rows are the only ones that age out. Nothing is
+  // cut here: a cap dropped the furthest tasks without a word. Home folds the
+  // far end instead and says how many it folded (src/lib/home.ts).
   const recent = new Set(recentlyCompleted.map((row) => row.id));
-  const tasks = allTasks
-    .filter((task) => task.status !== "completed" || recent.has(task.id))
-    .slice(0, HOME_TASK_LIMIT);
+  const tasks = allTasks.filter(
+    (task) => task.status !== "completed" || recent.has(task.id),
+  );
 
   return { counts, inbox, tasks };
 }

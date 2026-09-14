@@ -99,6 +99,34 @@ export function groupTasks(
   return { today: todayGroup, week, later };
 }
 
+/** How many of the Later tasks Home shows before it points at the calendar. */
+export const LATER_SHOWN = 3;
+
+/**
+ * The far end of the list, folded.
+ *
+ * What is due now and this week is shown whole, because that is what she has
+ * to act on. Everything after that is a preview: the first few, then a count
+ * and a way to the calendar, where the full list lives. The count is the point.
+ * A list that simply stops looks finished.
+ */
+export function foldLater(later: TaskSummary[]): {
+  shown: TaskSummary[];
+  more: number;
+} {
+  return {
+    shown: later.slice(0, LATER_SHOWN),
+    more: Math.max(0, later.length - LATER_SHOWN),
+  };
+}
+
+/** The words on the link under a folded Later. */
+export function moreLabel(more: number): string {
+  return more === 1
+    ? "1 more in your calendar"
+    : `${more} more in your calendar`;
+}
+
 /**
  * The line at the top of Home.
  *

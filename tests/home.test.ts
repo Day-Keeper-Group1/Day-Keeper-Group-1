@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import { taskByline, taskHeadline, taskWhen } from "@/components/task-row";
 import type { HomeCounts, TaskSummary } from "@/lib/contract/api";
-import { ctaFor, greeting, groupTasks } from "@/lib/home";
+import { ctaFor, foldLater, greeting, groupTasks, moreLabel } from "@/lib/home";
 
 /** The sketch's fictional day, so "the eighth day" is a date and not a mood. */
 const TODAY = "2026-08-10";
@@ -180,5 +180,22 @@ describe("taskHeadline and taskByline", () => {
     });
     expect(taskHeadline(t)).toBe("Renew rego");
     expect(taskByline(t)).toBe("Sat 26 Sep");
+  });
+});
+
+describe("foldLater", () => {
+  it("shows the first three later tasks and counts the rest", () => {
+    const later = Array.from({ length: 11 }, (_, i) => task({ id: `l${i}` }));
+    const folded = foldLater(later);
+    expect(folded.shown.map((t) => t.id)).toEqual(["l0", "l1", "l2"]);
+    expect(folded.more).toBe(8);
+    expect(moreLabel(folded.more)).toBe("8 more in your calendar");
+  });
+
+  it("folds nothing when there are three or fewer", () => {
+    const folded = foldLater([task({ id: "a" }), task({ id: "b" })]);
+    expect(folded.shown).toHaveLength(2);
+    expect(folded.more).toBe(0);
+    expect(moreLabel(1)).toBe("1 more in your calendar");
   });
 });

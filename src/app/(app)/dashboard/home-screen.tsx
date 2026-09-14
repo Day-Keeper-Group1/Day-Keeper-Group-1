@@ -17,7 +17,7 @@ import {
   type SessionUser,
   type TaskSummary,
 } from "@/lib/contract/api";
-import { ctaFor, greeting, groupTasks } from "@/lib/home";
+import { ctaFor, foldLater, greeting, groupTasks, moreLabel } from "@/lib/home";
 import { toggleTaskDone } from "@/lib/task-actions";
 import { cn } from "@/lib/utils";
 
@@ -148,6 +148,7 @@ export function HomeScreen({
     ? `/documents/${firstToCheck.id}/review`
     : "/documents/new";
   const groups = groupTasks(tasks, today);
+  const later = foldLater(groups.later);
   const firstName = user.displayName.trim().split(/\s+/)[0] || user.displayName;
 
   return (
@@ -226,7 +227,8 @@ export function HomeScreen({
               />
               <TaskGroup
                 heading="Later"
-                tasks={groups.later}
+                tasks={later.shown}
+                more={later.more}
                 onToggle={handleToggle}
               />
             </div>
@@ -257,10 +259,13 @@ export function HomeScreen({
 function TaskGroup({
   heading,
   tasks,
+  more = 0,
   onToggle,
 }: {
   heading: string;
   tasks: TaskSummary[];
+  /** Tasks in this group that are not drawn here, counted on a calendar link. */
+  more?: number;
   onToggle: (task: TaskSummary) => void;
 }) {
   if (tasks.length === 0) return null;
@@ -278,6 +283,14 @@ function TaskGroup({
           />
         ))}
       </div>
+      {more > 0 ? (
+        <Link
+          href="/calendar"
+          className="flex min-h-12 items-center gap-2 border-t border-line pl-14 text-base font-semibold text-primary hover:underline"
+        >
+          {moreLabel(more)} <span aria-hidden="true">→</span>
+        </Link>
+      ) : null}
     </section>
   );
 }
