@@ -1,10 +1,13 @@
 # Which model at which reasoning effort. One "model effort" pair per line.
 #
-# The two luna cells that scored full marks in 01-full-grid, plus luna max,
-# added after the first two had run, to see whether the top effort stops the
-# four letters flipping. terra is ten times the price and is not what the
-# reading step currently uses.
+# The two luna cells that scored full marks in 01-full-grid; luna max, added
+# after those two had run, to see whether the top effort stops the four
+# letters flipping; then the two terra cells that scored full marks in 01,
+# added after the luna results had been read, so that the model is a
+# variable here and not only the effort.
 
 gpt-5.6-luna   medium
 gpt-5.6-luna   xhigh
 gpt-5.6-luna   max
+gpt-5.6-terra  low
+gpt-5.6-terra  xhigh

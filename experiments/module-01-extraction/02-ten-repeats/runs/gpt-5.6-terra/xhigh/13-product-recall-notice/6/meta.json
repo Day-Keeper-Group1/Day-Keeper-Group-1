@@ -1,0 +1,11 @@
+{
+  "model": "gpt-5.6-terra",
+  "effort": "xhigh",
+  "letter": "13-product-recall-notice",
+  "repeat": 6,
+  "pages": ["page-01.png", "page-02.png"],
+  "image_detail": "auto",
+  "started_at": "2026-09-14T01:05:15.283Z",
+  "seconds": 10.392,
+  "ok": true
+}
