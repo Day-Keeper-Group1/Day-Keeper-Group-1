@@ -121,6 +121,10 @@ She taps *Looks right, save it*. Three writes happen together. One row in
 #t("tasks"): pay AGL electricity bill, due 15 August. Two rows in
 #t("reminders"): Wednesday at nine and Friday at nine, exactly the mornings
 the card named. And the letter's row in #t("documents") is marked confirmed.
+A short note says where the task went, and the screen moves on by itself: to
+the next letter waiting, or, after the last one, to the calendar at the month
+of the task she just saved. A letter that asks for nothing makes no task at
+all and is simply kept in her letters.
 
 This tap is the only thing in the product that turns a reading into something
 that will act later. Before it, the bill was rows the model wrote and a screen
@@ -224,10 +228,14 @@ About one letter in eight cannot be read at all. During development the model
 is played by a stand-in reader, and the stand-in fails on purpose at roughly
 that rate, so the failure path is exercised every day.
 
-In this release, a failed reading is the end of the road. The letter keeps its
-photographs and says plainly that it could not be read. There is no retry, no
-prompt to photograph it again, and nothing that suggests the failure was her
-fault.
+A model call that goes wrong is made again first, up to three tries in all,
+while the letter still says "reading…". Each try is its own row in
+#t("extraction_runs"), so the table shows how many calls a letter took. Only
+when the last try fails is she told.
+
+After that, a failed reading is the end of the road. The letter keeps its
+photographs and says plainly that it could not be read. There is no prompt to
+photograph it again, and nothing that suggests the failure was her fault.
 
 #why[
   *A smaller promise, made honestly.* An earlier design offered her a way out
