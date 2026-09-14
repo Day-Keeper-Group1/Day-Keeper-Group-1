@@ -27,7 +27,7 @@ Made up, not taken from any source: the council name Calderfield City Council, i
 
 ### action_required
 
-**Pay the overdue animal registration fee of \$23.00 to Calderfield City Council by 28 May 2026, quoting animal number 44637.** Page 1, the "REGISTRATION FEE" section, with "Amount due" and "Payment due by" in the grey bar, and the "HOW TO PAY" section under it. The paragraph above "ANIMAL DETAILS" says "Please renew now so that your registration is returned to good standing." The "By phone" line says "Please quote your animal number 44637." This field is free text and the experiments do not score it.
+**Pay Calderfield City Council.** Page 1, the "REGISTRATION FEE" section, with "Amount due" and "Payment due by" in the grey bar, and the "HOW TO PAY" section under it. The paragraph above "ANIMAL DETAILS" says "Please renew now so that your registration is returned to good standing." The "By phone" line says "Please quote your animal number 44637." The value starts with one of the contract's eight action words, and the experiments score that word.
 
 ### due_date
 

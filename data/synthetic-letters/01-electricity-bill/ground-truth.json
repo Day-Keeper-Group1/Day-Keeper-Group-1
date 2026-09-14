@@ -2,7 +2,7 @@
   "sample_id": "SYN-0001",
   "document_type": "electricity_bill",
   "issuer": "Example Energy Pty Ltd",
-  "action_required": "Pay the total amount due",
+  "action_required": "Pay Example Energy",
   "due_date": "2026-08-24",
   "amount": 82.42,
   "reference": "7960 963 636"

@@ -37,7 +37,7 @@ Made up, not taken from any source: the names Calderfield Water, Calderfield Cat
 
 ### action_required
 
-**Pay the amount to pay.** Page 1, the dark box "Amount to pay" in the middle of the three boxes under the address, the dark "Pay by" box to its right, and the "Payment options" section across the lower part of the page. The whole bill exists to ask for this payment. This field is free text and the experiments do not score it.
+**Pay Calderfield Water.** Page 1, the dark box "Amount to pay" in the middle of the three boxes under the address, the dark "Pay by" box to its right, and the "Payment options" section across the lower part of the page. The whole bill exists to ask for this payment. The value starts with one of the contract's eight action words, and the experiments score that word.
 
 ### due_date
 

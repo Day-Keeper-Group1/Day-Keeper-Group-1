@@ -30,7 +30,7 @@ Made up, not taken from any source: the fund name Tarnwell Health Fund, the poli
 
 ### action_required
 
-**No action required.** The letter asks her for nothing. Page 1, the second paragraph of the letter, says "Nothing on these pages needs a reply. Your cover carries on and your payments carry on exactly as they are." In the "HOW YOU PAY" box on page 1, her payment method is "Direct debit". The same box says the fund adjusts the figure itself, "so nothing is required at your end." This field is free text and the experiments do not score it.
+**No action.** The letter asks her for nothing. Page 1, the second paragraph of the letter, says "Nothing on these pages needs a reply. Your cover carries on and your payments carry on exactly as they are." In the "HOW YOU PAY" box on page 1, her payment method is "Direct debit". The same box says the fund adjusts the figure itself, "so nothing is required at your end." The value starts with one of the contract's eight action words, and the experiments score that word.
 
 ### due_date
 

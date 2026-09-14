@@ -34,6 +34,7 @@ import {
   type ExtractionResult,
 } from "../../../src/lib/contract/extraction";
 import {
+  actionWordOf,
   NO_PAYMENT_REQUIRED,
   NOT_APPLICABLE,
 } from "../../../src/lib/contract/fields";
@@ -41,7 +42,13 @@ import { experimentFromArgv, type Experiment } from "./experiment";
 import { groundTruth, type GroundTruth } from "./samples";
 import { jobsOf, runDir, type RunMeta } from "./run";
 
-export const SCORED = ["due_date", "amount", "reference", "issuer"] as const;
+export const SCORED = [
+  "due_date",
+  "amount",
+  "reference",
+  "issuer",
+  "action_required",
+] as const;
 export type ScoredField = (typeof SCORED)[number];
 
 export type Score = {
@@ -100,6 +107,18 @@ export function referenceCorrect(
   return collapse(got) === collapse(want);
 }
 
+/**
+ * action_required is right when it starts with the same action word as the
+ * key. The words after the verb ("Pay Example Energy" against "Pay Example
+ * Energy Pty Ltd") are not compared: the verb is what the product groups and
+ * scores by, and the rest is free text. See ACTION_WORDS in the contract.
+ */
+export function actionCorrect(got: string | null, want: string): boolean {
+  if (got === null) return false;
+  const w = actionWordOf(want);
+  return w !== null && actionWordOf(got) === w;
+}
+
 export function issuerCorrect(got: string | null, want: string): boolean {
   if (got === null) return false;
   const g = loose(got);
@@ -147,6 +166,10 @@ function scoreOne(
     amount: amountCorrect(got.amount ?? null, key.amount),
     reference: referenceCorrect(got.reference ?? null, key.reference),
     issuer: issuerCorrect(got.issuer ?? null, key.issuer),
+    action_required: actionCorrect(
+      got.action_required ?? null,
+      key.action_required,
+    ),
   };
 
   const u = usage as {

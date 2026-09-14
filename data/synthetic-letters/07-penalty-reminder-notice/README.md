@@ -33,7 +33,7 @@ Made up, not taken from any source: the council name Calderfield City Council, i
 
 ### action_required
 
-**Pay the total amount now payable of \$71.00 by the new due date.** Page 1, the "AMOUNT NOW PAYABLE" section with the "PAY BY" box on its right, and the "HOW TO PAY" section below it. Page 2 repeats it as the first item under "YOUR OPTIONS": "Pay the total amount now payable by the due date shown on the front of this notice." The front page is built around this payment: the amount table, the PAY BY box, the ways to pay, and the slip to send back with the payment. This field is free text and the experiments do not score it.
+**Pay Calderfield City Council.** Page 1, the "AMOUNT NOW PAYABLE" section with the "PAY BY" box on its right, and the "HOW TO PAY" section below it. Page 2 repeats it as the first item under "YOUR OPTIONS": "Pay the total amount now payable by the due date shown on the front of this notice." The front page is built around this payment: the amount table, the PAY BY box, the ways to pay, and the slip to send back with the payment. The value starts with one of the contract's eight action words, and the experiments score that word.
 
 ### due_date
 

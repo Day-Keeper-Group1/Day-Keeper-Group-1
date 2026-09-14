@@ -39,7 +39,7 @@ Made up, not taken from any source: the council name Calderfield City Council, t
 
 ### action_required
 
-**Pay the first instalment of the 2026 to 27 rates and charges.** Page 1, top right, the grey box with "Amount Due:" and "Due Date:", and the "HOW TO PAY" section across the lower part of the page. The tear-off slip at the bottom of page 1 says "FIRST INSTALMENT \$535.09". The notice sets out the rates and charges for 1 July 2026 to 30 June 2027 and shows how to pay them. The amount and date in the grey box are the first row of the "Option A" instalments, and the slip names that payment as the first instalment. This field is free text and the experiments do not score it.
+**Pay Calderfield City Council.** Page 1, top right, the grey box with "Amount Due:" and "Due Date:", and the "HOW TO PAY" section across the lower part of the page. The tear-off slip at the bottom of page 1 says "FIRST INSTALMENT \$535.09". The notice sets out the rates and charges for 1 July 2026 to 30 June 2027 and shows how to pay them. The amount and date in the grey box are the first row of the "Option A" instalments, and the slip names that payment as the first instalment. The value starts with one of the contract's eight action words, and the experiments score that word.
 
 ### due_date
 

@@ -24,7 +24,8 @@ import { MockExtractionProvider } from "@/server/extraction/mock-provider";
 function validField(key: string) {
   return {
     key,
-    value: "something",
+    // action_required must start with an action word; anything else is free.
+    value: key === "action_required" ? "Pay something" : "something",
     status: "confirmed" as const,
     confidence: 0.9,
   };
@@ -100,6 +101,48 @@ describe("the six fields", () => {
     expect(extraFieldsOf(withTime).map((f) => f.key)).toEqual([
       "bpay_biller_code",
     ]);
+  });
+});
+
+describe("action_required", () => {
+  it("accepts a value that starts with an action word, whatever follows", () => {
+    for (const value of [
+      "Pay Example Energy",
+      "return form to Services Australia",
+      "No action",
+      "Stop using heater",
+    ]) {
+      const result = validResult({
+        fields: CONTRACT_FIELD_KEYS.map((k) =>
+          k === "action_required" ? { ...validField(k), value } : validField(k),
+        ),
+      });
+      expect(safeParseExtractionResult(result).success, value).toBe(true);
+    }
+  });
+
+  it("rejects a sentence that starts with none of them, naming the list", () => {
+    const result = validResult({
+      fields: CONTRACT_FIELD_KEYS.map((k) =>
+        k === "action_required"
+          ? { ...validField(k), value: "Please pay the amount due" }
+          : validField(k),
+      ),
+    });
+    const parsed = safeParseExtractionResult(result);
+    expect(parsed.success).toBe(false);
+    expect(JSON.stringify(parsed.error?.issues)).toContain("Return form");
+  });
+
+  it("still lets an unreadable action_required carry no value", () => {
+    const result = validResult({
+      fields: CONTRACT_FIELD_KEYS.map((k) =>
+        k === "action_required"
+          ? { key: k, value: null, status: "unreadable" as const }
+          : validField(k),
+      ),
+    });
+    expect(safeParseExtractionResult(result).success).toBe(true);
   });
 });
 

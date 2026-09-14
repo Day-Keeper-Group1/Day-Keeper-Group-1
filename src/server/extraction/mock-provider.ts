@@ -41,7 +41,7 @@ const SPECIMENS = [
   {
     document_type: "Utility bill",
     issuer: "AGL Energy",
-    action_required: "Pay the amount due",
+    action_required: "Pay AGL Energy",
     due_date: "2026-08-15",
     due_time: null,
     amount: "$347.60",
@@ -50,7 +50,7 @@ const SPECIMENS = [
   {
     document_type: "Government letter",
     issuer: "Services Australia",
-    action_required: "Return the completed form",
+    action_required: "Return form to Services Australia",
     due_date: "2026-08-22",
     due_time: null,
     amount: null,
@@ -59,7 +59,7 @@ const SPECIMENS = [
   {
     document_type: "Registration renewal",
     issuer: "VicRoads",
-    action_required: "Renew the registration",
+    action_required: "Pay VicRoads",
     due_date: "2026-09-01",
     due_time: null,
     amount: "$852.10",
@@ -68,7 +68,7 @@ const SPECIMENS = [
   {
     document_type: "Rates notice",
     issuer: "City of Yarra",
-    action_required: "Pay the rates instalment",
+    action_required: "Pay City of Yarra",
     due_date: "2026-08-31",
     due_time: null,
     amount: "$612.40",
@@ -77,7 +77,7 @@ const SPECIMENS = [
   {
     document_type: "Medical letter",
     issuer: "Dr A. Patel, GP clinic",
-    action_required: "Attend the follow-up appointment",
+    action_required: "Attend Dr A. Patel, GP clinic",
     due_date: "2026-09-04",
     // An appointment happens AT a time. This is the one specimen that
     // exercises the optional due_time field; see src/lib/contract/fields.ts.

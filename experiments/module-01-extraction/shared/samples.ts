@@ -23,7 +23,7 @@ export type GroundTruth = {
   source_id: string;
   document_type: string;
   issuer: string;
-  action_required: string | null;
+  action_required: string;
   due_date: string | null;
   amount: number | null;
   reference: string | null;

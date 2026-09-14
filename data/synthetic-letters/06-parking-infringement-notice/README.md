@@ -34,7 +34,7 @@ Made up, not taken from any source: the names Calderfield City Council and State
 
 ### action_required
 
-**Pay the parking infringement penalty of \$41.00 by the due date.** Page 1, the "PENALTY AMOUNT" and "PAY BY" lines below the offence details, and the "HOW TO PAY" section under them. The first bullet under "YOUR OPTIONS" says "Pay the penalty in full by the due date shown above." The "YOUR OPTIONS" section lists six things the owner can do, and paying is the first. The "WHAT HAPPENS IF YOU DO NOT ACT" section says: "If the penalty is not paid, or you do not take another action available to you, by the due date shown on this notice, a penalty reminder notice may be issued and a fee will be added." This field is free text and the experiments do not score it.
+**Pay Calderfield City Council.** Page 1, the "PENALTY AMOUNT" and "PAY BY" lines below the offence details, and the "HOW TO PAY" section under them. The first bullet under "YOUR OPTIONS" says "Pay the penalty in full by the due date shown above." The "YOUR OPTIONS" section lists six things the owner can do, and paying is the first. The "WHAT HAPPENS IF YOU DO NOT ACT" section says: "If the penalty is not paid, or you do not take another action available to you, by the due date shown on this notice, a penalty reminder notice may be issued and a fee will be added." The value starts with one of the contract's eight action words, and the experiments score that word.
 
 ### due_date
 

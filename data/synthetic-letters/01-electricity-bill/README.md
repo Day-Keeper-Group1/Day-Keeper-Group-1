@@ -29,7 +29,7 @@ Made up, not taken from any source: the company names Example Energy Pty Ltd and
 
 ### action_required
 
-**Pay the total amount due.** Page 1, top left, the dark green box "TOTAL AMOUNT DUE" with "Pay by" under it, and the "How to pay" section across the lower half of the page. The whole bill exists to ask for this payment. This field is free text and the experiments do not score it.
+**Pay Example Energy.** Page 1, top left, the dark green box "TOTAL AMOUNT DUE" with "Pay by" under it, and the "How to pay" section across the lower half of the page. The whole bill exists to ask for this payment. The value starts with one of the contract's eight action words, and the experiments score that word.
 
 ### due_date
 

@@ -6,7 +6,7 @@ Return the six contract fields as JSON. Nothing else: no prose before it, no pro
 
 - **document_type** What kind of document this is, in plain words a person would use: utility bill, government letter, fine notice, medical letter, insurance renewal.
 - **issuer** The organisation that sent it, as printed on the page. Prefer the name a person would recognise over a legal entity name.
-- **action_required** What the person has to do, as a short imperative phrase: pay the amount due, return the completed form, attend the appointment. If the document requires nothing, say so plainly.
+- **action_required** What the person has to do. Start with one of these words, then name who or what in a few words: Pay, Attend, Return form, Collect, Take medicine, Stop using, Contact, No action. For example: Pay Example Energy; Attend Orthopaedic Clinic; Return form to Public Payments Office; Collect parcel from Calderfield Post Office; Take blood pressure tablet; Stop using heater; Contact a Support at Home provider. If the document asks for nothing, write No action.
 - **due_date** The date the action is due, as ISO 8601 (YYYY-MM-DD). If the page shows an ambiguous format, resolve it in favour of Australian day-first convention and mark the field uncertain.
 - **amount** The amount payable, exactly as written on the page including the currency symbol. Do not convert, round, or reformat.
 - **reference** The reference, account, or customer number the person must quote. Keep the spacing as printed.
@@ -33,6 +33,7 @@ Two values exist so that a real absence is not reported as a failure to read. Bo
 
 - `"No payment required"` for the amount when the document asks for no money.
 - `"Not applicable"` for a field the document genuinely does not have.
+- `"No action"` for action_required when the document asks the person to do nothing.
 
 Anything you read that is not one of the six keys goes in `open_payload`.
 
