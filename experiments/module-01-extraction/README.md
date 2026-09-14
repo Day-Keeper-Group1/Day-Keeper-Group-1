@@ -36,19 +36,15 @@ They are in [`data/synthetic-letters/`](../../data/synthetic-letters/), one fold
 
 ## The report
 
-Every experiment ends in one file, `REPORT.md`, in its own folder. It has six sections, always the same six, in this order, because the order is the method: a question, a guess, a setup, an observation, an interpretation, a judgement. A reader who knows the shape can open any experiment and find what they want without reading the rest.
+Every experiment ends in one file, `REPORT.md`, in its own folder. It has four sections, always the same four, in this order, because the order is how the work happens: what earlier runs showed and so what this one tries, how it was set up, what came out, and what to make of it. A reader who knows the shape can open any experiment and find what they want without reading the rest.
 
-**1. Question.** One sentence. What this experiment asks, on which letters, and what would count as an answer. If it cannot be one sentence, it is two experiments.
+**Motivation.** What the earlier experiments found, named by folder, and so what this run sets out to learn. Two or three sentences, written before the run. Say what was expected going in, plainly, and which number decides the next step. This is the section that shows the conclusion was not fitted to the result afterwards.
 
-**2. Hypothesis, and where it came from.** What was expected, stated before the run, and the reason it was expected: the earlier experiment, the observation, the hunch. Then one line each for what would confirm it and what would refute it. This is the section that proves the conclusion was not fitted to the result afterwards, and it is also where the human judgement lives; a hypothesis with no origin is a guess with no lesson in it.
+**Design.** The four variables, one line each, with the ones that changed since the previous experiment marked as changed, plus anything else about how the run was made: calls in flight, a cell added after the run started, a model left out and why. A list, not a paragraph. The four files beside the report are the definition; this section is the reader's summary of them.
 
-**3. What varied, what was held.** Point at the four variable files rather than restating them, and say what check shows everything else really was the same. Short.
+**Results.** The tables from `npm run m1:report`, pasted as they are: the per-cell table, the per-letter table with its bound sentence, the cost line with its sources, and every miss. Numbers and nothing else: no adjectives, no sentence that starts with "this shows". If a reader disagrees with the Discussion, the Results have to be something they can still accept.
 
-**4. Result.** The table from `npm run m1:report`, pasted as is, and the list of every miss. Numbers and nothing else: no adjectives, no explanation, no sentence that starts with "this shows". If a reader disagrees with section 5, section 4 has to be something they can still accept.
-
-**5. Reading the result.** What the numbers mean. Which cells were full, what pattern is or is not there, where the misses cluster and what kind of failure each cluster is. This is the section that is allowed to reason, and every claim in it should point back at a row in section 4.
-
-**6. Verdict.** Whether the hypothesis held, in the first sentence. Then what was settled either way, and what the next experiment could ask. A hypothesis that did not hold is not a failed experiment; it is the experiment doing its job, and the verdict says so plainly. The verdict does not make the next decision; it hands it over.
+**Discussion.** What the numbers say, what that settles, what it does not, and where the next run looks. It is the only section allowed to reason, and every claim in it points at a row in Results. It is written after the results have been read together by the people who decide the next run, never in the same sitting as the run; until then the section says so and stays empty.
 
 The report closes with how to reproduce it: the score and report commands, and a note that they re-mark the kept replies without calling the model.
 

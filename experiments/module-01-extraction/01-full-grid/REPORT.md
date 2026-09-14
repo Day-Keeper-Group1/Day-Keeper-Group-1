@@ -2,25 +2,21 @@
 
 Run 9 September 2026, against RACE's Azure AI Foundry endpoint.
 
-## 1. Question
+## Motivation
 
-On all fifteen letters in scope, which model at which reasoning effort reads every field of every letter correctly, and among those, which is cheapest?
+Before this directory existed, an earlier run read all twenty six synthetic letters through the `codex exec` command line rather than Azure's API. On it, terra was full marks at every effort from `low` upward while luna never was, so terra `low` looked like the cheapest cell that never missed. Eleven of the twenty six letters missed in every configuration on that run; the fifteen kept here are the ones that did not. That run is not in the repository because it did not use the path the product will use.
 
-## 2. Hypothesis, and where it came from
+This run repeats the question on the product's own path: on the fifteen letters, which model at which effort reads every field of every letter correctly, and among those, which is cheapest? Going in, the expectation was terra `low`. The number that decides the next step is the count of full cells and their cost per letter.
 
-**terra at effort `low` is stable on all fifteen letters, and it is the cheapest stable cell.**
+## Design
 
-This came from an earlier run, before this directory existed. That run read all twenty six synthetic letters, not fifteen, and went through the `codex exec` command line rather than Azure's API. On it, terra was full marks at every effort from `low` upward while luna never was, so terra `low` looked like the cheapest cell that never missed. Eleven of the twenty six letters missed in every configuration on that run; the fifteen kept here are the ones that did not. That run is not in the repository because it did not use the path the product will use, which is the first thing this experiment corrects.
+- **Letters**: all fifteen in `data/synthetic-letters/`, as listed in `letters.txt`.
+- **Prompt**: `prompt.md` beside this report, the six field descriptions from the contract.
+- **Cells**: both models at all six efforts, twelve cells, as listed in `cells.txt`.
+- **Repeats**: one read per cell per letter.
+- Four calls in flight. The same 25,077 input tokens for every cell is the check that every call saw the same pages, the same prompt and the same request shape.
 
-The hypothesis is confirmed if terra `low` scores 15/15 and no cheaper cell does. It is refuted if terra `low` misses, or if a cheaper cell also scores 15/15.
-
-## 3. What varied, what was held
-
-The four variable files beside this report say exactly what ran: all fifteen letters, the prompt, both models at all six efforts, one read per cell.
-
-Everything else was identical across the 180 calls. The same 25,077 input tokens for every cell is the check: same pages, same prompt, same request shape, every time.
-
-## 4. Result
+## Results
 
 | Model | Effort | Letters all right | Fields right | Wrong and confirmed | Input tokens | Output tokens | Reasoning tokens | Seconds | Cost per letter |
 |---|---|---|---|---|---|---|---|---|---|
@@ -89,7 +85,9 @@ Every miss:
 | terra | max | 10-private-health-annual-statement | 1 | due_date | null | 2026-08-01 | uncertain |
 | terra | max | 10-private-health-annual-statement | 1 | amount | null | $167.43 | confirmed |
 
-## 5. Reading the result
+## Discussion
+
+terra `low` did score 15/15, but so did luna `medium` at A$0.008 a letter against A$0.069, so terra `low` is not the cheapest full cell. The pattern the expectation rested on, terra clean from `low` upward, did not appear either: terra `medium` and `high` both missed.
 
 **Four cells scored full marks, not one.** luna `medium`, luna `xhigh`, terra `low`, terra `xhigh`. They sit at both ends of the effort scale for both models, with misses between them.
 
@@ -104,15 +102,9 @@ Every miss:
 
 Of the twenty one misses, nineteen were marked `confirmed`. The two marked `uncertain` would not have reached a screen.
 
-## 6. Verdict
-
-**The hypothesis is not supported.** terra `low` did score 15/15, but so did luna `medium` at A$0.008 a letter against A$0.069, so terra `low` is not the cheapest stable cell. And the pattern the hypothesis rested on, terra clean from `low` upward, did not appear: terra `medium` and `high` both missed.
-
 The stronger finding is that **one read per cell is not enough to choose**. The full cells and the cells beside them differ by one or two letters, and effort does not order them. Whether a cell is stable, in the sense of every time, is exactly what a single read cannot show.
 
-Two things are settled. The four cells worth looking at again are luna `medium`, luna `xhigh`, terra `low` and terra `xhigh`. And the six letters above are where the trouble is, for four different reasons, of which one is the contract's, one is the dataset's, and two are the model's.
-
-What the next experiment asks, more reads on the four cells or a narrower set of letters, is the next decision.
+Two things are settled. The four cells worth looking at again are luna `medium`, luna `xhigh`, terra `low` and terra `xhigh`. And the six letters above are where the trouble is, for four different reasons, of which one is the contract's, one is the dataset's, and two are the model's. What the next experiment asks, more reads on the full cells or a narrower set of letters, is the next decision.
 
 ## Reproducing this
 

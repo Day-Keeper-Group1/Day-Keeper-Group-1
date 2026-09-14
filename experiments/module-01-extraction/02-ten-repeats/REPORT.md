@@ -2,31 +2,23 @@
 
 Run 14 September 2026, against RACE's Azure AI Foundry endpoint.
 
-## 1. Question
+## Motivation
 
-With the prompt and the fifteen letters held exactly as in 01-full-grid, does luna at `medium`, `xhigh` and `max` read every letter correctly every time, and which letters, if any, does it only sometimes get right?
+In 01-full-grid four cells scored full marks, and they sat between cells that missed one or two letters: luna `medium` was full while luna `high` missed two, terra `low` was full while terra `medium` missed two. More reasoning should not make a model worse at the same page, so the difference between a full cell and its neighbour looked like which way one read happened to fall. One read per cell cannot tell a stable cell from a lucky one.
 
-## 2. Hypothesis, and where it came from
-
-**The full marks of luna `medium` and luna `xhigh` in 01-full-grid were one lucky read each, not stability. Read ten times, the nine letters that every cell got right in 01 stay 10/10, and at least one of the six letters that missed somewhere in 01 misses again in at least one of the cells.**
-
-This came from the shape of 01's result. The four full cells sat between cells that missed one or two letters, and effort did not order them: luna `medium` was full while luna `high` missed two, terra `low` was full while terra `medium` missed two. More reasoning should not make a model worse at the same page, so the difference between a full cell and its neighbour looked like which way one read happened to fall. One read per cell cannot tell a stable cell from a lucky one; ten reads can begin to.
-
-The hypothesis is confirmed if any of the six letters (`04`, `07`, `09`, `10`, `13`, `15`) misses at least once in any cell. It is refuted if every cell scores 150/150. Either answer is useful: the first says 01's full cells are not to be trusted and the letters need work one by one; the second says these fifteen can be written down as stable on luna and the only step left is more reads.
+This run reads the same fifteen letters with the same prompt ten times each on luna, to learn which letters the model reads the same way every time and which it only sometimes gets right. Going in, the expectation was that the nine letters every cell got right in 01 stay clean, and that at least one of 01's six problem letters misses again. The number that decides the next step is the per-letter count of reads all right.
 
 Ten reads all correct bounds a letter's per-read miss rate at about 26 percent with 95 percent confidence, so this run screens; it does not certify.
 
-## 3. What varied, what was held
+## Design
 
-The four variable files beside this report say exactly what ran: the same fifteen letters and the same prompt as 01-full-grid, three luna cells (`medium`, `xhigh`, `max`), ten reads per cell per letter. `diff 01-full-grid 02-ten-repeats` on the four files shows `cells.txt` and `repeats.txt` changed and nothing else.
+- **Letters**: the same fifteen as 01-full-grid, unchanged.
+- **Prompt**: the same `prompt.md` as 01-full-grid, unchanged.
+- **Cells** (changed): luna `medium`, luna `xhigh`, luna `max`. The run was designed with the first two; `max` was added to `cells.txt` after those had run and been read, to see whether the top effort stops the letters that flipped. That order matters and is recorded here: the third cell was chosen knowing the first two results. terra was left out on cost, ten times the price per letter.
+- **Repeats** (changed): ten reads per cell per letter, 450 calls in all.
+- Four calls in flight, same pages, same request shape as 01.
 
-The experiment was designed with two cells, `medium` and `xhigh`. `max` was added to `cells.txt` after those two had run and been read, to see whether the top effort stops the letters that flipped. It is recorded here because it changes what the run tested: the third cell was chosen knowing the first two results.
-
-terra was left out on cost: ten times the price per letter, and not the model the reading step currently uses.
-
-Everything else was identical across the 450 calls: the same pages, the same prompt, the same request shape, four calls in flight.
-
-## 4. Result
+## Results
 
 | Model | Effort | Letters all right | Fields right | Wrong and confirmed | Input tokens | Output tokens | Reasoning tokens | Seconds | Cost per letter |
 |---|---|---|---|---|---|---|---|---|---|
@@ -106,29 +98,9 @@ Cost is Azure's public list price multiplied by the tokens Azure reported per ca
 | luna | max | 10-private-health-annual-statement | 10 | amount | null | $167.43 | confirmed |
 | luna | max | 15-insurance-key-facts-sheet | 2 | reference | null | SYN-0025 | confirmed |
 
-## 5. Reading the result
+## Discussion
 
-**Eleven letters were read right every time, in all three cells.** The nine that every cell got right in 01 (`01`, `02`, `03`, `05`, `06`, `08`, `11`, `12`, `14`) stayed 10/10, and so did two of 01's six problem letters: `04-council-rates-notice`, which had missed in five of 01's twelve cells but never in luna `medium` or above, and `13-product-recall-notice`, whose one miss in 01 was luna `none` doubling a digit. Thirty reads each without a miss is not proof, but it is the first evidence that those two belong with the eleven rather than with the four below.
-
-**Four letters flip between reads.** `07`, `09`, `10` and `15` are the same page and the same prompt every time, and the model answers differently from one read to the next: `10-private-health-annual-statement` was right twice in ten at `medium`, `07-penalty-reminder-notice` three times in ten. In 01 each of these had looked stable in the two full cells because one read landed on the right side. Repeats were the only way to see this, and ten was enough.
-
-**When a letter is wrong it is almost always wrong the same way.** Each of the four has one wrong answer that accounts for every `confirmed` miss: `07` gives the second number printed on the page (`4797 2573 7796`) instead of the infringement number; `10` reports the `$167.43` printed on a statement that asks for nothing; `09` reports `$0.00` where the contract wants `No payment required`; `15` reports the generator's sample stamp `SYN-0025` as a reference. The only other misses are three due dates marked `uncertain`, which the product hides. So the model is not inventing and is not noisy in general: on each of these pages it is choosing between two candidates it can see, and which one it picks changes from read to read. That is a selection error with a coin in it, not a locked one.
-
-**More reasoning shifts the coin but does not remove it.** From `medium` to `xhigh` to `max`, `07` went 3, 7, 9 right out of ten; `09` went 6, 9, 9; `10` went 2, 5, 6; `15` went 8, 9, 9. Wrong and confirmed fell from 20 to 9 to 7. No cell brought any of the four to 10/10, and `max` costs four times `medium` per letter and takes four times as long. 01's reading that effort does not order the cells was itself a one-read artefact; with ten reads, on these letters, it does, with most of the gain between `medium` and `xhigh`.
-
-**Thirty six of the thirty nine field misses were `confirmed`.** The three that were not, all due dates, would not have reached a screen. Every other miss would have.
-
-**Cost per letter here is not the production cost.** 402 of the 450 calls were served from Azure's prompt cache, which is what repeating the same pages buys, and cached input is a tenth of the price. A letter in production is read once, uncached; 01's per-letter figures are the ones to quote.
-
-## 6. Verdict
-
-**The hypothesis is confirmed.** Four of the six letters that missed somewhere in 01 miss again in every luna cell tried, so the 15/15 that luna `medium` and luna `xhigh` scored in 01 were lucky reads, not stability. The nine letters predicted to stay clean did, and two more joined them.
-
-What this settles: the fifteen letters split into eleven that are stable on luna at `medium` as far as ten reads can tell, and four that are not stable on luna at any effort, including the highest. The four fail one way each, and three of the four ways were already named in 01: a second reference number on the page, an amount printed on a letter that asks for nothing, and the dataset's own stamp. The fourth, `$0.00` against `No payment required`, is a question about the contract's rule as much as about the model. Effort is not the lever for these four: `max` still flips every one of them.
-
-What it does not settle: whether the four can be fixed, and by what. The prompt has not been varied yet. Whether the eleven hold at a hundred reads is the certification step, and it is separate from the four.
-
-The model, the effort and which letters stay in scope are decisions recorded in `docs/extraction.md`, not here. This report is their evidence.
+Not yet written. The numbers above have been produced and marked; what they settle and where the next run looks is written after they have been read together by the people deciding the next run, not in the same sitting as the run.
 
 ## Reproducing this
 
