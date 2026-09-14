@@ -1,0 +1,54 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "gpt-4o",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "Support at Home monthly statement",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Thornhurst Health",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Review the statement and discuss any concerns with your provider",
+      "status": "confirmed",
+      "confidence": 0.96
+    },
+    {
+      "key": "due_date",
+      "value": "Not applicable",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "AC87542",
+      "status": "confirmed",
+      "confidence": 0.98
+    }
+  ],
+  "open_payload": {
+    "recipient_name": "Mrs M A Wilson",
+    "client_name": "Margaret Anne Wilson",
+    "address": "14 Bracken Rise, CALDERFIELD VIC 3999",
+    "provider_id": "63087",
+    "location": "Calderfield VIC",
+    "statement_period": "1 July 2026 to 31 July 2026",
+    "contact_phone": "(03) 5550 3392",
+    "contact_email": "enquiries@thornhurst-health.example",
+    "document_code": "SYN-0018"
+  }
+}

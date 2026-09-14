@@ -1,0 +1,86 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "gpt-4o",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "government income review letter",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Public Payments Office",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Complete the enclosed income and assets form and provide the requested details",
+      "status": "confirmed",
+      "confidence": 0.98
+    },
+    {
+      "key": "due_date",
+      "value": "2026-08-04",
+      "status": "confirmed",
+      "confidence": 0.9
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "PPO-5002-9891",
+      "status": "confirmed",
+      "confidence": 0.99
+    }
+  ],
+  "open_payload": {
+    "notice_date": "14 July 2026",
+    "recipient": "Mrs M A Wilson",
+    "recipient_address": "14 Bracken Rise, CALDERFIELD VIC 3999",
+    "date_of_birth": "14 March 1948",
+    "income_stream_provider": "Wattlebank Super",
+    "product_name": "Account-Based Pension",
+    "commenced": "1 September 2019",
+    "provider_reference": "PPO-7143-4935",
+    "review_period": "1 July 2025 to 30 June 2026",
+    "requested_details": [
+      "The account balance on the last day of the period under review",
+      "The gross amount paid over that period",
+      "The payment chosen to receive for the year ahead"
+    ],
+    "supporting_document": "Latest schedule from Wattlebank Super, or the account closing date if the account has closed",
+    "response_window": "21 days from 14 July 2026",
+    "late_consequence": "The pension can be suspended or cancelled, and concession card qualification may stop",
+    "online_submission": "public-payments-office.example/senddocuments",
+    "telephone": "(03) 5550 0257",
+    "telephone_hours": "Monday to Friday, 8 am to 5 pm",
+    "postal_address": "Reply Paid 2841, CALDERFIELD VIC 3999",
+    "submission_options": [
+      "Online",
+      "By telephone",
+      "By post",
+      "In person at a service centre"
+    ],
+    "one_time_access_code": "VRJF86",
+    "ongoing_reporting_duty": "Report any change in circumstances within 14 days of it happening",
+    "review_rights": "Ask for an explanation or review within 13 weeks of being told about the decision",
+    "signatory": "Karen Mitchell, Service Officer",
+    "enclosures": [
+      "Income and assets form",
+      "Reply paid envelope"
+    ],
+    "legal_basis": "Section 196 of the Social Security (Administration) Act 1999",
+    "language_assistance_phone": "1800 975 708",
+    "hearing_and_speech_assistance_phone": "1800 160 401",
+    "privacy_policy": "public-payments-office.example",
+    "document_code": "RVW452.2607",
+    "footer_code": "SYN-0010"
+  }
+}

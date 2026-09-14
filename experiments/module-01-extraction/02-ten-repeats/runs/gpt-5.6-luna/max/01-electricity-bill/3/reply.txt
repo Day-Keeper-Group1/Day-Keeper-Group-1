@@ -1,0 +1,56 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "gpt-4o",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "electricity bill",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Example Energy",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Pay the amount due",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "due_date",
+      "value": "2026-08-24",
+      "status": "confirmed",
+      "confidence": 1.0
+    },
+    {
+      "key": "amount",
+      "value": "$82.42",
+      "status": "confirmed",
+      "confidence": 1.0
+    },
+    {
+      "key": "reference",
+      "value": "7960 963 636",
+      "status": "confirmed",
+      "confidence": 0.98
+    }
+  ],
+  "open_payload": {
+    "customer_name": "Mrs M A Wilson",
+    "supply_address": "14 Bracken Rise, Calderfield VIC 3999",
+    "nmi": "60371335118",
+    "billing_period": "1 Jul 2026 – 31 Jul 2026",
+    "bill_issue_date": "05/08/2026",
+    "legal_issuer": "Example Energy Pty Ltd",
+    "abn": "87 483 733 155",
+    "banking_reference": "4969 3279 6092",
+    "postal_payment_reference": "3676 4187 1668",
+    "payment_code": "9200104",
+    "paystation_reference": "PPO-4357-4028"
+  }
+}

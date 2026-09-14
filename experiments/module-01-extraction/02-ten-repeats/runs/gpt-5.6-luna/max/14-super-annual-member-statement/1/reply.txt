@@ -1,0 +1,88 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "gpt-4o",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "annual superannuation member statement",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Wattlebank Super",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Keep this statement with your tax records",
+      "status": "confirmed",
+      "confidence": 0.98
+    },
+    {
+      "key": "due_date",
+      "value": "Not applicable",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "12 242 124",
+      "status": "confirmed",
+      "confidence": 0.99
+    }
+  ],
+  "open_payload": {
+    "member_name": "Mrs M A Wilson",
+    "mailing_address": "14 Bracken Rise, CALDERFIELD VIC 3999",
+    "statement_period": "1 July 2025 to 30 June 2026",
+    "prepared_date": "18 August 2026",
+    "account_type": "Account-based pension",
+    "date_joined": "2 April 2013",
+    "date_of_birth": "14 March 1948",
+    "account_summary": {
+      "opening_balance": "$129,920.15",
+      "contributions": "$0.00",
+      "rollovers_in": "$0.00",
+      "pension_payments_to_you": "$-8,120.00",
+      "insurance_premiums": "$0.00",
+      "fees_and_costs": "$-1,186.42",
+      "net_earnings": "$2,786.27",
+      "closing_balance": "$123,400.00"
+    },
+    "minimum_annual_payment_2026_27": "$7,400",
+    "minimum_payment_calculation": {
+      "balance_at_1_july_2026": "$123,400.00",
+      "percentage_factor": "6%",
+      "calculated_amount": "$7,404.00"
+    },
+    "total_fees_and_costs": "$1,186.42",
+    "investment_option": "Conservative Balanced",
+    "investment_allocation": "100%",
+    "asset_mix": {
+      "Australian shares": "24%",
+      "International shares": "18%",
+      "Cash and fixed interest": "58%"
+    },
+    "long_term_returns": {
+      "1 year": "2.19%",
+      "5 years p.a.": "6.20%",
+      "10 years p.a.": "6.80%"
+    },
+    "insurance": "No insurance cover",
+    "beneficiary": "Helen Wilson (daughter), non-binding nomination",
+    "contact_phone": "(03) 7010 3936",
+    "website": "www.wattlebank-super.example",
+    "ABN": "12 018 283 974",
+    "USI": "12018283974122",
+    "document_code": "SYN-0023"
+  }
+}
