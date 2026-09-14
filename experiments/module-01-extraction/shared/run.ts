@@ -70,12 +70,15 @@ export function isDone(experiment: Experiment, job: Job): boolean {
   return meta.ok;
 }
 
-/** Every call an experiment asks for: cells by letters by repeats. */
+/**
+ * Every call an experiment asks for: cells by letters by repeats. A cell
+ * with its own repeat count in cells.txt uses that instead of repeats.txt.
+ */
 export function jobsOf(experiment: Experiment): Job[] {
   const jobs: Job[] = [];
-  for (const cell of experiment.cells) {
+  for (const { repeats = experiment.repeats, ...cell } of experiment.cells) {
     for (const letter of experiment.letters) {
-      for (let repeat = 1; repeat <= experiment.repeats; repeat++) {
+      for (let repeat = 1; repeat <= repeats; repeat++) {
         jobs.push({ ...cell, letter, repeat });
       }
     }

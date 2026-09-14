@@ -68,7 +68,7 @@ export const FIELD_DESCRIPTIONS: Record<ContractFieldKey, string> = {
   issuer:
     "The organisation that sent it, as printed on the page. Prefer the name a person would recognise over a legal entity name.",
   action_required:
-    "What the person has to do. Start with one of these words, then name who or what in a few words: Pay, Attend, Return form, Collect, Take medicine, Stop using, Contact, No action. For example: Pay Example Energy; Attend Orthopaedic Clinic; Return form to Public Payments Office; Collect parcel from Calderfield Post Office; Take blood pressure tablet; Stop using heater; Contact a Support at Home provider. If the document asks for nothing, write No action.",
+    "What the person has to do. Start with one of these words, then name who or what in a few words: Pay, Attend, Return form, Collect, Take medicine, Stop using, Contact, No action. For example: Pay Example Energy; Attend Orthopaedic Clinic; Return form to Public Payments Office; Collect parcel from Calderfield Post Office; Take medicine perindopril each morning; Stop using heater; Contact a Support at Home provider. If the document asks for nothing, write No action.",
   due_date:
     "The date the action is due, as ISO 8601 (YYYY-MM-DD). If the page shows an ambiguous format, resolve it in favour of Australian day-first convention and mark the field uncertain.",
   amount:

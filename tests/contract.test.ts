@@ -17,7 +17,12 @@ import {
   isFullyConfident,
   safeParseExtractionResult,
 } from "@/lib/contract/extraction";
-import { CONTRACT_FIELD_KEYS, FIELD_LABELS } from "@/lib/contract/fields";
+import {
+  actionWordOf,
+  CONTRACT_FIELD_KEYS,
+  FIELD_DESCRIPTIONS,
+  FIELD_LABELS,
+} from "@/lib/contract/fields";
 import { deriveTaskStatus } from "@/lib/contract/api";
 import { MockExtractionProvider } from "@/server/extraction/mock-provider";
 
@@ -132,6 +137,20 @@ describe("action_required", () => {
     const parsed = safeParseExtractionResult(result);
     expect(parsed.success).toBe(false);
     expect(JSON.stringify(parsed.error?.issues)).toContain("Return form");
+  });
+
+  it("gives only examples in its own description that pass its own check", () => {
+    // The description is copied into the reader's prompt, so an example that
+    // starts with none of the words teaches the model to write a value the
+    // validator then rejects.
+    const examples =
+      FIELD_DESCRIPTIONS.action_required
+        .match(/For example: (.*?)\. If the document/)?.[1]
+        ?.split("; ") ?? [];
+    expect(examples.length).toBeGreaterThan(0);
+    for (const example of examples) {
+      expect(actionWordOf(example), example).not.toBeNull();
+    }
   });
 
   it("still lets an unreadable action_required carry no value", () => {

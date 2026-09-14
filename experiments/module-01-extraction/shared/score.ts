@@ -2,23 +2,31 @@
  * Mark every run against the answer key.
  *
  * This file is the experiment's definition of "correct", so it is the part
- * worth reading. Four fields are scored:
+ * worth reading. Five fields are scored:
  *
  *   due_date   the ISO string must match exactly. A letter with no due date
- *              must be reported as "Not applicable".
+ *              must be reported as "Not applicable". A date the page only
+ *              implies through a period ("within 14 days") is not a printed
+ *              date, and the key for such a letter is null.
  *   amount     the number must match, and the currency symbol must be there,
  *              because the contract says "including the currency symbol". A
  *              letter that asks for no money must be reported as
  *              "No payment required".
  *   reference  must match after collapsing runs of whitespace and ignoring
- *              case. The contract says keep the spacing as printed, so "UR
- *              6938509" is not "6938509".
+ *              case. The contract says keep the spacing as printed, and the
+ *              key holds the number as printed without the label word beside
+ *              it: "6429746 DFD", not "Ref #6429746 DFD". Letters printed as
+ *              part of the number stay: "HB 1193 8188", and "UR 6938509"
+ *              where the page prints that whole string under a barcode.
  *   issuer     one must contain the other once punctuation and case are
  *              removed, because the contract prefers "Example Energy" over
  *              "Example Energy Pty Ltd" and both are right.
+ *   action_required
+ *              must start with the same action word as the key; the words
+ *              after it are not compared. See actionCorrect below.
  *
- * document_type and action_required are free text and are not scored; they
- * are copied into scores.json so a person can read them.
+ * document_type is free text and is not scored; it is copied into
+ * scores.json so a person can read it.
  *
  * A field is "wrong and confirmed" when the value is wrong and the model
  * marked it `confirmed`. That is the one that reaches a person's screen, so it

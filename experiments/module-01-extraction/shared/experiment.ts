@@ -8,8 +8,10 @@
  *
  *   letters.txt   which letters, one folder name per line
  *   prompt.md     what the model is asked
- *   cells.txt     which model at which effort, one pair per line
- *   repeats.txt   how many times each cell reads each letter
+ *   cells.txt     which model at which effort, one pair per line; a third
+ *                 number on a line gives that cell its own repeat count
+ *   repeats.txt   how many times each cell reads each letter, unless the
+ *                 cell's line in cells.txt says otherwise
  *
  * The code that reads these, calls the model, marks the answers and prints
  * the table lives in this folder and is shared by every experiment. Scoring
@@ -28,7 +30,7 @@ import {
   type Model,
 } from "./config";
 
-export type Cell = { model: Model; effort: Effort };
+export type Cell = { model: Model; effort: Effort; repeats?: number };
 
 export type Experiment = {
   /** The folder name, e.g. "01-full-grid". */
@@ -72,7 +74,7 @@ export function loadExperiment(name: string): Experiment {
   };
 
   const cells = lines(need("cells.txt")).map((line, i) => {
-    const [model, effort] = line.split(/\s+/);
+    const [model, effort, repeatsText] = line.split(/\s+/);
     if (!(MODELS as readonly string[]).includes(model)) {
       throw new Error(
         `${name}/cells.txt line ${i + 1}: unknown model "${model}"`,
@@ -83,7 +85,14 @@ export function loadExperiment(name: string): Experiment {
         `${name}/cells.txt line ${i + 1}: unknown effort "${effort}"`,
       );
     }
-    return { model, effort } as Cell;
+    if (repeatsText === undefined) return { model, effort } as Cell;
+    const repeats = Number(repeatsText);
+    if (!Number.isInteger(repeats) || repeats < 1) {
+      throw new Error(
+        `${name}/cells.txt line ${i + 1}: repeat count "${repeatsText}" must be a whole number of 1 or more`,
+      );
+    }
+    return { model, effort, repeats } as Cell;
   });
 
   const repeatLines = lines(need("repeats.txt"));
