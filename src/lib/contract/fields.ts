@@ -101,6 +101,25 @@ export const OPTIONAL_FIELD_DESCRIPTIONS: Record<OptionalFieldKey, string> = {
 };
 
 /**
+ * KAN-58: every identifier the letter prints.
+ *
+ * A letter often prints several numbers a person could be asked for: a licence
+ * number and a customer number, a policy number and a customer number, a card
+ * number and a claim number. `reference` holds one of them, the one the letter
+ * tells her to quote, and the rest used to be dropped. `identifiers` is the
+ * whole list, each under the label printed beside it, so nothing on the page
+ * is lost and a screen can show "Customer number" rather than a word of ours.
+ *
+ * It sits beside the six fields rather than among them because it is a list,
+ * not a value, and because every existing reading, screen and experiment keeps
+ * working without it: a reader that returns no list returns an empty one.
+ * The reading prompt does not ask for the list yet, so this text is the
+ * definition, not yet something a model is told.
+ */
+export const IDENTIFIERS_DESCRIPTION =
+  "Every number or code printed on the letter that identifies the person, something she holds, or this matter, and that she could be asked for when she contacts the sender or pays: account, customer, member, patient, reference, invoice, notice, claim, policy, licence, registration, card or property numbers. Give each one once, with the label printed beside it exactly as printed, and its value exactly as printed, keeping the spacing. Leave out anything that identifies the sender rather than her (ABN, biller code, phone, web address), dates, amounts, and codes printed in the page margin. The reference field is one of these: the one the letter tells the person to quote.";
+
+/**
  * Every key the system recognises: the six required plus the optional ones.
  * Anything a provider returns outside this list lands in open_payload.
  */

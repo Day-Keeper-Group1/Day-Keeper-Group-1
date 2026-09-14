@@ -341,6 +341,22 @@ export async function readDocument(
         );
       }
 
+      // KAN-58: every number the letter printed, in the order the reader gave.
+      for (const [position, identifier] of result.identifiers.entries()) {
+        await client.query(
+          `INSERT INTO extracted_identifiers
+             (extraction_run_id, position, label, value, status)
+           VALUES ($1, $2, $3, $4, $5)`,
+          [
+            runId,
+            position,
+            identifier.label,
+            identifier.value,
+            identifier.status,
+          ],
+        );
+      }
+
       // failure_detail is set back to null in so many words: db/schema.sql
       // refuses a succeeded run that carries one, and saying it here means the
       // constraint and the statement agree in writing.

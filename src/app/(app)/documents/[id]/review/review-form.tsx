@@ -10,7 +10,7 @@ import { FactRow } from "@/components/fact-row";
 import { Panel, ScreenHeader } from "@/components/screen";
 import { Button } from "@/components/ui/button";
 import type { DocumentDetail } from "@/lib/contract/api";
-import { NOT_APPLICABLE, NO_PAYMENT_REQUIRED } from "@/lib/contract/fields";
+import { factLines } from "@/lib/facts";
 import type { PlanLine } from "@/lib/review-plan";
 import { cn } from "@/lib/utils";
 
@@ -84,23 +84,12 @@ export function ReviewForm({
   }, []);
 
   /*
-   * What the letter says, as it may be shown.
-   *
-   * A value the reader was not confident of never reaches a screen, so an
-   * unreadable row is not drawn and there is no row for a date that could not
-   * be read: the plan card carries that news in one sentence instead. The other
-   * two hidden values are confident facts with nothing to tell her, an
-   * appointment letter's absent reference number and a form with nothing to
-   * pay, and their spellings come from the contract so the comparison cannot
-   * quietly stop matching (src/lib/contract/fields.ts).
+   * What the letter says, as it may be shown: no row for a date that could not
+   * be read, since the plan card carries that news in one sentence instead, and
+   * every number the letter printed under its own label. The rule is shared
+   * with the letter and the day sheet, in src/lib/facts.ts.
    */
-  const facts = document.fields.filter(
-    (field) =>
-      field.status === "confirmed" &&
-      field.value &&
-      field.value !== NO_PAYMENT_REQUIRED &&
-      field.value !== NOT_APPLICABLE,
-  );
+  const facts = factLines(document.fields, document.identifiers);
 
   const photos = document.pages.filter((page) => page.url);
 
@@ -129,8 +118,8 @@ export function ReviewForm({
               {/* Wrapped so the first row is a first child and loses its rule:
                   the card's own heading sits above this. */}
               <div>
-                {facts.map((field) => (
-                  <FactRow key={field.key} field={field} />
+                {facts.map((line) => (
+                  <FactRow key={line.key} line={line} />
                 ))}
               </div>
             </Panel>

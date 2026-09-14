@@ -1,6 +1,6 @@
 // KAN-57: one line of what a letter says, drawn the same way wherever it appears.
 
-import type { ExtractedFieldView } from "@/lib/contract/api";
+import type { FactLine } from "@/lib/facts";
 
 /**
  * One row of the prototype's `.fact` list: what it is called, and what it said.
@@ -12,16 +12,25 @@ import type { ExtractedFieldView } from "@/lib/contract/api";
  *
  * Two columns, as the prototype draws them: the name in an 84px column at 13px,
  * the value beside it at 16.5px semibold. A long value wraps inside its own
- * column rather than under the name.
+ * column rather than under the name, and a long printed label ("Vehicle
+ * identification number") wraps inside its column the same way.
+ *
+ * A note sits under the value in the label's size and colour: the prototype's
+ * `.fact .quote`, "The one to quote" (src/lib/facts.ts).
  */
-export function FactRow({ field }: { field: ExtractedFieldView }) {
+export function FactRow({ line }: { line: FactLine }) {
   return (
     <div className="flex items-baseline gap-2.5 border-t border-line px-0.5 py-[11px] first:border-t-0">
       <span className="w-[84px] shrink-0 text-key text-ink-dim">
-        {field.label}
+        {line.label}
       </span>
       <span className="min-w-0 flex-1 text-button font-semibold break-words">
-        {field.value}
+        {line.value}
+        {line.note ? (
+          <span className="mt-0.5 block text-key font-medium text-ink-dim">
+            {line.note}
+          </span>
+        ) : null}
       </span>
     </div>
   );

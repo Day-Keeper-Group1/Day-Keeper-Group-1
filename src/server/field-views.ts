@@ -19,10 +19,11 @@
 
 import "server-only";
 
-import type { ExtractedFieldView } from "@/lib/contract/api";
+import type { ExtractedFieldView, IdentifierView } from "@/lib/contract/api";
 import { formatDueDate, isIsoDate } from "@/lib/contract/dates";
 import {
   FIELD_LABELS,
+  NOT_APPLICABLE,
   OPTIONAL_FIELD_KEYS,
   OPTIONAL_FIELD_LABELS,
   isContractFieldKey,
@@ -80,4 +81,49 @@ export function mapField(row: ExtractedFieldRow): ExtractedFieldView {
     value: isDate ? formatDueDate(value, "fact") : value,
     status: confirmed ? "confirmed" : "unreadable",
   };
+}
+
+/** KAN-58: one row of extracted_identifiers, as the queries select it. */
+export type ExtractedIdentifierRow = {
+  label: string;
+  value: string;
+  status: "confirmed" | "uncertain";
+};
+
+const collapse = (s: string) => s.trim().replace(/\s+/g, " ").toLowerCase();
+
+/**
+ * KAN-58: the numbers a letter printed, as the browser receives them.
+ *
+ * Confident rows only, the same rule as for fields. The one whose value is the
+ * confident `reference` is marked and moved to the front, compared the way the
+ * contract says the reference is written, spacing kept but runs of spaces and
+ * case not significant. `fields` are the views already made from the same
+ * reading, so the reference is read once.
+ */
+export function identifierViews(
+  rows: ExtractedIdentifierRow[],
+  fields: ExtractedFieldView[],
+): IdentifierView[] {
+  const reference = fields.find(
+    (field) =>
+      field.key === "reference" &&
+      field.status === "confirmed" &&
+      field.value !== null &&
+      field.value !== NOT_APPLICABLE,
+  )?.value;
+  const views = rows
+    .filter((row) => row.status === "confirmed")
+    .map((row) => ({
+      label: row.label,
+      value: row.value,
+      isReference:
+        reference !== undefined &&
+        reference !== null &&
+        collapse(row.value) === collapse(reference),
+    }));
+  return [
+    ...views.filter((view) => view.isReference),
+    ...views.filter((view) => !view.isReference),
+  ];
 }

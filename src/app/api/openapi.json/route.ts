@@ -122,6 +122,22 @@ export function GET() {
                               },
                             },
                           },
+                          identifiers: {
+                            type: "array",
+                            description:
+                              "Every number the letter prints that identifies the person, something she holds, or this matter, each under the label printed beside it. The reference field is one of them.",
+                            items: {
+                              type: "object",
+                              properties: {
+                                label: { type: "string" },
+                                value: { type: "string" },
+                                status: {
+                                  type: "string",
+                                  enum: ["confirmed", "uncertain"],
+                                },
+                              },
+                            },
+                          },
                           open_payload: { type: "object" },
                         },
                       },
@@ -181,6 +197,18 @@ export function GET() {
                           value: "7960 963 636",
                           status: "confirmed",
                           confidence: 0.95,
+                        },
+                      ],
+                      identifiers: [
+                        {
+                          label: "Account number",
+                          value: "7960 963 636",
+                          status: "confirmed",
+                        },
+                        {
+                          label: "NMI",
+                          value: "60371335118",
+                          status: "confirmed",
                         },
                       ],
                       open_payload: {},

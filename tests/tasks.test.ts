@@ -296,6 +296,10 @@ describe("one task", () => {
           extracted_value: "hidden guess",
           status: "uncertain",
         },
+      ])
+      .mockResolvedValueOnce([
+        { label: "Account number", value: "4417 9902", status: "confirmed" },
+        { label: "Invoice number", value: "hidden", status: "uncertain" },
       ]);
     queryOneMock.mockResolvedValue({ page_count: 2 });
 
@@ -346,6 +350,9 @@ describe("one task", () => {
           value: null,
           status: "unreadable",
         },
+      ],
+      identifiers: [
+        { label: "Account number", value: "4417 9902", isReference: false },
       ],
       pageCount: 2,
     });

@@ -227,6 +227,11 @@ async function main() {
       dueDate: isoDaysFromNow(-3),
       amount: NO_PAYMENT_REQUIRED,
       reference: "CRN 2201 8845",
+      // Two numbers, so the letter screens show one under "The one to quote".
+      identifiers: [
+        ["Customer reference number", "CRN 2201 8845"],
+        ["Letter reference", "PRV 5520 1178"],
+      ],
       pages: 2,
       pageSource: PAGE_SOURCES.servicesAustralia,
       uploadedDaysAgo: 9,
@@ -240,6 +245,7 @@ async function main() {
       dueDate: isoDaysFromNow(12),
       amount: "$89.20",
       reference: "5501 2280",
+      identifiers: [["Account number", "5501 2280"]],
       pages: 1,
       pageSource: PAGE_SOURCES.waterBill,
       uploadedDaysAgo: 4,
@@ -276,6 +282,11 @@ async function main() {
       dueDate: isoDaysFromNow(-20),
       amount: "$79.00",
       reference: "4417 9902",
+      identifiers: [
+        ["Account number", "4417 9902"],
+        ["Service number", "0412 118 204"],
+        ["Invoice number", "T 8830 2291"],
+      ],
       pages: 1,
       pageSource: PAGE_SOURCES.telstraBill,
       uploadedDaysAgo: 30,
@@ -333,6 +344,22 @@ own.
     throw error;
   } finally {
     await db.end();
+  }
+}
+
+/** KAN-58: the numbers a seeded reading found printed, in order, all confident. */
+async function insertIdentifiers(
+  db: Client,
+  runId: string,
+  identifiers: Array<[label: string, value: string]>,
+) {
+  for (const [position, [label, value]] of identifiers.entries()) {
+    await db.query(
+      `INSERT INTO extracted_identifiers
+         (extraction_run_id, position, label, value, status)
+       VALUES ($1, $2, $3, $4, 'confirmed')`,
+      [runId, position, label, value],
+    );
   }
 }
 
@@ -456,6 +483,12 @@ async function confirmedLetter(
     dueTime?: string;
     amount: string;
     reference: string;
+    /**
+     * KAN-58: every number the letter prints, label first. The reference is
+     * one of them. Omit for a letter that prints only its reference, which is
+     * then listed under the label "Reference".
+     */
+    identifiers?: Array<[label: string, value: string]>;
     pages: number;
     /** Which folder under data/synthetic-letters it was photographed from. */
     pageSource: string;
@@ -513,6 +546,11 @@ async function confirmedLetter(
     ["amount", spec.amount, "confirmed", 0.95],
     ["reference", spec.reference, "confirmed", 0.9],
   ]);
+  await insertIdentifiers(
+    db,
+    runId,
+    spec.identifiers ?? [["Reference", spec.reference]],
+  );
 
   const { rows } = await db.query<{ id: string }>(
     `INSERT INTO tasks (user_id, document_id, title, issuer, due_date, due_time)

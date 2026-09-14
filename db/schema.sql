@@ -314,6 +314,27 @@ CREATE TABLE extracted_fields (
 
 CREATE INDEX extracted_fields_run_idx ON extracted_fields (extraction_run_id);
 
+-- KAN-58: every identifier one reading found printed on the letter.
+--
+-- A letter prints several numbers a person could be asked for, and
+-- extracted_fields keeps only the one in `reference`. These rows keep the rest,
+-- each under the label the page printed beside it, in the order the reader
+-- gave them. There is no 'unreadable' row: a number that could not be read is
+-- not in the list. 'uncertain' rows are stored and never shown, the same rule
+-- as for fields (src/lib/contract/extraction.ts).
+CREATE TABLE extracted_identifiers (
+  id                uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  extraction_run_id uuid NOT NULL REFERENCES extraction_runs(id) ON DELETE CASCADE,
+  position          integer NOT NULL,
+  label             text NOT NULL,
+  value             text NOT NULL,
+  status            field_status NOT NULL,
+  CONSTRAINT extracted_identifiers_unique_position UNIQUE (extraction_run_id, position),
+  CONSTRAINT extracted_identifiers_status CHECK (status IN ('confirmed', 'uncertain'))
+);
+
+CREATE INDEX extracted_identifiers_run_idx ON extracted_identifiers (extraction_run_id);
+
 -- ---------------------------------------------------------------------------
 -- Tasks and reminders
 -- ---------------------------------------------------------------------------
