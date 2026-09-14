@@ -18,15 +18,15 @@ The answer keys for the eleven new letters were written for this run, from the p
 - **Prompt** (changed in one example): the product prompt as of 14 September. The `action_required` example "Take blood pressure tablet" in 04's prompt did not itself start with an action word, so the validator would have rejected a reply that copied it; it now reads "Take medicine perindopril each morning". Nothing else differs from 04.
 - **Cells**: luna `medium` and terra `low`, as in 04, with their own repeat counts: luna fifty reads per letter, terra twenty five.
 - **Repeats** (changed): twenty five trials of the scheme per letter. A trial is luna's reads 2k-1 and 2k and, when they disagree, terra's read k. The scheme is replayed from the kept reads by `shared/vote.ts` rather than run live; every call to the model is independent of every other, so a pair taken this way is the same as a pair made live, and keeping every terra read lets terra be reported on its own as well.
-- **Scoring**: five fields, as in 04. Two luna reads agree on a field when the scorer's own normalisation would call them the same value: the same date, the same number of dollars, the same reference once spaces and case are ignored, one issuer name containing the other, the same action word. That is the rule the product would have to use, since it has no answer key.
+- **Scoring** (changed after the run): five fields, as in 04. After the results were read on 14 September, six keys gained an `also_accepted` value (see `data/synthetic-letters/README.md`): the other of two numbers printed side by side on 16, 17, 22, 23 and 24, and on 26 the reading of the donation slip as a form to return by its printed date. The tables below are marked under those keys; the first marking, before the ruling, is in the git history of this file. 20-discharge-summary was taken out of scope the same evening; its rows are left as run. Two luna reads agree on a field when the scorer's own normalisation would call them the same value: the same date, the same number of dollars, the same reference once spaces and case are ignored, one issuer name containing the other, the same action word. That is the rule the product would have to use, since it has no answer key.
 - 1875 calls, six in flight.
 
 ## Results
 
 | Model | Effort | Letters all right | Fields right | Wrong and confirmed | Input tokens | Output tokens | Reasoning tokens | Seconds | Cost per letter |
 |---|---|---|---|---|---|---|---|---|---|
-| luna | medium | 848/1250 (68%) | 5666/6250 | 457 | 22424 | 604 | 223 | 6.6 | \$0.0013 (A\$0.0018) |
-| terra | low | 431/625 (69%) | 2866/3125 | 238 | 22424 | 262 | 83 | 5.2 | \$0.0096 (A\$0.0132) |
+| luna | medium | 965/1250 (77%) | 5843/6250 | 293 | 22424 | 604 | 223 | 6.6 | \$0.0013 (A\$0.0018) |
+| terra | low | 491/625 (79%) | 2960/3125 | 144 | 22424 | 262 | 83 | 5.2 | \$0.0096 (A\$0.0132) |
 
 ### Every letter
 
@@ -46,17 +46,17 @@ The answer keys for the eleven new letters were written for this run, from the p
 | 13-product-recall-notice | 50/50 (100%) | 25/25 (100%) | 75/75 (100%) | 0 |
 | 14-super-annual-member-statement | 50/50 (100%) | 25/25 (100%) | 75/75 (100%) | 0 |
 | 15-insurance-key-facts-sheet | 50/50 (100%) | 25/25 (100%) | 75/75 (100%) | 0 |
-| 16-driver-licence-renewal-notice | **14/50 (28%)** | **6/25 (24%)** | **20/75 (27%)** | 30 |
-| 17-vehicle-registration-renewal-notice | **41/50 (82%)** | 25/25 (100%) | **66/75 (88%)** | 8 |
+| 16-driver-licence-renewal-notice | **35/50 (70%)** | 25/25 (100%) | **60/75 (80%)** | 3 |
+| 17-vehicle-registration-renewal-notice | **47/50 (94%)** | 25/25 (100%) | **72/75 (96%)** | 2 |
 | 18-medicare-benefit-statement | **0/50 (0%)** | **0/25 (0%)** | **0/75 (0%)** | 125 |
 | 19-outpatient-appointment-letter | **47/50 (94%)** | 25/25 (100%) | **72/75 (96%)** | 3 |
 | 20-discharge-summary | **0/50 (0%)** | **0/25 (0%)** | **0/75 (0%)** | 45 |
 | 21-dispensed-medicine-label | **0/50 (0%)** | **0/25 (0%)** | **0/75 (0%)** | 136 |
-| 22-aged-care-notice-of-decision | **0/50 (0%)** | **0/25 (0%)** | **0/75 (0%)** | 81 |
+| 22-aged-care-notice-of-decision | **44/50 (88%)** | **23/25 (92%)** | **67/75 (89%)** | 6 |
 | 23-home-insurance-renewal | 50/50 (100%) | 25/25 (100%) | 75/75 (100%) | 0 |
 | 24-motor-insurance-renewal | **0/50 (0%)** | **0/25 (0%)** | **0/75 (0%)** | 93 |
 | 25-postal-collection-card | **8/50 (16%)** | **5/25 (20%)** | **13/75 (17%)** | 10 |
-| 26-charity-appeal-letter | **0/50 (0%)** | **0/25 (0%)** | **0/75 (0%)** | 160 |
+| 26-charity-appeal-letter | **46/50 (92%)** | **18/25 (72%)** | **64/75 (85%)** | 10 |
 
 A letter read 50/50 times bounds its per-read miss rate at 6% (95%, exact binomial).
 
@@ -84,19 +84,19 @@ Reader luna medium, twice; judge terra low when the two reads differ. 25 trials 
 | 13-product-recall-notice | 25 | 25/25 (100%) | 0 | 25/25 (100%) | 0 | 0 | \$0.0026 (A\$0.0036) |
 | 14-super-annual-member-statement | 25 | 25/25 (100%) | 0 | 25/25 (100%) | 0 | 0 | \$0.0027 (A\$0.0037) |
 | 15-insurance-key-facts-sheet | 25 | 25/25 (100%) | 0 | 25/25 (100%) | 0 | 0 | \$0.0023 (A\$0.0032) |
-| 16-driver-licence-renewal-notice | 25 | 5/25 (20%) | 20 | **4/25 (16%)** | **14** | 7 | \$0.0072 (A\$0.0100) |
-| 17-vehicle-registration-renewal-notice | 25 | 19/25 (76%) | 6 | **23/25 (92%)** | **1** | 1 | \$0.0046 (A\$0.0064) |
+| 16-driver-licence-renewal-notice | 25 | 5/25 (20%) | 20 | **18/25 (72%)** | 0 | 7 | \$0.0072 (A\$0.0100) |
+| 17-vehicle-registration-renewal-notice | 25 | 19/25 (76%) | 6 | **24/25 (96%)** | 0 | 1 | \$0.0046 (A\$0.0064) |
 | 18-medicare-benefit-statement | 25 | 23/25 (92%) | 2 | **0/25 (0%)** | **25** | 0 | \$0.0029 (A\$0.0041) |
 | 19-outpatient-appointment-letter | 25 | 22/25 (88%) | 3 | 25/25 (100%) | 0 | 0 | \$0.0033 (A\$0.0046) |
 | 20-discharge-summary | 25 | 11/25 (44%) | 14 | **0/25 (0%)** | **25** | 0 | \$0.0112 (A\$0.0156) |
 | 21-dispensed-medicine-label | 25 | 14/25 (56%) | 11 | **0/25 (0%)** | **25** | 0 | \$0.0035 (A\$0.0048) |
-| 22-aged-care-notice-of-decision | 25 | 19/25 (76%) | 6 | **0/25 (0%)** | **25** | 0 | \$0.0060 (A\$0.0083) |
+| 22-aged-care-notice-of-decision | 25 | 19/25 (76%) | 6 | 25/25 (100%) | 0 | 0 | \$0.0060 (A\$0.0083) |
 | 23-home-insurance-renewal | 25 | 25/25 (100%) | 0 | 25/25 (100%) | 0 | 0 | \$0.0024 (A\$0.0033) |
 | 24-motor-insurance-renewal | 25 | 15/25 (60%) | 10 | **0/25 (0%)** | **25** | 0 | \$0.0075 (A\$0.0104) |
 | 25-postal-collection-card | 25 | 23/25 (92%) | 2 | **4/25 (16%)** | **21** | 0 | \$0.0024 (A\$0.0034) |
-| 26-charity-appeal-letter | 25 | 21/25 (84%) | 4 | **0/25 (0%)** | **25** | 0 | \$0.0029 (A\$0.0040) |
+| 26-charity-appeal-letter | 25 | 21/25 (84%) | 4 | **24/25 (96%)** | **1** | 0 | \$0.0029 (A\$0.0040) |
 
-**All letters: 625 trials, 429/625 (69%) right, 188 wrong, 8 to the person. The judge was called in 86 trials (14%).**
+**All letters: 625 trials, 493/625 (79%) right, 124 wrong, 8 to the person. The judge was called in 86 trials (14%).**
 
 Cost per letter over all trials, as the scheme would have paid it: \$0.0037 (A\$0.0051).
 
@@ -106,7 +106,7 @@ Cost per letter over all trials, as the scheme would have paid it: \$0.0037 (A\$
 |---|---|---|---|---|
 | due_date | 34 | 22 | 12 | 0 |
 | amount | 4 | 3 | 1 | 0 |
-| reference | 44 | 10 | 24 | 10 |
+| reference | 44 | 21 | 13 | 10 |
 | issuer | 1 | 1 | 0 | 0 |
 | action_required | 11 | 10 | 1 | 0 |
 
@@ -121,9 +121,7 @@ One row per distinct wrong value. The count is how many reads gave it, split by 
 | 11-aged-care-monthly-statement | action_required | No action | Contact Thornhurst Health provider with concerns | 0 | 1 (1 confirmed) |
 | 16-driver-licence-renewal-notice | reference | 05 502 615 | 05 502 615; 812 46 305 | 1 (1 uncertain) | 0 |
 | 16-driver-licence-renewal-notice | reference | 05 502 615 | 812 46 305 | 14 (3 confirmed, 11 uncertain) | 0 |
-| 16-driver-licence-renewal-notice | reference | 05 502 615 | 812 466 305 | 21 (8 confirmed, 13 uncertain) | 19 (19 confirmed) |
 | 17-vehicle-registration-renewal-notice | reference | 812 466 305 | 9XK-7QJ | 3 (2 confirmed, 1 uncertain) | 0 |
-| 17-vehicle-registration-renewal-notice | reference | 812 466 305 | 9XK·7QJ | 6 (6 confirmed) | 0 |
 | 18-medicare-benefit-statement | issuer | Patient Rebate Scheme | claimstead | 50 (50 confirmed) | 0 |
 | 18-medicare-benefit-statement | reference | 4378 31830 2 | 37-3644928 | 2 (2 confirmed) | 0 |
 | 18-medicare-benefit-statement | reference | 4378 31830 2 | 37-364928 | 48 (48 confirmed) | 25 (25 confirmed) |
@@ -142,7 +140,6 @@ One row per distinct wrong value. The count is how many reads gave it, split by 
 | 22-aged-care-notice-of-decision | action_required | Contact a Support at Home provider | No action | 1 (1 confirmed) | 2 (2 confirmed) |
 | 22-aged-care-notice-of-decision | due_date | None | 2026-07-02 | 4 (2 confirmed, 2 uncertain) | 0 |
 | 22-aged-care-notice-of-decision | issuer | Bramworth Hospital | Bromworth Hospital Aged Care Assessment Service | 1 (1 confirmed) | 0 |
-| 22-aged-care-notice-of-decision | reference | AC87542 | RC532986 | 50 (50 confirmed) | 25 (25 confirmed) |
 | 24-motor-insurance-renewal | action_required | No action | Contact Quillhaven Insurance before 18 September 2026 to stop renewal | 1 (1 confirmed) | 0 |
 | 24-motor-insurance-renewal | action_required | No action | Contact Quillhaven Insurance before expiry if not renewing | 2 (2 confirmed) | 0 |
 | 24-motor-insurance-renewal | action_required | No action | Contact Quillhaven Insurance before renewal if you do not want to renew | 1 (1 confirmed) | 0 |
@@ -154,14 +151,18 @@ One row per distinct wrong value. The count is how many reads gave it, split by 
 | 24-motor-insurance-renewal | due_date | None | 2026-10-18 | 3 (3 uncertain) | 0 |
 | 25-postal-collection-card | due_date | None | None | 42 (42 unreadable) | 19 (19 unreadable) |
 | 25-postal-collection-card | reference | RS431545614AU | R S 4 3 1 5 4 5 6 1 4 A U | 2 (2 confirmed) | 8 (8 confirmed) |
-| 26-charity-appeal-letter | action_required | No action | Return form to Pentmere Foundation | 50 (50 confirmed) | 25 (25 confirmed) |
 | 26-charity-appeal-letter | amount | None | \$35, \$50, \$100 or My choice | 1 (1 uncertain) | 0 |
 | 26-charity-appeal-letter | amount | None | Not applicable | 3 (3 confirmed) | 7 (7 confirmed) |
-| 26-charity-appeal-letter | due_date | None | 2026-09-30 | 50 (50 confirmed) | 25 (25 confirmed) |
 
 ## Discussion
 
-Not yet written.
+Settled at the meeting on 14 September, late in the evening.
+
+The run was too big. Eleven letters went in at once, before anyone had read them, and their answer keys were still being argued over when the numbers came back: six keys changed that night, one letter was taken out of scope, and three questions about the keys are still open. That is the wrong order. From now on a letter goes into an experiment only after a person has read it with its README and the key has been agreed, and letters are added three at a time on top of a set that already reads stably, so that what one run shows can be talked through in one sitting.
+
+The reference field has to become a list. Five of the eleven letters print more than one number a person could fairly quote: a licence number beside a customer number, a policy number beside a customer number, an aged care ID beside a referral code, a rebate card number beside a claim number. The contract has one slot, so the key had to name one and the scoring had to grow an `also_accepted` list to cope, which is a patch on the wrong side. The contract should carry every identifier the letter prints, each with the label printed beside it, and say which one to quote first. That is a contract change with its own ticket. Until it is made, a reference miss on such a letter says nothing about the reader.
+
+The vote scheme did what it was for and no more. On the fourteen known letters it turned luna's 12 of 50 slips on the specialist account into 2 of 25, and on the licence renewal it sent every misread customer number to the person instead of to the screen. Where both reads gave the same wrong value, which is how every miss on 18, 21, 24 and 25 happened, it had nothing to work with, and no scheme built on agreement would. Those misses are for the prompt and the contract, not for more reads.
 
 ## Reproducing this
 

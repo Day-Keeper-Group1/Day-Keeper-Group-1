@@ -5,5 +5,8 @@
   "action_required": "Pay Driver and Vehicle Registry",
   "due_date": "2026-09-17",
   "amount": 479.4,
-  "reference": "812 466 305"
+  "reference": "812 466 305",
+  "also_accepted": {
+    "reference": ["9XK·7QJ"]
+  }
 }

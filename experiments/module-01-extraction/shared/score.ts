@@ -28,6 +28,9 @@
  * document_type is free text and is not scored; it is copied into
  * scores.json so a person can read it.
  *
+ * A key's `also_accepted` values (see samples.ts) count as right for their
+ * field under the same rule as the main value.
+ *
  * A field is "wrong and confirmed" when the value is wrong and the model
  * marked it `confirmed`. That is the one that reaches a person's screen, so it
  * is the number the report leads with.
@@ -169,14 +172,34 @@ function scoreOne(
     status[f.key] = f.status;
   }
 
+  const { also_accepted: alts = {}, ...plainKey } = key;
+  const anyOf = <W>(
+    fn: (got: string | null, want: W) => boolean,
+    value: string | null,
+    want: W,
+    more: W[] | undefined,
+  ) => fn(value, want) || (more ?? []).some((w) => fn(value, w));
+
   const correct: Record<ScoredField, boolean> = {
-    due_date: dueDateCorrect(got.due_date ?? null, key.due_date),
-    amount: amountCorrect(got.amount ?? null, key.amount),
-    reference: referenceCorrect(got.reference ?? null, key.reference),
-    issuer: issuerCorrect(got.issuer ?? null, key.issuer),
-    action_required: actionCorrect(
+    due_date: anyOf(
+      dueDateCorrect,
+      got.due_date ?? null,
+      key.due_date,
+      alts.due_date,
+    ),
+    amount: anyOf(amountCorrect, got.amount ?? null, key.amount, alts.amount),
+    reference: anyOf(
+      referenceCorrect,
+      got.reference ?? null,
+      key.reference,
+      alts.reference,
+    ),
+    issuer: anyOf(issuerCorrect, got.issuer ?? null, key.issuer, alts.issuer),
+    action_required: anyOf(
+      actionCorrect,
       got.action_required ?? null,
       key.action_required,
+      alts.action_required,
     ),
   };
 
@@ -204,7 +227,7 @@ function scoreOne(
       : null,
     got,
     status,
-    want: { ...key },
+    want: { ...plainKey },
     correct,
     wrong_and_confirmed: SCORED.filter(
       (f) => !correct[f] && status[f] === "confirmed",

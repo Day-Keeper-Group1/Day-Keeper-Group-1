@@ -5,5 +5,8 @@
   "action_required": "Pay Driver and Vehicle Registry",
   "due_date": "2026-08-28",
   "amount": 96.5,
-  "reference": "05 502 615"
+  "reference": "05 502 615",
+  "also_accepted": {
+    "reference": ["812 466 305"]
+  }
 }

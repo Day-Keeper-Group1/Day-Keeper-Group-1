@@ -10,6 +10,13 @@
  * `amount` in the key is a number, `due_date` an ISO string, and a null means
  * the letter genuinely has no such thing. The model is expected to say so
  * with the contract's own literals; see ../score.ts.
+ *
+ * A key may also carry `also_accepted`: per field, further values that count
+ * as right. It exists for letters that print two numbers a person could
+ * fairly quote (a policy number beside a customer number) or that a person
+ * could fairly read two ways (a donation slip with a return-by date, read as
+ * "No action" or as "Return form"). The team rules on each one; the first
+ * value stays the one the README explains.
  */
 
 import { readdirSync, readFileSync, statSync } from "node:fs";
@@ -27,6 +34,13 @@ export type GroundTruth = {
   due_date: string | null;
   amount: number | null;
   reference: string | null;
+  also_accepted?: Partial<{
+    issuer: string[];
+    action_required: string[];
+    due_date: (string | null)[];
+    amount: (number | null)[];
+    reference: (string | null)[];
+  }>;
 };
 
 export function sampleIds(): string[] {

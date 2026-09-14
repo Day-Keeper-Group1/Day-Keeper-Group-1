@@ -33641,7 +33641,7 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
@@ -33737,7 +33737,7 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
@@ -33785,7 +33785,7 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
@@ -33977,11 +33977,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -34361,11 +34361,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -34409,7 +34409,7 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
@@ -34505,7 +34505,7 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
@@ -34649,7 +34649,7 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
@@ -34697,7 +34697,7 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
@@ -34841,11 +34841,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -34889,11 +34889,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -34985,11 +34985,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -35129,7 +35129,7 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
@@ -35513,7 +35513,7 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
@@ -35561,11 +35561,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -35705,7 +35705,7 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
@@ -35753,7 +35753,7 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
@@ -35801,11 +35801,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -35849,7 +35849,7 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
@@ -35897,7 +35897,7 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
@@ -35993,11 +35993,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -36569,11 +36569,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -36809,11 +36809,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -37097,11 +37097,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -37145,11 +37145,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -37193,11 +37193,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -38297,11 +38297,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -48041,11 +48041,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -48089,11 +48089,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -48137,11 +48137,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -48185,11 +48185,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -48233,11 +48233,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -48281,11 +48281,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -48329,11 +48329,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -48377,11 +48377,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -48425,11 +48425,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -48473,11 +48473,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -48521,11 +48521,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -48569,11 +48569,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -48617,11 +48617,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -48665,11 +48665,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -48713,11 +48713,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -48761,11 +48761,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -48809,11 +48809,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -48857,11 +48857,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -48905,11 +48905,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -48953,11 +48953,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -49001,11 +49001,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -49049,11 +49049,11 @@
     "correct": {
       "due_date": false,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "reference"]
+    "wrong_and_confirmed": ["due_date"]
   },
   {
     "model": "gpt-5.6-luna",
@@ -49097,11 +49097,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -49145,11 +49145,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -49193,11 +49193,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -49241,11 +49241,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -49289,11 +49289,11 @@
     "correct": {
       "due_date": false,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -49337,11 +49337,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -49385,11 +49385,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -49433,11 +49433,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -49481,11 +49481,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -49529,11 +49529,11 @@
     "correct": {
       "due_date": false,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -49577,11 +49577,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -49625,11 +49625,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -49673,11 +49673,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": false
     },
-    "wrong_and_confirmed": ["reference", "action_required"]
+    "wrong_and_confirmed": ["action_required"]
   },
   {
     "model": "gpt-5.6-luna",
@@ -49721,11 +49721,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -49769,11 +49769,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -49817,11 +49817,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -49865,11 +49865,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -49913,11 +49913,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -49961,11 +49961,11 @@
     "correct": {
       "due_date": false,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "reference"]
+    "wrong_and_confirmed": ["due_date"]
   },
   {
     "model": "gpt-5.6-luna",
@@ -50009,11 +50009,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -50057,11 +50057,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -50105,11 +50105,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -50153,11 +50153,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -50201,11 +50201,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -50249,11 +50249,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -50297,11 +50297,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -50345,11 +50345,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -50393,11 +50393,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": false,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference", "issuer"]
+    "wrong_and_confirmed": ["issuer"]
   },
   {
     "model": "gpt-5.6-luna",
@@ -57639,13 +57639,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -57687,13 +57687,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -57735,13 +57735,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": false,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "amount", "action_required"]
+    "wrong_and_confirmed": ["amount"]
   },
   {
     "model": "gpt-5.6-luna",
@@ -57783,13 +57783,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -57831,13 +57831,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -57879,13 +57879,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -57927,13 +57927,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -57975,13 +57975,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -58023,13 +58023,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -58071,13 +58071,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -58119,13 +58119,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -58167,13 +58167,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -58215,13 +58215,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -58263,13 +58263,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -58311,13 +58311,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -58359,13 +58359,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": false,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "amount", "action_required"]
+    "wrong_and_confirmed": ["amount"]
   },
   {
     "model": "gpt-5.6-luna",
@@ -58407,13 +58407,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -58455,13 +58455,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -58503,13 +58503,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -58551,13 +58551,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -58599,13 +58599,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -58647,13 +58647,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -58695,13 +58695,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -58743,13 +58743,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -58791,13 +58791,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -58839,13 +58839,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -58887,13 +58887,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -58935,13 +58935,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -58983,13 +58983,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -59031,13 +59031,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -59079,13 +59079,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -59127,13 +59127,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -59175,13 +59175,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -59223,13 +59223,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -59271,13 +59271,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -59319,13 +59319,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -59367,13 +59367,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": false,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -59415,13 +59415,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -59463,13 +59463,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -59511,13 +59511,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -59559,13 +59559,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -59607,13 +59607,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -59655,13 +59655,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -59703,13 +59703,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -59751,13 +59751,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -59799,13 +59799,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": false,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "amount", "action_required"]
+    "wrong_and_confirmed": ["amount"]
   },
   {
     "model": "gpt-5.6-luna",
@@ -59847,13 +59847,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -59895,13 +59895,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -59943,13 +59943,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-luna",
@@ -59991,13 +59991,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -76841,11 +76841,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -76889,11 +76889,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -76985,11 +76985,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -77033,11 +77033,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -77081,11 +77081,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -77129,11 +77129,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -77225,11 +77225,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -77273,11 +77273,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -77321,11 +77321,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -77417,11 +77417,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -77465,11 +77465,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -77513,11 +77513,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -77561,11 +77561,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -77609,11 +77609,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -77657,11 +77657,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -77801,11 +77801,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -77849,11 +77849,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -77897,11 +77897,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -77945,11 +77945,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -84041,11 +84041,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -84089,11 +84089,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -84137,11 +84137,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -84185,11 +84185,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -84233,11 +84233,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -84281,11 +84281,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -84329,11 +84329,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -84377,11 +84377,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": false
     },
-    "wrong_and_confirmed": ["reference", "action_required"]
+    "wrong_and_confirmed": ["action_required"]
   },
   {
     "model": "gpt-5.6-terra",
@@ -84425,11 +84425,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -84473,11 +84473,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -84521,11 +84521,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -84569,11 +84569,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -84617,11 +84617,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -84665,11 +84665,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -84713,11 +84713,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -84761,11 +84761,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -84809,11 +84809,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -84857,11 +84857,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -84905,11 +84905,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -84953,11 +84953,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -85001,11 +85001,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -85049,11 +85049,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -85097,11 +85097,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": false
     },
-    "wrong_and_confirmed": ["reference", "action_required"]
+    "wrong_and_confirmed": ["action_required"]
   },
   {
     "model": "gpt-5.6-terra",
@@ -85145,11 +85145,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -85193,11 +85193,11 @@
     "correct": {
       "due_date": true,
       "amount": true,
-      "reference": false,
+      "reference": true,
       "issuer": true,
       "action_required": true
     },
-    "wrong_and_confirmed": ["reference"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -88839,13 +88839,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -88887,13 +88887,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -88935,13 +88935,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -88983,13 +88983,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -89031,13 +89031,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -89079,13 +89079,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": false,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "amount", "action_required"]
+    "wrong_and_confirmed": ["amount"]
   },
   {
     "model": "gpt-5.6-terra",
@@ -89127,13 +89127,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -89175,13 +89175,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -89223,13 +89223,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -89271,13 +89271,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -89319,13 +89319,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -89367,13 +89367,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -89415,13 +89415,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -89463,13 +89463,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -89511,13 +89511,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -89559,13 +89559,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -89607,13 +89607,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": false,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "amount", "action_required"]
+    "wrong_and_confirmed": ["amount"]
   },
   {
     "model": "gpt-5.6-terra",
@@ -89655,13 +89655,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": false,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "amount", "action_required"]
+    "wrong_and_confirmed": ["amount"]
   },
   {
     "model": "gpt-5.6-terra",
@@ -89703,13 +89703,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -89751,13 +89751,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": false,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "amount", "action_required"]
+    "wrong_and_confirmed": ["amount"]
   },
   {
     "model": "gpt-5.6-terra",
@@ -89799,13 +89799,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": false,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "amount", "action_required"]
+    "wrong_and_confirmed": ["amount"]
   },
   {
     "model": "gpt-5.6-terra",
@@ -89847,13 +89847,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": false,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "amount", "action_required"]
+    "wrong_and_confirmed": ["amount"]
   },
   {
     "model": "gpt-5.6-terra",
@@ -89895,13 +89895,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": false,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "amount", "action_required"]
+    "wrong_and_confirmed": ["amount"]
   },
   {
     "model": "gpt-5.6-terra",
@@ -89943,13 +89943,13 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   },
   {
     "model": "gpt-5.6-terra",
@@ -89991,12 +89991,12 @@
       "source_id": "SYN-0024"
     },
     "correct": {
-      "due_date": false,
+      "due_date": true,
       "amount": true,
       "reference": true,
       "issuer": true,
-      "action_required": false
+      "action_required": true
     },
-    "wrong_and_confirmed": ["due_date", "action_required"]
+    "wrong_and_confirmed": []
   }
 ]

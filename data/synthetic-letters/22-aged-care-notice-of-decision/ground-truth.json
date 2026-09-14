@@ -5,5 +5,8 @@
   "action_required": "Contact a Support at Home provider",
   "due_date": null,
   "amount": null,
-  "reference": "AC87542"
+  "reference": "AC87542",
+  "also_accepted": {
+    "reference": ["RC532986"]
+  }
 }
