@@ -1,12 +1,23 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { Camera, CircleAlert, Upload, X } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { PageHeader } from "@/components/layout/page-header";
-import { MAX_PAGES, type ApiError } from "@/lib/contract/api";
+import { InboxRow } from "@/components/inbox-row";
+import { Panel, ScreenHeader } from "@/components/screen";
+import {
+  MAX_PAGES,
+  type ApiError,
+  type DocumentSummary,
+  type HomePayload,
+} from "@/lib/contract/api";
+
+/**
+ * How often to ask again while a letter sent from here is still being read.
+ * The same five seconds as Home, for the same reason (home-screen.tsx).
+ */
+const QUEUE_POLL_MS = 5000;
 
 type Photo = {
   id: string;
@@ -34,11 +45,46 @@ type UploadError = {
  * inferred later by a model. See docs/scope.md. (KAN-28)
  */
 export default function UploadDocumentPage() {
-  const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<UploadError | null>(null);
+  /**
+   * Sent to be read: every letter of hers not yet dealt with, the same rows
+   * Home shows under To check. Null until the first answer arrives, so the
+   * card is not drawn empty and then filled.
+   */
+  const [queue, setQueue] = useState<DocumentSummary[] | null>(null);
+
+  const reading = (queue ?? []).some((doc) => doc.status === "processing");
+
+  // The queue is asked for once on arrival, so a letter sent a minute ago is
+  // still here, and then every few seconds while any of it is being read,
+  // so the row changes under her eyes from "reading…" to a name.
+  useEffect(() => {
+    let live = true;
+
+    async function refresh() {
+      try {
+        const response = await fetch("/api/home", { cache: "no-store" });
+        if (!response.ok) return;
+        const payload = (await response.json()) as HomePayload;
+        if (live) setQueue(payload.inbox);
+      } catch {
+        // A dropped poll is not worth a message; the next is seconds away.
+      }
+    }
+
+    void refresh();
+    const timer = reading
+      ? window.setInterval(() => void refresh(), QUEUE_POLL_MS)
+      : null;
+
+    return () => {
+      live = false;
+      if (timer !== null) window.clearInterval(timer);
+    };
+  }, [reading]);
 
   const atLimit = photos.length >= MAX_PAGES;
 
@@ -96,9 +142,18 @@ export default function UploadDocumentPage() {
         return;
       }
 
-      // The letter exists now and sits at 'processing' while the reading runs,
-      // so the letters area is where it shows up next.
-      router.push("/documents");
+      // The letter exists now and sits at 'processing' while the reading
+      // runs. She stays here, as in the prototype: the camera clears for the
+      // next letter and the one just sent appears below, first as "reading…"
+      // and then, when the reading lands, under its own name with a way in.
+      const sent = (await response.json()) as DocumentSummary;
+      setPhotos((prev) => {
+        for (const photo of prev) {
+          if (photo.previewUrl) URL.revokeObjectURL(photo.previewUrl);
+        }
+        return [];
+      });
+      setQueue((prev) => [sent, ...(prev ?? [])]);
     } catch {
       setError({
         message: "We could not reach the server. Please check your connection.",
@@ -109,10 +164,10 @@ export default function UploadDocumentPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-8">
-      <PageHeader
-        title="Photograph a letter"
-        description="A letter, a bill, a doctor's note: anything with a date in it. One letter at a time, as many pages as it runs to."
+    <div className="mx-auto max-w-2xl space-y-6">
+      <ScreenHeader
+        title="Photograph your letter"
+        subtitle="One letter at a time. If it runs to several pages, photograph every page."
       />
 
       {error ? (
@@ -149,19 +204,19 @@ export default function UploadDocumentPage() {
         <span className="flex size-12 items-center justify-center rounded-full bg-primary text-primary-foreground">
           <Camera className="size-6" strokeWidth={1.75} />
         </span>
-        <span className="text-sm font-medium text-foreground">
+        <span className="text-lg font-semibold text-foreground">
           {atLimit
             ? "That's ten pages, the most in one letter"
             : "Tap to photograph"}
         </span>
-        <span className="text-xs text-muted-foreground">
+        <span className="text-base text-muted-foreground">
           the camera stays open, keep going
         </span>
       </button>
 
       {photos.length > 0 ? (
         <div className="space-y-3">
-          <p className="text-sm font-medium text-foreground">
+          <p className="text-base font-semibold text-foreground">
             This letter &middot; {photos.length}{" "}
             {photos.length === 1 ? "photo" : "photos"}
           </p>
@@ -179,7 +234,7 @@ export default function UploadDocumentPage() {
                     className="size-full object-cover"
                   />
                 ) : (
-                  <span className="flex size-full items-center justify-center text-xs text-muted-foreground">
+                  <span className="flex size-full items-center justify-center text-base text-muted-foreground">
                     photo {index + 1}
                   </span>
                 )}
@@ -187,9 +242,9 @@ export default function UploadDocumentPage() {
                   type="button"
                   onClick={() => removePhoto(photo.id)}
                   aria-label={`Remove photo ${index + 1}`}
-                  className="absolute top-1 right-1 flex size-6 items-center justify-center rounded-full bg-background/90 text-foreground shadow"
+                  className="absolute top-1 right-1 flex size-8 items-center justify-center rounded-full bg-background/90 text-foreground shadow"
                 >
-                  <X className="size-3.5" strokeWidth={2} />
+                  <X className="size-4" strokeWidth={2} />
                 </button>
               </div>
             ))}
@@ -197,7 +252,7 @@ export default function UploadDocumentPage() {
               <button
                 type="button"
                 onClick={() => inputRef.current?.click()}
-                className="flex aspect-[3/4] flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-border text-xs font-medium text-primary hover:bg-muted/40"
+                className="flex aspect-[3/4] flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-border text-base font-semibold text-primary hover:bg-muted/40"
               >
                 <Camera className="size-4" strokeWidth={1.75} />+ photo
               </button>
@@ -217,11 +272,26 @@ export default function UploadDocumentPage() {
           <Upload className="size-4" strokeWidth={1.75} />
           {submitting ? "Sending..." : "Read it"}
         </Button>
-        <p className="text-center text-xs text-muted-foreground">
+        <p className="text-center text-base text-muted-foreground">
           Every photo you take here belongs to this one letter. They go
           together, and they are read as one. Up to {MAX_PAGES} pages.
         </p>
       </div>
+
+      {queue && queue.length > 0 ? (
+        <Panel title="Sent to be read">
+          <ul>
+            {queue.map((doc) => (
+              <li
+                key={doc.id}
+                className="border-t border-line first:border-t-0"
+              >
+                <InboxRow doc={doc} />
+              </li>
+            ))}
+          </ul>
+        </Panel>
+      ) : null}
     </div>
   );
 }
