@@ -263,11 +263,17 @@
   .menu .who span { display: block; font-size: 14px; color: var(--ink-dim); }
   .menu button { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 48px; padding: 0 10px; background: none; border: none; border-radius: var(--radius-btn); color: var(--danger); font-size: 16px; font-family: inherit; cursor: pointer; text-align: left; }
 
-  /* Checking one letter after another: the count of the round beside the
-     title, and after each save a line saying what was just kept and where. */
-  .review-count { font-size: 13px; font-weight: 700; color: var(--ink-dim); }
-  .saved { display: flex; align-items: flex-start; gap: 8px; background: var(--success-bg); color: var(--success); border-radius: var(--radius-card); padding: 11px 12px; font-size: 13.5px; font-weight: 600; line-height: 1.45; margin-bottom: 14px; }
-  .saved svg { flex: none; margin-top: 1px; }
+  /* Checking one letter after another. Beside the title, how many letters
+     are still waiting, this one included, counted from the letters
+     themselves every time the screen is drawn, so leaving and coming back
+     shows what is true then. After each save a note drops in under the top
+     bar saying what was kept and where, and goes by itself. */
+  .review-subrow { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+  .review-subrow .sub { margin-bottom: 0; }
+  .review-left { flex: none; font-size: 13px; font-weight: 700; color: var(--ink-dim); }
+  .flash { position: absolute; left: 14px; right: 14px; top: 76px; z-index: 6; display: flex; align-items: flex-start; gap: 8px; background: var(--success-bg); color: var(--success); border: var(--border-w) solid var(--success); border-radius: var(--radius-card); padding: 11px 12px; font-size: 13.5px; font-weight: 600; line-height: 1.45; box-shadow: 0 8px 24px rgba(28,26,21,.18); opacity: 0; visibility: hidden; pointer-events: none; transform: translateY(-10px); transition: all .3s; }
+  .flash.show { opacity: 1; visibility: visible; transform: translateY(0); }
+  .flash svg { flex: none; margin-top: 1px; }
 
   .screen { display: none; }
   .screen.active { display: block; }
@@ -286,6 +292,8 @@
 <!-- ================= PHONE ================= -->
 <div class="phone-wrap" id="phone-view">
   <div class="phone">
+
+    <div class="flash" id="flash" role="status"></div>
 
     <div class="toast" id="toast" onclick="go('home'); this.classList.remove('show')">
       <div class="env">Email · DayKeeper</div>
@@ -378,12 +386,11 @@
 
       <!-- REVIEW -->
       <section class="screen" id="s-review">
-        <div class="saved" id="review-saved" style="display:none"></div>
-        <div class="cal-screen-head">
-          <h1>Check what we found</h1>
-          <span class="review-count" id="review-count"></span>
+        <h1>Check what we found</h1>
+        <div class="review-subrow">
+          <div class="sub" id="review-sub">What we read, and what we'll do about it.</div>
+          <span class="review-left" id="review-left"></span>
         </div>
-        <div class="sub" id="review-sub">What we read, and what we'll do about it.</div>
 
         <!-- The photographs sit under the facts, because checking is
              comparing: what we read against what the letter says. -->
@@ -400,7 +407,7 @@
         </div>
 
         <button class="btn" onclick="confirmItem()">Looks right, save it</button>
-        <button class="btn ghost" onclick="endRound(); go('home')">Not now</button>
+        <button class="btn ghost" onclick="go('home')">Not now</button>
       </section>
 
       <!-- YOUR LETTERS -->
@@ -763,26 +770,30 @@
 
   /* ---------- review ---------- */
   /* ---------- checking one letter after another ----------
-     A round starts when she opens a letter from Home or the camera screen
-     and ends when nothing is left to check, or when she says Not now. The
-     count is what she has done plus what is still waiting, so a letter that
-     finishes reading mid round joins it. */
-  let round = null;   // { done, saved, lastMonth }
+     Nothing about a run of checks is kept once she leaves the review screen.
+     While she stays on it, `run` remembers only where to land when the last
+     letter is saved: the month of the last task saved, or Your letters if
+     none of them made a task. Any other screen clears it (go, below). */
+  let run = null;     // { anyTask, month }
+  let flashTimer = null;
 
-  function endRound() { round = null; }
+  /* The note after a save: shown, then gone by itself. */
+  function flash(text) {
+    const f = document.getElementById('flash');
+    f.innerHTML = icon('circle-check', 18) + '<span>' + text + '</span>';
+    f.classList.add('show');
+    if (flashTimer) clearTimeout(flashTimer);
+    flashTimer = setTimeout(() => f.classList.remove('show'), 3200);
+  }
 
   function openReview(id) {
     const it = queue.find(q => q.id === id && q.state === 'ready');
     if (!it) return;
     current = it;
     const L = LETTERS[it.idx];
-    if (!round) round = { done: 0, saved: null, lastMonth: null };
     const waiting = queue.filter(q => q.state === 'ready').length;
-    const total = round.done + waiting;
-    document.getElementById('review-count').textContent = total > 1 ? (round.done + 1) + ' of ' + total : '';
-    const saved = document.getElementById('review-saved');
-    saved.style.display = round.saved ? 'flex' : 'none';
-    saved.innerHTML = round.saved ? icon('circle-check', 18) + '<span>' + round.saved + '</span>' : '';
+    document.getElementById('review-left').textContent =
+      waiting > 1 ? waiting + ' left to check' : 'Last one to check';
     document.getElementById('review-sub').textContent = L.who + ' · ' + L.what;
     /* Read-only, and nothing on it is a question. Her whole job here is
        recognition: does this match the letter? Why the screen shows rather
@@ -795,38 +806,39 @@
     go('review');
   }
 
-  /* Saving writes the letter, and the task if the letter asks for one, then
-     goes straight on to the next letter waiting. With none left she lands on
-     the calendar at the month of the last task she saved; a round that saved
-     no task at all lands on Your letters, where those letters went. */
+  /* Saving writes the letter, and the task if the letter asks for one, says
+     so in a note that goes by itself, and moves straight on to the next letter
+     waiting. With none left she lands on the calendar at the month of the last
+     task saved without leaving this screen, or on Your letters if none of
+     them made a task. */
   function confirmItem() {
     if (!current) { go('calendar'); return; }
     const L = LETTERS[current.idx];
-    if (!round) round = { done: 0, saved: null, lastMonth: null };
+    if (!run) run = { anyTask: false, month: null };
     queue = queue.filter(q => q.id !== current.id);
     const action = (L.facts.find(f => f.k === 'What to do') || {}).v || L.task && L.task.title;
+    let note;
     if (L.task) {
       tasks.unshift({ id: 't' + current.id, who: L.who, what: L.what, title: L.task.title, when: L.task.when, due: L.task.due, done: false, marks: L.marks, agenda: L.agenda, pages: current.pages, facts: L.facts });
-      if (L.task.due) round.lastMonth = L.task.due.mo;
-      round.saved = L.task.due
+      run.anyTask = true;
+      if (L.task.due) run.month = L.task.due.mo;
+      note = L.task.due
         ? 'Saved. ' + action + ' is on your calendar for ' + L.task.when + '.'
         : 'Saved. ' + action + ' is on your list, with no date.';
-      round.anyTask = true;
     } else {
-      round.saved = 'Saved. ' + L.who + ' · ' + L.what + ' is kept in your letters.';
+      note = 'Saved. ' + L.who + ' · ' + L.what + ' is kept in your letters.';
     }
     letters.push({ who: L.who, what: L.what, due: L.task && L.task.due || null, when: L.task && L.task.due ? L.task.when : null, pages: current.pages, facts: L.facts });
-    round.done++;
     current = null;
     renderAll();
 
     const next = queue.find(q => q.state === 'ready');
-    if (next) { openReview(next.id); return; }
+    if (next) { openReview(next.id); flash(note); return; }
 
-    const landing = round.anyTask ? 'calendar' : 'letters';
-    if (round.lastMonth) { calMo = round.lastMonth; calYr = TODAY_YR; }
-    endRound();
+    const landing = run.anyTask ? 'calendar' : 'letters';
+    if (run.month) { calMo = run.month; calYr = TODAY_YR; }
     go(landing);
+    flash(note);
   }
 
   /* ---------- rendering ---------- */
@@ -1230,6 +1242,7 @@
   function go(name) {
     closeDay();
     closePhoto();
+    if (name !== 'review') run = null;
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById('s-' + name).classList.add('active');
     document.querySelectorAll('.nav button').forEach(b => b.classList.toggle('on', b.dataset.s === name));
@@ -1248,7 +1261,7 @@
     document.getElementById('toast').classList.remove('show');
     queue = []; tasks = INITIAL_TASKS.map(t => Object.assign({}, t));
     letters = INITIAL_LETTERS.map(l => Object.assign({}, l));
-    nextRead = 0; photos = 0; current = null; selDay = null; round = null; calMo = 8; calYr = 2026;
+    nextRead = 0; photos = 0; current = null; selDay = null; run = null; calMo = 8; calYr = 2026;
     document.getElementById('cam-d').textContent = 'the camera stays open, keep going';
     renderPages(); renderAll(); go('signin');
   }
