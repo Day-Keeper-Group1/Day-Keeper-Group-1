@@ -221,7 +221,10 @@ describe("one letter, in full", () => {
   // on it being refused.
   it("asks for a letter, its reading and its pages under one owner", async () => {
     queryOneMock.mockResolvedValue(documentRow());
-    queryMock.mockResolvedValueOnce(readingRows()).mockResolvedValueOnce([]);
+    queryMock
+      .mockResolvedValueOnce(readingRows())
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([]);
 
     await getDocument(DOCUMENT_ID, USER_ID, MELBOURNE);
 
@@ -257,6 +260,7 @@ describe("one letter, in full", () => {
     queryOneMock.mockResolvedValue(documentRow());
     queryMock
       .mockResolvedValueOnce(readingRows())
+      .mockResolvedValueOnce([])
       .mockResolvedValueOnce([{ id: "page-one", page_number: 1 }]);
 
     const detail = await getDocument(DOCUMENT_ID, USER_ID, MELBOURNE);
@@ -291,9 +295,36 @@ describe("one letter, in full", () => {
     expect(byKey.get("due_date")?.value).toBe("15 Aug 2026");
   });
 
+  it("lists the numbers the letter printed, the one to quote first, hedges dropped", async () => {
+    queryOneMock.mockResolvedValue(documentRow());
+    queryMock
+      .mockResolvedValueOnce([
+        ...readingRows().filter((row) => row.field_key !== "reference"),
+        {
+          field_key: "reference",
+          extracted_value: "8124  6630",
+          status: "confirmed",
+        },
+      ])
+      .mockResolvedValueOnce([
+        { label: "Licence number", value: "0550 2615", status: "confirmed" },
+        { label: "Card number", value: "P4471", status: "uncertain" },
+        { label: "Customer number", value: "8124 6630", status: "confirmed" },
+      ])
+      .mockResolvedValueOnce([]);
+
+    const detail = await getDocument(DOCUMENT_ID, USER_ID, MELBOURNE);
+
+    expect(detail?.identifiers).toEqual([
+      { label: "Customer number", value: "8124 6630", isReference: true },
+      { label: "Licence number", value: "0550 2615", isReference: false },
+    ]);
+  });
+
   it("offers each photograph as a path and never as a signed link", async () => {
     queryOneMock.mockResolvedValue(documentRow());
     queryMock
+      .mockResolvedValueOnce([])
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([{ id: "page-one", page_number: 1 }]);
 
@@ -310,7 +341,10 @@ describe("one letter, in full", () => {
 
   it("has no reading to show while the letter is still being read", async () => {
     queryOneMock.mockResolvedValue({ ...documentRow(), status: "processing" });
-    queryMock.mockResolvedValueOnce(readingRows()).mockResolvedValueOnce([]);
+    queryMock
+      .mockResolvedValueOnce(readingRows())
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([]);
 
     const detail = await getDocument(DOCUMENT_ID, USER_ID, MELBOURNE);
 

@@ -34,7 +34,12 @@ import {
   OPTIONAL_FIELD_KEYS,
 } from "@/lib/contract/fields";
 import { query, queryOne } from "@/server/db";
-import { mapField, type ExtractedFieldRow } from "@/server/field-views";
+import {
+  identifierViews,
+  mapField,
+  type ExtractedFieldRow,
+  type ExtractedIdentifierRow,
+} from "@/server/field-views";
 import { listTasks } from "@/server/tasks";
 
 /**
@@ -279,7 +284,7 @@ export async function getDocument(
   );
   if (!row) return null;
 
-  const [fields, pages] = await Promise.all([
+  const [fields, identifiers, pages] = await Promise.all([
     query<ExtractedFieldRow>(
       `SELECT f.field_key, f.extracted_value, f.status
          FROM documents d
@@ -289,6 +294,17 @@ export async function getDocument(
           AND d.user_id = $2
           AND e.status = 'succeeded'
         ORDER BY f.field_key`,
+      [documentId, userId],
+    ),
+    query<ExtractedIdentifierRow>(
+      `SELECT i.label, i.value, i.status
+         FROM documents d
+         JOIN extraction_runs e ON e.document_id = d.id
+         JOIN extracted_identifiers i ON i.extraction_run_id = e.id
+        WHERE d.id = $1
+          AND d.user_id = $2
+          AND e.status = 'succeeded'
+        ORDER BY i.position`,
       [documentId, userId],
     ),
     query<{ id: string; page_number: number }>(
@@ -302,13 +318,16 @@ export async function getDocument(
     ),
   ]);
 
+  const views = row.status === "processing" ? [] : fieldViews(fields);
+
   return {
     ...mapDocument(row, timeZone),
     // Empty while the letter is still being read, and empty for a letter no
     // reading ever succeeded for. The second case falls out of the query, which
     // finds nothing; the first is stated here as a rule rather than left to be
     // inferred from a run that has not finished yet.
-    fields: row.status === "processing" ? [] : fieldViews(fields),
+    fields: views,
+    identifiers: views.length === 0 ? [] : identifierViews(identifiers, views),
     pages: pages.map((page): DocumentPageView => ({
       id: page.id,
       pageNumber: page.page_number,

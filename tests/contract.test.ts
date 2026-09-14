@@ -165,6 +165,38 @@ describe("action_required", () => {
   });
 });
 
+describe("identifiers", () => {
+  it("defaults to an empty list for a reader that returns none", () => {
+    const parsed = safeParseExtractionResult(validResult());
+    expect(parsed.success).toBe(true);
+    if (parsed.success) expect(parsed.data.identifiers).toEqual([]);
+  });
+
+  it("keeps every labelled number, confirmed or uncertain", () => {
+    const parsed = safeParseExtractionResult(
+      validResult({
+        identifiers: [
+          { label: "Customer number", value: "8124 6630", status: "confirmed" },
+          { label: "Licence number", value: "0550 2615", status: "uncertain" },
+        ],
+      }),
+    );
+    expect(parsed.success).toBe(true);
+    if (parsed.success) expect(parsed.data.identifiers).toHaveLength(2);
+  });
+
+  it("refuses an identifier with no label, or one marked unreadable", () => {
+    for (const bad of [
+      { label: "", value: "8124 6630", status: "confirmed" },
+      { label: "Customer number", value: "8124 6630", status: "unreadable" },
+    ]) {
+      expect(
+        safeParseExtractionResult(validResult({ identifiers: [bad] })).success,
+      ).toBe(false);
+    }
+  });
+});
+
 describe("field states", () => {
   it("will not let an unreadable field carry a value", () => {
     const contradictory = validResult({

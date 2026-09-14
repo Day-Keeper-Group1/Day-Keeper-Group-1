@@ -46,6 +46,7 @@ const SPECIMENS = [
     due_time: null,
     amount: "$347.60",
     reference: "9201 4471 88",
+    identifiers: [["Account number", "9201 4471 88"]],
   },
   {
     document_type: "Government letter",
@@ -55,6 +56,10 @@ const SPECIMENS = [
     due_time: null,
     amount: null,
     reference: "CLM 30991 442",
+    identifiers: [
+      ["Claim number", "CLM 30991 442"],
+      ["Medicare card number", "2950 41873 1"],
+    ],
   },
   {
     document_type: "Registration renewal",
@@ -63,7 +68,11 @@ const SPECIMENS = [
     due_date: "2026-09-01",
     due_time: null,
     amount: "$852.10",
-    reference: "1AB 2CD",
+    reference: "8124 6630",
+    identifiers: [
+      ["Customer number", "8124 6630"],
+      ["Registration number", "1AB 2CD"],
+    ],
   },
   {
     document_type: "Rates notice",
@@ -73,6 +82,7 @@ const SPECIMENS = [
     due_time: null,
     amount: "$612.40",
     reference: "88 3120 7",
+    identifiers: [["Assessment number", "88 3120 7"]],
   },
   {
     document_type: "Medical letter",
@@ -84,6 +94,7 @@ const SPECIMENS = [
     due_time: "10:30",
     amount: null,
     reference: "PT-40192",
+    identifiers: [["Patient number", "PT-40192"]],
   },
 ] as const;
 
@@ -224,6 +235,19 @@ export class MockExtractionProvider implements DocumentExtractionProvider {
         provider: this.name,
         model: this.model,
         fields,
+        // KAN-58: every number the letter prints. A reference the mock could
+        // not read is not in the list either: a number nobody read is not a
+        // number the letter was found to print.
+        identifiers: specimen.identifiers
+          .filter(
+            ([, value]) =>
+              !(referenceUnreadable && value === specimen.reference),
+          )
+          .map(([label, value]) => ({
+            label,
+            value,
+            status: "confirmed" as const,
+          })),
         // Something outside the six, so the open payload is exercised rather
         // than being a theory nobody has ever put anything into.
         open_payload: {

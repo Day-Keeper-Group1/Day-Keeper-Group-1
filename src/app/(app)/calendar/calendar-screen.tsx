@@ -29,7 +29,7 @@ import {
   type TaskSummary,
 } from "@/lib/contract/api";
 import { formatDueDate, formatDueTime } from "@/lib/contract/dates";
-import { NOT_APPLICABLE, NO_PAYMENT_REQUIRED } from "@/lib/contract/fields";
+import { factLines } from "@/lib/facts";
 import { toggleTaskDone } from "@/lib/task-actions";
 import { cn } from "@/lib/utils";
 
@@ -525,22 +525,9 @@ function DueEntry({
   detail?: TaskDetail;
   onToggle: (task: TaskSummary) => void;
 }) {
-  /*
-   * What the letter says, as it may be shown.
-   *
-   * The same filter the letter and the review screens apply: a value the reader
-   * was not confident of never reaches a screen, and the two confident values
-   * with nothing to tell her (an appointment printing no reference, a form with
-   * nothing to pay) are not rows. The spellings come from the contract so the
-   * comparison cannot quietly stop matching (src/lib/contract/fields.ts).
-   */
-  const facts = (detail?.fields ?? []).filter(
-    (field) =>
-      field.status === "confirmed" &&
-      field.value &&
-      field.value !== NO_PAYMENT_REQUIRED &&
-      field.value !== NOT_APPLICABLE,
-  );
+  // What the letter says, as it may be shown: the same rows the letter and the
+  // review screens draw, from src/lib/facts.ts.
+  const facts = factLines(detail?.fields ?? [], detail?.identifiers ?? []);
   const pages = detail?.pageCount ?? 0;
 
   return (
@@ -550,8 +537,8 @@ function DueEntry({
 
       {facts.length > 0 ? (
         <div>
-          {facts.map((field) => (
-            <FactRow key={field.key} field={field} />
+          {facts.map((line) => (
+            <FactRow key={line.key} line={line} />
           ))}
         </div>
       ) : null}

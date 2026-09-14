@@ -98,6 +98,25 @@ export const extractedFieldSchema = z
 export type ExtractedFieldPayload = z.infer<typeof extractedFieldSchema>;
 
 /**
+ * KAN-58: one identifier the letter prints, under its own label.
+ *
+ * `label` is what the page prints beside the number ("Customer number"), and
+ * `value` is the number as printed. There is no `unreadable` here: a number the
+ * reader could not read is simply not in the list, because a list has no slot
+ * to leave empty. `uncertain` is kept, and treated the way an uncertain field
+ * is: stored, never shown. See IDENTIFIERS_DESCRIPTION in ./fields.ts.
+ */
+export const extractedIdentifierSchema = z.object({
+  label: z.string().min(1),
+  value: z.string().min(1),
+  status: z.enum(["confirmed", "uncertain"]),
+});
+
+export type ExtractedIdentifierPayload = z.infer<
+  typeof extractedIdentifierSchema
+>;
+
+/**
  * A whole extraction.
  *
  * `open_payload` is the escape hatch, and it is what lets six fields be a floor
@@ -119,6 +138,9 @@ export const extractionResultSchema = z
     provider: z.string().min(1),
     model: z.string().nullable(),
     fields: z.array(extractedFieldSchema).min(CONTRACT_FIELD_KEYS.length),
+    // KAN-58: every number the letter prints; empty for a reader that returns
+    // none, so older readers and stored payloads still parse.
+    identifiers: z.array(extractedIdentifierSchema).default([]),
     open_payload: z.record(z.string(), z.unknown()).default({}),
   })
   .superRefine((result, ctx) => {
