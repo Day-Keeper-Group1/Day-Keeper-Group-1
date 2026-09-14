@@ -45,9 +45,6 @@ Anything else you read that is not one of the six keys or an identifier goes in 
 
 ```json
 {
-  "contract_version": "2.0",
-  "provider": "azure",
-  "model": "<the model you are>",
   "fields": [
     {"key": "document_type", "value": "...", "status": "confirmed", "confidence": 0.9},
     {"key": "issuer", "value": "...", "status": "confirmed", "confidence": 0.9},
