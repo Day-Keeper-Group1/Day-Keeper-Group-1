@@ -35,9 +35,10 @@ function LetterRow({ doc }: { doc: DocumentSummary }) {
 
   return (
     <li className="border-t border-line first:border-t-0">
+      {/* The prototype's `.item`: 11px apart, 11px above and below. */}
       <Link
         href={`/documents/${doc.id}`}
-        className="flex min-h-14 items-center gap-3 rounded-lg px-1 py-3 hover:bg-card"
+        className="flex min-h-12 items-center gap-[11px] px-0.5 py-[11px]"
       >
         {/* The first page, at thumbnail size. A letter has its photographs from
             the moment it exists, so even a row that says "reading" can show
@@ -50,7 +51,7 @@ function LetterRow({ doc }: { doc: DocumentSummary }) {
           width={34}
           height={44}
           className={cn(
-            "h-11 w-[34px] shrink-0 rounded-sm border border-line bg-primary-soft object-cover",
+            "h-11 w-[34px] shrink-0 rounded-[5px] border border-line bg-primary-soft object-cover",
             reading && "animate-pulse",
           )}
           onError={(event) => {
@@ -60,39 +61,42 @@ function LetterRow({ doc }: { doc: DocumentSummary }) {
           }}
         />
 
-        {/* The name and the way in are one wrapping line rather than two
-            columns that cannot both give: "open →" may not shrink, so in a
-            narrow window the name was the only thing left to squeeze. */}
-        <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3">
-          <span className="min-w-0 flex-[1_1_10rem]">
-            <span className={cn("block", reading && "text-muted-foreground")}>
-              {doc.label}
+        {/* The name at 15px with where it is up to under it at 12.5px, and
+            "open →" beside them at 13px, never shrinking. */}
+        <span className="min-w-0 flex-1">
+          <span
+            className={cn(
+              "block text-item",
+              reading ? "text-ink-dim" : "text-foreground",
+            )}
+          >
+            {doc.label}
+          </span>
+          {status ? (
+            <span
+              className={cn(
+                "mt-0.5 block text-label",
+                // "ready to check" is not an alarm. It means a letter has
+                // been read and is waiting for her nod, so it gets bark
+                // brown: a pencil note in the margin, not a parking ticket.
+                // A reading that turned the upload away is what --danger is
+                // reserved for (docs/theme.md), and Home says it in that
+                // same red, so one sentence cannot be two colours on two
+                // screens.
+                ready && "font-semibold text-warn",
+                failed && "text-danger",
+                // A filed letter's due date, the prototype's `.item.ready .st`.
+                !ready && !failed && !reading && "font-semibold text-warn",
+                reading && "animate-pulse text-ink-dim",
+              )}
+            >
+              {status}
             </span>
-            {status ? (
-              <span
-                className={cn(
-                  "mt-0.5 block text-sm",
-                  // "ready to check" is not an alarm. It means a letter has
-                  // been read and is waiting for her nod, so it gets bark
-                  // brown: a pencil note in the margin, not a parking ticket.
-                  // A reading that turned the upload away is what --danger is
-                  // reserved for (docs/theme.md), and Home says it in that
-                  // same red, so one sentence cannot be two colours on two
-                  // screens.
-                  ready && "font-semibold text-warn",
-                  failed && "text-danger",
-                  !ready && !failed && "text-muted-foreground",
-                  reading && "animate-pulse",
-                )}
-              >
-                {status}
-              </span>
-            ) : null}
-          </span>
+          ) : null}
+        </span>
 
-          <span className="ml-auto shrink-0 font-semibold text-primary">
-            open →
-          </span>
+        <span className="shrink-0 text-key font-bold text-primary">
+          open <span aria-hidden="true">→</span>
         </span>
       </Link>
     </li>
@@ -155,21 +159,27 @@ export function LettersScreen({ initial }: { initial: DocumentSummary[] }) {
   return (
     // The same one column at every width, given more room rather than more
     // columns: a list of letters that grows to 1280px is a spreadsheet.
-    <div className="max-w-3xl space-y-2">
+    <div className="max-w-3xl">
       <ScreenHeader
         title="Your letters"
         subtitle="Every letter you've photographed, kept and named for you."
-        action={<PillButton render={<Link href="/dashboard">← Home</Link>} />}
+        action={
+          <PillButton
+            nativeButton={false}
+            render={<Link href="/dashboard">← Home</Link>}
+          />
+        }
       />
 
       {folders.length === 0 ? (
-        <p className="flex min-h-14 items-center px-1 text-muted-foreground">
+        <p className="flex min-h-12 items-center px-0.5 text-row text-ink-dim">
           Nothing yet
         </p>
       ) : (
         folders.map((folder) => (
           <section key={folder.heading}>
-            <h2 className="mt-4 mb-1 flex items-center gap-2 px-1 text-sm font-bold tracking-wide text-muted-foreground uppercase">
+            {/* The prototype's `.folder-h`: 13.5px, bold, spaced, uppercase. */}
+            <h2 className="mx-0.5 mt-[18px] mb-1 flex items-center gap-1.5 text-caption font-bold tracking-[0.06em] text-ink-dim uppercase">
               <Folder className="size-4" strokeWidth={2} aria-hidden="true" />
               {folder.heading}
             </h2>

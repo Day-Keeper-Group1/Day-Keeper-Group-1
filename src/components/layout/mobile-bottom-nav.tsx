@@ -36,19 +36,19 @@ function NavTab({
       href={href}
       aria-current={active ? "page" : undefined}
       className={cn(
-        // text-base, not text-sm: this label is the whole of how a person
-        // finds her way between the three screens, and a house icon beside a
-        // calendar icon does not explain itself to everybody.
-        "flex min-h-12 flex-col items-center justify-center gap-1 py-2 text-base",
-        active ? "font-bold text-foreground" : "font-medium text-ink-dim",
+        // The prototype's `.nav button`: 76px wide, 12px label, 3px between
+        // icon, label and bar. The cell is at least 48px tall, so the small
+        // label does not make a small target.
+        "flex min-h-12 w-[76px] flex-col items-center justify-center gap-[3px] text-nav",
+        active ? "font-bold text-foreground" : "text-ink-dim",
       )}
     >
-      <Icon className="size-6" strokeWidth={active ? 2.25 : 1.75} />
+      <Icon className="size-[21px]" strokeWidth={active ? 2.25 : 1.75} />
       {label}
       <span
         aria-hidden="true"
         className={cn(
-          "h-1 w-7 rounded-full",
+          "h-1 w-7 rounded-[2px]",
           active ? "bg-primary" : "bg-transparent",
         )}
       />
@@ -61,7 +61,8 @@ export function MobileBottomNav() {
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t-2 border-line bg-card pb-[env(safe-area-inset-bottom)] md:hidden">
-      <ul className="grid grid-cols-3 items-center px-3 pt-2 pb-3">
+      {/* `.nav`: padding 8px 10px 14px, the three cells spread around. */}
+      <ul className="flex items-center justify-around px-2.5 pt-2 pb-3.5">
         <li className="flex justify-center">
           <NavTab
             href={HOME.href}
@@ -81,9 +82,9 @@ export function MobileBottomNav() {
             aria-current={
               isNavItemActive(pathname, PHOTOGRAPH.href) ? "page" : undefined
             }
-            className="-mt-[26px] flex size-[58px] items-center justify-center rounded-full border-4 border-background bg-primary text-primary-foreground shadow-lg"
+            className="-mt-[26px] flex size-[58px] items-center justify-center rounded-full border-4 border-background bg-primary text-primary-foreground shadow-[0_6px_14px_rgba(23,69,44,0.35)]"
           >
-            <Camera className="size-7" strokeWidth={2} />
+            <Camera className="size-[25px]" strokeWidth={2} />
             <span className="sr-only">Photograph your letter</span>
           </Link>
         </li>

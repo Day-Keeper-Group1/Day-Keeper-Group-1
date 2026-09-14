@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Camera, CircleAlert, Upload, X } from "lucide-react";
+import { Camera, CircleAlert, X } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { InboxRow } from "@/components/inbox-row";
@@ -164,7 +164,7 @@ export default function UploadDocumentPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="mx-auto max-w-2xl">
       <ScreenHeader
         title="Photograph your letter"
         subtitle="One letter at a time. If it runs to several pages, photograph every page."
@@ -173,7 +173,7 @@ export default function UploadDocumentPage() {
       {error ? (
         // An icon and a heading as well as the colour: theme.md's rule is that
         // colour is never the only thing carrying a message.
-        <Alert variant="destructive">
+        <Alert variant="destructive" className="mb-3.5">
           <CircleAlert strokeWidth={1.75} />
           <AlertTitle>We could not save these photos</AlertTitle>
           <AlertDescription className="space-y-1">
@@ -195,36 +195,35 @@ export default function UploadDocumentPage() {
         }}
       />
 
+      {/* The prototype's `.cam`: a pale green, dashed area, green words. */}
       <button
         type="button"
         disabled={atLimit}
         onClick={() => inputRef.current?.click()}
-        className="flex w-full flex-col items-center gap-2 rounded-xl border-2 border-dashed border-primary/40 bg-primary/5 px-6 py-10 text-center transition-colors hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
+        className="mb-3.5 flex w-full flex-col items-center rounded-[10px] border-2 border-dashed border-line bg-primary-soft px-4 py-[34px] text-center text-primary disabled:cursor-not-allowed disabled:opacity-45"
       >
-        <span className="flex size-12 items-center justify-center rounded-full bg-primary text-primary-foreground">
-          <Camera className="size-6" strokeWidth={1.75} />
-        </span>
-        <span className="text-lg font-semibold text-foreground">
+        <Camera className="mb-1.5 size-8" strokeWidth={1.75} />
+        <span className="text-cam font-bold">
           {atLimit
             ? "That's ten pages, the most in one letter"
             : "Tap to photograph"}
         </span>
-        <span className="text-base text-muted-foreground">
+        <span className="mt-1 text-caption text-ink-dim">
           the camera stays open, keep going
         </span>
       </button>
 
       {photos.length > 0 ? (
-        <div className="space-y-3">
-          <p className="text-base font-semibold text-foreground">
-            This letter &middot; {photos.length}{" "}
-            {photos.length === 1 ? "photo" : "photos"}
-          </p>
-          <div className="grid grid-cols-4 gap-3 sm:grid-cols-5">
+        <Panel
+          title={`This letter · ${photos.length} ${photos.length === 1 ? "photo" : "photos"}`}
+          className="mb-3.5"
+        >
+          {/* `.pages`: 74 by 100 tiles, 10px apart, wrapping. */}
+          <div className="flex flex-wrap gap-2.5">
             {photos.map((photo, index) => (
               <div
                 key={photo.id}
-                className="relative aspect-[3/4] overflow-hidden rounded-lg border border-border bg-primary-soft"
+                className="relative h-[100px] w-[74px] overflow-hidden rounded-[8px] border border-line bg-primary-soft"
               >
                 {photo.previewUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -234,17 +233,20 @@ export default function UploadDocumentPage() {
                     className="size-full object-cover"
                   />
                 ) : (
-                  <span className="flex size-full items-center justify-center text-base text-muted-foreground">
+                  <span className="flex size-full items-center justify-center text-label text-ink-dim">
                     photo {index + 1}
                   </span>
                 )}
+                {/* Not in the prototype, whose camera cannot misfire. A real one
+                    can, and a blurred page read as part of a letter is worse
+                    than a small cross on its corner. */}
                 <button
                   type="button"
                   onClick={() => removePhoto(photo.id)}
                   aria-label={`Remove photo ${index + 1}`}
-                  className="absolute top-1 right-1 flex size-8 items-center justify-center rounded-full bg-background/90 text-foreground shadow"
+                  className="absolute top-1 right-1 flex size-6 items-center justify-center rounded-full bg-card/90 text-foreground shadow-[var(--shadow-card)] after:absolute after:-inset-2"
                 >
-                  <X className="size-4" strokeWidth={2} />
+                  <X className="size-3.5" strokeWidth={2.25} />
                 </button>
               </div>
             ))}
@@ -252,34 +254,31 @@ export default function UploadDocumentPage() {
               <button
                 type="button"
                 onClick={() => inputRef.current?.click()}
-                className="flex aspect-[3/4] flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-border text-base font-semibold text-primary hover:bg-muted/40"
+                className="flex h-[100px] w-[74px] items-center justify-center rounded-[8px] border-2 border-dashed border-line bg-card text-label font-semibold text-primary"
               >
-                <Camera className="size-4" strokeWidth={1.75} />+ photo
+                + photo
               </button>
             ) : null}
           </div>
-        </div>
+        </Panel>
       ) : null}
 
-      <div className="space-y-3">
-        <Button
-          type="button"
-          size="lg"
-          className="w-full"
-          disabled={photos.length === 0 || submitting}
-          onClick={() => void handleSubmit()}
-        >
-          <Upload className="size-4" strokeWidth={1.75} />
-          {submitting ? "Sending..." : "Read it"}
-        </Button>
-        <p className="text-center text-base text-muted-foreground">
-          Every photo you take here belongs to this one letter. They go
-          together, and they are read as one. Up to {MAX_PAGES} pages.
-        </p>
-      </div>
+      <Button
+        type="button"
+        size="block"
+        className="mt-1"
+        disabled={photos.length === 0 || submitting}
+        onClick={() => void handleSubmit()}
+      >
+        {submitting ? "Sending..." : "Read it"}
+      </Button>
+      <p className="mt-2.5 text-key leading-[1.45] text-ink-dim">
+        Every photo you take here belongs to this one letter. They go together,
+        and they are read as one.
+      </p>
 
       {queue && queue.length > 0 ? (
-        <Panel title="Sent to be read">
+        <Panel title="Sent to be read" className="mt-2">
           <ul>
             {queue.map((doc) => (
               <li

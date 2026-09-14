@@ -56,7 +56,8 @@ colour is a state some readers cannot see.
 | `--line` | `#8a8265` | borders and rules. Deliberately dark enough to see: a person who cannot find the edge of an input does not know where to tap |
 | `--primary` | `#17452c` | the pressable things. A dim, yellow-leaning green: drift towards teal and it becomes a SaaS dashboard, towards grey and it becomes a uniform |
 | `--primary-ink` | `#f7f4ea` | text and icons on primary |
-| `--primary-soft` | `#d9e5d5` | quiet green fills: thumbnails, the capture panel, calendar arrows |
+| `--primary-soft` | `#d9e5d5` | quiet green fills: thumbnails, the capture panel, calendar arrows |
+
 | `--button-hover` | `#123921` | the pressable things while the pointer is on them. A step darker than `--primary` rather than an opacity of it, so each high-contrast palette can name its own. Text on it clears 11.7:1 |
 | `--focus` | `#191a12` | the focus ring itself. Near-black, and thick |
 | `--focus-ink` | `#ffd21f` | the gold lining inside the focus ring. Never text |
@@ -69,11 +70,29 @@ colour is a state some readers cannot see.
 | `--dot-due` | `#8c0d07` | the calendar's due marks |
 | `--dot-rem` | `#b87500` | the calendar's reminder marks |
 
-Sizes travel with the palette: `--fs-body` 19px, `--btn-h` 56px,
-`--radius-card` 10px, `--radius-btn` 8px, `--border-w` 2px. Body text is at
-least 18px and a primary button at least 48px tall; the corners are restrained
-and the shadows almost absent, because the feel wanted here is the squareness
-of officialdom rather than the roundness of a toy.
+Sizes travel with the palette: `--btn-h` 56px, `--radius-card` 10px,
+`--radius-btn` 8px, `--border-w` 2px. A primary button is at least 48px tall;
+the corners are restrained and the shadows almost absent, because the feel
+wanted here is the squareness of officialdom rather than the roundness of a
+toy.
+
+### Type
+
+The prototype's sizes are the product's sizes: a 23px screen title, 16px task
+rows, 13.5px captions, 12.5px card labels, and the rest as the prototype's CSS
+sets them. `src/app/globals.css` gives each one a name (`text-title`,
+`text-row`, `text-caption`, `text-label` and so on) beside the prototype rule
+it comes from, and the screens drawn from the prototype use those names.
+
+This replaces an earlier floor of 18px for body text. Applied on its own, the
+floor enlarged the words without the layout they sit in, and the screens lost
+the proportion that made the prototype readable in the first place: rows
+wrapped, captions competed with titles, and cards crowded. Jason's ruling on
+14 September 2026 was that the prototype is the design. Larger text remains
+available without redesigning a screen: the phone's own text size setting, and
+the Accessibility panel on desktop, both scale every one of these sizes,
+because they are set in rem. `--fs-body` stays in the token block only because
+the prototype carries it; nothing reads it.
 
 ### Why "something is missing" gets no alarm colour
 
@@ -143,6 +162,6 @@ rather than inventing a nineteenth colour on the spot.
   meant one class on `<html>` could silently drop the product into an
   undesigned theme. A dark variant is real design work and gets its own
   contrast audit when someone does it.
-- **The prototype's type scale.** The prototype carries the palette but its
-  type is still the older, smaller scale. Build new screens at the sizes above
-  rather than matching the sketch.
+- **The pages not drawn from the prototype.** Sign in, register, forgot
+  password, settings and accessibility keep Tailwind's own type ramp. They are
+  the teammates' designs and are not measured against the prototype.

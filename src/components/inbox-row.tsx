@@ -42,7 +42,7 @@ export function InboxRow({ doc }: { doc: DocumentSummary }) {
           link is then minted when the image is actually wanted. */}
       <span
         className={cn(
-          "h-11 w-[34px] shrink-0 overflow-hidden rounded-md border border-line bg-primary-soft",
+          "h-11 w-[34px] shrink-0 overflow-hidden rounded-[5px] border border-line bg-primary-soft",
           reading && "animate-pulse",
         )}
       >
@@ -61,38 +61,34 @@ export function InboxRow({ doc }: { doc: DocumentSummary }) {
         />
       </span>
 
-      {/* The name and the way in are one wrapping line. "check →" may not
-          shrink and the thumbnail may not either, so in a narrow card the name
-          was the only thing left to squeeze and its glyphs ran over the word
-          beside it. Given a basis it takes its own line instead. */}
-      <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3">
-        <span className="min-w-0 flex-[1_1_10rem]">
-          <span
-            className={cn(
-              "block text-lg",
-              reading ? "text-ink-dim" : "text-foreground",
-            )}
-          >
-            {label}
-          </span>
-          <span
-            className={cn(
-              "block text-base",
-              reading && "animate-pulse text-ink-dim",
-              ready && "font-semibold text-warn",
-              !reading && !ready && "text-danger",
-            )}
-          >
-            {caption}
-          </span>
+      {/* The prototype's `.item .txt`: the name at 15px and the state under it
+          at 12.5px, with "check →" beside them at 13px, never shrinking. */}
+      <span className="min-w-0 flex-1">
+        <span
+          className={cn(
+            "block text-item",
+            reading ? "text-ink-dim" : "text-foreground",
+          )}
+        >
+          {label}
         </span>
-
-        {ready ? (
-          <span className="ml-auto shrink-0 text-base font-bold text-primary">
-            check <span aria-hidden="true">→</span>
-          </span>
-        ) : null}
+        <span
+          className={cn(
+            "mt-0.5 block text-label",
+            reading && "animate-pulse text-ink-dim",
+            ready && "font-semibold text-warn",
+            !reading && !ready && "text-danger",
+          )}
+        >
+          {caption}
+        </span>
       </span>
+
+      {ready ? (
+        <span className="shrink-0 text-key font-bold text-primary">
+          check <span aria-hidden="true">→</span>
+        </span>
+      ) : null}
     </>
   );
 
@@ -101,11 +97,13 @@ export function InboxRow({ doc }: { doc: DocumentSummary }) {
   return ready ? (
     <Link
       href={`/documents/${doc.id}/review`}
-      className="flex min-h-12 items-center gap-3 py-2"
+      className="flex min-h-12 items-center gap-[11px] px-0.5 py-[11px]"
     >
       {body}
     </Link>
   ) : (
-    <div className="flex min-h-12 items-center gap-3 py-2">{body}</div>
+    <div className="flex min-h-12 items-center gap-[11px] px-0.5 py-[11px]">
+      {body}
+    </div>
   );
 }

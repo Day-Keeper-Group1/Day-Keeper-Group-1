@@ -77,7 +77,7 @@ export function Topbar({ user }: { user: SessionUser }) {
                 aria-label={`Account menu for ${user.displayName}`}
               >
                 <Avatar className="size-9">
-                  <AvatarFallback className="text-base font-semibold">
+                  <AvatarFallback className="text-sm font-semibold">
                     {initialsOf(user.displayName)}
                   </AvatarFallback>
                 </Avatar>

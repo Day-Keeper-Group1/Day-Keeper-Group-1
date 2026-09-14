@@ -75,7 +75,7 @@ export default async function DocumentDetailPage({
   const photoCount = photos.length;
 
   return (
-    <div className="space-y-2">
+    <div>
       <ScreenHeader
         title={document.label}
         subtitle={statusSentence(document)}
@@ -86,11 +86,12 @@ export default async function DocumentDetailPage({
           The split waits for lg rather than md because the sidebar has already
           taken 240px by then, and two columns of a 768px window are narrower
           than the phone they were meant to improve on. */}
-      <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
-        <div className="space-y-4">
+      <div className="grid gap-3.5 lg:grid-cols-2 lg:items-start lg:gap-6">
+        <div className="flex flex-col gap-3.5">
           {document.status === "needs-review" ? (
             <Button
-              className="w-full"
+              size="block"
+              nativeButton={false}
               render={
                 <Link href={`/documents/${document.id}/review`}>Check it</Link>
               }
@@ -111,13 +112,14 @@ export default async function DocumentDetailPage({
         </div>
 
         <Panel>
-          <p className="mb-3 text-muted-foreground">
+          {/* The prototype's `.cap2`. */}
+          <p className="mb-[7px] text-label text-ink-dim">
             {photoCount === 1
               ? "1 photo · kept with this letter"
               : `${photoCount} photos · kept with this letter`}
           </p>
           {photoCount === 0 ? (
-            <p className="text-foreground">
+            <p className="text-row text-foreground">
               The photographs of this letter are not available.
             </p>
           ) : (

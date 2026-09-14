@@ -10,21 +10,6 @@ import { formatDueDate, formatDueTime } from "@/lib/contract/dates";
 import { cn } from "@/lib/utils";
 
 /**
- * The date column, in words.
- *
- * Overdue is told by the sentence, "was due Sat 15 Aug" set bolder, and never
- * by a red badge: red already means a failed reading in this product, and
- * colour is never the only signal (docs/theme.md). Nothing here is stored.
- * `status` came from the tick and the day in her zone, worked out while the
- * list was being built, so nothing has to notice midnight.
- *
- * A ticked task with no date says only "Done": it never had reminders, so its
- * done face does not get to claim any were switched off.
- *
- * Exported separately from the row because it is the one part worth testing
- * without rendering anything.
- */
-/**
  * The first line of a row: what to do, without who asked.
  *
  * Titles are stored as "Pay the amount due (Telstra)", which reads well in a
@@ -54,6 +39,21 @@ export function taskByline(task: TaskSummary): string {
     : when;
 }
 
+/**
+ * The date column, in words.
+ *
+ * Overdue is told by the sentence, "was due Sat 15 Aug" set bolder, and never
+ * by a red badge: red already means a failed reading in this product, and
+ * colour is never the only signal (docs/theme.md). Nothing here is stored.
+ * `status` came from the tick and the day in her zone, worked out while the
+ * list was being built, so nothing has to notice midnight.
+ *
+ * A ticked task with no date says only "Done": it never had reminders, so its
+ * done face does not get to claim any were switched off.
+ *
+ * Exported separately from the row because it is the one part worth testing
+ * without rendering anything.
+ */
 export function taskWhen(task: TaskSummary): string {
   if (task.status === "completed") {
     return task.dueDate ? "Done · reminders off" : "Done";
@@ -98,7 +98,7 @@ export function TaskRow({
     <span className="block min-w-0">
       <span
         className={cn(
-          "block text-lg leading-snug",
+          "block text-row leading-snug",
           done ? "text-ink-dim line-through" : "text-foreground",
         )}
       >
@@ -106,7 +106,7 @@ export function TaskRow({
       </span>
       <span
         className={cn(
-          "mt-0.5 block text-base",
+          "mt-0.5 block text-caption",
           done
             ? "font-semibold text-success"
             : overdue
@@ -120,33 +120,32 @@ export function TaskRow({
   );
 
   const opened = href ? (
-    <Link
-      href={href}
-      className="flex min-h-12 min-w-0 flex-1 items-center py-2"
-    >
+    <Link href={href} className="flex min-w-0 flex-1 items-center">
       {text}
     </Link>
   ) : onOpen ? (
     <button
       type="button"
       onClick={onOpen}
-      className="flex min-h-12 min-w-0 flex-1 items-center py-2 text-left"
+      className="flex min-w-0 flex-1 items-center text-left"
     >
       {text}
     </button>
   ) : (
-    <span className="flex min-w-0 flex-1 items-center py-2">{text}</span>
+    <span className="flex min-w-0 flex-1 items-center">{text}</span>
   );
 
+  // The prototype's `.row`: 12px above and below, 12px between the tick and
+  // the words, a line between rows.
   return (
     <div
       className={cn(
-        "flex min-h-12 items-center gap-2 border-t border-line first:border-t-0",
+        "flex min-h-12 items-center gap-3 border-t border-line px-0.5 py-3 first:border-t-0",
         className,
       )}
     >
-      {/* The tick: a 28px circle inside a 48px target, so the thing she aims at
-          is bigger than the thing she sees. */}
+      {/* The tick: the prototype's 26px `.dot`, answering taps 11px past its
+          edge, so the thing she aims at is bigger than the thing she sees. */}
       <button
         type="button"
         disabled={!onToggle}
@@ -158,20 +157,20 @@ export function TaskRow({
             : `Mark "${task.title}" as done`
         }
         className={cn(
-          "group/tick flex size-12 shrink-0 items-center justify-center rounded-full",
+          "group/tick relative flex size-[26px] shrink-0 items-center justify-center rounded-full after:absolute after:-inset-[11px]",
           !onToggle && "cursor-default",
         )}
       >
         <span
           className={cn(
-            "flex size-7 items-center justify-center rounded-full border-2 transition-colors",
+            "flex size-[26px] items-center justify-center rounded-full border-2 transition-colors",
             done
               ? "border-success bg-success text-primary-foreground"
               : "border-ink-dim text-transparent",
             onToggle && !done && "group-hover/tick:border-primary",
           )}
         >
-          <Check className="size-4" strokeWidth={3} />
+          <Check className="size-[15px]" strokeWidth={3} />
         </span>
       </button>
 

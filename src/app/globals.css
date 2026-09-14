@@ -7,9 +7,17 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  /* The prototype's stack, --font in its token block. The sans token used
+     to point at itself, so no family was ever set and browsers fell back
+     to their serif. */
+  --font-sans:
+    system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+    sans-serif;
+  --font-mono:
+    ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  --font-heading:
+    system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+    sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -47,31 +55,32 @@
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
 
-  /* The type scale, moved up so that `text-base` is the body size.
+  /* The prototype's type, by name.
 
-     Tailwind's own ramp starts at 1rem, and nothing here changes the
-     root font size, so `text-base` was 16px while docs/theme.md's
-     floor is 18px: every line of body copy written with the utility
-     that is named after body copy sat two points under the rule the
-     whole theme was measured against, and `text-sm` landed at 14px.
+     docs/prototype/user/daykeeper-sketch-live.html is the design, sizes
+     included (docs/theme.md, "Type"). Each name below is one rule in that
+     file, so a screen says what a piece of text is (a card label, a row,
+     a caption) and gets the prototype's size for it, rather than picking
+     a step on a ramp and landing near it. Tailwind's own ramp is left as
+     Tailwind ships it, for the pages that are not drawn from the
+     prototype (sign in, register, settings, accessibility).
 
-     Each step below is the stock value multiplied by 19/16, so
-     `text-base` lands exactly on --fs-body and every other step keeps
-     its proportion to it. The paired --text-*--line-height variables
-     Tailwind ships are unitless ratios, so they follow these sizes
-     without being restated here. tests/theme.test.ts holds the floor.
-
-     This is a scale, not a licence: `text-sm` is still only for the
-     caption under a row and for a card's uppercase title. */
-  --text-xs: 0.890625rem; /* 14.25px */
-  --text-sm: 1.0390625rem; /* 16.625px */
-  --text-base: 1.1875rem; /* 19px, the same as --fs-body */
-  --text-lg: 1.3359375rem; /* 21.375px */
-  --text-xl: 1.484375rem; /* 23.75px */
-  --text-2xl: 1.78125rem; /* 28.5px */
-  --text-3xl: 2.2265625rem; /* 35.625px */
-  --text-4xl: 2.671875rem; /* 42.75px */
-  --text-5xl: 3.5625rem; /* 57px */
+     rem rather than px, so the Accessibility panel's larger text settings,
+     which scale the root, still reach every one of them. */
+  --text-title: 1.4375rem; /* 23px    h1 */
+  --text-cta: 1.125rem; /* 18px    .review-cta .big */
+  --text-cam: 1.0625rem; /* 17px    .cam .t */
+  --text-button: 1.03125rem; /* 16.5px  .btn, .fact .v, .sheet .t */
+  --text-row: 1rem; /* 16px    .row, .cal-title */
+  --text-plan: 0.96875rem; /* 15.5px  .plan-row, .all-letters */
+  --text-item: 0.9375rem; /* 15px    .item */
+  --text-sub: 0.90625rem; /* 14.5px  .sub, .btn.ghost, .sheet .remind */
+  --text-day: 0.875rem; /* 14px    .cal .d */
+  --text-caption: 0.84375rem; /* 13.5px  .row .when, .review-cta .small, .cam .d, .plan-hold, .folder-h */
+  --text-key: 0.8125rem; /* 13px    .fact .k, .tiny, .item .go, .today-btn, .dd-day */
+  --text-label: 0.78125rem; /* 12.5px  .card h2, .item .st, .pg, .cap2 */
+  --text-nav: 0.75rem; /* 12px    .nav button */
+  --text-dow: 0.6875rem; /* 11px    .cal .dow */
 
   /* DayKeeper's own colours, the ones shadcn has no name for. These
      exist so a status can be written `bg-warn-bg text-warn` rather
@@ -189,9 +198,16 @@
   * {
     @apply border-border outline-ring/50;
   }
+
+  /* The focus state, everywhere: a near-black ring with a gold lining,
+     exactly as the prototype draws it. Why two colours, in docs/theme.md. */
+  :focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 6px var(--focus-ink);
+  }
   body {
     @apply bg-background text-foreground;
-    font-size: var(--fs-body);
   }
   html {
     @apply font-sans;

@@ -151,7 +151,7 @@ export function HomeScreen({
   const firstName = user.displayName.trim().split(/\s+/)[0] || user.displayName;
 
   return (
-    <div className="space-y-4">
+    <div>
       <ScreenHeader
         title={greeting(hourInZone(user.timeZone), firstName)}
         subtitle="Here's what needs you today."
@@ -162,20 +162,30 @@ export function HomeScreen({
           The split waits for lg: at md the sidebar has already taken 240px, so
           two columns of a 768px window are narrower than the phone they were
           meant to improve on, and the rows inside them wrapped to six lines. */}
-      <div className="grid gap-4 lg:grid-cols-2 lg:items-start lg:gap-6">
-        <div className="space-y-4">
+      <div className="grid gap-3.5 lg:grid-cols-2 lg:items-start lg:gap-6">
+        <div className="flex flex-col gap-3.5">
+          {/* The prototype's `.review-cta`: 18px of padding, an 18px bold line
+              and a 13.5px one under it, green when it asks for something and
+              an inert card when it does not. */}
           <button
             type="button"
             onClick={() => router.push(ctaHref)}
             className={cn(
-              "flex min-h-16 w-full flex-col justify-center gap-1 rounded-xl border-2 p-4 text-left transition-colors",
+              "flex w-full flex-col rounded-[10px] border-2 p-[18px] text-left transition-colors",
               ctaAsksForSomething
-                ? "border-transparent bg-primary text-primary-foreground shadow-sm hover:bg-button-hover"
+                ? "border-transparent bg-primary text-primary-foreground shadow-[var(--shadow-card)] hover:bg-button-hover"
                 : "border-line bg-card text-ink-dim",
             )}
           >
-            <span className="text-lg font-bold">{cta.big}</span>
-            <span className="text-base">{cta.small}</span>
+            <span className="mb-[3px] text-cta font-bold">{cta.big}</span>
+            <span
+              className={cn(
+                "text-caption",
+                ctaAsksForSomething ? "opacity-[0.92]" : "text-ink-dim",
+              )}
+            >
+              {cta.small}
+            </span>
           </button>
 
           {inbox.length > 0 ? (
@@ -199,17 +209,17 @@ export function HomeScreen({
 
         <Panel title="Your tasks">
           {tickError ? (
-            <p role="status" className="mb-3 text-base text-danger">
+            <p role="status" className="mb-3 text-caption text-danger">
               {tickError}
             </p>
           ) : null}
 
           {tasks.length === 0 ? (
-            <div className="flex min-h-12 items-center text-lg text-ink-dim">
+            <div className="flex min-h-12 items-center text-row text-ink-dim">
               Nothing yet
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               <TaskGroup
                 heading={
                   groups.today.some((task) => task.status === "overdue")
@@ -235,12 +245,13 @@ export function HomeScreen({
         </Panel>
       </div>
 
-      {/* The quiet door. She can ignore it for a year and lose nothing. */}
+      {/* The quiet door. She can ignore it for a year and lose nothing. The
+          prototype's `.all-letters`: 18px above, a line, 15.5px dim words. */}
       <Link
         href="/documents"
-        className="flex min-h-12 items-center gap-2 border-t border-line px-1 text-base text-ink-dim hover:text-foreground"
+        className="mx-0.5 mt-[18px] mb-1.5 flex min-h-12 items-center gap-2 border-t border-line px-1 py-3 text-plan text-ink-dim hover:text-foreground"
       >
-        <FolderOpen className="size-5 shrink-0" strokeWidth={1.75} />
+        <FolderOpen className="size-[18px] shrink-0" strokeWidth={1.75} />
         All your letters <span aria-hidden="true">→</span>
       </Link>
     </div>
@@ -271,7 +282,7 @@ function TaskGroup({
 
   return (
     <section>
-      <h3 className="mb-1 text-base font-semibold text-ink-dim">{heading}</h3>
+      <h3 className="text-caption font-bold text-ink-dim">{heading}</h3>
       <div>
         {tasks.map((task) => (
           <TaskRow
@@ -285,7 +296,7 @@ function TaskGroup({
       {more > 0 ? (
         <Link
           href="/calendar"
-          className="flex min-h-12 items-center gap-2 border-t border-line pl-14 text-base font-semibold text-primary hover:underline"
+          className="flex min-h-12 items-center gap-1.5 border-t border-line pl-10 text-caption font-bold text-primary hover:underline"
         >
           {moreLabel(more)} <span aria-hidden="true">→</span>
         </Link>

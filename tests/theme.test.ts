@@ -137,15 +137,14 @@ describe("the copies of the palette", () => {
 });
 
 /**
- * The floor under body text, made checkable.
+ * The prototype's type, made checkable.
  *
- * docs/theme.md asks for body text of at least 18px, and the utility a person
- * reaches for when they mean body text is `text-base`. Tailwind's own scale
- * starts at 1rem, so until globals.css moved the scale that utility rendered
- * at 16px and nobody could see it in the markup. These assertions are here so
- * the next person to touch the root size or the ramp finds out at once.
+ * Screens drawn from the prototype set their sizes by name (`text-row`,
+ * `text-caption`), and each name is declared in globals.css beside the
+ * prototype rule it copies. These assertions read both files, so a size
+ * changed in one and not the other is caught here rather than on a phone.
  */
-function typeScaleFrom(css: string): Map<string, number> {
+function namedSizesFrom(css: string): Map<string, number> {
   const themeBlock = css.slice(
     css.indexOf("@theme"),
     css.indexOf(":root", css.indexOf("@theme")),
@@ -154,41 +153,78 @@ function typeScaleFrom(css: string): Map<string, number> {
   for (const m of themeBlock.matchAll(
     /--text-([a-z0-9]+)\s*:\s*([0-9.]+)rem\s*;/g,
   )) {
-    // Every browser this product meets starts at a 16px root, and the
-    // accessibility panel only scales up from there.
     found.set(m[1], Number(m[2]) * 16);
   }
   return found;
 }
 
+/** The font-size of the first rule in the prototype whose selector is exactly this. */
+function prototypeSize(selector: string): number {
+  const css = read(PROTOTYPE);
+  const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const rule = css.match(
+    new RegExp(`(?:^|\\n)\\s*${escaped}\\s*\\{([^}]*)\\}`),
+  );
+  expect(rule, `prototype rule ${selector}`).not.toBeNull();
+  const size = rule![1].match(/font-size:\s*([0-9.]+)px/);
+  expect(size, `font-size in ${selector}`).not.toBeNull();
+  return Number(size![1]);
+}
+
 describe("the type scale", () => {
-  const scale = typeScaleFrom(read(GLOBALS));
+  const sizes = namedSizesFrom(read(GLOBALS));
 
-  it("puts text-base on the 18px floor or above", () => {
-    expect(scale.get("base")).toBeDefined();
-    expect(scale.get("base")!).toBeGreaterThanOrEqual(18);
-  });
+  const copies: Array<[string, string]> = [
+    ["title", "h1"],
+    ["sub", ".sub"],
+    ["label", ".card h2"],
+    ["cta", ".review-cta .big"],
+    ["caption", ".review-cta .small"],
+    ["row", ".row"],
+    ["item", ".item"],
+    ["cam", ".cam .t"],
+    ["button", ".btn"],
+    ["key", ".fact .k"],
+    ["plan", ".plan-row"],
+    ["day", ".cal .d"],
+    ["dow", ".cal .dow"],
+    ["nav", ".nav button"],
+  ];
 
-  it("agrees with --fs-body, the size the palette carries", () => {
-    // body itself is set from --fs-body, so a screen written with no size
-    // utility at all and one written with `text-base` have to come out the
-    // same size, or the floor holds in one place and not the other.
-    const body = read(GLOBALS).match(/--fs-body:\s*(\d+)px/);
-    expect(body).not.toBeNull();
-    expect(scale.get("base")).toBe(Number(body![1]));
-  });
+  for (const [name, selector] of copies) {
+    it(`text-${name} is the prototype's ${selector}`, () => {
+      expect(sizes.get(name), `--text-${name}`).toBeDefined();
+      expect(sizes.get(name)).toBe(prototypeSize(selector));
+    });
+  }
 
-  it("keeps the steps in order", () => {
-    const order = ["xs", "sm", "base", "lg", "xl", "2xl", "3xl"];
-    for (let i = 1; i < order.length; i++) {
-      const smaller = scale.get(order[i - 1]);
-      const larger = scale.get(order[i]);
-      expect(smaller, `--text-${order[i - 1]}`).toBeDefined();
-      expect(larger, `--text-${order[i]}`).toBeDefined();
-      expect(
-        larger!,
-        `text-${order[i]} is not above text-${order[i - 1]}`,
-      ).toBeGreaterThan(smaller!);
+  it("leaves Tailwind's own ramp alone for the pages not drawn from the prototype", () => {
+    for (const step of ["xs", "sm", "base", "lg", "xl", "2xl"]) {
+      expect(sizes.has(step), `--text-${step} is redefined`).toBe(false);
     }
+  });
+
+  it("names a real font family", () => {
+    const css = read(GLOBALS);
+    const declared = css.match(/--font-sans:\s*([^;]+);/);
+    expect(declared).not.toBeNull();
+    expect(declared![1]).not.toMatch(/var\(--font-sans\)/);
+    expect(declared![1]).toMatch(/system-ui/);
+  });
+});
+
+describe("cn and the named sizes", () => {
+  it("keeps a named size beside a colour", async () => {
+    const { cn } = await import("@/lib/utils");
+    expect(cn("text-label", "text-warn")).toBe("text-label text-warn");
+    expect(cn("text-caption", "text-ink-dim")).toBe(
+      "text-caption text-ink-dim",
+    );
+  });
+
+  it("knows every size globals.css declares", async () => {
+    const { NAMED_TEXT_SIZES } = await import("@/lib/utils");
+    const declared = [...namedSizesFrom(read(GLOBALS)).keys()].sort();
+    expect([...NAMED_TEXT_SIZES].sort()).toEqual(declared);
   });
 });

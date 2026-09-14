@@ -99,15 +99,15 @@ function MonthTaskGroup({
 
   return (
     <section>
-      <h3 className="mb-1 text-base font-semibold text-ink-dim">{heading}</h3>
+      <h3 className="text-caption font-bold text-ink-dim">{heading}</h3>
       {tasks.length === 0 ? (
-        <p className="flex min-h-12 items-center text-lg text-ink-dim">
+        <p className="flex min-h-12 items-center text-row text-ink-dim">
           {empty}
         </p>
       ) : (
-        <ul className="divide-y divide-border">
+        <ul>
           {tasks.map((task) => (
-            <li key={task.id}>
+            <li key={task.id} className="border-t border-line first:border-t-0">
               <TaskRow task={task} onToggle={onToggle} />
             </li>
           ))}
@@ -247,7 +247,7 @@ export function CalendarScreen({
   }
 
   return (
-    <div className="space-y-4">
+    <div>
       <ScreenHeader
         title="Calendar"
         subtitle="Everything you've confirmed, in one place."
@@ -265,7 +265,7 @@ export function CalendarScreen({
       {message ? (
         <p
           role="status"
-          className="rounded-xl border-2 border-border bg-warn-bg px-4 py-3 text-base text-warn"
+          className="mb-3.5 rounded-[10px] bg-warn-bg px-3 py-[11px] text-caption leading-[1.45] text-warn"
         >
           {message}
         </p>
@@ -276,38 +276,38 @@ export function CalendarScreen({
           The split waits for lg rather than md because the sidebar has already
           taken 240px by 768px, and a month grid in half of what is left is
           narrower than the same grid on a phone. */}
-      <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
+      <div className="grid gap-3.5 lg:grid-cols-2 lg:items-start lg:gap-6">
         <Panel>
-          <div className="mb-3 flex items-center justify-between gap-2">
-            <Button
-              variant="secondary"
-              size="icon"
+          {/* The prototype's `.cal-head`: two 36px pale green squares either
+              side of a 16px bold month. Each answers taps 6px past its edge. */}
+          <div className="mb-2.5 flex items-center justify-between gap-2">
+            <button
+              type="button"
               aria-label="Previous month"
               onClick={() => moveMonth(-1)}
-              className="size-12 text-2xl leading-none"
+              className="relative size-9 rounded-[8px] bg-primary-soft text-[20px] leading-none text-foreground after:absolute after:-inset-1.5"
             >
               &#8249;
-            </Button>
-            <div className="text-lg font-bold" aria-live="polite">
+            </button>
+            <div className="text-row font-bold" aria-live="polite">
               {MONTH_NAMES[month - 1]} {year}
             </div>
-            <Button
-              variant="secondary"
-              size="icon"
+            <button
+              type="button"
               aria-label="Next month"
               onClick={() => moveMonth(1)}
-              className="size-12 text-2xl leading-none"
+              className="relative size-9 rounded-[8px] bg-primary-soft text-[20px] leading-none text-foreground after:absolute after:-inset-1.5"
             >
               &#8250;
-            </Button>
+            </button>
           </div>
 
-          <div className="grid grid-cols-7 gap-1">
+          <div className="grid grid-cols-7 gap-[3px]">
             {WEEKDAY_INITIALS.map((initial, index) => (
               <div
                 key={index}
                 aria-hidden="true"
-                className="py-1 text-center text-base text-muted-foreground"
+                className="py-1 text-center text-dow text-ink-dim"
               >
                 {initial}
               </div>
@@ -332,7 +332,7 @@ export function CalendarScreen({
             overdue pinned above and the dateless below whatever month shows.
             src/lib/calendar.ts explains why it is not every task. */}
         <Panel title="Tasks">
-          <div className="space-y-4">
+          <div className="space-y-3">
             <MonthTaskGroup
               heading="Still to do"
               tasks={listed.overdue}
@@ -359,21 +359,23 @@ export function CalendarScreen({
           if (!open) setSelected(null);
         }}
       >
+        {/* The prototype's `.sheet`: a card-coloured panel with a 14px top
+            corner, 18px of padding, 24px below, and a small dim date on top. */}
         <SheetContent
           side="bottom"
           showCloseButton={false}
-          className="max-h-[80vh] overflow-y-auto"
+          className="max-h-[76vh] gap-0 overflow-y-auto rounded-t-[14px] bg-card px-[18px] pt-[18px] pb-6"
         >
-          <SheetHeader>
-            <SheetTitle className="text-base font-semibold text-muted-foreground">
+          <SheetHeader className="p-0">
+            <SheetTitle className="mb-2 text-key font-semibold text-ink-dim">
               {selected ? formatDueDate(selected, "long") : ""}
             </SheetTitle>
           </SheetHeader>
-          <div className="space-y-4 px-4 pb-6">
+          <div>
             {selectedMarks.map((mark, index) => (
               <div
                 key={`${mark.kind}-${mark.reminder?.id ?? mark.task.id}`}
-                className={cn(index > 0 && "border-t border-border pt-4")}
+                className={cn(index > 0 && "mt-3 border-t border-line pt-3")}
               >
                 {mark.kind === "reminder" ? (
                   <ReminderEntry mark={mark} today={today} />
@@ -387,8 +389,9 @@ export function CalendarScreen({
               </div>
             ))}
             <Button
-              variant="ghost"
-              className="min-h-12 w-full"
+              variant="quiet"
+              size="block-quiet"
+              className="mt-2"
               onClick={() => setSelected(null)}
             >
               Close
@@ -427,14 +430,16 @@ function DayCell({
   // the sheet is a button like every other button in this product, and 48px is
   // the floor. Seven columns of a 375px screen cannot also be 48px wide, so the
   // width is what the month costs and the height is what the rule gets.
+  // The prototype's `.cal .d`: 14px, 7px above the number, a 6px row of 5px
+  // dots under it, an 8px corner, at least 34px tall.
   const shell =
-    "flex min-h-12 flex-col items-center justify-center gap-1 rounded-lg text-base";
+    "flex min-h-[34px] flex-col items-center rounded-[8px] pt-[7px] pb-1 text-day";
 
   if (marks.length === 0) {
     return (
       <div className={cn(shell, "text-foreground")}>
-        <span>{day}</span>
-        <span className="h-1.5" />
+        <span className="leading-none">{day}</span>
+        <span className="mt-0.5 h-1.5" />
       </div>
     );
   }
@@ -449,20 +454,20 @@ function DayCell({
       }`}
       className={cn(
         shell,
-        "cursor-pointer focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",
+        "cursor-pointer",
         selected
           ? "bg-primary font-bold text-primary-foreground"
           : "text-foreground hover:bg-muted",
       )}
     >
-      <span>{day}</span>
-      <span className="flex h-1.5 items-center gap-1">
+      <span className="leading-none">{day}</span>
+      <span className="mt-0.5 flex h-1.5 items-center gap-[3px]">
         {marks.slice(0, 3).map((mark, index) => (
           <span
             key={index}
             aria-hidden="true"
             className={cn(
-              "size-1.5 rounded-full",
+              "size-[5px] rounded-full",
               selected
                 ? "bg-primary-foreground"
                 : mark.kind === "due"
@@ -489,15 +494,14 @@ function ReminderEntry({ mark, today }: { mark: CalendarMark; today: string }) {
   const caption = dueCaption(mark.task);
 
   return (
-    <div className="space-y-1">
-      <p className="flex items-center gap-2 text-base text-muted-foreground">
-        <Icon className="size-5 shrink-0" aria-hidden="true" strokeWidth={2} />
+    <div>
+      {/* `.sheet .remind` over `.sheet .t`. */}
+      <p className="mb-[3px] flex items-center gap-1.5 text-sub text-ink-dim">
+        <Icon className="size-4 shrink-0" aria-hidden="true" strokeWidth={2} />
         {sheetLine(mark, today)}
       </p>
-      <p className="text-lg font-bold text-foreground">{mark.task.title}</p>
-      {caption ? (
-        <p className="text-sm text-muted-foreground">{caption}</p>
-      ) : null}
+      <p className="text-button font-bold text-foreground">{mark.task.title}</p>
+      {caption ? <p className="text-caption text-ink-dim">{caption}</p> : null}
     </div>
   );
 }
@@ -540,8 +544,9 @@ function DueEntry({
   const pages = detail?.pageCount ?? 0;
 
   return (
-    <div className="space-y-2">
-      <TaskRow task={mark.task} onToggle={onToggle} />
+    <div>
+      {/* `.ent .row`: no rule above, 4px above and 10px below. */}
+      <TaskRow task={mark.task} onToggle={onToggle} className="pt-1 pb-2.5" />
 
       {facts.length > 0 ? (
         <div>
@@ -552,13 +557,13 @@ function DueEntry({
       ) : null}
 
       {detail && pages > 0 ? (
-        <div className="space-y-2">
-          <p className="text-sm text-muted-foreground">
+        <div className="mt-3">
+          <p className="mb-[7px] text-label text-ink-dim">
             {pages === 1
               ? "1 photo · kept with this task"
               : `${pages} photos · kept with this task`}
           </p>
-          <ol className="flex flex-wrap gap-2">
+          <ol className="flex flex-wrap gap-2.5">
             {Array.from({ length: pages }, (_, index) => index + 1).map(
               (page) => (
                 <li key={page}>
@@ -571,7 +576,7 @@ function DueEntry({
                     src={`/api/documents/${detail.documentId}/pages/${page}`}
                     alt={`Page ${page}`}
                     loading="lazy"
-                    className="h-[100px] w-[74px] rounded-lg border border-line bg-primary-soft object-cover"
+                    className="h-[100px] w-[74px] rounded-[8px] border border-line bg-primary-soft object-cover"
                   />
                 </li>
               ),
@@ -583,7 +588,7 @@ function DueEntry({
       {mark.task.documentId ? (
         <Link
           href={`/documents/${mark.task.documentId}`}
-          className="inline-flex min-h-12 items-center px-1 text-base font-semibold text-primary underline underline-offset-4"
+          className="mt-1 inline-flex min-h-12 items-center px-0.5 text-caption font-bold text-primary underline underline-offset-4"
         >
           See the letter
         </Link>

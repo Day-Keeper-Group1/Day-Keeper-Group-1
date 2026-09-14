@@ -116,14 +116,14 @@ export function ReviewForm({
   }
 
   return (
-    <div className="space-y-2">
+    <div>
       <ScreenHeader title="Check what we found" subtitle={subtitle} />
 
       {/* The same sections at every width: what it says, what we will do, the
           two answers, and the letter itself. On a wide screen the letter moves
           to a column beside them rather than below. */}
-      <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
-        <div className="space-y-4">
+      <div className="grid gap-3.5 lg:grid-cols-2 lg:items-start lg:gap-6">
+        <div className="flex flex-col gap-3.5">
           {facts.length > 0 ? (
             <Panel title="What it says">
               {/* Wrapped so the first row is a first child and loses its rule:
@@ -141,12 +141,13 @@ export function ReviewForm({
               {plan.map((line) => {
                 const Icon = PLAN_ICONS[line.icon];
                 return (
+                  // The prototype's `.plan-row`: 15.5px, 11px apart.
                   <div
                     key={line.text}
-                    className="flex items-center gap-3 border-t border-line py-3 first:border-t-0"
+                    className="flex items-center gap-[11px] border-t border-line px-0.5 py-[11px] text-plan first:border-t-0"
                   >
                     <Icon
-                      className="size-5 shrink-0 text-primary"
+                      className="size-[17px] shrink-0 text-primary"
                       strokeWidth={2}
                       aria-hidden="true"
                     />
@@ -155,18 +156,19 @@ export function ReviewForm({
                 );
               })}
             </div>
-            <p className="mt-3 rounded-lg bg-warn-bg px-3 py-3 text-warn">
+            <p className="mt-2.5 rounded-[10px] bg-warn-bg px-3 py-[11px] text-caption leading-[1.45] text-warn">
               {PLAN_HOLD}
             </p>
           </Panel>
 
-          <div className="space-y-2">
-            <Button size="lg" className="w-full" onClick={handleConfirm}>
+          <div>
+            <Button size="block" className="mt-1" onClick={handleConfirm}>
               Looks right, save it
             </Button>
             <Button
-              variant="ghost"
-              className="w-full"
+              variant="quiet"
+              size="block-quiet"
+              nativeButton={false}
               render={<Link href="/dashboard">Not now</Link>}
             />
           </div>
@@ -175,11 +177,11 @@ export function ReviewForm({
         <details
           open={photosOpen}
           onToggle={(event) => setPhotosOpen(event.currentTarget.open)}
-          className="rounded-xl border-2 border-border bg-card p-4 shadow-sm"
+          className="rounded-[10px] border-2 border-line bg-card p-4 shadow-[var(--shadow-card)]"
         >
           <summary
             className={cn(
-              "flex min-h-12 cursor-pointer items-center font-semibold",
+              "flex min-h-12 cursor-pointer items-center text-row font-semibold",
               wide && "hidden",
             )}
           >
@@ -187,7 +189,7 @@ export function ReviewForm({
           </summary>
 
           {photos.length === 0 ? (
-            <p className="text-foreground">
+            <p className="text-row text-foreground">
               The photographs of this letter are not available.
             </p>
           ) : (
