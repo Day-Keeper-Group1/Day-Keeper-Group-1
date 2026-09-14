@@ -266,12 +266,13 @@
   /* Checking one letter after another. Beside the title, how many letters
      are still waiting, this one included, counted from the letters
      themselves every time the screen is drawn, so leaving and coming back
-     shows what is true then. After each save a note drops in under the top
-     bar saying what was kept and where, and goes by itself. */
+     shows what is true then. After each save a note rises above the bottom
+     bar saying what was kept and where, and goes by itself. It sits low so
+     the title and the count stay in view while it is there. */
   .review-subrow { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
   .review-subrow .sub { margin-bottom: 0; }
   .review-left { flex: none; font-size: 13px; font-weight: 700; color: var(--ink-dim); }
-  .flash { position: absolute; left: 14px; right: 14px; top: 76px; z-index: 6; display: flex; align-items: flex-start; gap: 8px; background: var(--success-bg); color: var(--success); border: var(--border-w) solid var(--success); border-radius: var(--radius-card); padding: 11px 12px; font-size: 13.5px; font-weight: 600; line-height: 1.45; box-shadow: 0 8px 24px rgba(28,26,21,.18); opacity: 0; visibility: hidden; pointer-events: none; transform: translateY(-10px); transition: all .3s; }
+  .flash { position: absolute; left: 14px; right: 14px; bottom: 96px; z-index: 6; display: flex; align-items: flex-start; gap: 8px; background: var(--success-bg); color: var(--success); border: var(--border-w) solid var(--success); border-radius: var(--radius-card); padding: 11px 12px; font-size: 13.5px; font-weight: 600; line-height: 1.45; box-shadow: 0 8px 24px rgba(28,26,21,.18); opacity: 0; visibility: hidden; pointer-events: none; transform: translateY(12px); transition: all .3s; }
   .flash.show { opacity: 1; visibility: visible; transform: translateY(0); }
   .flash svg { flex: none; margin-top: 1px; }
 
