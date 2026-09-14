@@ -2,7 +2,7 @@
 
 import { describe, expect, it } from "vitest";
 
-import { taskWhen } from "@/components/task-row";
+import { taskByline, taskHeadline, taskWhen } from "@/components/task-row";
 import type { HomeCounts, TaskSummary } from "@/lib/contract/api";
 import { ctaFor, greeting, groupTasks } from "@/lib/home";
 
@@ -156,5 +156,29 @@ describe("taskWhen", () => {
 
   it("says so when there is no date at all", () => {
     expect(taskWhen(task({ id: "f" }))).toBe("No date");
+  });
+});
+
+describe("taskHeadline and taskByline", () => {
+  it("moves the issuer from the end of the title to the second line", () => {
+    const t = task({
+      id: "h",
+      dueDate: "2026-09-26",
+      title: "Pay the amount due (Yarra Valley Water)",
+      issuer: "Yarra Valley Water",
+    });
+    expect(taskHeadline(t)).toBe("Pay the amount due");
+    expect(taskByline(t)).toBe("Yarra Valley Water · Sat 26 Sep");
+  });
+
+  it("leaves a title that does not end in its issuer whole", () => {
+    const t = task({
+      id: "i",
+      dueDate: "2026-09-26",
+      title: "Renew rego",
+      issuer: "VicRoads",
+    });
+    expect(taskHeadline(t)).toBe("Renew rego");
+    expect(taskByline(t)).toBe("Sat 26 Sep");
   });
 });

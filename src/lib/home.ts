@@ -56,7 +56,9 @@ export function ctaFor(counts: HomeCounts): {
 /**
  * The task list, split into the headings Home shows.
  *
- * Overdue sits under Today rather than in a heading of its own. An unpaid bill
+ * Overdue sits with today's tasks rather than in a heading of its own, and Home
+ * words that heading "Needs doing" whenever an overdue task is in it, because
+ * a bill from August is not "Today". An unpaid bill
  * from three weeks ago is the loudest thing this person owns, and what it needs
  * is doing today; a separate "Overdue" section would be a second place to look
  * and a second thing to feel bad about.

@@ -3,7 +3,7 @@
 // KAN-57: one task, drawn the way the prototype's .row draws it.
 
 import Link from "next/link";
-import { Check, FileText } from "lucide-react";
+import { Check } from "lucide-react";
 
 import type { TaskSummary } from "@/lib/contract/api";
 import { formatDueDate, formatDueTime } from "@/lib/contract/dates";
@@ -24,6 +24,36 @@ import { cn } from "@/lib/utils";
  * Exported separately from the row because it is the one part worth testing
  * without rendering anything.
  */
+/**
+ * The first line of a row: what to do, without who asked.
+ *
+ * Titles are stored as "Pay the amount due (Telstra)", which reads well in a
+ * reminder that stands alone. In a list the issuer moves down to the second
+ * line beside the date, so the first line stays short enough to sit on one
+ * line at phone width. A title that does not end in its own issuer is shown
+ * whole.
+ */
+export function taskHeadline(task: TaskSummary): string {
+  const suffix = task.issuer ? ` (${task.issuer})` : null;
+  if (
+    suffix &&
+    task.title.endsWith(suffix) &&
+    task.title.length > suffix.length
+  ) {
+    return task.title.slice(0, -suffix.length);
+  }
+  return task.title;
+}
+
+/** The second line of a row: who asked, then when. */
+export function taskByline(task: TaskSummary): string {
+  const when = taskWhen(task);
+  const headline = taskHeadline(task);
+  return task.issuer && headline !== task.title
+    ? `${task.issuer} · ${when}`
+    : when;
+}
+
 export function taskWhen(task: TaskSummary): string {
   if (task.status === "completed") {
     return task.dueDate ? "Done · reminders off" : "Done";
@@ -60,33 +90,52 @@ export function TaskRow({
 }) {
   const done = task.status === "completed";
   const overdue = task.status === "overdue";
-  const when = taskWhen(task);
 
-  const title = (
-    <span
-      className={cn(
-        "block text-lg",
-        done ? "text-ink-dim line-through" : "text-foreground",
-      )}
-    >
-      {task.title}
+  // Two lines, always, at every width: what to do, then who and when. A row
+  // that decided for itself whether the date fitted beside the title came out
+  // a different shape each time, and the eye had to hunt for every date.
+  const text = (
+    <span className="block min-w-0">
+      <span
+        className={cn(
+          "block text-lg leading-snug",
+          done ? "text-ink-dim line-through" : "text-foreground",
+        )}
+      >
+        {taskHeadline(task)}
+      </span>
+      <span
+        className={cn(
+          "mt-0.5 block text-base",
+          done
+            ? "font-semibold text-success"
+            : overdue
+              ? "font-bold text-foreground"
+              : "text-ink-dim",
+        )}
+      >
+        {taskByline(task)}
+      </span>
     </span>
   );
 
   const opened = href ? (
-    <Link href={href} className="flex min-h-12 min-w-0 flex-1 items-center">
-      {title}
+    <Link
+      href={href}
+      className="flex min-h-12 min-w-0 flex-1 items-center py-2"
+    >
+      {text}
     </Link>
   ) : onOpen ? (
     <button
       type="button"
       onClick={onOpen}
-      className="flex min-h-12 min-w-0 flex-1 items-center text-left"
+      className="flex min-h-12 min-w-0 flex-1 items-center py-2 text-left"
     >
-      {title}
+      {text}
     </button>
   ) : (
-    <span className="min-w-0 flex-1">{title}</span>
+    <span className="flex min-w-0 flex-1 items-center py-2">{text}</span>
   );
 
   return (
@@ -126,37 +175,7 @@ export function TaskRow({
         </span>
       </button>
 
-      {/* The title and the date are one wrapping line, not two fixed columns.
-          Only the title can give in a row of shrink-0 neighbours, so in a
-          narrow card it was being squeezed to nothing while its glyphs went on
-          painting over the date beside it. Given a basis of 10rem the pair
-          breaks onto two lines instead, which is what the prototype's row does
-          on a phone anyway, and the date keeps its right edge either way. */}
-      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3">
-        <span className="flex min-w-0 flex-[1_1_10rem] items-center gap-2 py-1">
-          {opened}
-          {task.documentId ? (
-            <FileText
-              className="size-4 shrink-0 text-ink-dim"
-              strokeWidth={1.75}
-              aria-label="From a letter you photographed"
-            />
-          ) : null}
-        </span>
-
-        <span
-          className={cn(
-            "ml-auto shrink-0 text-right text-base",
-            done
-              ? "font-semibold text-success"
-              : overdue
-                ? "font-bold text-foreground"
-                : "text-ink-dim",
-          )}
-        >
-          {when}
-        </span>
-      </div>
+      {opened}
     </div>
   );
 }

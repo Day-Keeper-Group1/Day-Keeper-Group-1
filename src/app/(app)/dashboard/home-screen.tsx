@@ -211,7 +211,11 @@ export function HomeScreen({
           ) : (
             <div className="space-y-4">
               <TaskGroup
-                heading="Today"
+                heading={
+                  groups.today.some((task) => task.status === "overdue")
+                    ? "Needs doing"
+                    : "Today"
+                }
                 tasks={groups.today}
                 onToggle={handleToggle}
               />
