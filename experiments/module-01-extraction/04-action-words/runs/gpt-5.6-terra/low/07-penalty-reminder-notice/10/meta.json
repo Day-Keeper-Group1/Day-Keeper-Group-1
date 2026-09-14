@@ -1,0 +1,11 @@
+{
+  "model": "gpt-5.6-terra",
+  "effort": "low",
+  "letter": "07-penalty-reminder-notice",
+  "repeat": 10,
+  "pages": ["page-01.png", "page-02.png"],
+  "image_detail": "auto",
+  "started_at": "2026-09-14T10:01:59.516Z",
+  "seconds": 6.185,
+  "ok": true
+}

@@ -1,0 +1,11 @@
+{
+  "model": "gpt-5.6-terra",
+  "effort": "low",
+  "letter": "10-private-health-annual-statement",
+  "repeat": 5,
+  "pages": ["page-01.png", "page-02.png", "page-03.png"],
+  "image_detail": "auto",
+  "started_at": "2026-09-14T10:02:29.919Z",
+  "seconds": 4.727,
+  "ok": true
+}

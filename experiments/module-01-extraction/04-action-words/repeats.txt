@@ -1,0 +1,5 @@
+# How many times each cell reads each letter.
+#
+# Ten, as in 02 and 03, so the per-letter tables can be read side by side.
+
+10

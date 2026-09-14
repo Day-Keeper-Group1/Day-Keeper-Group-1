@@ -1,0 +1,7 @@
+# Which model at which reasoning effort. One "model effort" pair per line.
+#
+# The cheapest effort of each model: the two cells that read all fifteen
+# letters right in 03-prompt-by-purpose.
+
+gpt-5.6-luna   medium
+gpt-5.6-terra  low
