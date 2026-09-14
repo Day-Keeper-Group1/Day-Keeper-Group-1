@@ -187,6 +187,9 @@
   .fact:first-of-type { border-top: 0; }
   .fact .k { color: var(--ink-dim); font-size: 13px; width: 84px; flex: none; }
   .fact .v { font-size: 16.5px; font-weight: 600; }
+  /* The one number to give when she rings or pays, said in words under it,
+     and only when the letter printed more than one. */
+  .fact .quote { display: block; font-size: 13px; font-weight: 500; color: var(--ink-dim); margin-top: 2px; }
   .plan-row { display: flex; align-items: center; gap: 11px; padding: 11px 2px; border-top: 1px solid var(--line); font-size: 15.5px; }
   .plan-row:first-of-type { border-top: 0; }
   .plan-row .ico { flex: none; display: flex; color: var(--primary); }
@@ -470,10 +473,10 @@
     { who: 'AGL Energy', what: 'Electricity bill', delay: 5200,
       facts: [
         { k: 'From', v: 'AGL Energy' },
-        { k: 'What to do', v: 'Pay the amount due' },
+        { k: 'What to do', v: 'Pay AGL Energy' },
         { k: 'Due date', v: '15 Aug 2026' },
         { k: 'Amount', v: '$347.60' },
-        { k: 'Reference', v: '9201 4471 88' }
+        { k: 'Account number', v: '9201 4471 88', id: true, quote: true }
       ],
       /* Two reminders, not three: this bill is due the 15th and the sketch's
          today is the 10th, so the seven-day one would land in the past, and a
@@ -492,9 +495,10 @@
     { who: 'Medicare', what: 'Claim form', delay: 7000,
       facts: [
         { k: 'From', v: 'Services Australia' },
-        { k: 'What to do', v: 'Return the completed form' },
+        { k: 'What to do', v: 'Return form to Services Australia' },
         { k: 'Due date', v: '22 Aug 2026' },
-        { k: 'Reference', v: 'CLM 30991 442' }
+        { k: 'Claim number', v: 'CLM 30991 442', id: true, quote: true },
+        { k: 'Medicare card number', v: '2950 41873 1', id: true }
       ],
       plan: [
         { ico: 'bell', t: 'Remind you: Sat 15 Aug, 9 am' },
@@ -509,10 +513,12 @@
     { who: 'VicRoads', what: 'Registration renewal', delay: 6200,
       facts: [
         { k: 'From', v: 'VicRoads' },
-        { k: 'What to do', v: 'Renew the registration' },
+        { k: 'What to do', v: 'Pay VicRoads' },
         { k: 'Due date', v: '1 Sep 2026' },
         { k: 'Amount', v: '$852.10' },
-        { k: 'Reference', v: '1AB 2CD' }
+        { k: 'Customer number', v: '8124 6630', id: true, quote: true },
+        { k: 'Registration number', v: '1AB 2CD', id: true },
+        { k: 'Vehicle identification number', v: '6T1BF3EK 0BU 101722', id: true }
       ],
       plan: [
         { ico: 'bell', t: 'Remind you: Tue 25 Aug, 9 am' },
@@ -529,7 +535,7 @@
     { who: 'Dr Patel', what: 'Appointment letter', delay: 6800,
       facts: [
         { k: 'From', v: 'Dr A. Patel, GP clinic' },
-        { k: 'What to do', v: 'Attend follow-up appointment' },
+        { k: 'What to do', v: 'Attend GP appointment' },
         { k: 'When', v: 'Fri 4 Sep, 10:30 am' }
       ],
       plan: [
@@ -543,10 +549,10 @@
     { who: 'Yarra Council', what: 'Rates notice', delay: 7500,
       facts: [
         { k: 'From', v: 'City of Yarra' },
-        { k: 'What to do', v: 'Pay the rates instalment' },
+        { k: 'What to do', v: 'Pay City of Yarra' },
         { k: 'Due date', v: '31 Aug 2026' },
         { k: 'Amount', v: '$612.40' },
-        { k: 'Reference', v: '88 3120 7' }
+        { k: 'Assessment number', v: '88 3120 7', id: true, quote: true }
       ],
       plan: [
         { ico: 'bell', t: 'Remind you: Mon 24 Aug, 9 am' },
@@ -565,8 +571,8 @@
     { who: 'Carlton Community Centre', what: 'Membership form', delay: 5600,
       facts: [
         { k: 'From', v: 'Carlton Community Centre' },
-        { k: 'What to do', v: 'Return the signed form' },
-        { k: 'Reference', v: 'Member 2214' }
+        { k: 'What to do', v: 'Return form to Carlton Community Centre' },
+        { k: 'Member number', v: '2214', id: true, quote: true }
       ],
       plan: [
         { ico: 'file-text', t: "No date on this letter. It's saved; nothing goes on your calendar." }
@@ -593,17 +599,17 @@
       pages: 1,
       facts: [
         { k: 'From', v: 'Yarra Valley Water' },
-        { k: 'What to do', v: 'Pay the amount due' },
+        { k: 'What to do', v: 'Pay Yarra Valley Water' },
         { k: 'Due date', v: 'Wed 5 Aug' },
         { k: 'Amount', v: '$89.20' },
-        { k: 'Reference', v: '5501 2280' }
+        { k: 'Account number', v: '5501 2280', id: true, quote: true }
       ] },
     { id: 'p', who: 'Services Australia', what: 'Pension review form', title: 'Return pension review form', when: 'Tue 11 Aug', due: { mo: 8, d: 11 }, done: false, marks: [ { mo: 8, d: 11, l: 'Form due' } ],
       agenda: { day: 'Tuesday 11 August', line: 'Return pension review form', sub: 'Services Australia' },
       pages: 2,
       facts: [
         { k: 'From', v: 'Services Australia' },
-        { k: 'What to do', v: 'Return the completed form' },
+        { k: 'What to do', v: 'Return form to Services Australia' },
         { k: 'Due date', v: 'Tue 11 Aug' }
       ] }
   ];
@@ -612,11 +618,11 @@
      from July so the month folders are visible on first open. */
   const INITIAL_LETTERS = [
     { who: 'Telstra', what: 'Phone bill', due: { mo: 7, d: 14 }, when: 'Tue 14 Jul', pages: 1,
-      facts: [ { k: 'From', v: 'Telstra' }, { k: 'What to do', v: 'Pay the amount due' }, { k: 'Amount', v: '$79.00' } ] },
+      facts: [ { k: 'From', v: 'Telstra' }, { k: 'What to do', v: 'Pay Telstra' }, { k: 'Amount', v: '$79.00' } ] },
     { who: 'Yarra Valley Water', what: 'Water bill', due: { mo: 8, d: 5 }, when: 'Wed 5 Aug', pages: 1,
-      facts: [ { k: 'From', v: 'Yarra Valley Water' }, { k: 'What to do', v: 'Pay the amount due' }, { k: 'Amount', v: '$89.20' }, { k: 'Reference', v: '5501 2280' } ] },
+      facts: [ { k: 'From', v: 'Yarra Valley Water' }, { k: 'What to do', v: 'Pay Yarra Valley Water' }, { k: 'Amount', v: '$89.20' }, { k: 'Account number', v: '5501 2280', id: true, quote: true } ] },
     { who: 'Services Australia', what: 'Pension review form', due: { mo: 8, d: 11 }, when: 'Tue 11 Aug', pages: 2,
-      facts: [ { k: 'From', v: 'Services Australia' }, { k: 'What to do', v: 'Return the completed form' } ] }
+      facts: [ { k: 'From', v: 'Services Australia' }, { k: 'What to do', v: 'Return form to Services Australia' } ] }
   ];
 
   /* ---------- signing in ---------- */
@@ -689,8 +695,7 @@
        recognition: does this match the letter? Why the screen shows rather
        than asks, and why there is no correction anywhere in the product, is
        in src/lib/contract/api.ts. */
-    document.getElementById('facts').innerHTML = L.facts.map(f =>
-      '<div class="fact"><span class="k">' + f.k + '</span><span class="v">' + f.v + '</span></div>').join('');
+    document.getElementById('facts').innerHTML = factRows(L.facts);
     document.getElementById('review-photos').innerHTML = photoStrip(it.pages, 'letter');
     document.getElementById('plan').innerHTML = L.plan.map(p =>
       '<div class="plan-row"><span class="ico">' + icon(p.ico, 17) + '</span>' + p.t + '</div>').join('');
@@ -782,6 +787,24 @@
      the column is in db/schema.sql. */
   function isLate(t) {
     return !t.done && t.due && (t.due.mo * 100 + t.due.d) < (TODAY_MO * 100 + TODAY_D);
+  }
+
+  /* KAN-58: what a letter says, one row a fact.
+
+     A number the letter prints is shown under the label the letter printed
+     beside it, "Customer number", never under a word of ours like
+     "Reference": she is holding the letter, and the label is how she finds
+     the same number on the page. A letter that prints two or three numbers
+     shows them all, and says under one of them which to give when she rings
+     or pays; with a single number there is nothing to choose, so nothing is
+     said. The numbers come from the reading's list of identifiers, and the
+     one to quote is the contract's `reference`: src/lib/contract/fields.ts. */
+  function factRows(facts) {
+    const numbers = (facts || []).filter(f => f.id).length;
+    return (facts || []).map(f =>
+      '<div class="fact"><span class="k">' + f.k + '</span><span class="v">' + f.v +
+      (f.quote && numbers > 1 ? '<span class="quote">The one to quote</span>' : '') +
+      '</span></div>').join('');
   }
 
   /* What a task's letter said under one name, or nothing. */
@@ -883,7 +906,7 @@
     sheetTask = id;
     let h = '<div class="dd-day">' + (t.who ? t.who + ' · ' + t.what : t.title) + '</div>';
     h += '<div class="ent">' + taskRow(t, true);
-    (t.facts || []).forEach(f => { h += '<div class="fact"><span class="k">' + f.k + '</span><span class="v">' + f.v + '</span></div>'; });
+    h += factRows(t.facts);
     h += photoStrip(t.pages || 1, 'task');
     h += '</div>';
     h += '<button class="btn ghost" onclick="closeDay()">Close</button>';
@@ -975,7 +998,7 @@
     if (!l) return;
     let h = '<div class="dd-day">' + l.who + ' · ' + l.what + '</div>';
     h += '<div class="ent">';
-    (l.facts || []).forEach(f => { h += '<div class="fact"><span class="k">' + f.k + '</span><span class="v">' + f.v + '</span></div>'; });
+    h += factRows(l.facts);
     h += photoStrip(l.pages || 1, 'letter');
     h += '</div>';
     h += '<button class="btn ghost" onclick="closeDay()">Close</button>';
@@ -1062,7 +1085,7 @@
          Operations follow visibility: wherever the row is drawn, the tick
          works, however long ago the day was. */
       h += '<div class="ent">' + taskRow(t, true);
-      (t.facts || []).forEach(f => { h += '<div class="fact"><span class="k">' + f.k + '</span><span class="v">' + f.v + '</span></div>'; });
+      h += factRows(t.facts);
       h += photoStrip(t.pages || 1, 'task');
       h += '</div>';
     });
