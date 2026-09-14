@@ -254,11 +254,19 @@ CREATE TABLE document_pages (
 -- what makes an accuracy figure honest: a table holding only the readings that
 -- worked can be quoted to say anything.
 --
--- One reading per letter. There is no retry and no retake in this release
--- (docs/scope.md, and src/server/extraction/provider.ts on what a failure
--- means), so the unique constraint below is not bookkeeping: it is what makes a
--- second reading arrive as an error rather than as two answers to the same
--- question, with nothing to say which one the tables were written from.
+-- One row per attempt. KAN-59: a reading that fails in a way worth trying
+-- again is tried again, up to three attempts in all (src/server/uploads.ts),
+-- and each attempt is its own row, so the table says how many calls a letter
+-- took and what each one said. There is still no retake by the person
+-- (docs/scope.md).
+--
+-- One reading per letter all the same. The two unique indexes below the table
+-- are not bookkeeping: at most one run per letter ever succeeds, which is what
+-- makes a second answer to the same question arrive as an error rather than as
+-- two sets of fields with nothing to say which one the tables were written
+-- from; and at most one is under way at a time, so two readers can never be
+-- racing over the same photographs. Every query that reads a reading asks for
+-- the succeeded run and nothing else.
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE extraction_runs (
@@ -280,7 +288,6 @@ CREATE TABLE extraction_runs (
   started_at     timestamptz NOT NULL DEFAULT now(),
   finished_at    timestamptz,
   duration_ms    integer,
-  CONSTRAINT extraction_runs_one_per_document UNIQUE (document_id),
   -- A failure that does not say anything is a row nobody can act on, and a
   -- detail on a run that succeeded is a contradiction. Both directions are
   -- worth refusing.
@@ -289,6 +296,10 @@ CREATE TABLE extraction_runs (
 );
 
 CREATE INDEX extraction_runs_status_idx ON extraction_runs (status) WHERE status IN ('queued', 'processing');
+CREATE UNIQUE INDEX extraction_runs_one_success_per_document
+  ON extraction_runs (document_id) WHERE status = 'succeeded';
+CREATE UNIQUE INDEX extraction_runs_one_under_way_per_document
+  ON extraction_runs (document_id) WHERE status IN ('queued', 'processing');
 
 -- One field of one reading.
 --

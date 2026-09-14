@@ -29,9 +29,11 @@ vi.mock("@/server/storage", () => ({
 
 vi.mock("@/server/extraction", () => {
   class ExtractionFailure extends Error {
-    constructor(message: string) {
+    readonly retryable: boolean;
+    constructor(message: string, options: { retryable?: boolean } = {}) {
       super(message);
       this.name = "ExtractionFailure";
+      this.retryable = options.retryable ?? true;
     }
   }
 
@@ -51,6 +53,7 @@ import { query, queryOne, transaction } from "@/server/db";
 import { readLetter } from "@/server/extraction";
 import { deleteObjects, putObject, uploadObjectKey } from "@/server/storage";
 import {
+  MAX_READING_ATTEMPTS,
   UploadRejected,
   columnsFromReading,
   createDocument,
@@ -577,23 +580,29 @@ describe("reading a stored letter", () => {
   it("records a reading that failed on both the run and the letter", async () => {
     const { ExtractionFailure } = await import("@/server/extraction");
     queryOneMock.mockResolvedValue({ id: RUN_ID });
+    // A failure that would come out the same however often it was tried, so
+    // there is one attempt and one row.
     readLetterMock.mockRejectedValue(
-      new ExtractionFailure("the reader answered outside the contract"),
+      new ExtractionFailure("page 1 was handed over without its bytes", {
+        retryable: false,
+      }),
     );
     const client = transactionClient();
 
     await expect(
-      readDocument(DOCUMENT_ID, USER_ID, PAGES),
+      readDocument(DOCUMENT_ID, USER_ID, PAGES, { pauseMs: 0 }),
     ).resolves.toBeUndefined();
 
+    expect(readLetterMock).toHaveBeenCalledTimes(1);
     const calls = client.query.mock.calls as [string, unknown[]][];
+    expect(calls).toHaveLength(2);
     expect(calls[0][0]).toContain("UPDATE extraction_runs");
     expect(calls[0][0]).toContain("'failed'");
     // Developer text, kept on the run and shown to nobody. The sentence a
     // person meets is FAILURE_MESSAGE, worded in src/lib/contract/api.ts.
     expect(calls[0][1]).toEqual([
       RUN_ID,
-      "ExtractionFailure: the reader answered outside the contract",
+      "ExtractionFailure: page 1 was handed over without its bytes",
     ]);
 
     expect(calls[1][0]).toContain("UPDATE documents");
@@ -608,6 +617,100 @@ describe("reading a stored letter", () => {
     ).toBe(false);
   });
 
+  // KAN-59: a model that answered badly once usually does not twice running,
+  // so the letter is read again before anybody is told it failed, and every
+  // attempt is a row of its own.
+  it("reads the letter again after a failure worth retrying, one run per attempt", async () => {
+    const { ExtractionFailure } = await import("@/server/extraction");
+    queryOneMock.mockResolvedValue({ id: RUN_ID });
+    readLetterMock
+      .mockRejectedValueOnce(new ExtractionFailure("the Azure call failed"))
+      .mockResolvedValueOnce({
+        call: {
+          provider: "mock",
+          model: "mock-letter-reader",
+          effort: null,
+          seconds: 2,
+          usage: null,
+        },
+        result: reading(),
+      });
+    const client = transactionClient([{ id: "run-2" }]);
+
+    await readDocument(DOCUMENT_ID, USER_ID, PAGES, { pauseMs: 0 });
+
+    expect(readLetterMock).toHaveBeenCalledTimes(2);
+    const calls = client.query.mock.calls as [string, unknown[]][];
+
+    // The first attempt is closed as failed and the second opened, by the same
+    // reader, straight to processing.
+    expect(calls[0][0]).toContain("'failed'");
+    expect(calls[0][1]).toEqual([
+      RUN_ID,
+      "ExtractionFailure: the Azure call failed",
+    ]);
+    expect(calls[1][0]).toContain("INSERT INTO extraction_runs");
+    expect(calls[1][0]).toContain("'processing'");
+    expect(calls[1][1]).toEqual([RUN_ID]);
+
+    // The reading that worked is written on the second run, not the first.
+    const run = calls.find(([sql]) => sql.includes("'succeeded'"));
+    expect(run?.[1][0]).toBe("run-2");
+    // Nothing failed the letter on the way.
+    expect(
+      calls.some(
+        ([sql]) => sql.includes("UPDATE documents") && sql.includes("'failed'"),
+      ),
+    ).toBe(false);
+  });
+
+  it("fails the letter only after the last attempt fails", async () => {
+    const { ExtractionFailure } = await import("@/server/extraction");
+    queryOneMock.mockResolvedValue({ id: RUN_ID });
+    readLetterMock.mockRejectedValue(
+      new ExtractionFailure(
+        "the model answered with something that is not JSON",
+      ),
+    );
+    const client = transactionClient([{ id: "run-next" }]);
+
+    await readDocument(DOCUMENT_ID, USER_ID, PAGES, { pauseMs: 0 });
+
+    expect(readLetterMock).toHaveBeenCalledTimes(MAX_READING_ATTEMPTS);
+    const calls = client.query.mock.calls as [string, unknown[]][];
+    const opened = calls.filter(([sql]) =>
+      sql.includes("INSERT INTO extraction_runs"),
+    );
+    expect(opened).toHaveLength(MAX_READING_ATTEMPTS - 1);
+    const closed = calls.filter(
+      ([sql]) =>
+        sql.includes("UPDATE extraction_runs") && sql.includes("'failed'"),
+    );
+    expect(closed).toHaveLength(MAX_READING_ATTEMPTS);
+
+    const failedLetter = calls.filter(
+      ([sql]) => sql.includes("UPDATE documents") && sql.includes("'failed'"),
+    );
+    expect(failedLetter).toHaveLength(1);
+    expect(calls.at(-1)?.[0]).toContain("UPDATE documents");
+  });
+
+  // An error that is not a reading failure is a bug or a database refusing a
+  // write, and another model call fixes neither.
+  it("does not read again after an error nobody expected", async () => {
+    queryOneMock.mockResolvedValue({ id: RUN_ID });
+    readLetterMock.mockRejectedValue(new TypeError("bytes is undefined"));
+    const client = transactionClient();
+
+    await readDocument(DOCUMENT_ID, USER_ID, PAGES, { pauseMs: 0 });
+
+    expect(readLetterMock).toHaveBeenCalledTimes(1);
+    const calls = client.query.mock.calls as [string, unknown[]][];
+    expect(
+      calls.some(([sql]) => sql.includes("INSERT INTO extraction_runs")),
+    ).toBe(false);
+  });
+
   // It runs after the response has gone out, so there is nobody left to throw
   // at. Every outcome, including a database that will not take the write about
   // the failure, becomes a log line rather than an unhandled rejection.
@@ -617,7 +720,7 @@ describe("reading a stored letter", () => {
     transactionMock.mockRejectedValue(new Error("connection terminated"));
 
     await expect(
-      readDocument(DOCUMENT_ID, USER_ID, PAGES),
+      readDocument(DOCUMENT_ID, USER_ID, PAGES, { pauseMs: 0 }),
     ).resolves.toBeUndefined();
     expect(logged).toHaveBeenCalled();
   });

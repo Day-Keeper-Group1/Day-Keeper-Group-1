@@ -60,6 +60,7 @@ export class AzureExtractionProvider implements DocumentExtractionProvider {
     if (!AZURE_OPENAI_ENDPOINT || !AZURE_OPENAI_API_KEY) {
       throw new ExtractionFailure(
         "AZURE_OPENAI_ENDPOINT and AZURE_OPENAI_API_KEY must both be set in .env.local to use the azure reader. See .env.example.",
+        { retryable: false },
       );
     }
 
@@ -68,6 +69,7 @@ export class AzureExtractionProvider implements DocumentExtractionProvider {
     if (missing) {
       throw new ExtractionFailure(
         `page ${missing.pageNumber} of ${input.documentId} was handed over without its bytes`,
+        { retryable: false },
       );
     }
 

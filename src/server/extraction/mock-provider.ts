@@ -25,7 +25,7 @@
 import "server-only";
 import { createHash } from "node:crypto";
 import { CONTRACT_VERSION } from "@/lib/contract/extraction";
-import { NO_PAYMENT_REQUIRED } from "@/lib/contract/fields";
+import { NOT_APPLICABLE, NO_PAYMENT_REQUIRED } from "@/lib/contract/fields";
 import {
   DocumentExtractionProvider,
   ExtractionFailure,
@@ -96,6 +96,19 @@ const SPECIMENS = [
     reference: "PT-40192",
     identifiers: [["Patient number", "PT-40192"]],
   },
+  {
+    // KAN-59: the letter that asks for nothing. A statement to keep, with no
+    // date and nothing to pay, so saving it makes no task and files it in
+    // Your letters (src/server/confirm.ts).
+    document_type: "Annual statement",
+    issuer: "Wattlebank Super",
+    action_required: "No action",
+    due_date: null,
+    due_time: null,
+    amount: null,
+    reference: "7710 3342",
+    identifiers: [["Member number", "7710 3342"]],
+  },
 ] as const;
 
 /** Stable pseudo-random number in [0,1) derived from a string. */
@@ -135,9 +148,10 @@ export class MockExtractionProvider implements DocumentExtractionProvider {
     // failed letter is a real state on the home screen with its own sentence to
     // write, so the mock has to produce one often enough to build against.
     //
-    // The same document fails every time. There is no retake and no second
-    // attempt in this release (docs/scope.md), so a mock that relented on a
-    // later try would be rehearsing a way out that the product does not have.
+    // The same document fails every time, so it fails every attempt the
+    // reading is given (src/server/uploads.ts) and then shows as failed, one
+    // run row per attempt. A mock that relented on a later try would never
+    // show the failed state at all.
     if (hashUnit(`${seed}:fails`) < 0.125) {
       throw new ExtractionFailure(
         "mock provider: simulated failed reading, one document in eight",
@@ -183,7 +197,8 @@ export class MockExtractionProvider implements DocumentExtractionProvider {
       },
       {
         key: "due_date",
-        value: specimen.due_date,
+        // A letter with no date still reports the field, and says so.
+        value: specimen.due_date ?? NOT_APPLICABLE,
         status: dateUncertain ? ("uncertain" as const) : ("confirmed" as const),
         confidence: dateUncertain ? 0.61 : 0.94,
       },
