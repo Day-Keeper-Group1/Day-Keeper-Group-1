@@ -187,6 +187,9 @@
   .fact:first-of-type { border-top: 0; }
   .fact .k { color: var(--ink-dim); font-size: 13px; width: 84px; flex: none; }
   .fact .v { font-size: 16.5px; font-weight: 600; }
+  /* The one number to give when she rings or pays, said in words under it,
+     and only when the letter printed more than one. */
+  .fact .quote { display: block; font-size: 13px; font-weight: 500; color: var(--ink-dim); margin-top: 2px; }
   .plan-row { display: flex; align-items: center; gap: 11px; padding: 11px 2px; border-top: 1px solid var(--line); font-size: 15.5px; }
   .plan-row:first-of-type { border-top: 0; }
   .plan-row .ico { flex: none; display: flex; color: var(--primary); }
@@ -239,6 +242,11 @@
   .nav button.on { color: var(--ink); font-weight: 700; }
   .nav button.on::after { content: ""; display: block; width: 28px; height: 4px; border-radius: 2px; background: var(--primary); }
   .nav .cambtn { background: var(--primary); color: var(--primary-ink); width: 58px; height: 58px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-top: -26px; box-shadow: 0 6px 14px rgba(23,69,44,.35); border: 4px solid var(--bg); }
+  /* The camera button keeps its own face on its own screen. Without this the
+     `.nav button.on` rule above wins by specificity, draws the icon in ink on
+     the green disc and hangs the tab underline beneath it. */
+  .nav button.cambtn.on { color: var(--primary-ink); font-weight: 400; }
+  .nav button.cambtn.on::after { content: none; }
   .badge { position: absolute; top: -4px; right: 14px; background: var(--primary); color: var(--primary-ink); font-size: 11px; font-weight: 700; border-radius: 999px; padding: 1px 6px; }
 
   /* The top bar, as the finished app draws it on a phone: the name on the
@@ -509,7 +517,7 @@
         { k: 'What to do', v: 'Pay AGL Energy' },
         { k: 'Due date', v: '15 Aug 2026' },
         { k: 'Amount', v: '$347.60' },
-        { k: 'Reference', v: '9201 4471 88' }
+        { k: 'Account number', v: '9201 4471 88', id: true, quote: true }
       ],
       /* Two reminders, not three: this bill is due the 15th and the sketch's
          today is the 10th, so the seven-day one would land in the past, and a
@@ -530,7 +538,8 @@
         { k: 'From', v: 'Services Australia' },
         { k: 'What to do', v: 'Return form to Services Australia' },
         { k: 'Due date', v: '22 Aug 2026' },
-        { k: 'Reference', v: 'CLM 30991 442' }
+        { k: 'Claim number', v: 'CLM 30991 442', id: true, quote: true },
+        { k: 'Medicare card number', v: '2950 41873 1', id: true }
       ],
       plan: [
         { ico: 'bell', t: 'Remind you: Sat 15 Aug, 9 am' },
@@ -549,7 +558,7 @@
       facts: [
         { k: 'From', v: 'Wattlebank Super' },
         { k: 'What to do', v: 'No action' },
-        { k: 'Reference', v: 'Member 7710 3342' }
+        { k: 'Member number', v: '7710 3342', id: true, quote: true }
       ],
       plan: [
         { ico: 'file-text', t: "Nothing to do. It's kept in your letters." }
@@ -564,7 +573,9 @@
         { k: 'What to do', v: 'Pay VicRoads' },
         { k: 'Due date', v: '1 Sep 2026' },
         { k: 'Amount', v: '$852.10' },
-        { k: 'Reference', v: '1AB 2CD' }
+        { k: 'Customer number', v: '8124 6630', id: true, quote: true },
+        { k: 'Registration number', v: '1AB 2CD', id: true },
+        { k: 'Vehicle identification number', v: '6T1BF3EK 0BU 101722', id: true }
       ],
       plan: [
         { ico: 'bell', t: 'Remind you: Tue 25 Aug, 9 am' },
@@ -581,7 +592,7 @@
     { who: 'Dr Patel', what: 'Appointment letter', delay: 6800,
       facts: [
         { k: 'From', v: 'Dr A. Patel, GP clinic' },
-        { k: 'What to do', v: 'Attend Dr A. Patel, GP clinic' },
+        { k: 'What to do', v: 'Attend GP appointment' },
         { k: 'When', v: 'Fri 4 Sep, 10:30 am' }
       ],
       plan: [
@@ -598,7 +609,7 @@
         { k: 'What to do', v: 'Pay City of Yarra' },
         { k: 'Due date', v: '31 Aug 2026' },
         { k: 'Amount', v: '$612.40' },
-        { k: 'Reference', v: '88 3120 7' }
+        { k: 'Assessment number', v: '88 3120 7', id: true, quote: true }
       ],
       plan: [
         { ico: 'bell', t: 'Remind you: Mon 24 Aug, 9 am' },
@@ -618,7 +629,7 @@
       facts: [
         { k: 'From', v: 'Carlton Community Centre' },
         { k: 'What to do', v: 'Return form to Carlton Community Centre' },
-        { k: 'Reference', v: 'Member 2214' }
+        { k: 'Member number', v: '2214', id: true, quote: true }
       ],
       plan: [
         { ico: 'file-text', t: "No date on this letter. It's saved; nothing goes on your calendar." }
@@ -648,7 +659,7 @@
         { k: 'What to do', v: 'Pay Yarra Valley Water' },
         { k: 'Due date', v: 'Wed 5 Aug' },
         { k: 'Amount', v: '$89.20' },
-        { k: 'Reference', v: '5501 2280' }
+        { k: 'Account number', v: '5501 2280', id: true, quote: true }
       ] },
     { id: 'p', who: 'Services Australia', what: 'Pension review form', title: 'Return pension review form', when: 'Tue 11 Aug', due: { mo: 8, d: 11 }, done: false, marks: [ { mo: 8, d: 11, l: 'Form due' } ],
       agenda: { day: 'Tuesday 11 August', line: 'Return pension review form', sub: 'Services Australia' },
@@ -656,19 +667,39 @@
       facts: [
         { k: 'From', v: 'Services Australia' },
         { k: 'What to do', v: 'Return form to Services Australia' },
-        { k: 'Due date', v: 'Tue 11 Aug' }
+        { k: 'Due date', v: 'Tue 11 Aug' },
+        { k: 'Customer reference number', v: 'CRN 2201 8845', id: true, quote: true },
+        { k: 'Letter reference', v: 'PRV 5520 1178', id: true }
+      ] },
+    /* KAN-58: a letter that prints three numbers, there on first open, so the
+       way several numbers are shown can be seen without photographing
+       anything. Same customer number as the registration renewal the camera
+       hands out third: one person, one customer number. */
+    { id: 'l', who: 'VicRoads', what: 'Driver licence renewal', title: 'Renew driver licence', when: 'Fri 28 Aug', due: { mo: 8, d: 28 }, done: false, marks: [ { mo: 8, d: 28, l: 'Licence due' } ],
+      agenda: { day: 'Friday 28 August', line: 'Renew driver licence', sub: '$96.50 · customer 8124 6630' },
+      pages: 1,
+      facts: [
+        { k: 'From', v: 'VicRoads' },
+        { k: 'What to do', v: 'Pay VicRoads' },
+        { k: 'Due date', v: 'Fri 28 Aug' },
+        { k: 'Amount', v: '$96.50' },
+        { k: 'Customer number', v: '8124 6630', id: true, quote: true },
+        { k: 'Licence number', v: '0550 2615', id: true },
+        { k: 'Licence card number', v: 'P4471 2290', id: true }
       ] }
   ];
 
-  /* Your letters starts with a past: the two seeded tasks' letters, plus one
+  /* Your letters starts with a past: the three seeded tasks' letters, plus one
      from July so the month folders are visible on first open. */
   const INITIAL_LETTERS = [
     { who: 'Telstra', what: 'Phone bill', due: { mo: 7, d: 14 }, when: 'Tue 14 Jul', pages: 1,
       facts: [ { k: 'From', v: 'Telstra' }, { k: 'What to do', v: 'Pay Telstra' }, { k: 'Amount', v: '$79.00' } ] },
     { who: 'Yarra Valley Water', what: 'Water bill', due: { mo: 8, d: 5 }, when: 'Wed 5 Aug', pages: 1,
-      facts: [ { k: 'From', v: 'Yarra Valley Water' }, { k: 'What to do', v: 'Pay Yarra Valley Water' }, { k: 'Amount', v: '$89.20' }, { k: 'Reference', v: '5501 2280' } ] },
+      facts: [ { k: 'From', v: 'Yarra Valley Water' }, { k: 'What to do', v: 'Pay Yarra Valley Water' }, { k: 'Amount', v: '$89.20' }, { k: 'Account number', v: '5501 2280', id: true, quote: true } ] },
     { who: 'Services Australia', what: 'Pension review form', due: { mo: 8, d: 11 }, when: 'Tue 11 Aug', pages: 2,
-      facts: [ { k: 'From', v: 'Services Australia' }, { k: 'What to do', v: 'Return form to Services Australia' } ] }
+      facts: [ { k: 'From', v: 'Services Australia' }, { k: 'What to do', v: 'Return form to Services Australia' }, { k: 'Customer reference number', v: 'CRN 2201 8845', id: true, quote: true }, { k: 'Letter reference', v: 'PRV 5520 1178', id: true } ] },
+    { who: 'VicRoads', what: 'Driver licence renewal', due: { mo: 8, d: 28 }, when: 'Fri 28 Aug', pages: 1,
+      facts: [ { k: 'From', v: 'VicRoads' }, { k: 'What to do', v: 'Pay VicRoads' }, { k: 'Amount', v: '$96.50' }, { k: 'Customer number', v: '8124 6630', id: true, quote: true }, { k: 'Licence number', v: '0550 2615', id: true }, { k: 'Licence card number', v: 'P4471 2290', id: true } ] }
   ];
 
   /* ---------- signing in ---------- */
@@ -757,8 +788,7 @@
        recognition: does this match the letter? Why the screen shows rather
        than asks, and why there is no correction anywhere in the product, is
        in src/lib/contract/api.ts. */
-    document.getElementById('facts').innerHTML = L.facts.map(f =>
-      '<div class="fact"><span class="k">' + f.k + '</span><span class="v">' + f.v + '</span></div>').join('');
+    document.getElementById('facts').innerHTML = factRows(L.facts);
     document.getElementById('review-photos').innerHTML = photoStrip(it.pages, 'letter');
     document.getElementById('plan').innerHTML = L.plan.map(p =>
       '<div class="plan-row"><span class="ico">' + icon(p.ico, 17) + '</span>' + p.t + '</div>').join('');
@@ -875,6 +905,24 @@
     return !t.done && t.due && (t.due.mo * 100 + t.due.d) < (TODAY_MO * 100 + TODAY_D);
   }
 
+  /* KAN-58: what a letter says, one row a fact.
+
+     A number the letter prints is shown under the label the letter printed
+     beside it, "Customer number", never under a word of ours like
+     "Reference": she is holding the letter, and the label is how she finds
+     the same number on the page. A letter that prints two or three numbers
+     shows them all, and says under one of them which to give when she rings
+     or pays; with a single number there is nothing to choose, so nothing is
+     said. The numbers come from the reading's list of identifiers, and the
+     one to quote is the contract's `reference`: src/lib/contract/fields.ts. */
+  function factRows(facts) {
+    const numbers = (facts || []).filter(f => f.id).length;
+    return (facts || []).map(f =>
+      '<div class="fact"><span class="k">' + f.k + '</span><span class="v">' + f.v +
+      (f.quote && numbers > 1 ? '<span class="quote">The one to quote</span>' : '') +
+      '</span></div>').join('');
+  }
+
   /* What a task's letter said under one name, or nothing. */
   function factOf(t, k) {
     const f = (t.facts || []).find(x => x.k === k);
@@ -974,7 +1022,7 @@
     sheetTask = id;
     let h = '<div class="dd-day">' + (t.who ? t.who + ' · ' + t.what : t.title) + '</div>';
     h += '<div class="ent">' + taskRow(t, true);
-    (t.facts || []).forEach(f => { h += '<div class="fact"><span class="k">' + f.k + '</span><span class="v">' + f.v + '</span></div>'; });
+    h += factRows(t.facts);
     h += photoStrip(t.pages || 1, 'task');
     h += '</div>';
     h += '<button class="btn ghost" onclick="closeDay()">Close</button>';
@@ -1066,7 +1114,7 @@
     if (!l) return;
     let h = '<div class="dd-day">' + l.who + ' · ' + l.what + '</div>';
     h += '<div class="ent">';
-    (l.facts || []).forEach(f => { h += '<div class="fact"><span class="k">' + f.k + '</span><span class="v">' + f.v + '</span></div>'; });
+    h += factRows(l.facts);
     h += photoStrip(l.pages || 1, 'letter');
     h += '</div>';
     h += '<button class="btn ghost" onclick="closeDay()">Close</button>';
@@ -1153,7 +1201,7 @@
          Operations follow visibility: wherever the row is drawn, the tick
          works, however long ago the day was. */
       h += '<div class="ent">' + taskRow(t, true);
-      (t.facts || []).forEach(f => { h += '<div class="fact"><span class="k">' + f.k + '</span><span class="v">' + f.v + '</span></div>'; });
+      h += factRows(t.facts);
       h += photoStrip(t.pages || 1, 'task');
       h += '</div>';
     });

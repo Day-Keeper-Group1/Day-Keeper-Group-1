@@ -6,7 +6,7 @@ import { FactRow } from "@/components/fact-row";
 import { Panel, ScreenHeader } from "@/components/screen";
 import { Button } from "@/components/ui/button";
 import type { DocumentDetail, DocumentStatus } from "@/lib/contract/api";
-import { NOT_APPLICABLE, NO_PAYMENT_REQUIRED } from "@/lib/contract/fields";
+import { factLines } from "@/lib/facts";
 import { requireUser } from "@/server/auth/session";
 import { getDocument } from "@/server/documents";
 
@@ -52,24 +52,9 @@ export default async function DocumentDetailPage({
   // docs/api.md on why this is a 404 and never a 403.
   if (!document) notFound();
 
-  /*
-   * What the letter says, as it may be shown.
-   *
-   * A value the reader was not confident of never reaches a screen, so an
-   * unreadable row is not drawn (src/lib/contract/api.ts). The other two are
-   * confident facts that have nothing to tell her: an appointment letter that
-   * prints no reference number reports NOT_APPLICABLE, and a form with nothing
-   * to pay reports NO_PAYMENT_REQUIRED. Hiding those rows is not dropping the
-   * data, and the spellings come from the contract so the comparison cannot
-   * quietly stop matching (src/lib/contract/fields.ts).
-   */
-  const facts = document.fields.filter(
-    (field) =>
-      field.status === "confirmed" &&
-      field.value &&
-      field.value !== NO_PAYMENT_REQUIRED &&
-      field.value !== NOT_APPLICABLE,
-  );
+  // What the letter says, as it may be shown, every number under its printed
+  // label. The rule is shared with the review and the day sheet: src/lib/facts.ts.
+  const facts = factLines(document.fields, document.identifiers);
 
   const photos = document.pages.filter((page) => page.url);
   const photoCount = photos.length;
@@ -103,8 +88,8 @@ export default async function DocumentDetailPage({
               {/* Wrapped so that the first row is a first child and loses its
                   rule: the card's own heading sits above this. */}
               <div>
-                {facts.map((field) => (
-                  <FactRow key={field.key} field={field} />
+                {facts.map((line) => (
+                  <FactRow key={line.key} line={line} />
                 ))}
               </div>
             </Panel>

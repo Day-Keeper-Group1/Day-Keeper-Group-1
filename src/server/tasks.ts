@@ -20,7 +20,12 @@ import { query, queryOne } from "@/server/db";
 // endpoints draw the same rows. Both word them in src/server/field-views.ts, so
 // the two cannot spell a label differently or disagree about what a hedged
 // value shows.
-import { mapField, type ExtractedFieldRow } from "@/server/field-views";
+import {
+  identifierViews,
+  mapField,
+  type ExtractedFieldRow,
+  type ExtractedIdentifierRow,
+} from "@/server/field-views";
 
 type TaskListRow = {
   id: string;
@@ -165,7 +170,7 @@ export async function getTask(
   const summary = mapTaskRows(rows, timeZone, now)[0];
   if (!summary?.documentId) return null;
 
-  const [page, fields] = await Promise.all([
+  const [page, fields, identifiers] = await Promise.all([
     queryOne<{ page_count: number }>(
       `SELECT count(p.id)::integer AS page_count
          FROM documents d
@@ -196,14 +201,28 @@ export async function getTask(
                  f.field_key`,
       [summary.documentId, userId],
     ),
+    query<ExtractedIdentifierRow>(
+      `SELECT i.label, i.value, i.status
+         FROM documents d
+         JOIN extraction_runs e ON e.document_id = d.id
+         JOIN extracted_identifiers i ON i.extraction_run_id = e.id
+        WHERE d.id = $1
+          AND d.user_id = $2
+          AND e.status = 'succeeded'
+        ORDER BY i.position`,
+      [summary.documentId, userId],
+    ),
   ]);
 
   if (!page) return null;
 
+  const views = fields.map(mapField);
+
   return {
     ...summary,
     documentId: summary.documentId,
-    fields: fields.map(mapField),
+    fields: views,
+    identifiers: identifierViews(identifiers, views),
     pageCount: page.page_count,
   };
 }

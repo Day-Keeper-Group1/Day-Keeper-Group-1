@@ -63,6 +63,7 @@ const DETAIL: DocumentDetail = {
       status: "unreadable",
     },
   ],
+  identifiers: [],
   pages: [
     {
       id: "page-one",

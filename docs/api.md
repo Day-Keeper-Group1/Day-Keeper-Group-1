@@ -556,6 +556,13 @@ The review screen's endpoint: the letter, its fields, and its pages.
       "status": "unreadable"
     }
   ],
+  "identifiers": [
+    {
+      "label": "NMI",
+      "value": "6102 3345 781",
+      "isReference": false
+    }
+  ],
   "pages": [
     {
       "id": "7c0e1b2a-55d4-4c31-9f2b-0a8e6d17c003",
@@ -587,6 +594,18 @@ draw. A field can also carry `NO_PAYMENT_REQUIRED` or `NOT_APPLICABLE`, both
 exported from that same file: those are confident answers about the letter, not
 absences, so a screen that hides such a row is hiding a row and not dropping
 data. Import the constants; never retype the strings.
+
+`identifiers` is every number the letter prints that identifies the person,
+something she holds, or this matter, each under the label printed beside it
+(`IdentifierView` in `src/lib/contract/api.ts`). Confident ones only, in the
+order the reading gave, with the one whose value is the confident `reference`
+first and marked `isReference`. In the example the reference could not be read,
+so nothing is marked and the one number listed is the meter's. Empty whenever
+`fields` is, and for a letter read before the list existed. The reading prompt
+does not ask for the list yet, so a real reading returns it empty; the seed and
+the mock reader fill it. A screen shows these
+rows in place of the Reference row, and says "The one to quote" under the marked
+one when there is more than one (`factLines()` in `src/lib/facts.ts`).
 
 `value` is display text, formatted on the server, so a date arrives as
 `15 Aug 2026` rather than ISO. `value` is null exactly when the status is
@@ -832,7 +851,7 @@ offer the photograph.
 **Code** : `200 OK`
 
 **Content** : `TaskDetail`, which is the summary above plus `documentId`,
-`fields` (as in `GET /api/documents/:id`) and `pageCount`.
+`fields` and `identifiers` (as in `GET /api/documents/:id`) and `pageCount`.
 
 ### Error Responses
 
@@ -844,7 +863,7 @@ offer the photograph.
 This is what makes "what said so?" answerable three weeks after confirming:
 tapping an entry shows the letter's fields and offers the photograph.
 
-`fields` follows the same rules as `GET /api/documents/:id`.
+`fields` and `identifiers` follow the same rules as `GET /api/documents/:id`.
 
 ## Tick a task off
 

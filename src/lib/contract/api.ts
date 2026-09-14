@@ -174,8 +174,24 @@ export type TaskDetail = TaskSummary & {
    */
   documentId: string;
   fields: ExtractedFieldView[];
+  identifiers: IdentifierView[];
   /** How many photographs the letter has. */
   pageCount: number;
+};
+
+/**
+ * KAN-58: one number the letter prints, as a screen shows it.
+ *
+ * Confident ones only, in the order the reading gave, with the one the letter
+ * says to quote first. `isReference` marks that one: it is the value the
+ * `reference` field carries, so a screen can say "The one to quote" under it
+ * when there is more than one to choose from. A letter read before this list
+ * existed has none, and a screen falls back to its Reference row.
+ */
+export type IdentifierView = {
+  label: string;
+  value: string;
+  isReference: boolean;
 };
 
 /**
@@ -205,6 +221,8 @@ export type DocumentDetail = DocumentSummary & {
    * reading.
    */
   fields: ExtractedFieldView[];
+  /** Empty exactly when `fields` is, and for a reading that listed none. */
+  identifiers: IdentifierView[];
   pages: DocumentPageView[];
 };
 
