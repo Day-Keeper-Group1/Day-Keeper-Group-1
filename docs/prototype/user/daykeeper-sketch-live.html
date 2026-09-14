@@ -297,7 +297,7 @@
     <div class="flash" id="flash" role="status"></div>
 
     <div class="toast" id="toast" onclick="go('home'); this.classList.remove('show')">
-      <div class="env">Email · DayKeeper</div>
+      <div class="env">DayKeeper</div>
       <b id="toast-big">Your letter is ready to check</b>
       <span>Nothing happens until you look at it.</span>
     </div>
@@ -742,7 +742,9 @@
   function uploadLetter() {
     if (!photos || nextRead >= LETTERS.length) return;
     const it = { id: ++uid, idx: nextRead++, pages: photos, state: 'reading' };
-    queue.unshift(it);
+    /* In the order she photographed them: the first letter sent is the first
+       one on the list, and the first one she is asked to check. */
+    queue.push(it);
     photos = 0;
     renderPages(); renderAll();
     timers.push(setTimeout(() => {
