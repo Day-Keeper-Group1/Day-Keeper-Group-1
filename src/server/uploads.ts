@@ -502,14 +502,20 @@ export function columnsFromReading(result: ExtractionResult): {
   reference: string | null;
   openPayload: Record<string, unknown>;
 } {
-  const dueDate = confidentValue(result, "due_date");
-  const dueTime = confidentValue(result, "due_time");
+  const dueDateValue = confidentValue(result, "due_date");
+  const dueTimeValue = confidentValue(result, "due_time");
+  const dueDate = dueDateValue && isIsoDate(dueDateValue) ? dueDateValue : null;
+  // A time of day without a date has no place to go: the calendar cannot show
+  // it and a reminder cannot fire on it. So the time column is filled only
+  // when the date column is.
+  const dueTime =
+    dueDate && dueTimeValue && HH_MM.test(dueTimeValue) ? dueTimeValue : null;
 
   return {
     issuer: confidentValue(result, "issuer"),
     documentType: confidentValue(result, "document_type"),
-    dueDate: dueDate && isIsoDate(dueDate) ? dueDate : null,
-    dueTime: dueTime && HH_MM.test(dueTime) ? dueTime : null,
+    dueDate,
+    dueTime,
     amountText: confidentValue(result, "amount"),
     reference: confidentValue(result, "reference"),
     // Six fields are a floor, so anything the reader returned that this system

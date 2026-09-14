@@ -202,19 +202,39 @@ describe("columnsFromReading", () => {
     expect(columns.reference).toBe(NOT_APPLICABLE);
   });
 
-  it("fills the time column when the letter printed a time of day", () => {
+  it("fills the time column when the letter printed a date and a time of day", () => {
     const columns = columnsFromReading(
-      reading([{ key: "due_time", value: "10:30", status: "confirmed" }]),
+      reading([
+        { key: "due_date", value: "2026-10-02", status: "confirmed" },
+        { key: "due_time", value: "10:30", status: "confirmed" },
+      ]),
     );
 
     expect(columns.dueTime).toBe("10:30");
+  });
+
+  // A time without a date cannot be placed on the calendar, so it is not kept.
+  // This happens when the reader is sure of "10:30" but hedges on the date.
+  it("leaves the time column null when the date column is null", () => {
+    const columns = columnsFromReading(
+      reading([
+        { key: "due_date", value: "2026-10-02", status: "uncertain" },
+        { key: "due_time", value: "10:30", status: "confirmed" },
+      ]),
+    );
+
+    expect(columns.dueDate).toBeNull();
+    expect(columns.dueTime).toBeNull();
   });
 
   // The column is a `time`, and the only shape this system carries a time of
   // day in is a 24-hour wall clock (src/lib/contract/dates.ts).
   it("leaves the time column null when a confident value is not a wall clock", () => {
     const columns = columnsFromReading(
-      reading([{ key: "due_time", value: "10.30am", status: "confirmed" }]),
+      reading([
+        { key: "due_date", value: "2026-10-02", status: "confirmed" },
+        { key: "due_time", value: "10.30am", status: "confirmed" },
+      ]),
     );
 
     expect(columns.dueTime).toBeNull();
