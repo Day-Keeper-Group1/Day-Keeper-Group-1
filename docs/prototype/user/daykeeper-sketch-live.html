@@ -728,11 +728,11 @@
      the photograph she took. */
   function letterPage(i) {
     let h = '<svg viewBox="0 0 74 100" xmlns="http://www.w3.org/2000/svg">' +
-      '<rect width="74" height="100" fill="#fbf8f0"/>' +
-      '<rect x="8" y="8" width="22" height="5" rx="1" fill="#17452c"/>';
+      '<rect width="74" height="100" fill="var(--bg-card)"/>' +
+      '<rect x="8" y="8" width="22" height="5" rx="1" fill="var(--primary)"/>';
     const rows = i === 1 ? [20, 26, 32, 44, 50, 56, 70, 76] : [10, 16, 22, 28, 40, 46, 52, 64, 70, 76, 82];
-    rows.forEach((y, k) => { h += '<rect x="8" y="' + y + '" width="' + (k % 3 === 2 ? 34 : 58) + '" height="2.5" rx="1" fill="#c9c3b1"/>'; });
-    if (i === 1) h += '<rect x="8" y="86" width="30" height="6" rx="1" fill="#1c1a15"/>';
+    rows.forEach((y, k) => { h += '<rect x="8" y="' + y + '" width="' + (k % 3 === 2 ? 34 : 58) + '" height="2.5" rx="1" fill="var(--line)" opacity=".45"/>'; });
+    if (i === 1) h += '<rect x="8" y="86" width="30" height="6" rx="1" fill="var(--ink)"/>';
     return h + '</svg>';
   }
 
