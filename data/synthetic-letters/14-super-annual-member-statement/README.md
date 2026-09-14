@@ -39,3 +39,13 @@ Made up, not taken from any source: the fund name Wattlebank Super, its ABN, USI
 ### reference
 
 **12 242 124.** Page 1, "Your account" section, first item, "Member number". It is printed only once on the statement. The contract asks for the reference, account or customer number the person must quote. This statement identifies her account by its member number.
+
+### identifiers
+
+Every number the letter prints that identifies her, something she holds, or this matter, each under the label printed beside it, written as printed. The first list is the numbers a reading must find; the reference is one of them, and a reading that gives any of them as the reference is right. The experiments score whether every number in the first list is found.
+
+- **Member number 12 242 124.** Page 1, "Your account" panel, first cell of the top row.
+
+Also printed, and identifying something narrower: a payment method's own reference, a meter, an invoice or statement, a provider, or a one-time code. A reading may list these or leave them out.
+
+- **USI 12018283974122.** Page 1, top right header block, fourth and last line, under the phone number, the website and the ABN.

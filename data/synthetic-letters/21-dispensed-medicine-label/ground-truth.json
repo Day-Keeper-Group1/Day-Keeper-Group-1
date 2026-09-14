@@ -5,5 +5,12 @@
   "action_required": "Take medicine perindopril each morning",
   "due_date": null,
   "amount": null,
-  "reference": "6429746 DFD"
+  "reference": "6429746 DFD",
+  "identifiers": [
+    {
+      "label": "Ref #",
+      "value": "6429746 DFD",
+      "required": true
+    }
+  ]
 }

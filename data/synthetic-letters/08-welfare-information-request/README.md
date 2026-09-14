@@ -47,3 +47,14 @@ Made up, not taken from any source: the agency name Public Payments Office, the 
 ### reference
 
 **PPO-5002-9891.** Page 1, top right, beside the label "Customer Reference Number". The number itself is printed only once. Under "How to give us the details", option 1 is "Online". It tells her to "enter your Customer Reference Number together with the one-time access code below". The contract asks for the reference, account or customer number the person must quote, and this is the number the letter tells her to enter.
+
+### identifiers
+
+Every number the letter prints that identifies her, something she holds, or this matter, each under the label printed beside it, written as printed. The first list is the numbers a reading must find; the reference is one of them, and a reading that gives any of them as the reference is right. The experiments score whether every number in the first list is found.
+
+- **Customer Reference Number PPO-5002-9891.** page 1, top right header block, second line, bold beside the grey label.
+
+Also printed, and identifying something narrower: a payment method's own reference, a meter, an invoice or statement, a provider, or a one-time code. A reading may list these or leave them out.
+
+- **Provider reference PPO-7143-4935.** page 1, "Income stream under review" table, fourth row.
+- **One-time access code VRJF86.** page 1, boxed panel directly under the four numbered channels, printed in a serif typewriter face with wide letter spacing as V R J F 8 6.

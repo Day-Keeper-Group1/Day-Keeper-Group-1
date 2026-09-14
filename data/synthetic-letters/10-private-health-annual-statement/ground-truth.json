@@ -5,5 +5,22 @@
   "action_required": "No action",
   "due_date": null,
   "amount": null,
-  "reference": "65921613"
+  "reference": "65921613",
+  "identifiers": [
+    {
+      "label": "Membership number",
+      "value": "65921613",
+      "required": true
+    },
+    {
+      "label": "Statement identifier",
+      "value": "QFYCGT5",
+      "required": false
+    },
+    {
+      "label": "Reference",
+      "value": "1683 3227 13",
+      "required": false
+    }
+  ]
 }

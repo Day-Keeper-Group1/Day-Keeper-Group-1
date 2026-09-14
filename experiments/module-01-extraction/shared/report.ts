@@ -37,7 +37,7 @@ import {
   USD_TO_AUD,
   usdFor,
 } from "./prices";
-import { SCORED, type Score } from "./score";
+import { scoredFieldsOf, type Score } from "./score";
 
 const experiment = experimentFromArgv(process.argv.slice(2));
 const scores = JSON.parse(
@@ -61,11 +61,14 @@ console.log("|---|---|---|---|---|---|---|---|---|---|");
 for (const { model, effort } of experiment.cells) {
   const cell = scores.filter((s) => s.model === model && s.effort === effort);
   if (cell.length === 0) continue;
-  const letters = cell.filter((s) => SCORED.every((f) => s.correct[f])).length;
+  const letters = cell.filter((s) =>
+    scoredFieldsOf(s).every((f) => s.correct[f]),
+  ).length;
   const fields = cell.reduce(
-    (n, s) => n + SCORED.filter((f) => s.correct[f]).length,
+    (n, s) => n + scoredFieldsOf(s).filter((f) => s.correct[f]).length,
     0,
   );
+  const fieldsAsked = cell.reduce((n, s) => n + scoredFieldsOf(s).length, 0);
   const wrongConfirmed = cell.reduce(
     (n, s) => n + s.wrong_and_confirmed.length,
     0,
@@ -73,7 +76,7 @@ for (const { model, effort } of experiment.cells) {
   const withUsage = cell.filter((s) => s.usage);
   const usd = mean(withUsage.map((s) => usdFor(model, s.usage!)));
   console.log(
-    `| ${short(model)} | ${effort} | ${pct(letters, cell.length)} | ${fields}/${cell.length * SCORED.length} | ${wrongConfirmed} | ` +
+    `| ${short(model)} | ${effort} | ${pct(letters, cell.length)} | ${fields}/${fieldsAsked} | ${wrongConfirmed} | ` +
       `${mean(withUsage.map((s) => s.usage!.input_tokens)).toFixed(0)} | ` +
       `${mean(withUsage.map((s) => s.usage!.output_tokens)).toFixed(0)} | ` +
       `${mean(withUsage.map((s) => s.usage!.reasoning_tokens)).toFixed(0)} | ` +
@@ -102,7 +105,7 @@ for (const letter of experiment.letters) {
     );
     const n = cellScores.length;
     const k = cellScores.filter((s) =>
-      SCORED.every((f) => s.correct[f]),
+      scoredFieldsOf(s).every((f) => s.correct[f]),
     ).length;
     maxRepeats = Math.max(maxRepeats, n);
     const value = pct(k, n);
@@ -110,7 +113,7 @@ for (const letter of experiment.letters) {
   });
   const allN = letterScores.length;
   const allK = letterScores.filter((s) =>
-    SCORED.every((f) => s.correct[f]),
+    scoredFieldsOf(s).every((f) => s.correct[f]),
   ).length;
   const allReads = allK < allN ? `**${pct(allK, allN)}**` : pct(allK, allN);
   const wrongConfirmed = letterScores.reduce(
@@ -147,7 +150,7 @@ console.log(
 );
 
 const misses = scores.filter(
-  (s) => !SCORED.every((f) => s.correct[f]) || !s.ok,
+  (s) => !scoredFieldsOf(s).every((f) => s.correct[f]) || !s.ok,
 );
 if (misses.length) {
   console.log("\n### Every miss\n");
@@ -162,7 +165,7 @@ if (misses.length) {
       );
       continue;
     }
-    for (const f of SCORED) {
+    for (const f of scoredFieldsOf(s)) {
       if (s.correct[f]) continue;
       console.log(
         `| ${short(s.model)} | ${s.effort} | ${s.letter} | ${s.repeat} | ${f} | ${String(s.want[f])} | ${String(s.got[f])} | ${s.status[f] ?? ""} |`,

@@ -16,6 +16,7 @@ import { readFileSync } from "node:fs";
 import {
   CONTRACT_FIELD_KEYS,
   FIELD_DESCRIPTIONS,
+  IDENTIFIERS_DESCRIPTION,
 } from "../../../src/lib/contract/fields";
 import type { Experiment } from "./experiment";
 
@@ -32,4 +33,22 @@ export function loadPrompt(experiment: Experiment): string {
   }
 
   return text;
+}
+
+/**
+ * Does this experiment's prompt ask for the list of identifiers? The scorer
+ * marks the list only when it was asked for, so that experiments run before
+ * the list existed keep their marks. A prompt that names the list but
+ * carries a definition other than the contract's is refused, like a drifted
+ * field.
+ */
+export function asksForIdentifiers(experiment: Experiment): boolean {
+  const text = readFileSync(experiment.promptFile, "utf8");
+  if (text.includes(IDENTIFIERS_DESCRIPTION)) return true;
+  if (text.includes("**identifiers**")) {
+    throw new Error(
+      `${experiment.name}/prompt.md names identifiers but its definition no longer matches IDENTIFIERS_DESCRIPTION in src/lib/contract/fields.ts. Update prompt.md before running.`,
+    );
+  }
+  return false;
 }

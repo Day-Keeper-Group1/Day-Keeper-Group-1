@@ -41,3 +41,16 @@ Made up, not taken from any source: the company names Example Energy Pty Ltd, Si
 ### reference
 
 **5832 875 169.** Page 1, "Your account" table, first row, "Account number". The same number is printed in the top left box under the pay-by date ("Account 5832 875 169"), at the bottom left of the tear-off slip ("ACCOUNT NUMBER"), and in the last payment column ("Your account number: 5832 875 169"). The contract asks for the reference, account or customer number the person must quote, and the number this bill identifies her account by is the account number.
+
+### identifiers
+
+Every number the letter prints that identifies her, something she holds, or this matter, each under the label printed beside it, written as printed. The first list is the numbers a reading must find; the reference is one of them, and a reading that gives any of them as the reference is right. The experiments score whether every number in the first list is found.
+
+- **Account number 5832 875 169.** page 1, "Your account" table, first row; repeated in the top left box as "Account 5832 875 169", in the paystead column as "Your account number: 5832 875 169", and on the tear-off slip under "ACCOUNT NUMBER".
+
+Also printed, and identifying something narrower: a payment method's own reference, a meter, an invoice or statement, a provider, or a one-time code. A reading may list these or leave them out.
+
+- **MIRN 59122670931.** page 1, "Your account" table, second row; also page 2, first column of the meter read table under the heading "MIRN".
+- **Ref 6950 0977 7723.** page 1, "How to pay", Phone and internet banking column, directly under "Biller code: 9200072".
+- **Ref 8580 8754 1787.** page 1, "How to pay", Kelsworth Post column, under "Payment code: 9200104"; the same value is printed on the tear-off slip as "REF 8580 8754 1787".
+- **Example Energy Pty Ltd reference PPO-4357-4028.** page 1, "How to pay", paystead column, second last line, above "Your account number: 5832 875 169".

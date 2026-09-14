@@ -50,3 +50,16 @@ Made up, not taken from any source: the names Calderfield Water, Calderfield Cat
 ### reference
 
 **40740 95528.** Page 1, the light blue box on the left under the address, "Account number 40740 95528". The same number is printed in the paystead block at the bottom right of page 1 ("Your account number: 40740 95528"). The contract asks for the reference, account or customer number the person must quote, and the number this bill identifies her account by is the account number.
+
+### identifiers
+
+Every number the letter prints that identifies her, something she holds, or this matter, each under the label printed beside it, written as printed. The first list is the numbers a reading must find; the reference is one of them, and a reading that gives any of them as the reference is right. The experiments score whether every number in the first list is found.
+
+- **Account number 40740 95528.** page 1, pale blue box on the left of the three boxes under the address; printed again in the paystead block at the bottom right of page 1 as "Your account number: 40740 95528".
+
+Also printed, and identifying something narrower: a payment method's own reference, a meter, an invoice or statement, a provider, or a one-time code. A reading may list these or leave them out.
+
+- **Tax invoice 754908949.** page 1, left column, first line under the account number box.
+- **Meter no. KRV389288.** page 2, "Your water usage" table, first column of the single data row.
+- **Ref 7238 7344 7930.** page 1, Payment options, BANK block "Phone and internet banking", second line under the biller code.
+- **Ref 6653 3336 4755.** page 1, Payment options, POST block "Kelsworth Post", second line under the payment code.

@@ -5,5 +5,17 @@
   "action_required": "No action",
   "due_date": null,
   "amount": null,
-  "reference": "12 242 124"
+  "reference": "12 242 124",
+  "identifiers": [
+    {
+      "label": "Member number",
+      "value": "12 242 124",
+      "required": true
+    },
+    {
+      "label": "USI",
+      "value": "12018283974122",
+      "required": false
+    }
+  ]
 }

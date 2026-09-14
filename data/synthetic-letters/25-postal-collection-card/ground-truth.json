@@ -5,5 +5,12 @@
   "action_required": "Collect item from Calderfield Post Office",
   "due_date": null,
   "amount": null,
-  "reference": "RS431545614AU"
+  "reference": "RS431545614AU",
+  "identifiers": [
+    {
+      "label": "ARTICLE NUMBER",
+      "value": "RS431545614AU",
+      "required": true
+    }
+  ]
 }

@@ -30,7 +30,12 @@ import { actionWordOf } from "../../../src/lib/contract/fields";
 import type { Model } from "./config";
 import { experimentFromArgv } from "./experiment";
 import { USD_TO_AUD, usdFor } from "./prices";
-import { SCORED, type Score, type ScoredField } from "./score";
+import {
+  SCORED_WITH_IDENTIFIERS,
+  scoredFieldsOf,
+  type Score,
+  type ScoredField,
+} from "./score";
 
 const experiment = experimentFromArgv(process.argv.slice(2));
 const scores = JSON.parse(
@@ -100,6 +105,24 @@ function agree(
       const x = actionWordOf(a);
       return x !== null && x === actionWordOf(b);
     }
+    case "identifiers": {
+      // The same numbers, in any order, compared as the scorer compares them.
+      const set = (v: string | null) =>
+        new Set(
+          (v ?? "")
+            .split("; ")
+            .filter(Boolean)
+            .map((s) =>
+              s
+                .toLowerCase()
+                .replace(/\s+/g, "")
+                .replace(/[·•.\u2013-]/g, "-"),
+            ),
+        );
+      const x = set(a);
+      const y = set(b);
+      return x.size === y.size && [...x].every((s) => y.has(s));
+    }
   }
 }
 
@@ -109,7 +132,9 @@ type Trial = {
   trial: number;
   judgeCalled: boolean;
   /** Per field: how it was decided and whether the decided value is right. */
-  fields: Record<ScoredField, { decision: Decision; correct: boolean | null }>;
+  fields: Partial<
+    Record<ScoredField, { decision: Decision; correct: boolean | null }>
+  >;
   outcome: "right" | "wrong" | "to person" | "no reply";
   usd: number;
 };
@@ -134,7 +159,8 @@ for (const letter of experiment.letters) {
     if (!a || !b) continue; // the matrix has not reached this trial yet
     const fields = {} as Trial["fields"];
     let judgeCalled = false;
-    for (const f of SCORED) {
+    const scored = scoredFieldsOf(a);
+    for (const f of scored) {
       const va = a.ok ? (a.got[f] ?? null) : null;
       const vb = b.ok ? (b.got[f] ?? null) : null;
       if (a.ok && b.ok && agree(f, va, vb)) {
@@ -151,7 +177,7 @@ for (const letter of experiment.letters) {
         fields[f] = { decision: "unresolved", correct: null };
       }
     }
-    const decided = SCORED.map((f) => fields[f]);
+    const decided = scored.flatMap((f) => fields[f] ?? []);
     const outcome: Trial["outcome"] =
       !a.ok && !b.ok
         ? "no reply"
@@ -225,16 +251,21 @@ console.log(
   "| Field | Pairs that disagreed | Judge sided with the right read | Judge sided with a wrong read | Judge matched neither |",
 );
 console.log("|---|---|---|---|---|");
-for (const f of SCORED) {
-  const d = results.filter((r) => r.fields[f].decision !== "agreed");
+for (const f of SCORED_WITH_IDENTIFIERS) {
+  const d = results.filter((r) => {
+    const x = r.fields[f];
+    return x !== undefined && x.decision !== "agreed";
+  });
   if (d.length === 0) continue;
   const judgedRight = d.filter(
-    (r) => r.fields[f].decision === "judged" && r.fields[f].correct,
+    (r) => r.fields[f]?.decision === "judged" && r.fields[f]?.correct,
   ).length;
   const judgedWrong = d.filter(
-    (r) => r.fields[f].decision === "judged" && !r.fields[f].correct,
+    (r) => r.fields[f]?.decision === "judged" && !r.fields[f]?.correct,
   ).length;
-  const neither = d.filter((r) => r.fields[f].decision === "unresolved").length;
+  const neither = d.filter(
+    (r) => r.fields[f]?.decision === "unresolved",
+  ).length;
   console.log(
     `| ${f} | ${d.length} | ${judgedRight} | ${judgedWrong} | ${neither} |`,
   );
@@ -252,9 +283,9 @@ if (bad.length) {
     const a = read(reader, r.letter, 2 * r.trial - 1);
     const b = read(reader, r.letter, 2 * r.trial);
     const t = read(judge, r.letter, r.trial);
-    for (const f of SCORED) {
+    for (const f of scoredFieldsOf(a ?? { scored: undefined })) {
       const d = r.fields[f];
-      if (d.decision === "agreed" && d.correct) continue;
+      if (d === undefined || (d.decision === "agreed" && d.correct)) continue;
       const show = (s: Score | undefined) =>
         s?.ok ? String(s.got[f] ?? null) : "(no reply)";
       console.log(

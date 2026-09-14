@@ -46,3 +46,15 @@ Made up, not taken from any source: the council name Calderfield City Council, i
 ### reference
 
 **7717145263.** Page 1, the box at the top right, first row, "Infringement no.". The same number is printed on the tear-off slip ("Infringement no."), under the barcode on the slip, and at the right end of the dark red band at the top of page 2 ("Infringement no."). The contract asks for the reference, account or customer number the person must quote. The "Online" column under "HOW TO PAY" on page 1 says "Quote the infringement number."
+
+### identifiers
+
+Every number the letter prints that identifies her, something she holds, or this matter, each under the label printed beside it, written as printed. The first list is the numbers a reading must find; the reference is one of them, and a reading that gives any of them as the reference is right. The experiments score whether every number in the first list is found.
+
+- **Infringement no. 7717145263.** page 1, box at the top right, first row; also on the tear-off slip at the foot of page 1, in the human readable line under the barcode there, and at the right end of the dark red band at the top of page 2.
+- **Registration no. 9XK·7QJ.** page 1, OFFENCE DETAILS table, third row, left value cell. Checked at 4x: the separator is a small raised middle dot at mid cap height, not a hyphen and not a space.
+
+Also printed, and identifying something narrower: a payment method's own reference, a meter, an invoice or statement, a provider, or a one-time code. A reading may list these or leave them out.
+
+- **Issuing officer no. 8160.** page 1, OFFENCE DETAILS table, last row.
+- **Ref 4797 2573 7796.** page 1, HOW TO PAY, BPAY column, second line; three groups of four digits separated by single spaces.
