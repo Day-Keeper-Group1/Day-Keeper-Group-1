@@ -16,7 +16,7 @@ Return the six contract fields as JSON. Nothing else: no prose before it, no pro
 Pages print several numbers and several sums. Choose by what the number is for, not by the word printed beside it.
 
 - **reference** is the number this letter tells the person to quote when they contact the sender or pay. A number labelled "Reference" inside a payment method (BPAY, bank transfer, post office) is that method's own identifier, not the letter's reference. A property, membership, policy, infringement or customer number that the letter itself refers to comes first. Never return a stamp, watermark or print code from the page margin.
-- **amount** is what this letter asks the person to pay. A figure the letter merely reports, such as a monthly premium already paid by direct debit or a balance of $0.00, is not an amount payable; if the letter asks for nothing, the amount is "No payment required".
+- **amount** is what this letter asks the person to pay. A figure the letter merely reports without asking for it is not an amount payable; if the letter asks for nothing, the amount is "No payment required".
 - If two candidates still fit equally, choose one and mark the field `uncertain`.
 
 ## Status

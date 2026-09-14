@@ -12,9 +12,9 @@ This run keeps the contract's six definitions word for word and adds one section
 
 - **Letters**: the same fifteen as 01 and 02, unchanged. The ten that were stable in 02 are the regression test.
 - **Prompt** (changed): 01's prompt plus one section, "When more than one thing on the page fits a field". The six contract definitions are untouched; `shared/prompt.ts` refuses a prompt in which they drift. `diff 01-full-grid/prompt.md 03-prompt-by-purpose/prompt.md` is the whole change.
-- **Cells** (changed from 02): luna `medium` and terra `low`, the cheapest effort of each model. 02 showed effort is not the lever for these letters and that the two models flip on different ones, so the change is tested on both and effort is not spent.
+- **Cells** (changed from 02): luna `medium`, luna `xhigh` and terra `low`: the cheapest effort of each model, plus the luna cell that read best for its price in 02. 02 showed effort is not the lever for these letters and that the two models flip on different ones, so the change is tested on both and effort is not spent.
 - **Repeats**: ten, as in 02, so the two per-letter tables can be read side by side.
-- 300 calls, four in flight.
+- 450 calls, four in flight.
 
 ## Results
 
