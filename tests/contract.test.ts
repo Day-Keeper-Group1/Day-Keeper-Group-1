@@ -23,7 +23,7 @@ import {
   FIELD_DESCRIPTIONS,
   FIELD_LABELS,
 } from "@/lib/contract/fields";
-import { deriveTaskStatus } from "@/lib/contract/api";
+import { deriveTaskStatus, taskTitle } from "@/lib/contract/api";
 import { MockExtractionProvider } from "@/server/extraction/mock-provider";
 
 function validField(key: string) {
@@ -295,6 +295,40 @@ describe("when a task counts as overdue", () => {
     const melbourneSmallHours = new Date("2026-08-15T15:00:00Z");
     expect(deriveTaskStatus("open", "2026-08-15", melbourneSmallHours)).toBe(
       "overdue",
+    );
+  });
+});
+
+describe("taskTitle", () => {
+  it("uses the action alone when it already names the issuer", () => {
+    expect(
+      taskTitle({
+        action: "Pay Telstra",
+        issuer: "Telstra",
+        documentType: null,
+      }),
+    ).toBe("Pay Telstra");
+  });
+
+  it("adds the issuer in brackets when the action does not name it", () => {
+    expect(
+      taskTitle({
+        action: "Attend GP appointment",
+        issuer: "Dr A. Patel, GP clinic",
+        documentType: null,
+      }),
+    ).toBe("Attend GP appointment (Dr A. Patel, GP clinic)");
+  });
+
+  it("never produces empty brackets", () => {
+    expect(
+      taskTitle({ action: null, issuer: "Telstra", documentType: "Bill" }),
+    ).toBe("Letter from Telstra");
+    expect(taskTitle({ action: " ", issuer: null, documentType: "Bill" })).toBe(
+      "Bill",
+    );
+    expect(taskTitle({ action: null, issuer: null, documentType: null })).toBe(
+      "Letter",
     );
   });
 });

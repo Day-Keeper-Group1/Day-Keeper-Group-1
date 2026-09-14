@@ -534,7 +534,7 @@ The review screen's endpoint: the letter, its fields, and its pages.
     {
       "key": "action_required",
       "label": "What to do",
-      "value": "Pay the electricity bill",
+      "value": "Pay AGL Energy",
       "status": "confirmed"
     },
     {
@@ -624,7 +624,7 @@ message. There is no fields array and no acknowledged array; see
   "documentId": "3a9f1e77-4c02-4f1a-9b3e-5d2c8a11f004",
   "task": {
     "id": "5b8c2f19-0e77-4d3a-9c41-6f2a7b0d1e55",
-    "title": "Pay the electricity bill (AGL Energy)",
+    "title": "Pay AGL Energy",
     "documentId": "3a9f1e77-4c02-4f1a-9b3e-5d2c8a11f004",
     "issuer": "AGL Energy",
     "dueDate": "2026-08-15",
@@ -688,11 +688,17 @@ Default decisions, open to review:
   is created anyway. Blocking would trap the person on a screen that offers her
   nothing to fix, which is a worse failure for this audience than a missing
   reference number.
-- **The task's title is `action_required (issuer)`**, mechanical and
-  predictable. Because either half can be empty and `tasks.title` is NOT NULL,
-  it falls back in order: `action_required (issuer)`, then `action_required`,
-  then `Letter from issuer`, then the document type, then `Letter`. Nobody
-  should ever meet a task called `()`.
+- **The task's title is `action_required`, with the issuer in brackets only
+  when the action does not already name it.** `action_required` starts with an
+  action word and usually names who ("Pay AGL Energy"), so the bracket would
+  repeat it; "Attend GP appointment (Dr A. Patel, GP clinic)" keeps it. Because
+  either half can be empty and `tasks.title` is NOT NULL, it falls back to
+  `action_required`, then `Letter from issuer`, then the document type, then
+  `Letter`. The rule is one function, `taskTitle()` in
+  `src/lib/contract/api.ts`, which the confirm handler must call.
+- **A letter whose action is `No action` is kept as a letter and gets no
+  task.** Nothing asks her to do anything, and a task titled "No action" on the
+  home list would be the kind of noise this product exists to remove.
 - **A letter that names no date becomes a task with no due date**, no reminders
   and no calendar mark. `planReminders()` is not called at all: it takes a date
   and throws without one.
@@ -755,7 +761,7 @@ from.
 [
   {
     "id": "5b8c2f19-0e77-4d3a-9c41-6f2a7b0d1e55",
-    "title": "Pay the electricity bill (AGL Energy)",
+    "title": "Pay AGL Energy",
     "documentId": "3a9f1e77-4c02-4f1a-9b3e-5d2c8a11f004",
     "issuer": "AGL Energy",
     "dueDate": "2026-08-15",

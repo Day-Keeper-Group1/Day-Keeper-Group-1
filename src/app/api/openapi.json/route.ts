@@ -160,7 +160,7 @@ export function GET() {
                         },
                         {
                           key: "action_required",
-                          value: "pay the amount due",
+                          value: "Pay Example Energy",
                           status: "confirmed",
                           confidence: 0.95,
                         },

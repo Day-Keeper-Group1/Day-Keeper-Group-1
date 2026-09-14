@@ -68,7 +68,11 @@ On the health fund's annual statement, the page shows "Monthly amount you pay \$
 
 ## Discussion
 
-Not yet written.
+Settled on 14 September.
+
+The action words work. Every one of the 280 reads started with the right word, and on every letter with a named payee or office both models wrote the key's words exactly. Only the recall notice produced different wording after the verb, and all of it was still the right action. That is enough to keep the eight words as the contract, and to let the task title be the action itself.
+
+luna's two slips matter more than their count. Both were on letters that ask for nothing, and one was the \$167.43 premium on the health fund statement: the value every cell gave twenty one times in 02 and none gave in 03. The prompt section from 03 made that miss rare, not impossible, and ten reads a letter cannot tell the two apart. The next run reads each letter more times, and adds letters the prompt was not written against.
 
 ## Reproducing this
 

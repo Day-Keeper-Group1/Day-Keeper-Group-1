@@ -39,6 +39,7 @@ import { hashPassword } from "../src/server/auth/password";
 import { hashSessionToken } from "../src/server/auth/token";
 import { APP_TIME_ZONE, addDays, todayInZone } from "../src/lib/contract/dates";
 import { CONTRACT_VERSION } from "../src/lib/contract/extraction";
+import { taskTitle } from "../src/lib/contract/api";
 import { NO_PAYMENT_REQUIRED } from "../src/lib/contract/fields";
 import { planReminders } from "../src/lib/contract/reminders";
 
@@ -198,7 +199,7 @@ async function main() {
     await insertFields(db, aglRun, [
       ["document_type", "Utility bill", "confirmed", 0.97],
       ["issuer", "AGL Energy", "confirmed", 0.96],
-      ["action_required", "Pay the amount due", "confirmed", 0.92],
+      ["action_required", "Pay AGL Energy", "confirmed", 0.92],
       // The model hedged on the date and could not read the reference. Storage
       // keeps the hedge and its guess as evaluation data; the product treats
       // both rows the same way, as "no value", and asks nobody to adjudicate.
@@ -222,7 +223,7 @@ async function main() {
     const centrelink = await confirmedLetter(db, storage, margaretId, {
       issuer: "Services Australia",
       documentType: "Government letter",
-      action: "Return the completed form",
+      action: "Return form to Services Australia",
       dueDate: isoDaysFromNow(-3),
       amount: NO_PAYMENT_REQUIRED,
       reference: "CRN 2201 8845",
@@ -235,7 +236,7 @@ async function main() {
     const water = await confirmedLetter(db, storage, margaretId, {
       issuer: "Yarra Valley Water",
       documentType: "Utility bill",
-      action: "Pay the amount due",
+      action: "Pay Yarra Valley Water",
       dueDate: isoDaysFromNow(12),
       amount: "$89.20",
       reference: "5501 2280",
@@ -251,7 +252,7 @@ async function main() {
     const gp = await confirmedLetter(db, storage, margaretId, {
       issuer: "Dr A. Patel, GP clinic",
       documentType: "Medical letter",
-      action: "Attend the appointment",
+      action: "Attend GP appointment",
       dueDate: isoDaysFromNow(26),
       dueTime: "10:30",
       amount: NO_PAYMENT_REQUIRED,
@@ -271,7 +272,7 @@ async function main() {
     const telstra = await confirmedLetter(db, storage, margaretId, {
       issuer: "Telstra",
       documentType: "Utility bill",
-      action: "Pay the amount due",
+      action: "Pay Telstra",
       dueDate: isoDaysFromNow(-20),
       amount: "$79.00",
       reference: "4417 9902",
@@ -519,7 +520,11 @@ async function confirmedLetter(
     [
       userId,
       documentId,
-      `${spec.action} (${spec.issuer})`,
+      taskTitle({
+        action: spec.action,
+        issuer: spec.issuer,
+        documentType: spec.documentType,
+      }),
       spec.issuer,
       spec.dueDate,
       spec.dueTime ?? null,

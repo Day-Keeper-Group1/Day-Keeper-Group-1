@@ -363,6 +363,38 @@ export type SessionUser = {
  * Comparing instants against a UTC end of day looks equivalent and is not: it
  * keeps a Melbourne task "upcoming" until ten the next morning. See ./dates.ts.
  */
+/**
+ * The title a confirmed letter's task gets.
+ *
+ * `action_required` starts with an action word and usually names who already
+ * ("Pay Telstra", "Return form to Services Australia"), so the issuer is added
+ * in brackets only when the action does not already contain it: "Attend GP
+ * appointment (Dr A. Patel, GP clinic)". Either half can be missing and
+ * `tasks.title` is NOT NULL, so it falls back to the action alone, then
+ * "Letter from issuer", then the document type, then "Letter". Nobody meets a
+ * task called "()".
+ *
+ * The seed and the confirm handler both call this; a second copy of the rule
+ * is how two screens end up naming one task differently. The list row splits
+ * the bracket back off (taskHeadline in src/components/task-row.tsx).
+ */
+export function taskTitle(parts: {
+  action: string | null;
+  issuer: string | null;
+  documentType: string | null;
+}): string {
+  const action = parts.action?.trim() || null;
+  const issuer = parts.issuer?.trim() || null;
+  if (action && issuer) {
+    return action.toLowerCase().includes(issuer.toLowerCase())
+      ? action
+      : `${action} (${issuer})`;
+  }
+  if (action) return action;
+  if (issuer) return `Letter from ${issuer}`;
+  return parts.documentType?.trim() || "Letter";
+}
+
 export function deriveTaskStatus(
   state: "open" | "completed" | "dismissed",
   dueDate: string | null,

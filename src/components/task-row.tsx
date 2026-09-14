@@ -12,11 +12,12 @@ import { cn } from "@/lib/utils";
 /**
  * The first line of a row: what to do, without who asked.
  *
- * Titles are stored as "Pay the amount due (Telstra)", which reads well in a
- * reminder that stands alone. In a list the issuer moves down to the second
- * line beside the date, so the first line stays short enough to sit on one
- * line at phone width. A title that does not end in its own issuer is shown
- * whole.
+ * A title carries its issuer in brackets when the action does not already
+ * name it, "Attend GP appointment (Dr A. Patel, GP clinic)", which reads well
+ * in a reminder that stands alone (taskTitle in src/lib/contract/api.ts). In a
+ * list the issuer moves down to the second line beside the date, so the first
+ * line stays short enough to sit on one line at phone width. A title that
+ * does not end in its own issuer, such as "Pay Telstra", is shown whole.
  */
 export function taskHeadline(task: TaskSummary): string {
   const suffix = task.issuer ? ` (${task.issuer})` : null;
