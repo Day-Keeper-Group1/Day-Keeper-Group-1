@@ -1,10 +1,11 @@
 /**
  * Seed data.
  *
- * Margaret's world at the moment she opens the app: four letters confirmed, one
- * waiting to be checked, and one still being read. Every state the interface
- * has to draw is present, so nobody has to imagine what an overdue task looks
- * like, or photograph a letter to find out.
+ * Margaret's world at the moment she opens the app: four letters confirmed and
+ * one waiting to be checked. Every settled state the interface has to draw is
+ * present, so nobody has to imagine what an overdue task looks like. The one
+ * state not seeded is "still being read": a seeded row would never finish,
+ * and photographing any letter shows the real thing for ten seconds.
  *
  * Everything is synthetic. No real person, account number or amount appears
  * here, and none may be added: the project cannot lawfully hold real
@@ -102,7 +103,6 @@ const LETTERS_DIR = "data/synthetic-letters";
  */
 const PAGE_SOURCES = {
   aglBill: "01-electricity-bill",
-  stillReading: "06-parking-infringement-notice",
   servicesAustralia: "08-welfare-information-request",
   waterBill: "03-water-bill",
   medical: "09-specialist-account-statement",
@@ -207,30 +207,6 @@ async function main() {
       ["amount", "$347.60", "confirmed", 0.95],
       ["reference", null, "unreadable", 0.18],
     ]);
-
-    // ---- A letter still being read ----------------------------------------
-    // Photographed a moment ago. This is the waiting state, which is where a
-    // person spends the first ten seconds of every upload.
-    const stillReading = randomUUID();
-    await db.query(
-      `INSERT INTO documents (id, user_id, status, uploaded_at)
-       VALUES ($1, $2, 'processing', now() - interval '20 seconds')`,
-      [stillReading, margaretId],
-    );
-    await insertPages(
-      db,
-      storage,
-      margaretId,
-      stillReading,
-      1,
-      PAGE_SOURCES.stillReading,
-    );
-    await db.query(
-      `INSERT INTO extraction_runs
-         (document_id, status, provider, model, contract_version)
-       VALUES ($1, 'processing', $2, $3, $4)`,
-      [stillReading, SEED_PROVIDER, SEED_MODEL, CONTRACT_VERSION],
-    );
 
     // ---- Four letters already dealt with -----------------------------------
     // Overdue, upcoming, an appointment, and one already ticked. These are the
@@ -343,7 +319,6 @@ Seeded.
                     endpoints before sign-in is built. Local databases only.)
 
   1 letter waiting to be checked (an uncertain date and an unreadable reference)
-  1 letter still being read
   4 letters confirmed: one overdue and two pages long, one upcoming, one
     appointment with a time of day, and one done early, whose later reminders
     rang into a finished task and were skipped

@@ -72,10 +72,11 @@ service called `storage`.
 
 ### What the seed gives you
 
-Margaret's world at the moment she opens the app, with every state the interface
-has to draw already present, so you never have to manufacture one:
+Margaret's world at the moment she opens the app, with every settled state the
+interface has to draw already present, so you never have to manufacture one.
+The only state not seeded is a letter still being read: a seeded row would never
+finish, and photographing any letter shows the real thing for ten seconds.
 
-- a letter **still being read**
 - a letter **waiting to be checked**, where the reader was unsure of the due
   date and could not read the reference at all
 - letters **confirmed**: one overdue, one upcoming, one **appointment with a
