@@ -1,80 +1,101 @@
 "use client";
 
+// KAN-57: the prototype's bottom bar, three cells with the camera raised.
+
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  LayoutDashboard,
-  FolderOpen,
-  ListChecks,
-  CalendarDays,
-  Upload,
-} from "lucide-react";
+import { Camera, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { isNavItemActive, PRIMARY_NAV } from "./nav-items";
 
-// Settings stays reachable from the topbar's account menu on every screen
-// size, so the bottom row keeps to what a phone screen has room for: the
-// three tabs the product prototype itself uses (Home, Scan, Calendar) plus
-// the desktop app's archive and task list either side of them.
-const SIDE_ITEMS = [
-  { label: "Home", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Calendar", href: "/calendar", icon: CalendarDays },
-] as const;
+const HOME = PRIMARY_NAV[0];
+const PHOTOGRAPH = PRIMARY_NAV[1];
+const CALENDAR = PRIMARY_NAV[2];
 
-const TRAILING_ITEMS = [
-  { label: "Archive", href: "/documents", icon: FolderOpen },
-  { label: "Tasks", href: "/tasks", icon: ListChecks },
-] as const;
+/**
+ * Home and Calendar, either side of the camera.
+ *
+ * The selected tab is bold with a bar under the label rather than a different
+ * colour (docs/theme.md rule five). The bar keeps its space when the tab is not
+ * selected, so the two labels never shift by four pixels as a person moves
+ * between them.
+ */
+function NavTab({
+  href,
+  label,
+  icon: Icon,
+  active,
+}: {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  active: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      aria-current={active ? "page" : undefined}
+      className={cn(
+        // text-base, not text-sm: this label is the whole of how a person
+        // finds her way between the three screens, and a house icon beside a
+        // calendar icon does not explain itself to everybody.
+        "flex min-h-12 flex-col items-center justify-center gap-1 py-2 text-base",
+        active ? "font-bold text-foreground" : "font-medium text-ink-dim",
+      )}
+    >
+      <Icon className="size-6" strokeWidth={active ? 2.25 : 1.75} />
+      {label}
+      <span
+        aria-hidden="true"
+        className={cn(
+          "h-1 w-7 rounded-full",
+          active ? "bg-primary" : "bg-transparent",
+        )}
+      />
+    </Link>
+  );
+}
 
 export function MobileBottomNav() {
   const pathname = usePathname();
-  const isActive = (href: string) =>
-    pathname === href || pathname.startsWith(`${href}/`);
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background pb-[env(safe-area-inset-bottom)] md:hidden">
-      <ul className="grid grid-cols-5 items-center">
-        {SIDE_ITEMS.map((item) => (
-          <li key={item.href}>
-            <Link
-              href={item.href}
-              aria-current={isActive(item.href) ? "page" : undefined}
-              className={cn(
-                "flex flex-col items-center gap-1 py-2 text-[11px] font-medium",
-                isActive(item.href) ? "text-primary" : "text-muted-foreground",
-              )}
-            >
-              <item.icon className="size-5" strokeWidth={1.75} />
-              {item.label}
-            </Link>
-          </li>
-        ))}
+    <nav className="fixed inset-x-0 bottom-0 z-40 border-t-2 border-line bg-card pb-[env(safe-area-inset-bottom)] md:hidden">
+      <ul className="grid grid-cols-3 items-center px-3 pt-2 pb-3">
+        <li className="flex justify-center">
+          <NavTab
+            href={HOME.href}
+            label={HOME.label}
+            icon={HOME.icon}
+            active={isNavItemActive(pathname, HOME.href)}
+          />
+        </li>
 
         <li className="flex justify-center">
+          {/* The one thing this product asks a person to do, so it is the one
+              control that leaves the bar: 58px of primary green ringed in the
+              page colour, the way the prototype draws it. The ring is the page
+              rather than white because docs/theme.md has no white. */}
           <Link
-            href="/documents/new"
-            aria-current={isActive("/documents/new") ? "page" : undefined}
-            className="-mt-6 flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/25"
+            href={PHOTOGRAPH.href}
+            aria-current={
+              isNavItemActive(pathname, PHOTOGRAPH.href) ? "page" : undefined
+            }
+            className="-mt-[26px] flex size-[58px] items-center justify-center rounded-full border-4 border-background bg-primary text-primary-foreground shadow-lg"
           >
-            <Upload className="size-6" strokeWidth={2} />
-            <span className="sr-only">Upload document photo</span>
+            <Camera className="size-7" strokeWidth={2} />
+            <span className="sr-only">Photograph your letter</span>
           </Link>
         </li>
 
-        {TRAILING_ITEMS.map((item) => (
-          <li key={item.href}>
-            <Link
-              href={item.href}
-              aria-current={isActive(item.href) ? "page" : undefined}
-              className={cn(
-                "flex flex-col items-center gap-1 py-2 text-[11px] font-medium",
-                isActive(item.href) ? "text-primary" : "text-muted-foreground",
-              )}
-            >
-              <item.icon className="size-5" strokeWidth={1.75} />
-              {item.label}
-            </Link>
-          </li>
-        ))}
+        <li className="flex justify-center">
+          <NavTab
+            href={CALENDAR.href}
+            label={CALENDAR.label}
+            icon={CALENDAR.icon}
+            active={isNavItemActive(pathname, CALENDAR.href)}
+          />
+        </li>
       </ul>
     </nav>
   );

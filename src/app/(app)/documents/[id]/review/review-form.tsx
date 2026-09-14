@@ -1,13 +1,18 @@
 "use client";
 
+// KAN-57: Check what we found, rebuilt as the prototype's two cards and one green button.
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Bell, CalendarDays, FileText, type LucideIcon } from "lucide-react";
+import { FactRow } from "@/components/fact-row";
+import { Panel, ScreenHeader } from "@/components/screen";
 import { Button } from "@/components/ui/button";
-import type {
-  DocumentDetail,
-  DocumentPageView,
-  ExtractedFieldView,
-} from "@/lib/contract/api";
+import type { DocumentDetail } from "@/lib/contract/api";
+import { NOT_APPLICABLE, NO_PAYMENT_REQUIRED } from "@/lib/contract/fields";
+import type { PlanLine } from "@/lib/review-plan";
+import { cn } from "@/lib/utils";
 
 /**
  * The review screen shows, it never asks.
@@ -19,68 +24,90 @@ import type {
  * a tap, and that is the only control. See src/lib/contract/api.ts.
  */
 
-/**
- * The letter itself, page by page.
- *
- * Each photograph is loaded through `/api/documents/:id/pages/:n`, which checks
- * who is asking and then redirects to a link storage has signed, so the browser
- * follows the redirect and the signed link never sits in a payload long enough
- * to go stale.
- *
- * The photographs are lazy for two reasons that arrive together. This screen
- * draws them twice, once for each breakpoint, and only one of the two is ever
- * on screen, so eager images would pull every page of the letter down twice
- * over somebody's mobile data. And a letter may run to ten pages, of which the
- * person sees the first before scrolling. Deferring also means the signed link
- * is minted when the image is actually wanted, so it cannot expire while she is
- * still working her way down the page.
- */
-function Photographs({ pages }: { pages: DocumentPageView[] }) {
-  if (pages.length === 0) {
-    return (
-      <div className="flex aspect-[3/4] items-center justify-center rounded-lg border border-dashed border-border bg-muted/30">
-        <p className="px-6 text-center text-sm text-muted-foreground">
-          The photographs of this letter are not available.
-        </p>
-      </div>
-    );
-  }
+/** The plan card's three kinds of line, as lucide draws them. */
+const PLAN_ICONS: Record<PlanLine["icon"], LucideIcon> = {
+  bell: Bell,
+  calendar: CalendarDays,
+  page: FileText,
+};
 
-  return (
-    <ol className="space-y-3">
-      {pages.map((page) =>
-        page.url ? (
-          <li key={page.id}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={page.url}
-              alt={`Page ${page.pageNumber}`}
-              loading="lazy"
-              className="w-full max-w-full rounded-lg border border-border"
-            />
-          </li>
-        ) : null,
-      )}
-    </ol>
-  );
-}
+/**
+ * The sentence that closes the plan card.
+ *
+ * It is the whole reason the screen exists: everything above it is a proposal,
+ * and nothing above it has happened. Said in bark brown on sandy yellow, which
+ * is the product's "please look" and never its "you did something wrong".
+ */
+const PLAN_HOLD =
+  "Nothing happens until you say so, and never from a date you haven't checked.";
+
+/**
+ * The width at which the fold below stops being a fold and becomes a column.
+ *
+ * 64rem, the same lg the grid below splits at, because the sidebar has taken
+ * 240px by 768px and a photograph in half of what is left is smaller than the
+ * phone's.
+ */
+const WIDE = "(min-width: 64rem)";
 
 export function ReviewForm({
   document,
-  fields,
+  plan,
 }: {
   document: DocumentDetail;
-  fields: ExtractedFieldView[];
+  plan: PlanLine[];
 }) {
   const router = useRouter();
 
-  // Rows without a confident value are not drawn: an empty row invites an
-  // answer nobody is being asked for. The card-level message below speaks for
-  // whatever is missing.
-  const readable = fields.filter(
-    (field) => field.status === "confirmed" && field.value,
+  /*
+   * The photographs are one list of images, mounted once.
+   *
+   * On a phone they live behind a fold, because the letter is in her hand and
+   * the screen is small; on a wide screen there is room to show them beside the
+   * facts and no reason to hide them. Drawing the fold and the column as two
+   * blocks that take turns by media query would pull every page of the letter
+   * down twice, so instead the same details element is opened by the media
+   * query and loses its summary when it has nothing left to do.
+   */
+  const [wide, setWide] = useState(false);
+  const [photosOpen, setPhotosOpen] = useState(false);
+
+  useEffect(() => {
+    const query = window.matchMedia(WIDE);
+    const sync = () => {
+      setWide(query.matches);
+      if (query.matches) setPhotosOpen(true);
+    };
+    sync();
+    query.addEventListener("change", sync);
+    return () => query.removeEventListener("change", sync);
+  }, []);
+
+  /*
+   * What the letter says, as it may be shown.
+   *
+   * A value the reader was not confident of never reaches a screen, so an
+   * unreadable row is not drawn and there is no row for a date that could not
+   * be read: the plan card carries that news in one sentence instead. The other
+   * two hidden values are confident facts with nothing to tell her, an
+   * appointment letter's absent reference number and a form with nothing to
+   * pay, and their spellings come from the contract so the comparison cannot
+   * quietly stop matching (src/lib/contract/fields.ts).
+   */
+  const facts = document.fields.filter(
+    (field) =>
+      field.status === "confirmed" &&
+      field.value &&
+      field.value !== NO_PAYMENT_REQUIRED &&
+      field.value !== NOT_APPLICABLE,
   );
-  const dateMissing = !readable.some((field) => field.key === "due_date");
+
+  const photos = document.pages.filter((page) => page.url);
+
+  const subtitle =
+    document.issuer && document.documentType
+      ? `${document.issuer} · ${document.documentType}`
+      : document.label;
 
   function handleConfirm() {
     // Confirming is its own ticket, so for now this only takes the person back
@@ -89,51 +116,101 @@ export function ReviewForm({
   }
 
   return (
-    <div className="space-y-6">
-      <div className="grid gap-6 md:grid-cols-2">
-        <div className="hidden md:block">
-          <Photographs pages={document.pages} />
-        </div>
+    <div className="space-y-2">
+      <ScreenHeader title="Check what we found" subtitle={subtitle} />
 
-        <details className="rounded-lg border border-border md:hidden">
-          <summary className="cursor-pointer px-4 py-3 text-sm font-medium text-foreground">
-            View original document
-          </summary>
-          <div className="px-4 pb-4">
-            <Photographs pages={document.pages} />
-          </div>
-        </details>
-
-        <div className="space-y-5">
-          <dl className="space-y-4">
-            {readable.map((field) => (
-              <div key={field.key} className="space-y-0.5">
-                <dt className="text-sm text-muted-foreground">{field.label}</dt>
-                <dd className="text-base font-medium text-foreground">
-                  {field.value}
-                </dd>
+      {/* The same sections at every width: what it says, what we will do, the
+          two answers, and the letter itself. On a wide screen the letter moves
+          to a column beside them rather than below. */}
+      <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
+        <div className="space-y-4">
+          {facts.length > 0 ? (
+            <Panel title="What it says">
+              {/* Wrapped so the first row is a first child and loses its rule:
+                  the card's own heading sits above this. */}
+              <div>
+                {facts.map((field) => (
+                  <FactRow key={field.key} field={field} />
+                ))}
               </div>
-            ))}
-          </dl>
-
-          {dateMissing ? (
-            <p className="rounded-lg border border-border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
-              This letter doesn&apos;t give a clear date. It will be saved, and
-              nothing goes on your calendar. If the date is on the letter,
-              photographing it again may pick it up.
-            </p>
+            </Panel>
           ) : null}
 
-          <div className="flex flex-col gap-3 pt-2 sm:flex-row">
-            <Button onClick={handleConfirm} className="sm:flex-1">
+          <Panel title="What DayKeeper will do">
+            <div>
+              {plan.map((line) => {
+                const Icon = PLAN_ICONS[line.icon];
+                return (
+                  <div
+                    key={line.text}
+                    className="flex items-center gap-3 border-t border-line py-3 first:border-t-0"
+                  >
+                    <Icon
+                      className="size-5 shrink-0 text-primary"
+                      strokeWidth={2}
+                      aria-hidden="true"
+                    />
+                    <span>{line.text}</span>
+                  </div>
+                );
+              })}
+            </div>
+            <p className="mt-3 rounded-lg bg-warn-bg px-3 py-3 text-warn">
+              {PLAN_HOLD}
+            </p>
+          </Panel>
+
+          <div className="space-y-2">
+            <Button size="lg" className="w-full" onClick={handleConfirm}>
               Looks right, save it
             </Button>
             <Button
-              variant="outline"
-              render={<Link href="/documents/new">Take the photos again</Link>}
+              variant="ghost"
+              className="w-full"
+              render={<Link href="/dashboard">Not now</Link>}
             />
           </div>
         </div>
+
+        <details
+          open={photosOpen}
+          onToggle={(event) => setPhotosOpen(event.currentTarget.open)}
+          className="rounded-xl border-2 border-border bg-card p-4 shadow-sm"
+        >
+          <summary
+            className={cn(
+              "flex min-h-12 cursor-pointer items-center font-semibold",
+              wide && "hidden",
+            )}
+          >
+            See the photographs
+          </summary>
+
+          {photos.length === 0 ? (
+            <p className="text-foreground">
+              The photographs of this letter are not available.
+            </p>
+          ) : (
+            <ol className="space-y-3">
+              {photos.map((page) => (
+                <li key={page.id}>
+                  {/* A letter may run to ten pages, of which she sees the first
+                      before scrolling, so the rest are fetched when they are
+                      wanted. That also means storage signs each link at the
+                      moment the image is asked for, rather than signing ten at
+                      once and racing her scroll. */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={page.url}
+                    alt={`Page ${page.pageNumber}`}
+                    loading="lazy"
+                    className="w-full max-w-full rounded-lg border border-line"
+                  />
+                </li>
+              ))}
+            </ol>
+          )}
+        </details>
       </div>
     </div>
   );

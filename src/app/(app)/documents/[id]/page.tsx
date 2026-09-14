@@ -1,32 +1,39 @@
-import { Fragment } from "react";
+// KAN-57: one letter, rebuilt as the prototype's facts and photographs.
+
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { FactRow } from "@/components/fact-row";
+import { Panel, ScreenHeader } from "@/components/screen";
 import { Button } from "@/components/ui/button";
-import { PageHeader } from "@/components/layout/page-header";
-import { StatusBadge } from "@/components/status-badge";
+import type { DocumentDetail, DocumentStatus } from "@/lib/contract/api";
+import { NOT_APPLICABLE, NO_PAYMENT_REQUIRED } from "@/lib/contract/fields";
 import { requireUser } from "@/server/auth/session";
 import { getDocument } from "@/server/documents";
 
 /**
- * The upload day as this screen writes it: '10 Aug'.
+ * Where this letter is up to, in a sentence rather than a badge.
  *
- * `uploadedAt` is an instant rather than a calendar day, so this is the one
- * date on the screen that src/lib/contract/dates.ts cannot write: its
- * formatters take 'YYYY-MM-DD'. The person's own zone is passed in rather than
- * left to the default, because this renders on the server, and the server's
- * idea of the day is not hers. See src/lib/contract/dates.ts on why a day off
- * by one is the worst bug this product has available to it.
+ * A badge asks a person to learn a vocabulary of five words and their colours.
+ * The sentence says the same thing and also says what it means for her, which
+ * is the only part she wanted. Colour is never the only signal here, and here
+ * it is not a signal at all.
  */
-function formatUploadedDay(uploadedAt: string, timeZone: string): string {
-  return new Date(uploadedAt).toLocaleDateString("en-AU", {
-    timeZone,
-    day: "numeric",
-    month: "short",
-  });
+function statusSentence(document: DocumentDetail): string {
+  const sentences: Record<DocumentStatus, string> = {
+    processing:
+      "Still being read. You can close the app; we'll tell you when it's ready.",
+    "needs-review": "Read, and waiting for your OK.",
+    confirmed: "Saved. Its task is on your list.",
+    // The one sentence src/lib/contract/api.ts words for every surface. It
+    // leads by saying the fault was ours, because it was.
+    failed: document.failure?.message ?? "Something went wrong on our side.",
+    archived: "Kept.",
+  };
+  return sentences[document.status];
 }
 
 /**
- * One letter, opened from the letters area.
+ * One letter, opened from Your letters.
  *
  * A server component, so the reading is fetched by calling the same module the
  * endpoint calls rather than by going back out through HTTP to our own API.
@@ -45,88 +52,95 @@ export default async function DocumentDetailPage({
   // docs/api.md on why this is a 404 and never a 403.
   if (!document) notFound();
 
-  const needsReview = document.status === "needs-review";
-  // Rows the model was not confident of never carry a value, and a row with no
-  // value is not drawn at all. The reasoning is in src/lib/contract/api.ts.
-  const readable = document.fields.filter(
-    (field) => field.status === "confirmed" && field.value,
+  /*
+   * What the letter says, as it may be shown.
+   *
+   * A value the reader was not confident of never reaches a screen, so an
+   * unreadable row is not drawn (src/lib/contract/api.ts). The other two are
+   * confident facts that have nothing to tell her: an appointment letter that
+   * prints no reference number reports NOT_APPLICABLE, and a form with nothing
+   * to pay reports NO_PAYMENT_REQUIRED. Hiding those rows is not dropping the
+   * data, and the spellings come from the contract so the comparison cannot
+   * quietly stop matching (src/lib/contract/fields.ts).
+   */
+  const facts = document.fields.filter(
+    (field) =>
+      field.status === "confirmed" &&
+      field.value &&
+      field.value !== NO_PAYMENT_REQUIRED &&
+      field.value !== NOT_APPLICABLE,
   );
 
+  const photos = document.pages.filter((page) => page.url);
+  const photoCount = photos.length;
+
   return (
-    <div className="space-y-6">
-      <PageHeader
+    <div className="space-y-2">
+      <ScreenHeader
         title={document.label}
-        actions={
-          needsReview ? (
-            <Button
-              render={
-                <Link href={`/documents/${document.id}/review`}>
-                  Review extracted information
-                </Link>
-              }
-            />
-          ) : undefined
-        }
+        subtitle={statusSentence(document)}
       />
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <div className="md:order-2">
-          {document.pages.length === 0 ? (
-            <div className="flex aspect-[3/4] items-center justify-center rounded-lg border border-dashed border-border bg-muted/30">
-              <p className="px-6 text-center text-sm text-muted-foreground">
-                The photographs of this letter are not available.
-              </p>
-            </div>
-          ) : (
-            <ol className="space-y-3">
-              {document.pages.map((page) =>
-                page.url ? (
-                  <li key={page.id}>
-                    {/* A letter may run to ten pages, of which she sees the
-                        first before scrolling, so the rest are fetched when
-                        they are wanted. That also means storage signs each
-                        link at the moment the image is asked for, rather than
-                        signing ten at once and racing her scroll. */}
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={page.url}
-                      alt={`Page ${page.pageNumber}`}
-                      loading="lazy"
-                      className="w-full max-w-full rounded-lg border border-border"
-                    />
-                  </li>
-                ) : null,
-              )}
-            </ol>
-          )}
-        </div>
+      {/* The same sections at every width: what it says, then the letter
+          itself. On a wide screen they sit side by side instead of stacking.
+          The split waits for lg rather than md because the sidebar has already
+          taken 240px by then, and two columns of a 768px window are narrower
+          than the phone they were meant to improve on. */}
+      <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
+        <div className="space-y-4">
+          {document.status === "needs-review" ? (
+            <Button
+              className="w-full"
+              render={
+                <Link href={`/documents/${document.id}/review`}>Check it</Link>
+              }
+            />
+          ) : null}
 
-        <div className="space-y-6 md:order-1">
-          <section className="space-y-3 rounded-lg border border-border p-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-medium text-foreground">Status</h2>
-              <StatusBadge status={document.status} />
-            </div>
-            <dl className="grid grid-cols-2 gap-y-3 text-sm">
-              <dt className="text-muted-foreground">Uploaded</dt>
-              <dd className="text-right text-foreground">
-                {formatUploadedDay(document.uploadedAt, user.timeZone)}
-              </dd>
-              {readable.map((field) => (
-                <Fragment key={field.key}>
-                  <dt className="text-muted-foreground">{field.label}</dt>
-                  <dd className="text-right text-foreground">{field.value}</dd>
-                </Fragment>
-              ))}
-            </dl>
-          </section>
-
-          {document.failure ? (
-            <p className="rounded-lg border border-border bg-muted/30 px-4 py-3 text-sm text-foreground">
-              {document.failure.message}
-            </p>
+          {facts.length > 0 ? (
+            <Panel title="What it says">
+              {/* Wrapped so that the first row is a first child and loses its
+                  rule: the card's own heading sits above this. */}
+              <div>
+                {facts.map((field) => (
+                  <FactRow key={field.key} field={field} />
+                ))}
+              </div>
+            </Panel>
           ) : null}
         </div>
+
+        <Panel>
+          <p className="mb-3 text-muted-foreground">
+            {photoCount === 1
+              ? "1 photo · kept with this letter"
+              : `${photoCount} photos · kept with this letter`}
+          </p>
+          {photoCount === 0 ? (
+            <p className="text-foreground">
+              The photographs of this letter are not available.
+            </p>
+          ) : (
+            <ol className="space-y-3">
+              {photos.map((page) => (
+                <li key={page.id}>
+                  {/* A letter may run to ten pages, of which she sees the first
+                      before scrolling, so the rest are fetched when they are
+                      wanted. That also means storage signs each link at the
+                      moment the image is asked for, rather than signing ten at
+                      once and racing her scroll. */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={page.url}
+                    alt={`Page ${page.pageNumber}`}
+                    loading="lazy"
+                    className="w-full max-w-full rounded-lg border border-line"
+                  />
+                </li>
+              ))}
+            </ol>
+          )}
+        </Panel>
       </div>
     </div>
   );

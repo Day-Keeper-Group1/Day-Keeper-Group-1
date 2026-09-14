@@ -135,3 +135,60 @@ describe("the copies of the palette", () => {
     expect(strays).toEqual([]);
   });
 });
+
+/**
+ * The floor under body text, made checkable.
+ *
+ * docs/theme.md asks for body text of at least 18px, and the utility a person
+ * reaches for when they mean body text is `text-base`. Tailwind's own scale
+ * starts at 1rem, so until globals.css moved the scale that utility rendered
+ * at 16px and nobody could see it in the markup. These assertions are here so
+ * the next person to touch the root size or the ramp finds out at once.
+ */
+function typeScaleFrom(css: string): Map<string, number> {
+  const themeBlock = css.slice(
+    css.indexOf("@theme"),
+    css.indexOf(":root", css.indexOf("@theme")),
+  );
+  const found = new Map<string, number>();
+  for (const m of themeBlock.matchAll(
+    /--text-([a-z0-9]+)\s*:\s*([0-9.]+)rem\s*;/g,
+  )) {
+    // Every browser this product meets starts at a 16px root, and the
+    // accessibility panel only scales up from there.
+    found.set(m[1], Number(m[2]) * 16);
+  }
+  return found;
+}
+
+describe("the type scale", () => {
+  const scale = typeScaleFrom(read(GLOBALS));
+
+  it("puts text-base on the 18px floor or above", () => {
+    expect(scale.get("base")).toBeDefined();
+    expect(scale.get("base")!).toBeGreaterThanOrEqual(18);
+  });
+
+  it("agrees with --fs-body, the size the palette carries", () => {
+    // body itself is set from --fs-body, so a screen written with no size
+    // utility at all and one written with `text-base` have to come out the
+    // same size, or the floor holds in one place and not the other.
+    const body = read(GLOBALS).match(/--fs-body:\s*(\d+)px/);
+    expect(body).not.toBeNull();
+    expect(scale.get("base")).toBe(Number(body![1]));
+  });
+
+  it("keeps the steps in order", () => {
+    const order = ["xs", "sm", "base", "lg", "xl", "2xl", "3xl"];
+    for (let i = 1; i < order.length; i++) {
+      const smaller = scale.get(order[i - 1]);
+      const larger = scale.get(order[i]);
+      expect(smaller, `--text-${order[i - 1]}`).toBeDefined();
+      expect(larger, `--text-${order[i]}`).toBeDefined();
+      expect(
+        larger!,
+        `text-${order[i]} is not above text-${order[i - 1]}`,
+      ).toBeGreaterThan(smaller!);
+    }
+  });
+});

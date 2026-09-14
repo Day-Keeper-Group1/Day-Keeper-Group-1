@@ -20,7 +20,7 @@ DayKeeper (Group 1): an AI-powered life management system for people in vulnerab
 - [`experiments/`](experiments/): where a product decision was settled by measuring. One folder per question, with its raw results kept so the decision can be checked later. Each has its own `README.md` (the question) and `AGENTS.md` (how the code is arranged).
 - [`src/lib/contract/`](src/lib/contract/): the agreement, in TypeScript, with validators: the six fields, the shapes the browser receives, the date rules and the reminder ladder. Import these types; do not restate them.
 - [`src/server/`](src/server/): server-only code. [`db.ts`](src/server/db.ts) for queries, [`storage.ts`](src/server/storage.ts) for the photographs themselves (an S3 bucket, MinIO locally), [`extraction/`](src/server/extraction/) for the reader interface and its mock. `src/lib` is safe anywhere; `src/server` never reaches the browser.
-- [`src/app/`](src/app/): the interface. The pages still read from [`src/lib/mock-data.ts`](src/lib/mock-data.ts); wiring them to real endpoints is the work.
+- [`src/app/`](src/app/): the interface, one page tree for phone and desktop, laid out from the phone prototype and given more room on a wide screen. Pages read the endpoints in [`docs/api.md`](docs/api.md) or call `src/server/` directly from server components; nothing reads fixture data.
 
 ## Conventions
 
@@ -76,7 +76,7 @@ Terminal output follows one rule: silence means success, anything printed is sig
 
 Tests are Vitest, in `tests/`. [`tests/contract.test.ts`](tests/contract.test.ts) needs no database and no network: it checks that the agreement between the reader and everything else still holds.
 
-The pages have no working sign-in yet and read [`src/lib/mock-data.ts`](src/lib/mock-data.ts), so `npm run dev` shows the interface with fixture data. The seeded accounts (`margaret@example.com` and `operator@example.com`, password `daykeeper`) are already in the database and will work once somebody builds authentication.
+Sign in with a seeded account (`margaret@example.com` or `operator@example.com`, password `daykeeper`); `npm run dev` then shows the interface over the seed's letters and tasks. Uploading a letter runs the reader named by `AI_EXTRACTION_PROVIDER` (the mock by default).
 
 Two rules that are easy to break by accident. Both are written where they are enforced, with the reasoning attached, so read them there rather than trusting a summary:
 
