@@ -33,6 +33,7 @@ They are in [`data/synthetic-letters/`](../../data/synthetic-letters/), one fold
 |---|---|---|
 | [`01-full-grid/`](01-full-grid/REPORT.md) | On all fifteen letters, both models at all six efforts, one read each: which cells are stable? | Four cells scored full marks, at both ends of the effort scale for both models, with misses in between. That is more than one winner and less than a pattern, and one read per cell cannot say which. |
 | [`02-ten-repeats/`](02-ten-repeats/REPORT.md) | Same letters, same prompt, luna `medium`, `xhigh` and `max`, ten reads each: does a full cell stay full? | No. Eleven letters were right all thirty times; four flip between reads, each between the right answer and one particular wrong one. Higher effort flips less but still flips, even at `max`. 01's full marks were lucky reads. |
+| [`03-prompt-by-purpose/`](03-prompt-by-purpose/REPORT.md) | Same letters, ten reads, luna `medium`, luna `xhigh`, terra `low`; the prompt gains one section on choosing by what a number is for, not the word beside it. Does that stop the flipping? | Yes. luna `medium` and terra `low` read all fifteen right in 150 of 150 reads, zero wrong and confirmed; the ten stable letters did not drop a read. Screening only, and tested only on the pages that inspired the section. |
 
 ## The report
 

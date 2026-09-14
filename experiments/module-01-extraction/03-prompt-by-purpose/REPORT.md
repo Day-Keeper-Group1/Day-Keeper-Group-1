@@ -63,7 +63,17 @@ Cost is Azure's public list price multiplied by the tokens Azure reported per ca
 
 ## Discussion
 
-Not yet written.
+**One added section did what no cell could.** In 02 five letters flipped between reads on every cell of both models, and the best cell was 143/150. With the prompt telling the model to choose by what a number is for rather than by the word beside it, luna `medium` and terra `low` each read all fifteen letters right in 150 of 150 reads, with zero wrong and confirmed fields across the whole run. The four letters that had flipped on a literal label (`04`, `07`, `10`, `15`) are 30/30 on every cell. The ten letters that were stable in 02 did not drop a read, so the change fixed without breaking.
+
+**02's reading was right: the misses were on the page.** The prompt change touched nothing about the model, the effort or the images. It named the trap, a number labelled *Reference* inside a payment method, a figure the letter reports without asking for it, and the trap stopped working. That is stronger evidence than 02 could give that these were selection errors between visible candidates, not failures to see.
+
+**The lever order is now prompt, then model, then effort.** Effort moved the flip rate in 02 and cured nothing; the model changed which letters flipped; the prompt removed the flipping. On these letters the cheapest cell of each model is as good as any.
+
+**luna `xhigh` is the one cell short of full, and the reason is effort.** Four of its ten reads of `09` gave a due date the letter does not print, `2026-07-14`, every time marked `uncertain`, so none would have reached a screen. 02 saw the same answer once from `xhigh` and once from `max`; `medium` never produced it in either run. More thinking on a letter with no due date invents one and then hedges it. It costs the product nothing, and it is a reason not to prefer `xhigh` over `medium` here.
+
+**What this does not show.** Ten reads bound a letter's per-read miss rate at 26 percent; 150/150 is a screen, not a certificate. And the section was written after looking at the three pages that flipped, so its rules are general in wording but tested only on the pages that inspired them. Whether it holds on letters it has never seen is the question that decides if this prompt is a fix or a fit.
+
+**Where the next runs look.** A hundred reads of luna `medium` on these fifteen, to turn 26 percent into 3. The same prompt on letters outside the fifteen, starting with the eleven synthetic letters left out since the earliest run, to test the fit. And the degraded, phone-like renders of the same pages, since every run so far has read clean ones.
 
 ## Reproducing this
 
