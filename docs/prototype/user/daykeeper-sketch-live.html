@@ -610,11 +610,29 @@
       facts: [
         { k: 'From', v: 'Services Australia' },
         { k: 'What to do', v: 'Return form to Services Australia' },
-        { k: 'Due date', v: 'Tue 11 Aug' }
+        { k: 'Due date', v: 'Tue 11 Aug' },
+        { k: 'Customer reference number', v: 'CRN 2201 8845', id: true, quote: true },
+        { k: 'Letter reference', v: 'PRV 5520 1178', id: true }
+      ] },
+    /* KAN-58: a letter that prints three numbers, there on first open, so the
+       way several numbers are shown can be seen without photographing
+       anything. Same customer number as the registration renewal the camera
+       hands out third: one person, one customer number. */
+    { id: 'l', who: 'VicRoads', what: 'Driver licence renewal', title: 'Renew driver licence', when: 'Fri 28 Aug', due: { mo: 8, d: 28 }, done: false, marks: [ { mo: 8, d: 28, l: 'Licence due' } ],
+      agenda: { day: 'Friday 28 August', line: 'Renew driver licence', sub: '$96.50 · customer 8124 6630' },
+      pages: 1,
+      facts: [
+        { k: 'From', v: 'VicRoads' },
+        { k: 'What to do', v: 'Pay VicRoads' },
+        { k: 'Due date', v: 'Fri 28 Aug' },
+        { k: 'Amount', v: '$96.50' },
+        { k: 'Customer number', v: '8124 6630', id: true, quote: true },
+        { k: 'Licence number', v: '0550 2615', id: true },
+        { k: 'Licence card number', v: 'P4471 2290', id: true }
       ] }
   ];
 
-  /* Your letters starts with a past: the two seeded tasks' letters, plus one
+  /* Your letters starts with a past: the three seeded tasks' letters, plus one
      from July so the month folders are visible on first open. */
   const INITIAL_LETTERS = [
     { who: 'Telstra', what: 'Phone bill', due: { mo: 7, d: 14 }, when: 'Tue 14 Jul', pages: 1,
@@ -622,7 +640,9 @@
     { who: 'Yarra Valley Water', what: 'Water bill', due: { mo: 8, d: 5 }, when: 'Wed 5 Aug', pages: 1,
       facts: [ { k: 'From', v: 'Yarra Valley Water' }, { k: 'What to do', v: 'Pay Yarra Valley Water' }, { k: 'Amount', v: '$89.20' }, { k: 'Account number', v: '5501 2280', id: true, quote: true } ] },
     { who: 'Services Australia', what: 'Pension review form', due: { mo: 8, d: 11 }, when: 'Tue 11 Aug', pages: 2,
-      facts: [ { k: 'From', v: 'Services Australia' }, { k: 'What to do', v: 'Return form to Services Australia' } ] }
+      facts: [ { k: 'From', v: 'Services Australia' }, { k: 'What to do', v: 'Return form to Services Australia' }, { k: 'Customer reference number', v: 'CRN 2201 8845', id: true, quote: true }, { k: 'Letter reference', v: 'PRV 5520 1178', id: true } ] },
+    { who: 'VicRoads', what: 'Driver licence renewal', due: { mo: 8, d: 28 }, when: 'Fri 28 Aug', pages: 1,
+      facts: [ { k: 'From', v: 'VicRoads' }, { k: 'What to do', v: 'Pay VicRoads' }, { k: 'Amount', v: '$96.50' }, { k: 'Customer number', v: '8124 6630', id: true, quote: true }, { k: 'Licence number', v: '0550 2615', id: true }, { k: 'Licence card number', v: 'P4471 2290', id: true } ] }
   ];
 
   /* ---------- signing in ---------- */
