@@ -241,6 +241,26 @@
   .nav .cambtn { background: var(--primary); color: var(--primary-ink); width: 58px; height: 58px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-top: -26px; box-shadow: 0 6px 14px rgba(23,69,44,.35); border: 4px solid var(--bg); }
   .badge { position: absolute; top: -4px; right: 14px; background: var(--primary); color: var(--primary-ink); font-size: 11px; font-weight: 700; border-radius: 999px; padding: 1px 6px; }
 
+  /* The top bar, as the finished app draws it on a phone: the name on the
+     left, her initials on the right opening the account menu. It stays put
+     while the screen scrolls under it. */
+  .topbar { position: sticky; top: -22px; z-index: 4; display: flex; align-items: center; justify-content: space-between; height: 64px; margin: -22px -18px 22px; padding: 0 16px; background: var(--bg); border-bottom: 1px solid var(--line); }
+  .topbar .brand { display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 600; color: var(--ink); }
+  .topbar .logo { width: 32px; height: 32px; border-radius: 6px; background: var(--primary); color: var(--primary-ink); display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 600; }
+  .topbar .avatar { width: 48px; height: 48px; border: none; background: none; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; font-family: inherit; }
+  .topbar .avatar span { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--line); background: var(--bg); color: var(--ink-dim); font-size: 14px; font-weight: 600; display: flex; align-items: center; justify-content: center; }
+  .menu { position: absolute; top: 58px; right: 12px; width: 240px; background: var(--bg-card); border: 1px solid var(--line); border-radius: var(--radius-card); box-shadow: 0 8px 24px rgba(28,26,21,.18); padding: 6px; display: none; }
+  .menu.show { display: block; }
+  .menu .who { padding: 8px 10px 10px; font-size: 16px; color: var(--ink); border-bottom: 1px solid var(--line); margin-bottom: 4px; }
+  .menu .who span { display: block; font-size: 14px; color: var(--ink-dim); }
+  .menu button { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 48px; padding: 0 10px; background: none; border: none; border-radius: var(--radius-btn); color: var(--danger); font-size: 16px; font-family: inherit; cursor: pointer; text-align: left; }
+
+  /* Checking one letter after another: the count of the round beside the
+     title, and after each save a line saying what was just kept and where. */
+  .review-count { font-size: 13px; font-weight: 700; color: var(--ink-dim); }
+  .saved { display: flex; align-items: flex-start; gap: 8px; background: var(--success-bg); color: var(--success); border-radius: var(--radius-card); padding: 11px 12px; font-size: 13.5px; font-weight: 600; line-height: 1.45; margin-bottom: 14px; }
+  .saved svg { flex: none; margin-top: 1px; }
+
   .screen { display: none; }
   .screen.active { display: block; }
 
@@ -266,6 +286,16 @@
     </div>
 
     <div class="app">
+
+      <!-- top bar -->
+      <div class="topbar" id="topbar">
+        <span class="brand"><span class="logo">D</span>DayKeeper</span>
+        <button class="avatar" onclick="toggleMenu(event)" aria-label="Account menu for Margaret Wilson"><span>MW</span></button>
+        <div class="menu" id="menu">
+          <div class="who">Margaret Wilson<span>margaret@example.com</span></div>
+          <button onclick="reset()"><span data-icon="log-out" data-size="20" data-weight="1.75"></span>Sign out</button>
+        </div>
+      </div>
 
       <!-- SIGN IN -->
       <!-- The walk starts here because the release does. The sketch checks
@@ -340,7 +370,11 @@
 
       <!-- REVIEW -->
       <section class="screen" id="s-review">
-        <h1>Check what we found</h1>
+        <div class="saved" id="review-saved" style="display:none"></div>
+        <div class="cal-screen-head">
+          <h1>Check what we found</h1>
+          <span class="review-count" id="review-count"></span>
+        </div>
         <div class="sub" id="review-sub">What we read, and what we'll do about it.</div>
 
         <!-- The photographs sit under the facts, because checking is
@@ -358,7 +392,7 @@
         </div>
 
         <button class="btn" onclick="confirmItem()">Looks right, save it</button>
-        <button class="btn ghost" onclick="go('home')">Not now</button>
+        <button class="btn ghost" onclick="endRound(); go('home')">Not now</button>
       </section>
 
       <!-- YOUR LETTERS -->
@@ -446,6 +480,8 @@
     'bell': '<path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/>',
     'bell-off': '<path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M17 17H4a1 1 0 0 1-.74-1.673C4.59 13.956 6 12.499 6 8a6 6 0 0 1 .258-1.742"/><path d="m2 2 20 20"/><path d="M8.668 3.01A6 6 0 0 1 18 8c0 2.687.77 4.653 1.707 6.05"/>',
     'check': '<path d="M20 6 9 17l-5-5"/>',
+    'circle-check': '<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>',
+    'log-out': '<path d="m16 17 5-5-5-5"/><path d="M21 12H9"/><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>',
     'file-text': '<path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>'
   };
 
@@ -470,7 +506,7 @@
     { who: 'AGL Energy', what: 'Electricity bill', delay: 5200,
       facts: [
         { k: 'From', v: 'AGL Energy' },
-        { k: 'What to do', v: 'Pay the amount due' },
+        { k: 'What to do', v: 'Pay AGL Energy' },
         { k: 'Due date', v: '15 Aug 2026' },
         { k: 'Amount', v: '$347.60' },
         { k: 'Reference', v: '9201 4471 88' }
@@ -492,7 +528,7 @@
     { who: 'Medicare', what: 'Claim form', delay: 7000,
       facts: [
         { k: 'From', v: 'Services Australia' },
-        { k: 'What to do', v: 'Return the completed form' },
+        { k: 'What to do', v: 'Return form to Services Australia' },
         { k: 'Due date', v: '22 Aug 2026' },
         { k: 'Reference', v: 'CLM 30991 442' }
       ],
@@ -506,10 +542,26 @@
       marks: [ { mo: 8, d: 15, l: 'reminder' }, { mo: 8, d: 19, l: 'reminder' }, { mo: 8, d: 21, l: 'reminder' }, { mo: 8, d: 22, l: 'Medicare' } ],
       agenda: { day: 'Saturday 22 August', line: 'Return Medicare form', sub: 'ref CLM 30991 442' } },
 
+    /* The letter that asks for nothing: a statement to keep. Confirming it
+       files it in Your letters and makes no task, so nothing appears on
+       Home or the calendar. */
+    { who: 'Wattlebank Super', what: 'Annual statement', delay: 5800,
+      facts: [
+        { k: 'From', v: 'Wattlebank Super' },
+        { k: 'What to do', v: 'No action' },
+        { k: 'Reference', v: 'Member 7710 3342' }
+      ],
+      plan: [
+        { ico: 'file-text', t: "Nothing to do. It's kept in your letters." }
+      ],
+      task: null,
+      marks: [],
+      agenda: null },
+
     { who: 'VicRoads', what: 'Registration renewal', delay: 6200,
       facts: [
         { k: 'From', v: 'VicRoads' },
-        { k: 'What to do', v: 'Renew the registration' },
+        { k: 'What to do', v: 'Pay VicRoads' },
         { k: 'Due date', v: '1 Sep 2026' },
         { k: 'Amount', v: '$852.10' },
         { k: 'Reference', v: '1AB 2CD' }
@@ -529,7 +581,7 @@
     { who: 'Dr Patel', what: 'Appointment letter', delay: 6800,
       facts: [
         { k: 'From', v: 'Dr A. Patel, GP clinic' },
-        { k: 'What to do', v: 'Attend follow-up appointment' },
+        { k: 'What to do', v: 'Attend Dr A. Patel, GP clinic' },
         { k: 'When', v: 'Fri 4 Sep, 10:30 am' }
       ],
       plan: [
@@ -543,7 +595,7 @@
     { who: 'Yarra Council', what: 'Rates notice', delay: 7500,
       facts: [
         { k: 'From', v: 'City of Yarra' },
-        { k: 'What to do', v: 'Pay the rates instalment' },
+        { k: 'What to do', v: 'Pay City of Yarra' },
         { k: 'Due date', v: '31 Aug 2026' },
         { k: 'Amount', v: '$612.40' },
         { k: 'Reference', v: '88 3120 7' }
@@ -565,7 +617,7 @@
     { who: 'Carlton Community Centre', what: 'Membership form', delay: 5600,
       facts: [
         { k: 'From', v: 'Carlton Community Centre' },
-        { k: 'What to do', v: 'Return the signed form' },
+        { k: 'What to do', v: 'Return form to Carlton Community Centre' },
         { k: 'Reference', v: 'Member 2214' }
       ],
       plan: [
@@ -593,7 +645,7 @@
       pages: 1,
       facts: [
         { k: 'From', v: 'Yarra Valley Water' },
-        { k: 'What to do', v: 'Pay the amount due' },
+        { k: 'What to do', v: 'Pay Yarra Valley Water' },
         { k: 'Due date', v: 'Wed 5 Aug' },
         { k: 'Amount', v: '$89.20' },
         { k: 'Reference', v: '5501 2280' }
@@ -603,7 +655,7 @@
       pages: 2,
       facts: [
         { k: 'From', v: 'Services Australia' },
-        { k: 'What to do', v: 'Return the completed form' },
+        { k: 'What to do', v: 'Return form to Services Australia' },
         { k: 'Due date', v: 'Tue 11 Aug' }
       ] }
   ];
@@ -612,11 +664,11 @@
      from July so the month folders are visible on first open. */
   const INITIAL_LETTERS = [
     { who: 'Telstra', what: 'Phone bill', due: { mo: 7, d: 14 }, when: 'Tue 14 Jul', pages: 1,
-      facts: [ { k: 'From', v: 'Telstra' }, { k: 'What to do', v: 'Pay the amount due' }, { k: 'Amount', v: '$79.00' } ] },
+      facts: [ { k: 'From', v: 'Telstra' }, { k: 'What to do', v: 'Pay Telstra' }, { k: 'Amount', v: '$79.00' } ] },
     { who: 'Yarra Valley Water', what: 'Water bill', due: { mo: 8, d: 5 }, when: 'Wed 5 Aug', pages: 1,
-      facts: [ { k: 'From', v: 'Yarra Valley Water' }, { k: 'What to do', v: 'Pay the amount due' }, { k: 'Amount', v: '$89.20' }, { k: 'Reference', v: '5501 2280' } ] },
+      facts: [ { k: 'From', v: 'Yarra Valley Water' }, { k: 'What to do', v: 'Pay Yarra Valley Water' }, { k: 'Amount', v: '$89.20' }, { k: 'Reference', v: '5501 2280' } ] },
     { who: 'Services Australia', what: 'Pension review form', due: { mo: 8, d: 11 }, when: 'Tue 11 Aug', pages: 2,
-      facts: [ { k: 'From', v: 'Services Australia' }, { k: 'What to do', v: 'Return the completed form' } ] }
+      facts: [ { k: 'From', v: 'Services Australia' }, { k: 'What to do', v: 'Return form to Services Australia' } ] }
   ];
 
   /* ---------- signing in ---------- */
@@ -679,11 +731,27 @@
   }
 
   /* ---------- review ---------- */
+  /* ---------- checking one letter after another ----------
+     A round starts when she opens a letter from Home or the camera screen
+     and ends when nothing is left to check, or when she says Not now. The
+     count is what she has done plus what is still waiting, so a letter that
+     finishes reading mid round joins it. */
+  let round = null;   // { done, saved, lastMonth }
+
+  function endRound() { round = null; }
+
   function openReview(id) {
     const it = queue.find(q => q.id === id && q.state === 'ready');
     if (!it) return;
     current = it;
     const L = LETTERS[it.idx];
+    if (!round) round = { done: 0, saved: null, lastMonth: null };
+    const waiting = queue.filter(q => q.state === 'ready').length;
+    const total = round.done + waiting;
+    document.getElementById('review-count').textContent = total > 1 ? (round.done + 1) + ' of ' + total : '';
+    const saved = document.getElementById('review-saved');
+    saved.style.display = round.saved ? 'flex' : 'none';
+    saved.innerHTML = round.saved ? icon('circle-check', 18) + '<span>' + round.saved + '</span>' : '';
     document.getElementById('review-sub').textContent = L.who + ' · ' + L.what;
     /* Read-only, and nothing on it is a question. Her whole job here is
        recognition: does this match the letter? Why the screen shows rather
@@ -697,15 +765,38 @@
     go('review');
   }
 
+  /* Saving writes the letter, and the task if the letter asks for one, then
+     goes straight on to the next letter waiting. With none left she lands on
+     the calendar at the month of the last task she saved; a round that saved
+     no task at all lands on Your letters, where those letters went. */
   function confirmItem() {
     if (!current) { go('calendar'); return; }
     const L = LETTERS[current.idx];
+    if (!round) round = { done: 0, saved: null, lastMonth: null };
     queue = queue.filter(q => q.id !== current.id);
-    tasks.unshift({ id: 't' + current.id, who: L.who, what: L.what, title: L.task.title, when: L.task.when, due: L.task.due, done: false, marks: L.marks, agenda: L.agenda, pages: current.pages, facts: L.facts });
-    letters.push({ who: L.who, what: L.what, due: L.task.due || null, when: L.task.due ? L.task.when : null, pages: current.pages, facts: L.facts });
+    const action = (L.facts.find(f => f.k === 'What to do') || {}).v || L.task && L.task.title;
+    if (L.task) {
+      tasks.unshift({ id: 't' + current.id, who: L.who, what: L.what, title: L.task.title, when: L.task.when, due: L.task.due, done: false, marks: L.marks, agenda: L.agenda, pages: current.pages, facts: L.facts });
+      if (L.task.due) round.lastMonth = L.task.due.mo;
+      round.saved = L.task.due
+        ? 'Saved. ' + action + ' is on your calendar for ' + L.task.when + '.'
+        : 'Saved. ' + action + ' is on your list, with no date.';
+      round.anyTask = true;
+    } else {
+      round.saved = 'Saved. ' + L.who + ' · ' + L.what + ' is kept in your letters.';
+    }
+    letters.push({ who: L.who, what: L.what, due: L.task && L.task.due || null, when: L.task && L.task.due ? L.task.when : null, pages: current.pages, facts: L.facts });
+    round.done++;
     current = null;
     renderAll();
-    go('calendar');
+
+    const next = queue.find(q => q.state === 'ready');
+    if (next) { openReview(next.id); return; }
+
+    const landing = round.anyTask ? 'calendar' : 'letters';
+    if (round.lastMonth) { calMo = round.lastMonth; calYr = TODAY_YR; }
+    endRound();
+    go(landing);
   }
 
   /* ---------- rendering ---------- */
@@ -1080,6 +1171,13 @@
     renderCalendar();
   }
 
+  /* ---------- the account menu ---------- */
+  function toggleMenu(e) {
+    e.stopPropagation();
+    document.getElementById('menu').classList.toggle('show');
+  }
+  document.addEventListener('click', () => document.getElementById('menu').classList.remove('show'));
+
   /* ---------- navigation ---------- */
   function go(name) {
     closeDay();
@@ -1089,6 +1187,8 @@
     document.querySelectorAll('.nav button').forEach(b => b.classList.toggle('on', b.dataset.s === name));
     /* Signed out, there is nowhere to navigate to. */
     document.getElementById('nav').style.display = name === 'signin' ? 'none' : 'flex';
+    document.getElementById('topbar').style.display = name === 'signin' ? 'none' : 'flex';
+    document.getElementById('menu').classList.remove('show');
     document.querySelector('.phone').scrollIntoView({ block: 'start' });
   }
   document.querySelectorAll('.nav button').forEach(b => b.addEventListener('click', () => { if (b.dataset.s) go(b.dataset.s); }));
@@ -1100,7 +1200,7 @@
     document.getElementById('toast').classList.remove('show');
     queue = []; tasks = INITIAL_TASKS.map(t => Object.assign({}, t));
     letters = INITIAL_LETTERS.map(l => Object.assign({}, l));
-    nextRead = 0; photos = 0; current = null; selDay = null; calMo = 8; calYr = 2026;
+    nextRead = 0; photos = 0; current = null; selDay = null; round = null; calMo = 8; calYr = 2026;
     document.getElementById('cam-d').textContent = 'the camera stays open, keep going';
     renderPages(); renderAll(); go('signin');
   }
