@@ -1,0 +1,11 @@
+{
+  "model": "gpt-5.6-terra",
+  "effort": "low",
+  "letter": "12-failure-to-vote-notice",
+  "repeat": 10,
+  "pages": ["page-01.png"],
+  "image_detail": "auto",
+  "started_at": "2026-09-14T02:21:35.283Z",
+  "seconds": 4.404,
+  "ok": true
+}

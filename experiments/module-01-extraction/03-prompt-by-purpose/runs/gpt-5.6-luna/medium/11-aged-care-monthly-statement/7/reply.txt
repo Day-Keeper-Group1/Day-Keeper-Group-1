@@ -1,0 +1,68 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "GPT-4o",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "monthly statement",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Thornhurst Health",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Review the statement and discuss any concerns",
+      "status": "confirmed",
+      "confidence": 0.96
+    },
+    {
+      "key": "due_date",
+      "value": "Not applicable",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "AC87542",
+      "status": "confirmed",
+      "confidence": 0.98
+    }
+  ],
+  "open_payload": {
+    "client_name": "Margaret Anne Wilson",
+    "recipient_name": "Mrs M A Wilson",
+    "address": "14 Bracken Rise, Calderfield VIC 3999",
+    "my_aged_care_id": "AC87542",
+    "provider_id": "63087",
+    "location": "Calderfield VIC",
+    "statement_period": "1 July 2026 to 31 July 2026",
+    "financial_summary": {
+      "support_at_home_jul_expenditure": "$1,155.25",
+      "support_at_home_available_balance_aug_sep": "$4,828.79",
+      "assistive_technology_jul_expenditure": "$850",
+      "assistive_technology_committed_funds": "$1,200",
+      "assistive_technology_remaining_budget": "$12,450",
+      "home_modification_jul_expenditure": "$4,860",
+      "home_modification_committed_funds": "$2,300",
+      "home_modification_remaining_budget": "$7,840",
+      "restorative_care_spending": "$1,842.50",
+      "restorative_care_jul_expenditure": "$1,040",
+      "restorative_care_remaining_budget": "$3,117.50"
+    },
+    "contact_phone": "(03) 5550 3392",
+    "contact_email": "enquiries@thornhurst-health.example",
+    "footer_code": "SYN-0018"
+  }
+}

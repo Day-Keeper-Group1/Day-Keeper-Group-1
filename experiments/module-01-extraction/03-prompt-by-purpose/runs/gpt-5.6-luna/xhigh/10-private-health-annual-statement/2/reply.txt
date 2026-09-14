@@ -1,0 +1,66 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "gpt-4o",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "private health insurance annual statement",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Tarnwell Health Fund",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "No action required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "due_date",
+      "value": "Not applicable",
+      "status": "confirmed",
+      "confidence": 0.98
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.97
+    },
+    {
+      "key": "reference",
+      "value": "65921613",
+      "status": "confirmed",
+      "confidence": 0.99
+    }
+  ],
+  "open_payload": {
+    "letter_date": "2 July 2026",
+    "member": "Mrs Margaret Anne Wilson",
+    "address": "14 Bracken Rise, CALDERFIELD VIC 3999",
+    "date_of_birth": "14/03/1948",
+    "member_since": "1 March 1979",
+    "cover": "Hospital and extras (combined)",
+    "policy_name": "Tarnwell Everyday Hospital and Extras",
+    "monthly_premium_before_rebate": "$246.80",
+    "government_rebate": "-$79.37",
+    "monthly_amount_you_pay": "$167.43",
+    "cover_paid_to": "31 July 2026",
+    "payment_method": "Direct debit",
+    "next_deduction": "01/08/2026",
+    "biller_code": "9200058",
+    "bpay_reference": "1683 3227 13",
+    "change_effective_date": "1 September 2026",
+    "optical_yearly_limit_change": "from $250 to $200",
+    "statement_updated": "01/July/2026",
+    "statement_identifier": "QFYCGT5",
+    "contact_phone": "1300 975 709",
+    "website": "www.tarnwell-health-fund.example"
+  }
+}

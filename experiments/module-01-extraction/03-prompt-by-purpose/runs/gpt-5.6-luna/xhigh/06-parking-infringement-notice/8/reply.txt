@@ -1,0 +1,85 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "gpt-4o",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "parking infringement notice",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Calderfield City Council",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Pay the penalty in full by the due date",
+      "status": "confirmed",
+      "confidence": 0.98
+    },
+    {
+      "key": "due_date",
+      "value": "2026-07-21",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "amount",
+      "value": "$41.00",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "7717145263",
+      "status": "confirmed",
+      "confidence": 0.99
+    }
+  ],
+  "open_payload": {
+    "notice_date": "23/06/2026",
+    "issued_to": "THE OWNER",
+    "offence_date": "23/06/2026",
+    "offence_time": "12:41 PM",
+    "issue_time": "12:48 PM",
+    "location": "Marlow Street, Calderfield",
+    "registration_no": "9XR·7QJ",
+    "vehicle": "TOYOTA SEDAN SILVER",
+    "offence_code": "701",
+    "offence": "Parking for longer than indicated",
+    "legislation": "Road Safety Road Rules 2017 r 205(1)",
+    "issuing_officer_no": "8160",
+    "payment_methods": {
+      "bpay_biller_code": "9200104",
+      "bpay_reference": "4797 2573 7796",
+      "online": "www.calderfield-city-council.example/fines",
+      "phone": "1300 975 711 (card payments)",
+      "by_post": "PO Box 26, Calderfield 3999",
+      "in_person": "Customer Service Centre, business hours"
+    },
+    "enquiries": {
+      "phone": "(03) 5550 8602",
+      "web": "www.calderfield-city-council.example/fines",
+      "post": "PO Box 26, Calderfield VIC 3999"
+    },
+    "interpreter_phone": "(03) 5550 3968",
+    "available_options": [
+      "Apply for a review of this infringement notice",
+      "Nominate the person who was in charge of the vehicle at the time of the offence",
+      "Elect to have the matter heard and determined in the Magistrates' Court",
+      "Apply to pay by instalments or apply for more time to pay",
+      "Apply for the Work and Development Permit scheme if eligible"
+    ],
+    "review_grounds": [
+      "Exceptional Circumstances",
+      "Contrary to Law",
+      "Special Circumstances",
+      "Mistaken Identity",
+      "Person Unaware of Fine"
+    ]
+  }
+}

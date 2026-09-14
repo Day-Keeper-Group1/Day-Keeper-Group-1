@@ -1,6 +1,6 @@
 # 03-prompt-by-purpose
 
-Not yet run.
+Run 14 September 2026, against RACE's Azure AI Foundry endpoint.
 
 ## Motivation
 
@@ -18,7 +18,48 @@ This run keeps the contract's six definitions word for word and adds one section
 
 ## Results
 
-Not yet run.
+| Model | Effort | Letters all right | Fields right | Wrong and confirmed | Input tokens | Output tokens | Reasoning tokens | Seconds | Cost per letter |
+|---|---|---|---|---|---|---|---|---|---|
+| luna | medium | 150/150 (100%) | 600/600 | 0 | 25271 | 557 | 152 | 6.2 | $0.0016 (A$0.0023) |
+| luna | xhigh | 146/150 (97%) | 596/600 | 0 | 25271 | 1421 | 975 | 11.7 | $0.0027 (A$0.0037) |
+| terra | low | 150/150 (100%) | 600/600 | 0 | 25271 | 263 | 78 | 5.0 | $0.0130 (A$0.0181) |
+
+### Every letter
+
+| Letter | luna medium | luna xhigh | terra low | All reads | Wrong and confirmed |
+|---|---|---|---|---|---|
+| 01-electricity-bill | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 30/30 (100%) | 0 |
+| 02-gas-bill | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 30/30 (100%) | 0 |
+| 03-water-bill | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 30/30 (100%) | 0 |
+| 04-council-rates-notice | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 30/30 (100%) | 0 |
+| 05-animal-registration-overdue-notice | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 30/30 (100%) | 0 |
+| 06-parking-infringement-notice | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 30/30 (100%) | 0 |
+| 07-penalty-reminder-notice | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 30/30 (100%) | 0 |
+| 08-welfare-information-request | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 30/30 (100%) | 0 |
+| 09-specialist-account-statement | 10/10 (100%) | **6/10 (60%)** | 10/10 (100%) | **26/30 (87%)** | 0 |
+| 10-private-health-annual-statement | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 30/30 (100%) | 0 |
+| 11-aged-care-monthly-statement | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 30/30 (100%) | 0 |
+| 12-failure-to-vote-notice | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 30/30 (100%) | 0 |
+| 13-product-recall-notice | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 30/30 (100%) | 0 |
+| 14-super-annual-member-statement | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 30/30 (100%) | 0 |
+| 15-insurance-key-facts-sheet | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 30/30 (100%) | 0 |
+
+A letter read 10/10 times bounds its per-read miss rate at 26% (95%, exact binomial).
+
+450 calls, 450 valid replies.
+
+**This run: 450 calls, $2.60 (A$3.60) in total.**
+
+Cost is Azure's public list price multiplied by the tokens Azure reported per call. Prices are from LiteLLM's model price table (https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json, commit 9eaf15bc, 2026-09-07). The exchange rate USD 1 = AUD 1.3861 is from Frankfurter (European Central Bank rates) (https://api.frankfurter.dev/v1/latest?base=USD&symbols=AUD, 2026-09-08). What RACE pays per token is not known to the team, so this is an estimate at list, not an invoice. Seconds were measured with four calls in flight.
+
+### Every miss
+
+| Model | Effort | Letter | Repeat | Field | Key | Model said | Status |
+|---|---|---|---|---|---|---|---|
+| luna | xhigh | 09-specialist-account-statement | 1 | due_date | null | 2026-07-14 | uncertain |
+| luna | xhigh | 09-specialist-account-statement | 2 | due_date | null | 2026-07-14 | uncertain |
+| luna | xhigh | 09-specialist-account-statement | 5 | due_date | null | 2026-07-14 | uncertain |
+| luna | xhigh | 09-specialist-account-statement | 10 | due_date | null | 2026-07-14 | uncertain |
 
 ## Discussion
 

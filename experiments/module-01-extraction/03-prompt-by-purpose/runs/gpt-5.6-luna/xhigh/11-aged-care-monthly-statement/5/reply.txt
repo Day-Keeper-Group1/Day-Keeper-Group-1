@@ -1,0 +1,82 @@
+{
+  "contract_version": "2.0",
+  "provider": "azure",
+  "model": "gpt-4o",
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "Support at Home monthly statement",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Thornhurst Health",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Review the statement and discuss any concerns with your provider",
+      "status": "confirmed",
+      "confidence": 0.94
+    },
+    {
+      "key": "due_date",
+      "value": "Not applicable",
+      "status": "confirmed",
+      "confidence": 0.98
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "AC87542",
+      "status": "confirmed",
+      "confidence": 0.95
+    }
+  ],
+  "open_payload": {
+    "client_name": "Margaret Anne Wilson",
+    "mailing_name": "Mrs M A Wilson",
+    "address": "14 Bracken Rise, CALDERFIELD VIC 3999",
+    "my_aged_care_id": "AC87542",
+    "provider_id": "63087",
+    "location": "Calderfield VIC",
+    "statement_period": "1 July 2026 to 31 July 2026",
+    "contact": {
+      "phone": "(03) 5550 3392",
+      "email": "enquiries@thornhurst-health.example"
+    },
+    "financial_summary": {
+      "support_at_home": {
+        "July_expenditure": "$1,155.25",
+        "available_balance_Aug_Sep": "$4,828.79"
+      },
+      "assistive_technology": {
+        "July_expenditure": "$850",
+        "committed_assistive_technology_funds": "$1,200",
+        "remaining_budget_15_November_2026": "$12,450"
+      },
+      "home_modification": {
+        "July_expenditure": "$4,860",
+        "committed_home_modification_funds": "$2,300",
+        "remaining_budget_15_November_2026": "$7,840"
+      },
+      "restorative_care": {
+        "spending_from_previous_months": "$1,842.50",
+        "July_expenditure": "$1,040",
+        "remaining_budget_27_September_2026": "$3,117.50"
+      }
+    },
+    "document_notes": [
+      "This is not an invoice – no payment is required.",
+      "A separate invoice will be issued for payment of participant contributions.",
+      "The statement includes information about services received in the previous calendar month."
+    ]
+  }
+}

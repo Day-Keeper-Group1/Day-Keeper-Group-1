@@ -1,0 +1,11 @@
+{
+  "model": "gpt-5.6-luna",
+  "effort": "medium",
+  "letter": "04-council-rates-notice",
+  "repeat": 3,
+  "pages": ["page-01.png", "page-02.png"],
+  "image_detail": "auto",
+  "started_at": "2026-09-14T02:08:50.634Z",
+  "seconds": 6.247,
+  "ok": true
+}
