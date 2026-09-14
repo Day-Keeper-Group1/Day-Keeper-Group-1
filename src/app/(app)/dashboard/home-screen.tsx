@@ -2,14 +2,16 @@
 
 // KAN-57: Home, the prototype's HOME screen, on real data.
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FolderOpen } from "lucide-react";
 
 import { Panel, ScreenHeader } from "@/components/screen";
 import { InboxRow } from "@/components/inbox-row";
+import { useActivity } from "@/components/layout/activity";
 import { TaskRow } from "@/components/task-row";
+import { TaskSheet } from "@/components/task-sheet";
 import {
   deriveTaskStatus,
   type HomePayload,
@@ -19,16 +21,6 @@ import {
 import { ctaFor, foldLater, greeting, groupTasks, moreLabel } from "@/lib/home";
 import { toggleTaskDone } from "@/lib/task-actions";
 import { cn } from "@/lib/utils";
-
-/**
- * How often to ask again while something of hers is still being read.
- *
- * Five seconds, and only while `counts.processing` is above zero: a reading
- * takes tens of seconds, so this is frequent enough that the row changes while
- * she is still looking at it, and it stops the moment there is nothing left to
- * wait for. docs/api.md, "Everything the home screen needs".
- */
-const HOME_POLL_MS = 5000;
 
 /**
  * The hour on her clock, not the server's.
@@ -59,35 +51,22 @@ export function HomeScreen({
   const router = useRouter();
   const [payload, setPayload] = useState<HomePayload>(initial);
   const [tickError, setTickError] = useState<string | null>(null);
+  /** The task open in the sheet, by id, so the sheet's tick follows the list. */
+  const [openTaskId, setOpenTaskId] = useState<string | null>(null);
+
+  // KAN-59: the app asks /api/home once for every screen, and again every five
+  // seconds while anything is being read (src/components/layout/activity.tsx).
+  // Each answer replaces the whole payload, because the counts and the lists
+  // were gathered in one query and are only true together.
+  const { home } = useActivity();
+  const [taken, setTaken] = useState(home);
+  if (home !== taken) {
+    setTaken(home);
+    if (home) setPayload(home);
+  }
 
   const { counts, inbox, tasks } = payload;
-  const processing = counts.processing;
-
-  useEffect(() => {
-    if (processing === 0) return;
-
-    let live = true;
-    const timer = window.setInterval(() => {
-      void (async () => {
-        try {
-          const response = await fetch("/api/home", { cache: "no-store" });
-          if (!response.ok) return;
-          const next = (await response.json()) as HomePayload;
-          // The whole payload at once, because the counts and the lists were
-          // gathered in one query and are only true together.
-          if (live) setPayload(next);
-        } catch {
-          // A dropped poll is not worth telling anyone about. The next one is
-          // five seconds away and what is on screen is still true.
-        }
-      })();
-    }, HOME_POLL_MS);
-
-    return () => {
-      live = false;
-      window.clearInterval(timer);
-    };
-  }, [processing]);
+  const openTask = tasks.find((task) => task.id === openTaskId) ?? null;
 
   /**
    * The tick, shown first and sent second.
@@ -228,17 +207,20 @@ export function HomeScreen({
                 }
                 tasks={groups.today}
                 onToggle={handleToggle}
+                onOpen={setOpenTaskId}
               />
               <TaskGroup
                 heading="Next seven days"
                 tasks={groups.week}
                 onToggle={handleToggle}
+                onOpen={setOpenTaskId}
               />
               <TaskGroup
                 heading="Later"
                 tasks={later.shown}
                 more={later.more}
                 onToggle={handleToggle}
+                onOpen={setOpenTaskId}
               />
             </div>
           )}
@@ -254,6 +236,13 @@ export function HomeScreen({
         <FolderOpen className="size-[18px] shrink-0" strokeWidth={1.75} />
         All your letters <span aria-hidden="true">→</span>
       </Link>
+
+      {/* KAN-59: a task opens where it is, in the sheet, as in the prototype. */}
+      <TaskSheet
+        task={openTask}
+        onClose={() => setOpenTaskId(null)}
+        onToggle={handleToggle}
+      />
     </div>
   );
 }
@@ -271,12 +260,14 @@ function TaskGroup({
   tasks,
   more = 0,
   onToggle,
+  onOpen,
 }: {
   heading: string;
   tasks: TaskSummary[];
   /** Tasks in this group that are not drawn here, counted on a calendar link. */
   more?: number;
   onToggle: (task: TaskSummary) => void;
+  onOpen: (taskId: string) => void;
 }) {
   if (tasks.length === 0) return null;
 
@@ -289,7 +280,7 @@ function TaskGroup({
             key={task.id}
             task={task}
             onToggle={onToggle}
-            href={task.documentId ? `/documents/${task.documentId}` : undefined}
+            onOpen={() => onOpen(task.id)}
           />
         ))}
       </div>

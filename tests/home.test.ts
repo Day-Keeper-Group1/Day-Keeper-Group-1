@@ -179,7 +179,20 @@ describe("taskHeadline and taskByline", () => {
       issuer: "VicRoads",
     });
     expect(taskHeadline(t)).toBe("Renew rego");
-    expect(taskByline(t)).toBe("Sat 26 Sep");
+  });
+
+  // KAN-59: the second line is the same shape on every row, even when the
+  // first line already named who.
+  it("always says who, then when, on the second line", () => {
+    const t = task({
+      id: "j",
+      dueDate: "2026-09-26",
+      title: "Pay VicRoads",
+      issuer: "VicRoads",
+    });
+    expect(taskHeadline(t)).toBe("Pay VicRoads");
+    expect(taskByline(t)).toBe("VicRoads · Sat 26 Sep");
+    expect(taskByline({ ...t, issuer: null })).toBe("Sat 26 Sep");
   });
 });
 

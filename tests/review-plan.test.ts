@@ -10,7 +10,25 @@
 
 import { describe, expect, it } from "vitest";
 import { APP_TIME_ZONE } from "@/lib/contract/dates";
-import { NO_DATE_PLAN_LINE, planLinesFor } from "@/lib/review-plan";
+import {
+  NO_ACTION_PLAN_LINE,
+  NO_DATE_PLAN_LINE,
+  planLinesFor,
+} from "@/lib/review-plan";
+
+// KAN-59: saving a letter that asks for nothing makes no task, so the card
+// promises no reminder, even when the letter prints a date.
+describe("a letter that asks for nothing", () => {
+  it("says it is kept, and promises nothing else", () => {
+    expect(
+      planLinesFor(
+        { dueDate: "2026-08-15", action: "No action" },
+        "2026-08-08",
+        APP_TIME_ZONE,
+      ),
+    ).toEqual([{ icon: "page", text: NO_ACTION_PLAN_LINE }]);
+  });
+});
 
 describe("a bill with a week to run", () => {
   const plan = planLinesFor(
