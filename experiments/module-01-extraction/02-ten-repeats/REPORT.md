@@ -30,29 +30,29 @@ Everything else was identical across the 450 calls: the same pages, the same pro
 
 | Model | Effort | Letters all right | Fields right | Wrong and confirmed | Input tokens | Output tokens | Reasoning tokens | Seconds | Cost per letter |
 |---|---|---|---|---|---|---|---|---|---|
-| luna | medium | 129/150 | 579/600 | 20 | 25080 | 570 | 173 | 7.3 | $0.0016 (A$0.0023) |
-| luna | xhigh | 140/150 | 590/600 | 9 | 25080 | 1502 | 1044 | 12.3 | $0.0028 (A$0.0039) |
-| luna | max | 143/150 | 592/600 | 7 | 25080 | 4460 | 3970 | 30.9 | $0.0064 (A$0.0088) |
+| luna | medium | 129/150 (86%) | 579/600 | 20 | 25080 | 570 | 173 | 7.3 | $0.0016 (A$0.0023) |
+| luna | xhigh | 140/150 (93%) | 590/600 | 9 | 25080 | 1502 | 1044 | 12.3 | $0.0028 (A$0.0039) |
+| luna | max | 143/150 (95%) | 592/600 | 7 | 25080 | 4460 | 3970 | 30.9 | $0.0064 (A$0.0088) |
 
 ### Every letter
 
-| Letter | luna medium | luna xhigh | luna max | Wrong and confirmed |
-|---|---|---|---|---|
-| 01-electricity-bill | 10/10 | 10/10 | 10/10 | 0 |
-| 02-gas-bill | 10/10 | 10/10 | 10/10 | 0 |
-| 03-water-bill | 10/10 | 10/10 | 10/10 | 0 |
-| 04-council-rates-notice | 10/10 | 10/10 | 10/10 | 0 |
-| 05-animal-registration-overdue-notice | 10/10 | 10/10 | 10/10 | 0 |
-| 06-parking-infringement-notice | 10/10 | 10/10 | 10/10 | 0 |
-| 07-penalty-reminder-notice | **3/10** | **7/10** | **9/10** | 11 |
-| 08-welfare-information-request | 10/10 | 10/10 | 10/10 | 0 |
-| 09-specialist-account-statement | **6/10** | **9/10** | **9/10** | 4 |
-| 10-private-health-annual-statement | **2/10** | **5/10** | **6/10** | 17 |
-| 11-aged-care-monthly-statement | 10/10 | 10/10 | 10/10 | 0 |
-| 12-failure-to-vote-notice | 10/10 | 10/10 | 10/10 | 0 |
-| 13-product-recall-notice | 10/10 | 10/10 | 10/10 | 0 |
-| 14-super-annual-member-statement | 10/10 | 10/10 | 10/10 | 0 |
-| 15-insurance-key-facts-sheet | **8/10** | **9/10** | **9/10** | 4 |
+| Letter | luna medium | luna xhigh | luna max | All reads | Wrong and confirmed |
+|---|---|---|---|---|---|
+| 01-electricity-bill | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 30/30 (100%) | 0 |
+| 02-gas-bill | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 30/30 (100%) | 0 |
+| 03-water-bill | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 30/30 (100%) | 0 |
+| 04-council-rates-notice | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 30/30 (100%) | 0 |
+| 05-animal-registration-overdue-notice | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 30/30 (100%) | 0 |
+| 06-parking-infringement-notice | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 30/30 (100%) | 0 |
+| 07-penalty-reminder-notice | **3/10 (30%)** | **7/10 (70%)** | **9/10 (90%)** | **19/30 (63%)** | 11 |
+| 08-welfare-information-request | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 30/30 (100%) | 0 |
+| 09-specialist-account-statement | **6/10 (60%)** | **9/10 (90%)** | **9/10 (90%)** | **24/30 (80%)** | 4 |
+| 10-private-health-annual-statement | **2/10 (20%)** | **5/10 (50%)** | **6/10 (60%)** | **13/30 (43%)** | 17 |
+| 11-aged-care-monthly-statement | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 30/30 (100%) | 0 |
+| 12-failure-to-vote-notice | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 30/30 (100%) | 0 |
+| 13-product-recall-notice | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 30/30 (100%) | 0 |
+| 14-super-annual-member-statement | 10/10 (100%) | 10/10 (100%) | 10/10 (100%) | 30/30 (100%) | 0 |
+| 15-insurance-key-facts-sheet | **8/10 (80%)** | **9/10 (90%)** | **9/10 (90%)** | **26/30 (87%)** | 4 |
 
 A letter read 10/10 times bounds its per-read miss rate at 26% (95%, exact binomial).
 
