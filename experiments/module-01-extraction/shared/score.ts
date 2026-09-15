@@ -14,7 +14,7 @@
  *              because the contract says "including the currency symbol". A
  *              letter that asks for no money must be reported as
  *              "No payment required".
- *   reference  must match after collapsing runs of whitespace and ignoring
+ *   reference  must match after removing whitespace, a leading "#" and
  *              case, against the key's reference or, where the key lists
  *              identifiers, any identifier marked required (KAN-61: the
  *              letter does not rank the numbers that belong to the person). The contract says keep the spacing as printed, and the
@@ -106,7 +106,6 @@ export type Score = {
 };
 
 const loose = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
-const collapse = (s: string) => s.trim().replace(/\s+/g, " ").toLowerCase();
 
 export function dueDateCorrect(
   got: string | null,
@@ -130,6 +129,15 @@ export function amountCorrect(
   return Number.isFinite(number) && Math.abs(number - want) < 0.005;
 }
 
+/**
+ * KAN-61: a reference is compared without any whitespace and without a
+ * leading "#", because the page may print "Ref #6429746 DFD" or set a
+ * barcode line with a space after every character, and a reader told to
+ * copy the page as printed is right to keep them.
+ */
+export const referenceIdentity = (s: string) =>
+  s.trim().replace(/^#\s*/, "").replace(/\s+/g, "").toLowerCase();
+
 export function referenceCorrect(
   got: string | null,
   want: string | null,
@@ -137,7 +145,7 @@ export function referenceCorrect(
   if (got === null) return false;
   if (want === null)
     return got.trim().toLowerCase() === NOT_APPLICABLE.toLowerCase();
-  return collapse(got) === collapse(want);
+  return referenceIdentity(got) === referenceIdentity(want);
 }
 
 /**

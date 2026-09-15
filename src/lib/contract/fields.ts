@@ -74,7 +74,7 @@ export const FIELD_DESCRIPTIONS: Record<ContractFieldKey, string> = {
   amount:
     "The amount the letter asks the person to pay, exactly as written on the page including the currency symbol. Only Pay has one. For every other action write No payment required, even when the page prints a price already paid, a premium taken by direct debit, a benefit paid to the person or a balance of zero. Do not convert, round, or reformat.",
   reference:
-    "The reference, account, or customer number the person must quote: the one of the letter's identifiers that belongs to the person or to this matter and that the letter tells them to quote. Never a number that identifies the sender. Keep the spacing as printed.",
+    "The reference, account, or customer number the person must quote: one of the letter's identifiers, the one that belongs to the person or to this matter. When the letter says which number to quote, that one; when it does not, the number that identifies the person or the matter, such as an account, customer, member, patient or notice number. While such a number is printed the reference is never Not applicable. Never a number that identifies the sender. Keep the spacing as printed.",
 };
 
 /**

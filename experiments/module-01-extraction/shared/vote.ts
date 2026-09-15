@@ -31,6 +31,7 @@ import type { Model } from "./config";
 import { experimentFromArgv } from "./experiment";
 import { USD_TO_AUD, usdFor } from "./prices";
 import {
+  referenceIdentity,
   SCORED_WITH_IDENTIFIERS,
   scoredFieldsOf,
   type Score,
@@ -88,7 +89,7 @@ function agree(
       const na = isAbsent(a, "Not applicable");
       const nb = isAbsent(b, "Not applicable");
       if (na || nb) return na && nb;
-      return collapse(a!) === collapse(b!);
+      return referenceIdentity(a!) === referenceIdentity(b!);
     }
     case "issuer": {
       if (a === null || b === null) return a === b;
@@ -106,7 +107,12 @@ function agree(
       return x !== null && x === actionWordOf(b);
     }
     case "identifiers": {
-      // The same numbers, in any order, compared as the scorer compares them.
+      // KAN-61: two lists agree when one is within the other, compared as the
+      // scorer compares values. The numbers the prompt says to leave out come
+      // and go between reads, and the product would take the union of the two
+      // lists; what has to match is that neither read names a number the other
+      // read gives differently. Two lists that each carry a value the other
+      // lacks disagree, and the judge is called.
       const set = (v: string | null) =>
         new Set(
           (v ?? "")
@@ -121,7 +127,9 @@ function agree(
         );
       const x = set(a);
       const y = set(b);
-      return x.size === y.size && [...x].every((s) => y.has(s));
+      const within = (p: Set<string>, q: Set<string>) =>
+        [...p].every((s) => q.has(s));
+      return within(x, y) || within(y, x);
     }
   }
 }
