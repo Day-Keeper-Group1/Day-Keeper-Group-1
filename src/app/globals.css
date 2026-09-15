@@ -211,6 +211,12 @@
   }
   html {
     @apply font-sans;
+    /* KAN-59: the top bar is sticky and 64px tall (h-16 in
+       src/components/layout/topbar.tsx). A screen that moves on by itself,
+       like saving a letter and landing on the calendar, is scrolled to by
+       Next.js, which skips sticky elements when it picks where to scroll;
+       without this the new screen's title lands behind the bar. */
+    scroll-padding-top: 4rem;
   }
 
   html[data-font-scale="large"] {

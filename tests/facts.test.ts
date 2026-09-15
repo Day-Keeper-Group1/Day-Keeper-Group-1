@@ -60,6 +60,35 @@ describe("factLines", () => {
     ]);
   });
 
+  // KAN-59: the kind of letter is said above the rows, not in them.
+  it("leaves the document type out of the rows", () => {
+    const lines = factLines([
+      field("document_type", "Document type", "Utility bill"),
+      field("issuer", "From", "Yarra Valley Water"),
+    ]);
+    expect(lines.map((line) => line.key)).toEqual(["issuer"]);
+  });
+
+  it("writes an appointment's date and time as one row, When", () => {
+    const lines = factLines([
+      field("issuer", "From", "Dr A. Patel, GP clinic"),
+      field("due_date", "Due date", "4 Sep 2026"),
+      field("due_time", "Time", "10:30"),
+    ]);
+    expect(lines).toEqual([
+      { key: "issuer", label: "From", value: "Dr A. Patel, GP clinic" },
+      { key: "when", label: "When", value: "4 Sep 2026, 10:30 am" },
+    ]);
+  });
+
+  it("shows no time when there is no date to hang it on", () => {
+    const lines = factLines([
+      field("due_date", "Due date", null, "unreadable"),
+      field("due_time", "Time", "10:30"),
+    ]);
+    expect(lines).toEqual([]);
+  });
+
   it("hides unreadable values and confident absences, as before", () => {
     const lines = factLines([
       field("issuer", "From", "Telstra"),

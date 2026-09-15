@@ -340,6 +340,24 @@ export async function getDocument(
 }
 
 /**
+ * KAN-59: how many of this person's letters are waiting to be checked.
+ *
+ * Counted from the letters every time the review screen is drawn, rather than
+ * kept anywhere, so "3 left to check" is what is true when she looks, including
+ * a letter whose reading landed while she was checking another.
+ */
+export async function countLettersToCheck(userId: string): Promise<number> {
+  const row = await queryOne<{ waiting: number }>(
+    `SELECT count(*)::integer AS waiting
+       FROM documents d
+      WHERE d.user_id = $1
+        AND d.status = 'needs-review'`,
+    [userId],
+  );
+  return row?.waiting ?? 0;
+}
+
+/**
  * Where one photograph of one owned letter is kept.
  *
  * Null for a page that does not exist and null for a letter belonging to
@@ -384,10 +402,11 @@ export async function getHome(
   now: Date = new Date(),
 ): Promise<HomePayload> {
   const [inboxRows, allTasks, recentlyCompleted] = await Promise.all([
-    // Every letter not yet dealt with, in one merged list, newest upload first
-    // and uncapped. The prototype draws these interleaved in a single card, so
-    // they travel as the one list they are rather than as three the client has
-    // to weave.
+    // Every letter not yet dealt with, in one merged list, first photographed
+    // first and uncapped. The prototype draws these interleaved in a single
+    // card, so they travel as the one list they are rather than as three the
+    // client has to weave. KAN-59: oldest on top, because checking starts from
+    // the top and the pile is checked in the order it was photographed.
     query<DocumentRow>(
       `SELECT d.id,
               d.issuer,
@@ -407,7 +426,7 @@ export async function getHome(
          FROM documents d
         WHERE d.user_id = $1
           AND d.status IN ('processing', 'needs-review', 'failed')
-        ORDER BY d.uploaded_at DESC, d.id DESC`,
+        ORDER BY d.uploaded_at ASC, d.id ASC`,
       [userId],
     ),
     listTasks(userId, timeZone, now),

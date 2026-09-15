@@ -23,7 +23,7 @@ function statusSentence(document: DocumentDetail): string {
     processing:
       "Still being read. You can close the app; we'll tell you when it's ready.",
     "needs-review": "Read, and waiting for your OK.",
-    confirmed: "Saved. Its task is on your list.",
+    confirmed: "Saved, and kept in your letters.",
     // The one sentence src/lib/contract/api.ts words for every surface. It
     // leads by saying the fault was ours, because it was.
     failed: document.failure?.message ?? "Something went wrong on our side.",

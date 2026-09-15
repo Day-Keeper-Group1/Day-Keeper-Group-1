@@ -5,6 +5,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { useActivity } from "./activity";
 import {
   DESKTOP_ONLY_NAV,
   isNavItemActive,
@@ -20,7 +21,16 @@ import {
  * deficiency can still see where she is. The row is min-h-12 because every
  * pressable thing in this product clears 48px.
  */
-function SidebarLink({ item, active }: { item: NavItem; active: boolean }) {
+function SidebarLink({
+  item,
+  active,
+  badge = 0,
+}: {
+  item: NavItem;
+  active: boolean;
+  /** KAN-59: letters waiting to be checked, beside Home. */
+  badge?: number;
+}) {
   return (
     <Link
       href={item.href}
@@ -40,12 +50,21 @@ function SidebarLink({ item, active }: { item: NavItem; active: boolean }) {
       ) : null}
       <item.icon className="size-6 shrink-0" strokeWidth={1.75} />
       {item.label}
+      {badge > 0 ? (
+        <span className="ml-auto rounded-full bg-primary px-2 py-px text-key font-bold text-primary-foreground">
+          {badge}
+          <span className="sr-only">
+            {badge === 1 ? " letter to check" : " letters to check"}
+          </span>
+        </span>
+      ) : null}
     </Link>
   );
 }
 
 export function SidebarNav() {
   const pathname = usePathname();
+  const { home } = useActivity();
 
   return (
     <nav className="flex h-full w-60 shrink-0 flex-col border-r border-border bg-sidebar px-3 py-4">
@@ -67,6 +86,9 @@ export function SidebarNav() {
             <SidebarLink
               item={item}
               active={isNavItemActive(pathname, item.href)}
+              badge={
+                item.href === "/dashboard" ? (home?.counts.needsReview ?? 0) : 0
+              }
             />
           </li>
         ))}

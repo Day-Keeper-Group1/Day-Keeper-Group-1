@@ -9,8 +9,7 @@ it and where everything is.
 Three things, and deliberately only three:
 
 1. **A database and a bucket** everyone can run in one command: a schema that is
-   already settled, seed data covering every state the interface has to draw,
-   and somewhere for the photographs themselves to live that behaves like the
+   already settled, a small seed of letters already checked, and somewhere for the photographs themselves to live that behaves like the
    real thing because it speaks the same protocol.
 2. **The contract**: the six fields, in TypeScript, with a validator. This is the
    agreement between whoever reads a document and whoever turns it into a task,
@@ -20,8 +19,9 @@ Three things, and deliberately only three:
    built and demonstrated before anyone has model access.
 
 **The API and the pages follow `docs/api.md`.** Sign in, the letters
-(upload, list, open, page images, home) and the tasks endpoints exist and the
-screens read them; confirming a letter is the next piece. When you add an
+(upload, list, open, confirm, page images, home) and the tasks endpoints exist
+and the screens read them: a photographed letter is read, checked, saved and
+lands on the calendar. Sending the reminders is the next piece. When you add an
 endpoint, add it to that file first: it is the specification, with the
 reasoning for the parts that look arbitrary.
 
@@ -72,18 +72,20 @@ service called `storage`.
 
 ### What the seed gives you
 
-Margaret's world at the moment she opens the app, with every settled state the
-interface has to draw already present, so you never have to manufacture one.
-The only state not seeded is a letter still being read: a seeded row would never
-finish, and photographing any letter shows the real thing for ten seconds.
+Margaret's calendar after a few weeks: three letters she has already checked,
+and nothing waiting. Each sits under a different heading on Home:
 
-- a letter **waiting to be checked**, where the reader was unsure of the due
-  date and could not read the reference at all
-- letters **confirmed**: one overdue, one upcoming, one **appointment with a
-  time of day** (and therefore a shorter reminder ladder, see
-  `src/lib/contract/reminders.ts`), and one already done, ticked off before its
-  last reminder's morning, so that reminder rang, found it done, and was
-  recorded `skipped`
+- one **overdue**, two pages long, printing two numbers (so the letter shows
+  which one to quote)
+- one **due in the next seven days**
+- one **appointment with a time of day**, later on
+
+Every other state is made by photographing a letter, which is the path that has
+to work anyway: it is read (the mock reader by default, see
+`AI_EXTRACTION_PROVIDER`), waits under To check on Home, is checked, and lands on
+the calendar. The mock also fails one letter in eight, after trying it three
+times, and hands out a statement that asks for nothing, which is saved without a
+task and kept in Your letters.
 
 `db/seed.ts` is the inventory: what it prints when it runs is the list.
 

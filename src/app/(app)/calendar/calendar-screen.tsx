@@ -2,20 +2,13 @@
 
 // KAN-57: the calendar, drawn to the prototype: a month of dots, a day sheet, and the task list.
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
+import { useMemo, useState } from "react";
 import { Bell, BellOff } from "lucide-react";
 
-import { FactRow } from "@/components/fact-row";
+import { BottomSheet } from "@/components/bottom-sheet";
 import { Panel, PillButton, ScreenHeader } from "@/components/screen";
 import { TaskRow } from "@/components/task-row";
-import { Button } from "@/components/ui/button";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { TaskEntry, TaskSheet, useTaskDetail } from "@/components/task-sheet";
 import {
   marksByDay,
   monthCells,
@@ -23,13 +16,8 @@ import {
   tasksForMonth,
   type CalendarMark,
 } from "@/lib/calendar";
-import {
-  deriveTaskStatus,
-  type TaskDetail,
-  type TaskSummary,
-} from "@/lib/contract/api";
+import { deriveTaskStatus, type TaskSummary } from "@/lib/contract/api";
 import { formatDueDate, formatDueTime } from "@/lib/contract/dates";
-import { factLines } from "@/lib/facts";
 import { toggleTaskDone } from "@/lib/task-actions";
 import { cn } from "@/lib/utils";
 
@@ -89,11 +77,13 @@ function MonthTaskGroup({
   tasks,
   empty,
   onToggle,
+  onOpen,
 }: {
   heading: string;
   tasks: TaskSummary[];
   empty?: string;
   onToggle: (task: TaskSummary) => void;
+  onOpen: (taskId: string) => void;
 }) {
   if (tasks.length === 0 && !empty) return null;
 
@@ -108,7 +98,11 @@ function MonthTaskGroup({
         <ul>
           {tasks.map((task) => (
             <li key={task.id} className="border-t border-line first:border-t-0">
-              <TaskRow task={task} onToggle={onToggle} />
+              <TaskRow
+                task={task}
+                onToggle={onToggle}
+                onOpen={() => onOpen(task.id)}
+              />
             </li>
           ))}
         </ul>
@@ -121,29 +115,29 @@ export function CalendarScreen({
   initial,
   today,
   timeZone,
+  initialMonth,
 }: {
   initial: TaskSummary[];
   today: string;
   timeZone: string;
+  /**
+   * KAN-59: the month to open at, 'YYYY-MM', when she was sent here to see
+   * something land: the month of the last task she saved. Today's month
+   * otherwise.
+   */
+  initialMonth?: string | null;
 }) {
   const [todayYear, todayMonth] = today.split("-").map(Number);
+  const [openYear, openMonth] = (initialMonth ?? today).split("-").map(Number);
 
   const [tasks, setTasks] = useState<TaskSummary[]>(initial);
   const [message, setMessage] = useState<string | null>(null);
-  const [year, setYear] = useState(todayYear);
-  const [month, setMonth] = useState(todayMonth);
+  const [year, setYear] = useState(openYear);
+  const [month, setMonth] = useState(openMonth);
+  /** The task open in its own sheet, from the list, by id. */
+  const [openTaskId, setOpenTaskId] = useState<string | null>(null);
   /** The open day, 'YYYY-MM-DD', or null when the sheet is shut. */
   const [selected, setSelected] = useState<string | null>(null);
-  /**
-   * What each opened task's letter said, by task id.
-   *
-   * The list endpoint does not carry fields or a page count, so the day sheet
-   * asks for them the first time a day containing that task is opened and keeps
-   * the answer. A person reopening the same day gets it back without a request.
-   */
-  const [details, setDetails] = useState<Record<string, TaskDetail>>({});
-  /** Task ids already asked for, so reopening a day asks for nothing twice. */
-  const asked = useRef(new Set<string>());
 
   const byDay = useMemo(() => marksByDay(tasks), [tasks]);
   const cells = useMemo(() => monthCells(year, month), [year, month]);
@@ -156,47 +150,6 @@ export function CalendarScreen({
     () => (selected ? (byDay.get(selected) ?? []) : []),
     [selected, byDay],
   );
-
-  // Which letters the open day needs, as a string, so that reopening the same
-  // day does not re-run this effect on a freshly built array.
-  const wanted = selectedMarks
-    .filter((mark) => mark.kind === "due" && mark.task.documentId)
-    .map((mark) => mark.task.id)
-    .join(",");
-
-  useEffect(() => {
-    if (!wanted) return;
-    let cancelled = false;
-
-    void (async () => {
-      for (const id of wanted.split(",")) {
-        if (cancelled) return;
-        // Asked for already, on this day or another one that shares the task.
-        if (asked.current.has(id)) continue;
-        asked.current.add(id);
-        try {
-          const response = await fetch(`/api/tasks/${id}`);
-          if (!response.ok) {
-            asked.current.delete(id);
-            continue;
-          }
-          const detail = (await response.json()) as TaskDetail;
-          if (cancelled) return;
-          setDetails((prev) => ({ ...prev, [detail.id]: detail }));
-        } catch {
-          // The sheet still shows the task, its tick and its date. Saying
-          // nothing about the letter is honest; an error box over a task she
-          // opened to tick is not. Forgetting we asked lets the next opening
-          // of the day try again.
-          asked.current.delete(id);
-        }
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [wanted]);
 
   function moveMonth(step: number) {
     setSelected(null);
@@ -337,68 +290,50 @@ export function CalendarScreen({
               heading="Still to do"
               tasks={listed.overdue}
               onToggle={onToggle}
+              onOpen={setOpenTaskId}
             />
             <MonthTaskGroup
               heading={MONTH_NAMES[month - 1]}
               tasks={listed.inMonth}
               empty={`Nothing due in ${MONTH_NAMES[month - 1]}`}
               onToggle={onToggle}
+              onOpen={setOpenTaskId}
             />
             <MonthTaskGroup
               heading="No date"
               tasks={listed.undated}
               onToggle={onToggle}
+              onOpen={setOpenTaskId}
             />
           </div>
         </Panel>
       </div>
 
-      <Sheet
+      <BottomSheet
         open={selected !== null}
-        onOpenChange={(open) => {
-          if (!open) setSelected(null);
-        }}
+        onClose={() => setSelected(null)}
+        heading={selected ? formatDueDate(selected, "long") : ""}
       >
-        {/* The prototype's `.sheet`: a card-coloured panel with a 14px top
-            corner, 18px of padding, 24px below, and a small dim date on top. */}
-        <SheetContent
-          side="bottom"
-          showCloseButton={false}
-          className="max-h-[76vh] gap-0 overflow-y-auto rounded-t-[14px] bg-card px-[18px] pt-[18px] pb-6"
-        >
-          <SheetHeader className="p-0">
-            <SheetTitle className="mb-2 text-key font-semibold text-ink-dim">
-              {selected ? formatDueDate(selected, "long") : ""}
-            </SheetTitle>
-          </SheetHeader>
-          <div>
-            {selectedMarks.map((mark, index) => (
-              <div
-                key={`${mark.kind}-${mark.reminder?.id ?? mark.task.id}`}
-                className={cn(index > 0 && "mt-3 border-t border-line pt-3")}
-              >
-                {mark.kind === "reminder" ? (
-                  <ReminderEntry mark={mark} today={today} />
-                ) : (
-                  <DueEntry
-                    mark={mark}
-                    detail={details[mark.task.id]}
-                    onToggle={onToggle}
-                  />
-                )}
-              </div>
-            ))}
-            <Button
-              variant="quiet"
-              size="block-quiet"
-              className="mt-2"
-              onClick={() => setSelected(null)}
-            >
-              Close
-            </Button>
+        {selectedMarks.map((mark, index) => (
+          <div
+            key={`${mark.kind}-${mark.reminder?.id ?? mark.task.id}`}
+            className={cn(index > 0 && "mt-3 border-t border-line pt-3")}
+          >
+            {mark.kind === "reminder" ? (
+              <ReminderEntry mark={mark} today={today} />
+            ) : (
+              <DueEntry mark={mark} onToggle={onToggle} />
+            )}
           </div>
-        </SheetContent>
-      </Sheet>
+        ))}
+      </BottomSheet>
+
+      {/* KAN-59: a task in the list opens in its own sheet, as on Home. */}
+      <TaskSheet
+        task={tasks.find((task) => task.id === openTaskId) ?? null}
+        onClose={() => setOpenTaskId(null)}
+        onToggle={onToggle}
+      />
     </div>
   );
 }
@@ -507,79 +442,19 @@ function ReminderEntry({ mark, today }: { mark: CalendarMark; today: string }) {
 }
 
 /**
- * The task itself, in the day sheet.
- *
- * The same row as the list beside it, with the same working tick: operations
- * follow visibility, so wherever a task is drawn it can be ticked, however long
- * ago the day was. Underneath it, what the letter said and the photographs kept
- * with it, the way the prototype's day sheet draws a due day: opening the day a
- * bill lands on and being shown only its title is the product forgetting why it
- * asked for a photograph.
+ * The task itself, in the day sheet: the same inside as a task's own sheet
+ * (src/components/task-sheet.tsx), the row with its tick, what the letter
+ * said and the photographs, the way the prototype's day sheet draws a due day.
+ * Opening the day a bill lands on and being shown only its title would be the
+ * product forgetting why it asked for a photograph.
  */
 function DueEntry({
   mark,
-  detail,
   onToggle,
 }: {
   mark: CalendarMark;
-  detail?: TaskDetail;
   onToggle: (task: TaskSummary) => void;
 }) {
-  // What the letter says, as it may be shown: the same rows the letter and the
-  // review screens draw, from src/lib/facts.ts.
-  const facts = factLines(detail?.fields ?? [], detail?.identifiers ?? []);
-  const pages = detail?.pageCount ?? 0;
-
-  return (
-    <div>
-      {/* `.ent .row`: no rule above, 4px above and 10px below. */}
-      <TaskRow task={mark.task} onToggle={onToggle} className="pt-1 pb-2.5" />
-
-      {facts.length > 0 ? (
-        <div>
-          {facts.map((line) => (
-            <FactRow key={line.key} line={line} />
-          ))}
-        </div>
-      ) : null}
-
-      {detail && pages > 0 ? (
-        <div className="mt-3">
-          <p className="mb-[7px] text-label text-ink-dim">
-            {pages === 1
-              ? "1 photo · kept with this task"
-              : `${pages} photos · kept with this task`}
-          </p>
-          <ol className="flex flex-wrap gap-2.5">
-            {Array.from({ length: pages }, (_, index) => index + 1).map(
-              (page) => (
-                <li key={page}>
-                  {/* Lazy, because a ten page letter in a sheet she opened to
-                      tick one box is ten images she never scrolled to, and
-                      because storage signs each link when the image is
-                      actually wanted. */}
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={`/api/documents/${detail.documentId}/pages/${page}`}
-                    alt={`Page ${page}`}
-                    loading="lazy"
-                    className="h-[100px] w-[74px] rounded-[8px] border border-line bg-primary-soft object-cover"
-                  />
-                </li>
-              ),
-            )}
-          </ol>
-        </div>
-      ) : null}
-
-      {mark.task.documentId ? (
-        <Link
-          href={`/documents/${mark.task.documentId}`}
-          className="mt-1 inline-flex min-h-12 items-center px-0.5 text-caption font-bold text-primary underline underline-offset-4"
-        >
-          See the letter
-        </Link>
-      ) : null}
-    </div>
-  );
+  const detail = useTaskDetail(mark.task.documentId ? mark.task.id : null);
+  return <TaskEntry task={mark.task} detail={detail} onToggle={onToggle} />;
 }
