@@ -434,11 +434,23 @@ hint to the person choosing a file, not a constraint on what arrives.
 the interface polls `GET /api/home` every five seconds and stops when
 `counts.processing` reaches zero. The count and the row come out of the same
 payload, so one poll refreshes both, and neither can show a different answer
-from the other.
+from the other. It is one poll for the whole app, not one per screen
+(`src/components/layout/activity.tsx`): Home, the camera screen, the number on
+the Home tab and the message that says a letter is ready all read it.
 
-If the reading fails, the letter's status becomes `failed`, and nothing takes it
-further. Repair is out of scope, so there is no retry endpoint and no retake
-endpoint.
+**A reading that fails is tried again before anyone is told.** A model call
+that errors, answers with something that is not JSON, or answers outside the
+contract is made again, up to three attempts in all, and the letter stays
+`processing` (the screen says "reading…") until one works or the last one
+fails. Every attempt is its own row in `extraction_runs`, so the table says how
+many calls a letter took and what each one said; at most one of them ever
+succeeds (`db/schema.sql`). A failure that would come out the same however
+often it was tried, such as a page handed to the reader without its bytes, is
+not tried again. `readDocument()` in `src/server/uploads.ts` has the rule.
+
+When the last attempt fails, the letter's status becomes `failed`, and nothing
+takes it further. Repair is out of scope, so there is no retry endpoint and no
+retake endpoint.
 
 ## List letters
 
@@ -490,7 +502,9 @@ model was confident of.
 
 **This list is the door.** Every letter is here, including ones that never
 became a task because the reading found nothing to do, and opening one shows the
-photographs that came with it.
+photographs that came with it. The Your letters screen draws the saved ones
+(`confirmed` and `archived`): a letter still being read, waiting to be checked,
+or failed is on Home under To check, where something can be done about it.
 
 ## One letter, in full
 
@@ -675,14 +689,37 @@ the 10th, so the earliest rung of the ladder would have landed in the past, and
 a reminder in the past is never created. `planReminders()` in
 `src/lib/contract/reminders.ts` is what drops it.
 
+**A letter that asks for nothing** (`action_required` is `No action`) is saved
+and makes no task, so `task` is null:
+
+```json
+{
+  "documentId": "b71c0d54-8e33-4a77-8c19-90ab4e6f2213",
+  "task": null
+}
+```
+
 ### Error Responses
 
-**Condition** : The letter has already been confirmed.
+**Condition** : The letter is not waiting to be checked: it has already been
+confirmed, it is still being read, or its reading failed.
 **Code** : `409 CONFLICT`
 
-It renders as a line above the button, since the confirm button navigates
-unconditionally and has nowhere else to put one. The `message` is written to be
-shown as-is.
+**Content example**
+
+```json
+{
+  "error": {
+    "code": "conflict",
+    "message": "This letter is already saved."
+  }
+}
+```
+
+The other two say "This letter is still being read." and "This letter could not
+be read, so there is nothing to save." It renders as a line above the button,
+which stays where it is so she can see what happened. The `message` is written
+to be shown as-is.
 
 **Condition** : No such letter, or it belongs to somebody else.
 **Code** : `404 NOT FOUND`
@@ -692,8 +729,20 @@ shown as-is.
 The returned task includes its reminders, so the calendar the person lands on
 can draw itself without a second request.
 
+**After a save, the screen moves on by itself** (`src/lib/confirm-flow.ts`). A
+note says what was kept and where, and goes after three seconds; she is taken
+straight to the next letter waiting, first photographed first; and after the
+last one she lands on the calendar at the month of the last task she saved, or
+on Your letters if none of the letters she saved made a task. Which letter is
+next is asked of `GET /api/home` after the save, so a reading that landed while
+she was checking joins the end of the queue. "Not now" goes Home and ends the
+run.
+
 Confirming is the moment a letter becomes a task with reminders, all in one
-transaction. The schedule comes from `planReminders()` and nowhere else. **The
+transaction (`confirmDocument()` in `src/server/confirm.ts`), with a
+`document.confirm` row in `audit_logs` carrying the task's id and how many
+reminders were planned, never anything the letter said. The letter is locked
+while it is read, so two taps on the button cannot make two tasks. The schedule comes from `planReminders()` and nowhere else. **The
 review screen and this handler must pass it the same `today`**, or the card
 promises a reminder the handler never creates; that file says why passing the
 day is what makes the two answers identical, rather than sharing the function.
@@ -988,7 +1037,7 @@ is still being read, and both sit in `inbox`.
   still reading" would say "Nothing to check" while a letter is visibly being
   read in the card below it. The nav badge shows `needsReview` alone.
 - `inbox`: every letter not yet dealt with, status `processing`, `needs-review`
-  or `failed`, one merged list, newest upload first, not capped. The card is
+  or `failed`, one merged list, first photographed first, not capped. The card is
   shown when `inbox` is non-empty, which is not the same test as the counts: a
   queue holding only failures still shows the card.
 - `tasks`: **every open task, whatever its date, plus anything completed in the

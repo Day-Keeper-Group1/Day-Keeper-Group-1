@@ -131,13 +131,18 @@ export async function listTasks(
   return mapTaskRows(rows, timeZone, now);
 }
 
-/** Return one owned task with the fields and page count of its letter. */
-export async function getTask(
+/**
+ * Return one owned task as a list row needs it, with every reminder.
+ *
+ * KAN-59: what confirming a letter answers with, so the calendar the person
+ * lands on can draw the new task without asking again.
+ */
+export async function getTaskSummary(
   taskId: string,
   userId: string,
   timeZone: string,
   now: Date = new Date(),
-): Promise<TaskDetail | null> {
+): Promise<TaskSummary | null> {
   const rows = await query<TaskListRow>(
     `SELECT t.id,
             t.title,
@@ -167,7 +172,17 @@ export async function getTask(
     [taskId, userId, timeZone],
   );
 
-  const summary = mapTaskRows(rows, timeZone, now)[0];
+  return mapTaskRows(rows, timeZone, now)[0] ?? null;
+}
+
+/** Return one owned task with the fields and page count of its letter. */
+export async function getTask(
+  taskId: string,
+  userId: string,
+  timeZone: string,
+  now: Date = new Date(),
+): Promise<TaskDetail | null> {
+  const summary = await getTaskSummary(taskId, userId, timeZone, now);
   if (!summary?.documentId) return null;
 
   const [page, fields, identifiers] = await Promise.all([

@@ -15,9 +15,11 @@
  * returns is validated against the contract in src/lib/contract/extraction.ts
  * before it goes anywhere near the database.
  *
- * One reading per letter. This release makes one model call and everything
- * after it is ordinary code, so there is no second model and nothing that
- * searches over what was read; see docs/scope.md.
+ * One reading per letter. This release makes one model call that succeeds and
+ * everything after it is ordinary code, so there is no second model and nothing
+ * that searches over what was read; see docs/scope.md. A call that fails is
+ * made again, which is a second attempt at the same reading and not a second
+ * opinion.
  */
 
 import "server-only";
@@ -41,17 +43,30 @@ export type ExtractionInput = {
  * One kind of failure, because there is one thing to say. This release has no
  * rejection and no repair: a letter is never turned away for being the wrong
  * sort of document, a photograph is never refused for being blurred, and nobody
- * is asked to take it again. So a failure here is our side failing, the
- * document is marked failed, and that is the end of it.
+ * is asked to take it again. So a failure here is our side failing. The same
+ * photographs are read again a couple of times first (src/server/uploads.ts),
+ * and only when every try has failed is the document marked failed.
  *
  * `message` is developer text. It is stored with the run and never shown; the
  * sentence a person reads is worded once, in src/lib/contract/api.ts, so that
  * every surface says it identically.
  */
 export class ExtractionFailure extends Error {
-  constructor(message: string) {
+  /**
+   * KAN-59: whether reading the same photographs again could come out
+   * differently. A call that errored, an answer that was not JSON, and an
+   * answer outside the contract are all things a model does once and not the
+   * next time, so they are worth another try (src/server/uploads.ts). A page
+   * handed over without its bytes, or a reader with no key configured, fails
+   * the same way however many times it is asked, and says so here so nobody
+   * pays for the asking.
+   */
+  readonly retryable: boolean;
+
+  constructor(message: string, options: { retryable?: boolean } = {}) {
     super(message);
     this.name = "ExtractionFailure";
+    this.retryable = options.retryable ?? true;
   }
 }
 

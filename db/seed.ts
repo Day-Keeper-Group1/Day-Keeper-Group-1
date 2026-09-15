@@ -1,11 +1,14 @@
 /**
  * Seed data.
  *
- * Margaret's world at the moment she opens the app: four letters confirmed and
- * one waiting to be checked. Every settled state the interface has to draw is
- * present, so nobody has to imagine what an overdue task looks like. The one
- * state not seeded is "still being read": a seeded row would never finish,
- * and photographing any letter shows the real thing for ten seconds.
+ * Margaret's world at the moment she opens the app: three letters she has
+ * already checked, and nothing waiting. KAN-59: the seed is the calendar a
+ * person would have after a few weeks, not a tour of every state. One task is
+ * overdue, one is due in the next seven days, and one is an appointment with a
+ * time of day, which is one of each place a task can sit on Home. Everything
+ * else (a letter being read, one to check, one that asks for nothing, one that
+ * failed) is made by photographing a letter, which is the path that has to
+ * work anyway.
  *
  * Everything is synthetic. No real person, account number or amount appears
  * here, and none may be added: the project cannot lawfully hold real
@@ -103,11 +106,9 @@ const LETTERS_DIR = "data/synthetic-letters";
  * again. Only Services Australia does, whose notice is one sheet.
  */
 const PAGE_SOURCES = {
-  aglBill: "01-electricity-bill",
   servicesAustralia: "08-welfare-information-request",
   waterBill: "03-water-bill",
   medical: "09-specialist-account-statement",
-  telstraBill: "02-gas-bill",
 } as const;
 
 /** PNG's first eight bytes, which readPageImage() holds each fixture to. */
@@ -167,53 +168,11 @@ async function main() {
       [margaretId, hashSessionToken(DEV_SESSION_TOKEN)],
     );
 
-    // ---- A letter waiting to be checked -----------------------------------
-    // The reading finished; the due date came out uncertain and the reference
-    // could not be read at all. This is the letter the review screen exists
-    // for, and the one to open first when looking at the app.
-    const agl = randomUUID();
-    await db.query(
-      // The denormalised columns are filled the moment a reading succeeds, not
-      // at confirm: the "to check" list names who a letter is from before
-      // anybody has checked it. Only CONFIDENT values land here. The due date
-      // came out uncertain and the reference unreadable, so both columns stay
-      // NULL: a value the model was unsure of never reaches a document, the
-      // calendar, or a screen (src/lib/contract/api.ts). The hedge itself lives
-      // one table over, in extracted_fields, as evaluation data.
-      `INSERT INTO documents
-         (id, user_id, status, uploaded_at, issuer, document_type, amount_text)
-       VALUES ($1, $2, 'needs-review', now() - interval '2 hours',
-               'AGL Energy', 'Utility bill', '$347.60')`,
-      [agl, margaretId],
-    );
-    await insertPages(db, storage, margaretId, agl, 1, PAGE_SOURCES.aglBill);
-    const aglRun = randomUUID();
-    await db.query(
-      `INSERT INTO extraction_runs
-         (id, document_id, status, provider, model, contract_version,
-          started_at, finished_at, duration_ms)
-       VALUES ($1, $2, 'succeeded', $3, $4, $5,
-               now() - interval '2 hours', now() - interval '2 hours' + interval '6 seconds', 6100)`,
-      [aglRun, agl, SEED_PROVIDER, SEED_MODEL, CONTRACT_VERSION],
-    );
-    await insertFields(db, aglRun, [
-      ["document_type", "Utility bill", "confirmed", 0.97],
-      ["issuer", "AGL Energy", "confirmed", 0.96],
-      ["action_required", "Pay AGL Energy", "confirmed", 0.92],
-      // The model hedged on the date and could not read the reference. Storage
-      // keeps the hedge and its guess as evaluation data; the product treats
-      // both rows the same way, as "no value", and asks nobody to adjudicate.
-      // See src/lib/contract/extraction.ts.
-      ["due_date", isoDaysFromNow(6), "uncertain", 0.61],
-      ["amount", "$347.60", "confirmed", 0.95],
-      ["reference", null, "unreadable", 0.18],
-    ]);
-
-    // ---- Four letters already dealt with -----------------------------------
-    // Overdue, upcoming, an appointment, and one already ticked. These are the
-    // ways a task reads on screen, and each has its own wording and its own
-    // place in the sort, so none of them can be judged until they are all on
-    // the screen at the same time.
+    // ---- Three letters already checked --------------------------------------
+    // Overdue, due this week, and an appointment later on. These are the three
+    // headings a task can sit under on Home, and each has its own wording and
+    // its own place in the sort, so none of them can be judged until they are
+    // all on the screen at the same time.
 
     // Overdue: the date has passed and nobody has ticked it off. It sorts to
     // the top of the home list, by due date ascending and nothing else.
@@ -237,12 +196,12 @@ async function main() {
       uploadedDaysAgo: 9,
     });
 
-    // Upcoming: the ordinary case.
+    // Due within the next seven days: the ordinary case.
     const water = await confirmedLetter(db, storage, margaretId, {
       issuer: "Yarra Valley Water",
       documentType: "Utility bill",
       action: "Pay Yarra Valley Water",
-      dueDate: isoDaysFromNow(12),
+      dueDate: isoDaysFromNow(5),
       amount: "$89.20",
       reference: "5501 2280",
       identifiers: [["Account number", "5501 2280"]],
@@ -268,54 +227,13 @@ async function main() {
       uploadedDaysAgo: 1,
     });
 
-    // Done, ticked off before its later reminders' mornings arrived. Nothing
-    // cancelled anything: the dispatcher rang on each of those mornings, found
-    // the task already completed, sent nothing, and wrote 'skipped'. Being
-    // nagged about something already handled is the anxiety this product exists
-    // to remove, and this is the row that shows the mechanism working. The
-    // mechanism itself is explained in db/schema.sql, above the reminders
-    // table.
-    const telstra = await confirmedLetter(db, storage, margaretId, {
-      issuer: "Telstra",
-      documentType: "Utility bill",
-      action: "Pay Telstra",
-      dueDate: isoDaysFromNow(-20),
-      amount: "$79.00",
-      reference: "4417 9902",
-      identifiers: [
-        ["Account number", "4417 9902"],
-        ["Service number", "0412 118 204"],
-        ["Invoice number", "T 8830 2291"],
-      ],
-      pages: 1,
-      pageSource: PAGE_SOURCES.telstraBill,
-      uploadedDaysAgo: 30,
-    });
-    await db.query(
-      `UPDATE tasks SET state = 'completed', completed_at = now() - interval '24 days'
-        WHERE document_id = $1`,
-      [telstra],
-    );
-    // The bill was due 20 days ago, so its reminders rang 27, 23 and 21 days
-    // ago. She ticked it off 24 days ago: the first had already been sent by
-    // then; the later two rang into a done task and became 'skipped'. The
-    // insert below marked every past reminder 'sent', so this corrects the ones
-    // whose mornings came after the tick.
-    await db.query(
-      `UPDATE reminders SET status = 'skipped', sent_at = NULL
-        WHERE task_id IN (SELECT id FROM tasks WHERE document_id = $1)
-          AND scheduled_for > now() - interval '24 days'`,
-      [telstra],
-    );
-
     await db.query(
       `INSERT INTO audit_logs (actor_id, action, target_type, target_id) VALUES
          ($1, 'user.register', 'user', $1),
          ($1, 'document.confirm', 'document', $2),
          ($1, 'document.confirm', 'document', $3),
-         ($1, 'document.confirm', 'document', $4),
-         ($1, 'document.confirm', 'document', $5)`,
-      [margaretId, centrelink, water, gp, telstra],
+         ($1, 'document.confirm', 'document', $4)`,
+      [margaretId, centrelink, water, gp],
     );
 
     await db.query("COMMIT");
@@ -330,14 +248,13 @@ Seeded.
                     (Margaret, valid 30 days. Lets you call authenticated
                     endpoints before sign-in is built. Local databases only.)
 
-  1 letter waiting to be checked (an uncertain date and an unreadable reference)
-  4 letters confirmed: one overdue and two pages long, one upcoming, one
-    appointment with a time of day, and one done early, whose later reminders
-    rang into a finished task and were skipped
+  3 letters checked, and nothing waiting to be checked:
+    one overdue and two pages long, one due in the next seven days, and one
+    appointment with a time of day
 
 Every page above has a real photograph in the bucket, borrowed from
-data/synthetic-letters. Upload something through the app to add one of your
-own.
+data/synthetic-letters. Photograph a letter in the app to see it read,
+checked and put on the calendar.
 `);
   } catch (error) {
     await db.query("ROLLBACK");

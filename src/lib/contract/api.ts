@@ -312,6 +312,21 @@ export const MAX_PAGE_BYTES = 10 * 1024 * 1024;
  * stays until it is ticked. The list itself is the reminder.
  */
 
+/**
+ * KAN-59: what POST /api/documents/:id/confirm answers.
+ *
+ * `task` is null when the letter asks for nothing (`action_required` is
+ * NO_ACTION in ./fields.ts): the letter is kept in Your letters and no task is
+ * made, because a task titled "No action" is noise on a list whose whole job is
+ * saying what to do. Otherwise it is the task the letter became, with every
+ * reminder planned for it, so the calendar the person lands on can draw it
+ * without asking again.
+ */
+export type ConfirmDocumentResponse = {
+  documentId: string;
+  task: TaskSummary | null;
+};
+
 /** What the home screen needs, in one request. */
 export type HomeCounts = {
   needsReview: number;
@@ -324,9 +339,14 @@ export type HomeCounts = {
  * cannot disagree with each other on screen.
  *
  * `inbox` is every document not yet dealt with: status 'processing',
- * 'needs-review' or 'failed', in one merged list, newest upload first. The
+ * 'needs-review' or 'failed', in one merged list, first photographed first. The
  * prototype renders these interleaved in a single card, so the server sends them
  * as the one list they are rather than as three the client has to weave.
+ *
+ * KAN-59: oldest on top because that is the order the pile was photographed
+ * in, and checking starts from the top: the letter she photographed first is
+ * the first she is asked to look at, and one photographed while she is
+ * checking joins the end of the queue rather than jumping ahead of it.
  */
 export type HomePayload = {
   counts: HomeCounts;

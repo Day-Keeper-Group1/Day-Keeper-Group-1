@@ -428,6 +428,8 @@ describe("the home screen", () => {
     expect(sql).toContain(
       "d.status IN ('processing', 'needs-review', 'failed')",
     );
+    // KAN-59: first photographed on top, because checking starts from the top.
+    expect(sql).toContain("ORDER BY d.uploaded_at ASC");
   });
 
   it("keeps every open task and ages out only the older ticks", async () => {

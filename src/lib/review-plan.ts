@@ -21,6 +21,7 @@
  */
 
 import { formatDueDate, formatDueTime } from "@/lib/contract/dates";
+import { NO_ACTION, actionWordOf } from "@/lib/contract/fields";
 import { PLAN_LINES, planReminders } from "@/lib/contract/reminders";
 
 export type PlanLine = {
@@ -39,11 +40,25 @@ export type PlanLine = {
 export const NO_DATE_PLAN_LINE =
   "No date on this letter. It's saved; nothing goes on your calendar.";
 
+/**
+ * KAN-59: what the card says when the letter asks for nothing.
+ *
+ * Saving such a letter makes no task (src/server/confirm.ts), so there is no
+ * reminder and no calendar mark to promise, and the card says where the letter
+ * goes instead. Checked before the date, because a statement can print a date
+ * that asks nothing of her.
+ */
+export const NO_ACTION_PLAN_LINE = "Nothing to do. It's kept in your letters.";
+
 export function planLinesFor(
-  letter: { dueDate?: string; dueTime?: string },
+  letter: { dueDate?: string; dueTime?: string; action?: string | null },
   today: string,
   timeZone: string,
 ): PlanLine[] {
+  if (letter.action && actionWordOf(letter.action) === NO_ACTION) {
+    return [{ icon: "page", text: NO_ACTION_PLAN_LINE }];
+  }
+
   if (!letter.dueDate) {
     return [{ icon: "page", text: NO_DATE_PLAN_LINE }];
   }

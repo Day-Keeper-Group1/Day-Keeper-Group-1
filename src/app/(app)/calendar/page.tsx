@@ -1,5 +1,6 @@
 // KAN-57: the calendar, served from the database in the person's own time zone.
 
+import { monthParam } from "@/lib/confirm-flow";
 import { todayInZone } from "@/lib/contract/dates";
 import { requireUser } from "@/server/auth/session";
 import { listTasks } from "@/server/tasks";
@@ -17,7 +18,12 @@ import { CalendarScreen } from "./calendar-screen";
  * worst place in the product to have two answers. src/lib/contract/dates.ts
  * says it plainly: prefer the person's own zone whenever there is a session.
  */
-export default async function CalendarPage() {
+export default async function CalendarPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ month?: string }>;
+}) {
+  const { month } = await searchParams;
   const user = await requireUser();
   const tasks = await listTasks(user.id, user.timeZone);
 
@@ -26,6 +32,10 @@ export default async function CalendarPage() {
       initial={tasks}
       today={todayInZone(user.timeZone)}
       timeZone={user.timeZone}
+      // KAN-59: `?month=2026-10` when the last letter checked lands her here,
+      // so the task she just saved is on the month she sees
+      // (src/lib/confirm-flow.ts).
+      initialMonth={monthParam(month)}
     />
   );
 }

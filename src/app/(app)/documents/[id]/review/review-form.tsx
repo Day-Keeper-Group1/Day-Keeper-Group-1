@@ -1,18 +1,26 @@
 "use client";
 
 // KAN-57: Check what we found, rebuilt as the prototype's two cards and one green button.
+// KAN-59: the button saves, and moves on to the next letter waiting.
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Bell, CalendarDays, FileText, type LucideIcon } from "lucide-react";
 import { FactRow } from "@/components/fact-row";
-import { Panel, ScreenHeader } from "@/components/screen";
+import { useActivity } from "@/components/layout/activity";
+import { PhotoStrip } from "@/components/photo-strip";
+import { Panel } from "@/components/screen";
 import { Button } from "@/components/ui/button";
-import type { DocumentDetail } from "@/lib/contract/api";
+import type {
+  ApiError,
+  ConfirmDocumentResponse,
+  DocumentDetail,
+  HomePayload,
+} from "@/lib/contract/api";
+import { nextHref, parseRun, runAfter, savedNote } from "@/lib/confirm-flow";
 import { factLines } from "@/lib/facts";
 import type { PlanLine } from "@/lib/review-plan";
-import { cn } from "@/lib/utils";
 
 /**
  * The review screen shows, it never asks.
@@ -41,47 +49,29 @@ const PLAN_ICONS: Record<PlanLine["icon"], LucideIcon> = {
 const PLAN_HOLD =
   "Nothing happens until you say so, and never from a date you haven't checked.";
 
-/**
- * The width at which the fold below stops being a fold and becomes a column.
- *
- * 64rem, the same lg the grid below splits at, because the sidebar has taken
- * 240px by 768px and a photograph in half of what is left is smaller than the
- * phone's.
- */
-const WIDE = "(min-width: 64rem)";
+const SAVE_FAILED =
+  "We couldn't save that just now. Please try again in a moment.";
 
 export function ReviewForm({
   document,
   plan,
+  action,
+  left,
+  run,
 }: {
   document: DocumentDetail;
   plan: PlanLine[];
+  /** What the card says to do, word for word, for the note after saving. */
+  action: string | null;
+  /** "3 left to check", counted from the letters when the page was drawn. */
+  left: string;
+  /** Where this run of checks lands, as the address carried it. */
+  run: string | null;
 }) {
   const router = useRouter();
-
-  /*
-   * The photographs are one list of images, mounted once.
-   *
-   * On a phone they live behind a fold, because the letter is in her hand and
-   * the screen is small; on a wide screen there is room to show them beside the
-   * facts and no reason to hide them. Drawing the fold and the column as two
-   * blocks that take turns by media query would pull every page of the letter
-   * down twice, so instead the same details element is opened by the media
-   * query and loses its summary when it has nothing left to do.
-   */
-  const [wide, setWide] = useState(false);
-  const [photosOpen, setPhotosOpen] = useState(false);
-
-  useEffect(() => {
-    const query = window.matchMedia(WIDE);
-    const sync = () => {
-      setWide(query.matches);
-      if (query.matches) setPhotosOpen(true);
-    };
-    sync();
-    query.addEventListener("change", sync);
-    return () => query.removeEventListener("change", sync);
-  }, []);
+  const { flash } = useActivity();
+  const [saving, setSaving] = useState(false);
+  const [problem, setProblem] = useState<string | null>(null);
 
   /*
    * What the letter says, as it may be shown: no row for a date that could not
@@ -91,40 +81,101 @@ export function ReviewForm({
    */
   const facts = factLines(document.fields, document.identifiers);
 
-  const photos = document.pages.filter((page) => page.url);
+  /**
+   * Save, say so, and go on.
+   *
+   * The next letter is asked for after the save rather than known in advance,
+   * because a reading can land while she is looking at this one, and the one
+   * that just landed belongs at the end of the queue she is working through.
+   * If that question fails the letter is still saved, so she lands as if it
+   * had been the last one rather than being told something went wrong.
+   */
+  async function handleConfirm() {
+    if (saving) return;
+    setSaving(true);
+    setProblem(null);
 
-  const subtitle =
-    document.issuer && document.documentType
-      ? `${document.issuer} · ${document.documentType}`
-      : document.label;
+    let saved: ConfirmDocumentResponse;
+    try {
+      const response = await fetch(`/api/documents/${document.id}/confirm`, {
+        method: "POST",
+      });
+      if (!response.ok) {
+        const body = (await response
+          .json()
+          .catch(() => null)) as ApiError | null;
+        setProblem(body?.error?.message ?? SAVE_FAILED);
+        setSaving(false);
+        return;
+      }
+      saved = (await response.json()) as ConfirmDocumentResponse;
+    } catch {
+      setProblem(SAVE_FAILED);
+      setSaving(false);
+      return;
+    }
 
-  function handleConfirm() {
-    // Confirming is its own ticket, so for now this only takes the person back
-    // to the letter. Nothing here writes.
-    router.push(`/documents/${document.id}`);
+    let next: string | null = null;
+    try {
+      const response = await fetch("/api/home", { cache: "no-store" });
+      if (response.ok) {
+        const home = (await response.json()) as HomePayload;
+        next =
+          home.inbox.find(
+            (doc) => doc.status === "needs-review" && doc.id !== document.id,
+          )?.id ?? null;
+      }
+    } catch {
+      // Landing is the safe answer; see above.
+    }
+
+    // The note is said before the screen changes and outlives it: it belongs
+    // to the app, not to this page (src/components/layout/activity.tsx).
+    flash(savedNote(saved.task, action, document.label));
+    router.push(nextHref(runAfter(parseRun(run), saved.task), next));
   }
 
   return (
     <div>
-      <ScreenHeader title="Check what we found" subtitle={subtitle} />
+      {/* The prototype's review heading: the title, and under it who the letter
+          is from beside how many are left to check, this one included. */}
+      <div className="mb-[18px]">
+        <h1 className="text-title font-bold tracking-[-0.2px] text-foreground">
+          Check what we found
+        </h1>
+        <div className="mt-[3px] flex items-baseline justify-between gap-3">
+          <p className="min-w-0 text-sub text-ink-dim">{document.label}</p>
+          <span className="shrink-0 text-key font-bold text-ink-dim">
+            {left}
+          </span>
+        </div>
+      </div>
 
-      {/* The same sections at every width: what it says, what we will do, the
-          two answers, and the letter itself. On a wide screen the letter moves
-          to a column beside them rather than below. */}
+      {/* The same sections at every width: what it says with the photographs
+          under it, then what we will do and the two answers. On a wide screen
+          the second half moves beside the first rather than below. */}
       <div className="grid gap-3.5 lg:grid-cols-2 lg:items-start lg:gap-6">
-        <div className="flex flex-col gap-3.5">
+        {/* The photographs sit under the facts, because checking is comparing:
+            what we read against what the letter says. */}
+        <Panel title="What it says">
+          {/* Wrapped so the first row is a first child and loses its rule:
+              the card's own heading sits above this. */}
           {facts.length > 0 ? (
-            <Panel title="What it says">
-              {/* Wrapped so the first row is a first child and loses its rule:
-                  the card's own heading sits above this. */}
-              <div>
-                {facts.map((line) => (
-                  <FactRow key={line.key} line={line} />
-                ))}
-              </div>
-            </Panel>
+            <div>
+              {facts.map((line) => (
+                <FactRow key={line.key} line={line} />
+              ))}
+            </div>
           ) : null}
+          <PhotoStrip
+            documentId={document.id}
+            count={document.pages.length}
+            whose="letter"
+            className={facts.length > 0 ? "mt-3" : undefined}
+          />
+        </Panel>
 
+        <div className="flex flex-col gap-3.5">
           <Panel title="What DayKeeper will do">
             <div>
               {plan.map((line) => {
@@ -151,8 +202,21 @@ export function ReviewForm({
           </Panel>
 
           <div>
-            <Button size="block" className="mt-1" onClick={handleConfirm}>
-              Looks right, save it
+            {problem ? (
+              <p
+                role="status"
+                className="mb-2 rounded-[10px] bg-warn-bg px-3 py-[11px] text-caption leading-[1.45] text-warn"
+              >
+                {problem}
+              </p>
+            ) : null}
+            <Button
+              size="block"
+              className="mt-1"
+              disabled={saving}
+              onClick={() => void handleConfirm()}
+            >
+              {saving ? "Saving…" : "Looks right, save it"}
             </Button>
             <Button
               variant="quiet"
@@ -162,46 +226,6 @@ export function ReviewForm({
             />
           </div>
         </div>
-
-        <details
-          open={photosOpen}
-          onToggle={(event) => setPhotosOpen(event.currentTarget.open)}
-          className="rounded-[10px] border-2 border-line bg-card p-4 shadow-[var(--shadow-card)]"
-        >
-          <summary
-            className={cn(
-              "flex min-h-12 cursor-pointer items-center text-row font-semibold",
-              wide && "hidden",
-            )}
-          >
-            See the photographs
-          </summary>
-
-          {photos.length === 0 ? (
-            <p className="text-row text-foreground">
-              The photographs of this letter are not available.
-            </p>
-          ) : (
-            <ol className="space-y-3">
-              {photos.map((page) => (
-                <li key={page.id}>
-                  {/* A letter may run to ten pages, of which she sees the first
-                      before scrolling, so the rest are fetched when they are
-                      wanted. That also means storage signs each link at the
-                      moment the image is asked for, rather than signing ten at
-                      once and racing her scroll. */}
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={page.url}
-                    alt={`Page ${page.pageNumber}`}
-                    loading="lazy"
-                    className="w-full max-w-full rounded-lg border border-line"
-                  />
-                </li>
-              ))}
-            </ol>
-          )}
-        </details>
       </div>
     </div>
   );

@@ -39,7 +39,12 @@ import {
 } from "@/lib/contract/extraction";
 import { query, queryOne, transaction } from "@/server/db";
 import { documentLabel } from "@/server/documents";
-import { extractionProvider, readLetter } from "@/server/extraction";
+import {
+  ExtractionFailure,
+  extractionProvider,
+  readLetter,
+  type Reading,
+} from "@/server/extraction";
 import { deleteObjects, putObject, uploadObjectKey } from "@/server/storage";
 
 /**
@@ -243,22 +248,41 @@ export async function createDocument(
 }
 
 /**
+ * KAN-59: how many times one letter's photographs are read before the letter is
+ * called failed. A model call that errors, answers with something that is not
+ * JSON, or answers outside the contract usually does not do it twice running,
+ * and a person told "something went wrong on our side" about a hiccup the
+ * second call would have cleared has been told something that was not worth
+ * her attention.
+ */
+export const MAX_READING_ATTEMPTS = 3;
+
+/** The pause before trying again, so a call that failed for being too early is not repeated at once. */
+const RETRY_PAUSE_MS = 2000;
+
+/**
  * Read the letter, and write down whatever happened.
  *
  * Never throws. It runs after the response has gone out (`after()` in the route
  * handler), so there is nobody left to tell: every outcome, including the ones
  * nobody foresaw, becomes a row rather than an unhandled rejection.
  *
- * An ExtractionFailure and an error nobody expected are treated alike on
- * purpose. This release has no rejection and no repair, so there is one thing
- * to say about a reading that did not happen, and
- * src/server/extraction/provider.ts has the argument.
+ * KAN-59: a reading that fails in a way worth trying again is tried again, up
+ * to MAX_READING_ATTEMPTS in all. Every attempt is its own extraction_runs row,
+ * so the table says how many calls a letter took and what each one said, and
+ * the letter itself stays 'processing' (the screen says "reading…") until one
+ * succeeds or the last one fails. Only ExtractionFailure says whether trying
+ * again could help (src/server/extraction/provider.ts); any other error is a
+ * bug or a database that will not take a write, and neither is fixed by
+ * paying for another model call.
  */
 export async function readDocument(
   documentId: string,
   userId: string,
   pages: UploadedPage[],
+  options: { pauseMs?: number } = {},
 ): Promise<void> {
+  const pauseMs = options.pauseMs ?? RETRY_PAUSE_MS;
   // Claiming the run is also the ownership check, so knowing a document id is
   // not enough to spend a model call on somebody else's letter. Restricting it
   // to a queued run means a second call for the same letter finds nothing to do
@@ -290,9 +314,9 @@ export async function readDocument(
       `[uploads] could not start the reading of document ${documentId}`,
       error,
     );
-    // Nothing is going to pick this letter up later. There is no retry and no
-    // repair endpoint in this release, and the request that would have carried
-    // a second attempt has already been answered, so a document left saying
+    // Nothing is going to pick this letter up later. There is no repair
+    // endpoint in this release, and the request that would have carried the
+    // reading has already been answered, so a document left saying
     // 'processing' would be polled forever by a person who is never told
     // anything. The run stays 'queued', which is the true account of it: the
     // call never started.
@@ -300,151 +324,268 @@ export async function readDocument(
     return;
   }
 
-  try {
-    const reading = await readLetter({
-      documentId,
-      pages: pages.map((page) => ({
+  const input = {
+    documentId,
+    pages: pages.map((page) => ({
+      pageNumber: page.pageNumber,
+      // Where these bytes were stored, derived the way createDocument derived
+      // it. The reader is handed the bytes it needs; the key is what lets a
+      // reading be traced back to the object it looked at.
+      storagePath: uploadObjectKey({
+        userId,
+        documentId,
         pageNumber: page.pageNumber,
-        // Where these bytes were stored, derived the way createDocument derived
-        // it. The reader is handed the bytes it needs; the key is what lets a
-        // reading be traced back to the object it looked at.
-        storagePath: uploadObjectKey({
-          userId,
-          documentId,
-          pageNumber: page.pageNumber,
-          contentType: page.mimeType,
-        }),
-        mimeType: page.mimeType,
-        bytes: page.bytes,
-      })),
-    });
+        contentType: page.mimeType,
+      }),
+      mimeType: page.mimeType,
+      bytes: page.bytes,
+    })),
+  };
 
-    const result = reading.result;
-    const columns = columnsFromReading(result);
+  for (let attempt = 1; ; attempt++) {
+    let reading: Reading;
+    try {
+      reading = await readLetter(input);
+    } catch (error) {
+      const detail = failureDetail(error);
+      console.error(
+        `[uploads] reading document ${documentId} failed, attempt ${attempt} of ${MAX_READING_ATTEMPTS}`,
+        error,
+      );
 
-    // One transaction, because a run that says 'succeeded' with no fields under
-    // it, and a document named after a reading that was never recorded, are
-    // both states nothing downstream knows how to read.
-    await transaction(async (client) => {
-      for (const field of result.fields) {
-        await client.query(
-          `INSERT INTO extracted_fields
-             (extraction_run_id, field_key, extracted_value, status, confidence)
-           VALUES ($1, $2, $3, $4, $5)`,
-          [
-            runId,
-            field.key,
-            field.value,
-            field.status,
-            field.confidence ?? null,
-          ],
-        );
+      const worthAnotherTry =
+        attempt < MAX_READING_ATTEMPTS &&
+        error instanceof ExtractionFailure &&
+        error.retryable;
+      if (!worthAnotherTry) {
+        await recordFailedReading(runId, documentId, userId, detail);
+        return;
       }
 
-      // KAN-58: every number the letter printed, in the order the reader gave.
-      for (const [position, identifier] of result.identifiers.entries()) {
-        await client.query(
-          `INSERT INTO extracted_identifiers
-             (extraction_run_id, position, label, value, status)
-           VALUES ($1, $2, $3, $4, $5)`,
-          [
-            runId,
-            position,
-            identifier.label,
-            identifier.value,
-            identifier.status,
-          ],
-        );
+      const next = await startNextAttempt(runId, documentId, detail);
+      if (!next) {
+        // The attempt that failed could not be closed and the next one could
+        // not be opened, so there will be no next one: say so on the letter
+        // rather than leave it 'processing' for ever.
+        await recordFailedReading(runId, documentId, userId, detail);
+        return;
       }
+      runId = next;
+      if (pauseMs > 0) {
+        await new Promise((resolve) => setTimeout(resolve, pauseMs));
+      }
+      continue;
+    }
 
-      // failure_detail is set back to null in so many words: db/schema.sql
-      // refuses a succeeded run that carries one, and saying it here means the
-      // constraint and the statement agree in writing.
+    try {
+      await writeReading(runId, documentId, userId, reading);
+    } catch (error) {
+      // The model answered and the database would not take it. Reading the
+      // letter again would buy the same answer and the same refusal.
+      console.error(
+        `[uploads] could not write the reading of document ${documentId}`,
+        error,
+      );
+      await recordFailedReading(
+        runId,
+        documentId,
+        userId,
+        failureDetail(error),
+      );
+    }
+    return;
+  }
+}
+
+/**
+ * Developer text for a run that failed, stored on the run and shown to nobody.
+ * The name is kept beside the message because "ExtractionFailure" and
+ * "TypeError" are the first thing anyone reading the row wants to know, and
+ * because it also guarantees the column is never the empty string.
+ */
+function failureDetail(error: unknown): string {
+  return error instanceof Error
+    ? `${error.name}: ${error.message}`
+    : String(error);
+}
+
+/**
+ * Close an attempt that failed and open the next, as one unit, and return the
+ * new run's id. The new run is written straight to 'processing', because the
+ * call is about to be made by the code that wrote it: there is no moment at
+ * which it is queued and waiting for somebody.
+ *
+ * Null when the database would not take it, which the caller treats as the end
+ * of the reading.
+ */
+async function startNextAttempt(
+  runId: string,
+  documentId: string,
+  detail: string,
+): Promise<string | null> {
+  try {
+    return await transaction(async (client) => {
       await client.query(
         `UPDATE extraction_runs
-            SET status = 'succeeded',
-                model = $2,
-                contract_version = $3,
-                raw_response = $4,
-                failure_detail = NULL,
-                finished_at = now(),
-                duration_ms = $5
+            SET status = 'failed',
+                failure_detail = $2,
+                finished_at = now()
           WHERE id = $1`,
+        [runId, detail],
+      );
+
+      // Same reader, same model, same letter: another attempt at the one
+      // reading, not a second opinion.
+      const next = await client.query<{ id: string }>(
+        `INSERT INTO extraction_runs (document_id, status, provider, model)
+         SELECT document_id, 'processing', provider, model
+           FROM extraction_runs
+          WHERE id = $1
+         RETURNING id`,
+        [runId],
+      );
+      return next.rows[0]?.id ?? null;
+    });
+  } catch (error) {
+    console.error(
+      `[uploads] could not start another reading of document ${documentId}`,
+      error,
+    );
+    return null;
+  }
+}
+
+/**
+ * Write a reading that came back, on the run, the fields and the letter.
+ *
+ * One transaction, because a run that says 'succeeded' with no fields under
+ * it, and a document named after a reading that was never recorded, are both
+ * states nothing downstream knows how to read.
+ */
+async function writeReading(
+  runId: string,
+  documentId: string,
+  userId: string,
+  reading: Reading,
+): Promise<void> {
+  const result = reading.result;
+  const columns = columnsFromReading(result);
+
+  await transaction(async (client) => {
+    for (const field of result.fields) {
+      await client.query(
+        `INSERT INTO extracted_fields
+           (extraction_run_id, field_key, extracted_value, status, confidence)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [runId, field.key, field.value, field.status, field.confidence ?? null],
+      );
+    }
+
+    // KAN-58: every number the letter printed, in the order the reader gave.
+    for (const [position, identifier] of result.identifiers.entries()) {
+      await client.query(
+        `INSERT INTO extracted_identifiers
+           (extraction_run_id, position, label, value, status)
+         VALUES ($1, $2, $3, $4, $5)`,
         [
           runId,
-          result.model,
-          result.contract_version,
-          JSON.stringify(result),
-          // The call's own record of how long it took, measured by the provider
-          // rather than by arithmetic across two clocks.
-          Math.round(reading.call.seconds * 1000),
+          position,
+          identifier.label,
+          identifier.value,
+          identifier.status,
         ],
+      );
+    }
+
+    // failure_detail is set back to null in so many words: db/schema.sql
+    // refuses a succeeded run that carries one, and saying it here means the
+    // constraint and the statement agree in writing.
+    await client.query(
+      `UPDATE extraction_runs
+          SET status = 'succeeded',
+              model = $2,
+              contract_version = $3,
+              raw_response = $4,
+              failure_detail = NULL,
+              finished_at = now(),
+              duration_ms = $5
+        WHERE id = $1`,
+      [
+        runId,
+        result.model,
+        result.contract_version,
+        JSON.stringify(result),
+        // The call's own record of how long it took, measured by the provider
+        // rather than by arithmetic across two clocks.
+        Math.round(reading.call.seconds * 1000),
+      ],
+    );
+
+    await client.query(
+      `UPDATE documents
+          SET status = 'needs-review',
+              issuer = $3,
+              document_type = $4,
+              due_date = $5,
+              due_time = $6,
+              amount_text = $7,
+              reference = $8,
+              open_payload = $9
+        WHERE id = $1
+          AND user_id = $2`,
+      [
+        documentId,
+        userId,
+        columns.issuer,
+        columns.documentType,
+        columns.dueDate,
+        columns.dueTime,
+        columns.amountText,
+        columns.reference,
+        JSON.stringify(columns.openPayload),
+      ],
+    );
+  });
+}
+
+/**
+ * The last attempt failed: say so on the run and on the letter.
+ *
+ * Swallows its own failure for the same reason readDocument() never throws.
+ */
+async function recordFailedReading(
+  runId: string,
+  documentId: string,
+  userId: string,
+  detail: string,
+): Promise<void> {
+  try {
+    await transaction(async (client) => {
+      await client.query(
+        `UPDATE extraction_runs
+            SET status = 'failed',
+                failure_detail = $2,
+                finished_at = now()
+          WHERE id = $1`,
+        [runId, detail],
       );
 
       await client.query(
         `UPDATE documents
-            SET status = 'needs-review',
-                issuer = $3,
-                document_type = $4,
-                due_date = $5,
-                due_time = $6,
-                amount_text = $7,
-                reference = $8,
-                open_payload = $9
+            SET status = 'failed'
           WHERE id = $1
             AND user_id = $2`,
-        [
-          documentId,
-          userId,
-          columns.issuer,
-          columns.documentType,
-          columns.dueDate,
-          columns.dueTime,
-          columns.amountText,
-          columns.reference,
-          JSON.stringify(columns.openPayload),
-        ],
+        [documentId, userId],
       );
     });
-  } catch (error) {
-    // Developer text, stored on the run and shown to nobody. The name is kept
-    // beside the message because "ExtractionFailure" and "TypeError" are the
-    // first thing anyone reading this row wants to know, and because it also
-    // guarantees the column is never the empty string.
-    const detail =
-      error instanceof Error
-        ? `${error.name}: ${error.message}`
-        : String(error);
-    console.error(`[uploads] reading document ${documentId} failed`, error);
-
-    try {
-      await transaction(async (client) => {
-        await client.query(
-          `UPDATE extraction_runs
-              SET status = 'failed',
-                  failure_detail = $2,
-                  finished_at = now()
-            WHERE id = $1`,
-          [runId, detail],
-        );
-
-        await client.query(
-          `UPDATE documents
-              SET status = 'failed'
-            WHERE id = $1
-              AND user_id = $2`,
-          [documentId, userId],
-        );
-      });
-    } catch (writeError) {
-      // The letter stays on 'processing' and this line is the only record of
-      // why. There is nothing further to try: the request is long gone, and a
-      // database that will not take this write will not take a retry either.
-      console.error(
-        `[uploads] could not record the failed reading of document ${documentId}`,
-        writeError,
-      );
-    }
+  } catch (writeError) {
+    // The letter stays on 'processing' and this line is the only record of
+    // why. There is nothing further to try: the request is long gone, and a
+    // database that will not take this write will not take another either.
+    console.error(
+      `[uploads] could not record the failed reading of document ${documentId}`,
+      writeError,
+    );
   }
 }
 
