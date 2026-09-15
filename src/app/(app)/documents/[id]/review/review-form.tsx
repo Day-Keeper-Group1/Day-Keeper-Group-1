@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { ExtractedField, MockDocument } from "@/lib/mock-data";
+import type { DocumentDetail, ExtractedFieldView } from "@/lib/contract/api";
 
 /**
  * The review screen shows, it never asks.
@@ -33,8 +33,8 @@ export function ReviewForm({
   document,
   fields,
 }: {
-  document: MockDocument;
-  fields: ExtractedField[];
+  document: DocumentDetail;
+  fields: ExtractedFieldView[];
 }) {
   const router = useRouter();
 
@@ -92,6 +92,7 @@ export function ReviewForm({
             </Button>
             <Button
               variant="outline"
+              nativeButton={false}
               render={<Link href="/documents/new">Take the photos again</Link>}
             />
           </div>

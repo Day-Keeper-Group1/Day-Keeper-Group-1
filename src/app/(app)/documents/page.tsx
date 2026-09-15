@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { FolderOpen, Search } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
@@ -16,7 +16,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MOCK_DOCUMENTS } from "@/lib/mock-data";
+import type { DocumentSummary } from "@/lib/contract/api";
 
 const FILTERS: { label: string; value: "all" | Status }[] = [
   { label: "All", value: "all" },
@@ -27,21 +27,68 @@ const FILTERS: { label: string; value: "all" | Status }[] = [
   { label: "Archived", value: "archived" },
 ];
 
+/** The browser owns display timezone; the API keeps the unambiguous UTC instant. */
+function formatUploadedAt(instant: string): string {
+  const date = new Date(instant);
+  if (Number.isNaN(date.getTime())) return instant;
+  return new Intl.DateTimeFormat(undefined, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZoneName: "short",
+  }).format(date);
+}
+
 export default function DocumentArchivePage() {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<"all" | Status>("all");
+  const [documents, setDocuments] = useState<DocumentSummary[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const documents = useMemo(() => {
-    return MOCK_DOCUMENTS.filter((doc) => {
+  useEffect(() => {
+    let active = true;
+    async function loadDocuments() {
+      try {
+        const response = await fetch("/api/documents", { cache: "no-store" });
+        const body = await response.json();
+        if (!response.ok) {
+          throw new Error(
+            body.error?.message ?? "We could not load your documents.",
+          );
+        }
+        if (active) setDocuments(body);
+      } catch (caught) {
+        if (active) {
+          setError(
+            caught instanceof Error
+              ? caught.message
+              : "We could not load your documents.",
+          );
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+    void loadDocuments();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const filteredDocuments = useMemo(() => {
+    return documents.filter((doc) => {
       const matchesFilter = filter === "all" || doc.status === filter;
       const matchesQuery =
         query.trim().length === 0 ||
-        `${doc.issuer} ${doc.documentType}`
+        `${doc.label} ${doc.issuer ?? ""} ${doc.documentType ?? ""}`
           .toLowerCase()
           .includes(query.trim().toLowerCase());
       return matchesFilter && matchesQuery;
     });
-  }, [query, filter]);
+  }, [documents, query, filter]);
 
   return (
     <div className="space-y-6">
@@ -79,7 +126,15 @@ export default function DocumentArchivePage() {
         </Tabs>
       </div>
 
-      {documents.length === 0 ? (
+      {loading ? (
+        <p className="text-sm text-muted-foreground">
+          Loading your documents...
+        </p>
+      ) : error ? (
+        <p role="alert" className="text-sm text-destructive">
+          {error}
+        </p>
+      ) : filteredDocuments.length === 0 ? (
         <EmptyState
           icon={FolderOpen}
           title="No documents match"
@@ -99,18 +154,22 @@ export default function DocumentArchivePage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {documents.map((doc) => (
+                {filteredDocuments.map((doc) => (
                   <TableRow key={doc.id} className="cursor-pointer">
                     <TableCell>
                       <Link
-                        href={`/documents/${doc.id}`}
+                        href={
+                          doc.status === "needs-review"
+                            ? `/documents/${doc.id}/review`
+                            : `/documents/${doc.id}`
+                        }
                         className="block font-medium text-foreground"
                       >
-                        {doc.issuer}
+                        {doc.label}
                       </Link>
                     </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {doc.documentType}
+                      {doc.documentType ?? "-"}
                     </TableCell>
                     <TableCell>
                       <StatusBadge status={doc.status} />
@@ -119,7 +178,7 @@ export default function DocumentArchivePage() {
                       {doc.dueDate ?? "-"}
                     </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {doc.uploadedAt}
+                      {formatUploadedAt(doc.uploadedAt)}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -128,18 +187,23 @@ export default function DocumentArchivePage() {
           </div>
 
           <ul className="space-y-2 md:hidden">
-            {documents.map((doc) => (
+            {filteredDocuments.map((doc) => (
               <li key={doc.id}>
                 <Link
-                  href={`/documents/${doc.id}`}
+                  href={
+                    doc.status === "needs-review"
+                      ? `/documents/${doc.id}/review`
+                      : `/documents/${doc.id}`
+                  }
                   className="flex items-center justify-between gap-3 rounded-lg border border-border px-4 py-3"
                 >
                   <span className="min-w-0">
                     <span className="block truncate text-sm font-medium text-foreground">
-                      {doc.issuer}
+                      {doc.label}
                     </span>
                     <span className="block text-xs text-muted-foreground">
-                      {doc.documentType} &middot; {doc.uploadedAt}
+                      {doc.documentType ?? "Reading"} &middot;{" "}
+                      {formatUploadedAt(doc.uploadedAt)}
                     </span>
                   </span>
                   <StatusBadge status={doc.status} />

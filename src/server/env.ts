@@ -12,74 +12,95 @@
 import "server-only";
 import { z } from "zod";
 
-const envSchema = z.object({
-  DATABASE_URL: z
-    .string()
-    .min(
-      1,
-      "DATABASE_URL is not set. Copy .env.example to .env.local, then run: docker compose up -d",
-    )
-    .refine(
-      (v) => v.startsWith("postgres://") || v.startsWith("postgresql://"),
-      "DATABASE_URL must be a postgres:// connection string",
-    ),
+const envSchema = z
+  .object({
+    DATABASE_URL: z
+      .string()
+      .min(
+        1,
+        "DATABASE_URL is not set. Copy .env.example to .env.local, then run: docker compose up -d",
+      )
+      .refine(
+        (v) => v.startsWith("postgres://") || v.startsWith("postgresql://"),
+        "DATABASE_URL must be a postgres:// connection string",
+      ),
 
-  /**
-   * Where the photographs live: an S3-compatible endpoint. Locally that is the
-   * MinIO in docker-compose.yml; deployed it is whatever bucket the host
-   * provides. The protocol is the same either way, which is the whole point of
-   * choosing one now rather than writing to the server's disk and rewriting it
-   * later. See db/schema.sql.
-   */
-  STORAGE_ENDPOINT: z
-    .string()
-    .min(
-      1,
-      "STORAGE_ENDPOINT is not set. Copy .env.example to .env.local, then run: docker compose up -d",
-    )
-    .refine((v) => /^https?:\/\//.test(v), "STORAGE_ENDPOINT must be a URL"),
+    /**
+     * Where the photographs live: an S3-compatible endpoint. Locally that is the
+     * MinIO in docker-compose.yml; deployed it is whatever bucket the host
+     * provides. The protocol is the same either way, which is the whole point of
+     * choosing one now rather than writing to the server's disk and rewriting it
+     * later. See db/schema.sql.
+     */
+    STORAGE_ENDPOINT: z
+      .string()
+      .min(
+        1,
+        "STORAGE_ENDPOINT is not set. Copy .env.example to .env.local, then run: docker compose up -d",
+      )
+      .refine((v) => /^https?:\/\//.test(v), "STORAGE_ENDPOINT must be a URL"),
 
-  /**
-   * The address the BROWSER uses to reach the same storage.
-   *
-   * A signed URL is signed for one host, so the host the browser calls has to
-   * be the host we signed. On a laptop both are localhost and this can be left
-   * alone. They part company the moment the app itself runs in a container,
-   * where the server says `http://storage:9000` and the browser must still say
-   * `http://localhost:59000`; a signed URL made with the wrong one comes back
-   * as an access error that looks like a permissions bug and is not.
-   */
-  STORAGE_PUBLIC_ENDPOINT: z.string().optional(),
+    /**
+     * The address the BROWSER uses to reach the same storage.
+     *
+     * A signed URL is signed for one host, so the host the browser calls has to
+     * be the host we signed. On a laptop both are localhost and this can be left
+     * alone. They part company the moment the app itself runs in a container,
+     * where the server says `http://storage:9000` and the browser must still say
+     * `http://localhost:59000`; a signed URL made with the wrong one comes back
+     * as an access error that looks like a permissions bug and is not.
+     */
+    STORAGE_PUBLIC_ENDPOINT: z.string().optional(),
 
-  /** The bucket. One bucket holds everything; the key prefix separates people. */
-  STORAGE_BUCKET: z.string().min(1).default("daykeeper"),
+    /** The bucket. One bucket holds everything; the key prefix separates people. */
+    STORAGE_BUCKET: z.string().min(1).default("daykeeper"),
 
-  STORAGE_ACCESS_KEY: z
-    .string()
-    .min(1, "STORAGE_ACCESS_KEY is not set. See .env.example."),
-  STORAGE_SECRET_KEY: z
-    .string()
-    .min(1, "STORAGE_SECRET_KEY is not set. See .env.example."),
+    STORAGE_ACCESS_KEY: z
+      .string()
+      .min(1, "STORAGE_ACCESS_KEY is not set. See .env.example."),
+    STORAGE_SECRET_KEY: z
+      .string()
+      .min(1, "STORAGE_SECRET_KEY is not set. See .env.example."),
 
-  /**
-   * Which extraction provider to use.
-   *
-   * 'mock' is the default and needs no credentials, so the whole product runs
-   * end to end before anyone has an API key. Swapping this is the single switch
-   * that turns the real reader on.
-   */
-  AI_EXTRACTION_PROVIDER: z.enum(["mock", "openai", "bedrock"]).default("mock"),
+    /**
+     * Which extraction provider to use.
+     *
+     * 'mock' is the default and needs no credentials, so the whole product runs
+     * end to end before anyone has an API key. Swapping this is the single switch
+     * that turns the real reader on.
+     */
+    AI_EXTRACTION_PROVIDER: z
+      .enum(["mock", "openai", "bedrock"])
+      .default("mock"),
 
-  /**
-   * How long a signed-in session lasts. Long, because asking someone with a
-   * failing memory to sign in repeatedly is a way of losing them.
-   */
-  SESSION_TTL_DAYS: z.coerce.number().int().positive().default(30),
+    /** Credentials stay server-side: never prefix these with NEXT_PUBLIC_. */
+    OPENAI_API_KEY: z.string().min(1).optional(),
+    OPENAI_BASE_URL: z
+      .string()
+      .url("OPENAI_BASE_URL must be a URL")
+      .default("https://api.openai.com/v1"),
+    OPENAI_EXTRACTION_MODEL: z.string().min(1).default("gpt-5.6-luna"),
 
-  NODE_ENV: z
-    .enum(["development", "test", "production"])
-    .default("development"),
-});
+    /**
+     * How long a signed-in session lasts. Long, because asking someone with a
+     * failing memory to sign in repeatedly is a way of losing them.
+     */
+    SESSION_TTL_DAYS: z.coerce.number().int().positive().default(30),
+
+    NODE_ENV: z
+      .enum(["development", "test", "production"])
+      .default("development"),
+  })
+  .superRefine((value, ctx) => {
+    if (value.AI_EXTRACTION_PROVIDER === "openai" && !value.OPENAI_API_KEY) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["OPENAI_API_KEY"],
+        message:
+          "OPENAI_API_KEY is required when AI_EXTRACTION_PROVIDER=openai. Configure it in your host's secret manager.",
+      });
+    }
+  });
 
 export type Env = z.infer<typeof envSchema>;
 

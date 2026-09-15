@@ -25,6 +25,7 @@ export default function UploadDocumentPage() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const atLimit = photos.length >= MAX_PAGES;
 
@@ -50,14 +51,31 @@ export default function UploadDocumentPage() {
     });
   }
 
-  function handleSubmit() {
+  async function handleSubmit() {
     if (photos.length === 0) return;
     setSubmitting(true);
-    // No backend yet (see AGENTS.md: the API and the pages are the work
-    // still to build), so this is where a real POST /api/documents would
-    // go. The mock flow moves straight to the letters area, where the
-    // letter would appear while it is being read.
-    router.push("/documents");
+    setError(null);
+    const form = new FormData();
+    photos.forEach((photo) => form.append("pages", photo.file));
+    try {
+      const response = await fetch("/api/documents", {
+        method: "POST",
+        body: form,
+      });
+      const body = await response.json();
+      if (!response.ok)
+        throw new Error(
+          body.error?.message ?? "We could not upload those photos.",
+        );
+      router.push("/documents");
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "We could not upload those photos.",
+      );
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -70,7 +88,7 @@ export default function UploadDocumentPage() {
       <input
         ref={inputRef}
         type="file"
-        accept="image/*,.pdf"
+        accept="image/*"
         capture="environment"
         className="sr-only"
         onChange={(event) => {
@@ -160,6 +178,11 @@ export default function UploadDocumentPage() {
           Every photo you take here belongs to this one letter. They go
           together, and they are read as one. Up to {MAX_PAGES} pages.
         </p>
+        {error ? (
+          <p role="alert" className="text-center text-sm text-destructive">
+            {error}
+          </p>
+        ) : null}
       </div>
     </div>
   );

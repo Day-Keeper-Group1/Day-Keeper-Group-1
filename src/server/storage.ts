@@ -153,6 +153,17 @@ export async function putObject(
   );
 }
 
+/** Load one photograph's bytes for the extraction provider. */
+export async function getObjectBytes(key: string): Promise<Uint8Array> {
+  const object = await internal().send(
+    new GetObjectCommand({ Bucket: env().STORAGE_BUCKET, Key: key }),
+  );
+  if (!object.Body) {
+    throw new Error(`Storage object "${key}" had no body`);
+  }
+  return object.Body.transformToByteArray();
+}
+
 /**
  * How long a link to a photograph stays good. Long enough to look at a letter
  * and think about it, short enough that a link copied out of the page stops
