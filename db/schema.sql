@@ -542,23 +542,6 @@ CREATE TABLE audit_logs (
 CREATE INDEX audit_logs_created_idx ON audit_logs (created_at DESC);
 CREATE INDEX audit_logs_actor_idx ON audit_logs (actor_id, created_at DESC);
 
--- Every prompt sent to a model, so an accuracy claim can be reproduced and a
--- reading that went wrong can be argued about with the evidence present. Kept
--- apart from audit_logs because it has a different retention story and a
--- different audience.
-CREATE TABLE ai_prompt_logs (
-  id                uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  extraction_run_id uuid REFERENCES extraction_runs(id) ON DELETE SET NULL,
-  provider          text NOT NULL,
-  model             text,
-  prompt            text NOT NULL,
-  prompt_tokens     integer,
-  completion_tokens integer,
-  created_at        timestamptz NOT NULL DEFAULT now()
-);
-
-CREATE INDEX ai_prompt_logs_run_idx ON ai_prompt_logs (extraction_run_id);
-
 -- ---------------------------------------------------------------------------
 -- updated_at maintenance
 --

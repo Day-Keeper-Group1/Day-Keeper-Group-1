@@ -122,7 +122,7 @@ doing its job.
   grid(
     rows: (auto, auto, auto),
     row-gutter: 4pt,
-    piece("PostgreSQL")[Twelve tables. Everything except the photographs.],
+    piece("PostgreSQL")[Eleven tables. Everything except the photographs.],
     piece("An S3 bucket")[The photographs. MinIO on a laptop, a real bucket later. Same protocol either way.],
     piece("One reading step")[A model looks at the pages twice, and a third time when the two readings differ, and returns six fields. Nothing else in the product calls a model.],
   ),

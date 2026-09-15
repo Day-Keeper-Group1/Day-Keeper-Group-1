@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>The twelve tables</title>
+<title>The eleven tables</title>
 <link rel="stylesheet" href="_style.css">
 <style>
   /* A schema map wants more width than the portrait diagrams: it lands on the
@@ -55,7 +55,7 @@
 </head>
 <body>
 <div class="sheet">
-  <h1>The twelve tables, and which step writes each</h1>
+  <h1>The eleven tables, and which step writes each</h1>
 
   <div class="canvas">
 
@@ -332,25 +332,6 @@
     <div class="note" style="left:1310px; top:800px; width:240px">
       Who did what, to which record. It has nowhere to put the contents of a
       letter, and that is the point rather than an omission.
-    </div>
-
-    <div class="tbl aside" style="left:1594px; top:800px">
-      <h2>ai_prompt_logs</h2>
-      <ul>
-        <li class="key">id</li>
-        <li>extraction_run_id</li>
-        <li>provider</li>
-        <li>model</li>
-        <li>prompt</li>
-        <li>prompt_tokens</li>
-        <li>completion_tokens</li>
-        <li>created_at</li>
-      </ul>
-    </div>
-    <div class="note" style="left:1834px; top:800px; width:240px">
-      Nothing writes it yet. The prompt is one file,
-      <code>src/server/extraction/prompt.md</code>, which a test holds equal
-      to the experiment's.
     </div>
 
     <div class="legend">
