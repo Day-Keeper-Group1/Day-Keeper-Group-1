@@ -46,6 +46,14 @@ import {
   type Reading,
 } from "@/server/extraction";
 import { deleteObjects, putObject, uploadObjectKey } from "@/server/storage";
+import {
+  type Cell,
+  JUDGE,
+  MAX_ROUNDS,
+  READER,
+  decide,
+  unsureOfWhatMatters,
+} from "@/server/extraction/scheme";
 
 /**
  * One photographed page, already read into memory and already judged.
@@ -248,33 +256,45 @@ export async function createDocument(
 }
 
 /**
- * KAN-59: how many times one letter's photographs are read before the letter is
- * called failed. A model call that errors, answers with something that is not
- * JSON, or answers outside the contract usually does not do it twice running,
- * and a person told "something went wrong on our side" about a hiccup the
- * second call would have cleared has been told something that was not worth
- * her attention.
+ * KAN-59: how many times one model call is made before it is given up on. A
+ * call that errors, answers with something that is not JSON, or answers outside
+ * the contract usually does not do it twice running, and a person told
+ * "something went wrong on our side" about a hiccup the second call would have
+ * cleared has been told something that was not worth her attention.
+ *
+ * KAN-63: this counts attempts at one call. A letter read under the scheme
+ * makes two or three calls a round, and each call gets this many attempts.
  */
 export const MAX_READING_ATTEMPTS = 3;
 
 /** The pause before trying again, so a call that failed for being too early is not repeated at once. */
 const RETRY_PAUSE_MS = 2000;
 
+/** What one call came to after its attempts: a reading, or the reason there is none. */
+type CallOutcome =
+  { ok: true; reading: Reading } | { ok: false; detail: string };
+
 /**
- * Read the letter, and write down whatever happened.
+ * Read the letter under the scheme, and write down whatever happened.
  *
  * Never throws. It runs after the response has gone out (`after()` in the route
  * handler), so there is nobody left to tell: every outcome, including the ones
  * nobody foresaw, becomes a row rather than an unhandled rejection.
  *
- * KAN-59: a reading that fails in a way worth trying again is tried again, up
- * to MAX_READING_ATTEMPTS in all. Every attempt is its own extraction_runs row,
- * so the table says how many calls a letter took and what each one said, and
- * the letter itself stays 'processing' (the screen says "reading…") until one
- * succeeds or the last one fails. Only ExtractionFailure says whether trying
- * again could help (src/server/extraction/provider.ts); any other error is a
- * bug or a database that will not take a write, and neither is fixed by
- * paying for another model call.
+ * KAN-63: the scheme in docs/extraction.md, run in rounds. A round is one
+ * extraction_runs row: two reader calls at once, a judge call when they differ
+ * (src/server/extraction/scheme.ts decides), and every call and every attempt
+ * at it a model_calls row under the round. The letter stays 'processing' (the
+ * screen says "reading…") until a round ends it. docs/api.md has the whole
+ * table of what can happen; in short:
+ *
+ *   - a call that still fails after MAX_READING_ATTEMPTS fails the letter at
+ *     once, because the service is failing and reading again will not help;
+ *   - a round whose three readings disagree is closed as failed and the letter
+ *     is read again from the start, up to MAX_ROUNDS rounds;
+ *   - a decided reading whose due date or amount is not confirmed fails the
+ *     letter (src/lib/contract/extraction.ts says why);
+ *   - anything else decided is written, and the letter is ready to check.
  */
 export async function readDocument(
   documentId: string,
@@ -342,46 +362,89 @@ export async function readDocument(
     })),
   };
 
-  for (let attempt = 1; ; attempt++) {
-    let reading: Reading;
-    try {
-      reading = await readLetter(input);
-    } catch (error) {
-      const detail = failureDetail(error);
-      console.error(
-        `[uploads] reading document ${documentId} failed, attempt ${attempt} of ${MAX_READING_ATTEMPTS}`,
-        error,
+  for (let round = 1; ; round++) {
+    const currentRun = runId;
+    const call = (role: "reader" | "judge", slot: number, cell: Cell) =>
+      callWithAttempts(
+        currentRun,
+        documentId,
+        input,
+        role,
+        slot,
+        cell,
+        pauseMs,
       );
 
-      const worthAnotherTry =
-        attempt < MAX_READING_ATTEMPTS &&
-        error instanceof ExtractionFailure &&
-        error.retryable;
-      if (!worthAnotherTry) {
+    // The two reader calls are independent, so they are made at the same time.
+    const [first, second] = await Promise.all([
+      call("reader", 1, READER),
+      call("reader", 2, READER),
+    ]);
+    if (!first.ok || !second.ok) {
+      const broken = !first.ok ? first : (second as { detail: string });
+      await recordFailedReading(runId, documentId, userId, broken.detail);
+      return;
+    }
+
+    let decision = decide(first.reading.result, second.reading.result);
+    let judge: CallOutcome | null = null;
+    if (decision.outcome === "needs-judge") {
+      judge = await call("judge", 1, JUDGE);
+      if (!judge.ok) {
+        await recordFailedReading(runId, documentId, userId, judge.detail);
+        return;
+      }
+      decision = decide(
+        first.reading.result,
+        second.reading.result,
+        judge.reading.result,
+      );
+    }
+
+    if (decision.outcome !== "decided") {
+      const detail = `SchemeUndecided: round ${round} of ${MAX_ROUNDS}, the readings differ on ${decision.parts.join(", ")}`;
+      if (round >= MAX_ROUNDS) {
         await recordFailedReading(runId, documentId, userId, detail);
         return;
       }
-
       const next = await startNextAttempt(runId, documentId, detail);
       if (!next) {
-        // The attempt that failed could not be closed and the next one could
+        // The round that failed could not be closed and the next one could
         // not be opened, so there will be no next one: say so on the letter
         // rather than leave it 'processing' for ever.
         await recordFailedReading(runId, documentId, userId, detail);
         return;
       }
       runId = next;
-      if (pauseMs > 0) {
-        await new Promise((resolve) => setTimeout(resolve, pauseMs));
-      }
       continue;
     }
 
+    const unsure = unsureOfWhatMatters(decision.result);
+    if (unsure.length > 0) {
+      await recordFailedReading(
+        runId,
+        documentId,
+        userId,
+        `UnsureOfWhatMatters: the decided reading's ${unsure.join(" and ")} is not confirmed`,
+      );
+      return;
+    }
+
+    // The round took as long as its slower reader call plus the judge, which
+    // is what the person waited, measured by the calls themselves.
+    const seconds =
+      Math.max(first.reading.call.seconds, second.reading.call.seconds) +
+      (judge?.ok ? judge.reading.call.seconds : 0);
+
     try {
-      await writeReading(runId, documentId, userId, reading);
+      await writeReading(runId, documentId, userId, {
+        call: { ...first.reading.call, seconds },
+        result: decision.result,
+      });
     } catch (error) {
-      // The model answered and the database would not take it. Reading the
-      // letter again would buy the same answer and the same refusal.
+      // The readings came back and the database would not take the decision.
+      // Reading the letter again would buy the same answer and the same
+      // refusal.
       console.error(
         `[uploads] could not write the reading of document ${documentId}`,
         error,
@@ -398,6 +461,97 @@ export async function readDocument(
 }
 
 /**
+ * Make one call of a round, trying again when a failure is worth it, and write
+ * every attempt down as a model_calls row.
+ *
+ * Never throws. Only ExtractionFailure says whether trying again could help
+ * (src/server/extraction/provider.ts); any other error is a bug, and a bug is
+ * not fixed by paying for another model call.
+ */
+async function callWithAttempts(
+  runId: string,
+  documentId: string,
+  input: Parameters<typeof readLetter>[0],
+  role: "reader" | "judge",
+  slot: number,
+  cell: Cell,
+  pauseMs: number,
+): Promise<CallOutcome> {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      const reading = await readLetter(input, cell);
+      await recordCall(runId, { role, slot, attempt, cell, reading });
+      return { ok: true, reading };
+    } catch (error) {
+      const detail = failureDetail(error);
+      console.error(
+        `[uploads] reading document ${documentId} failed: ${role} ${slot}, attempt ${attempt} of ${MAX_READING_ATTEMPTS}`,
+        error,
+      );
+      await recordCall(runId, { role, slot, attempt, cell, detail });
+
+      const worthAnotherTry =
+        attempt < MAX_READING_ATTEMPTS &&
+        error instanceof ExtractionFailure &&
+        error.retryable;
+      if (!worthAnotherTry) return { ok: false, detail };
+      if (pauseMs > 0) {
+        await new Promise((resolve) => setTimeout(resolve, pauseMs));
+      }
+    }
+  }
+}
+
+/**
+ * One model call, as a row: which part of the round it was, which attempt,
+ * what it was made with, and what came back or why nothing did.
+ *
+ * Swallows its own failure. The row is the record of a call that already
+ * happened; a database refusing it must not turn a reading that worked into
+ * one that failed.
+ */
+async function recordCall(
+  runId: string,
+  call: {
+    role: "reader" | "judge";
+    slot: number;
+    attempt: number;
+    cell: Cell;
+  } & ({ reading: Reading } | { detail: string }),
+): Promise<void> {
+  const reading = "reading" in call ? call.reading : null;
+  try {
+    await query(
+      `INSERT INTO model_calls
+         (extraction_run_id, role, slot, attempt, status, model, effort,
+          raw_response, failure_detail, input_tokens, reasoning_tokens,
+          output_tokens, duration_ms)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+      [
+        runId,
+        call.role,
+        call.slot,
+        call.attempt,
+        reading ? "succeeded" : "failed",
+        reading?.call.model ?? call.cell.model,
+        reading?.call.effort ?? call.cell.effort,
+        reading ? JSON.stringify(reading.result) : null,
+        "detail" in call ? call.detail : null,
+        reading?.call.usage?.input_tokens ?? null,
+        reading?.call.usage?.reasoning_tokens ?? null,
+        reading?.call.usage?.output_tokens ?? null,
+        reading ? Math.round(reading.call.seconds * 1000) : null,
+      ],
+    );
+  } catch (error) {
+    console.error(
+      `[uploads] could not record a model call of run ${runId}`,
+      error,
+    );
+  }
+}
+
+/**
  * Developer text for a run that failed, stored on the run and shown to nobody.
  * The name is kept beside the message because "ExtractionFailure" and
  * "TypeError" are the first thing anyone reading the row wants to know, and
@@ -410,7 +564,7 @@ function failureDetail(error: unknown): string {
 }
 
 /**
- * Close an attempt that failed and open the next, as one unit, and return the
+ * Close a round that failed and open the next, as one unit, and return the
  * new run's id. The new run is written straight to 'processing', because the
  * call is about to be made by the code that wrote it: there is no moment at
  * which it is queued and waiting for somebody.
@@ -434,8 +588,8 @@ async function startNextAttempt(
         [runId, detail],
       );
 
-      // Same reader, same model, same letter: another attempt at the one
-      // reading, not a second opinion.
+      // KAN-63: the next round of the scheme, on the same letter. Its calls
+      // are written under it as model_calls rows.
       const next = await client.query<{ id: string }>(
         `INSERT INTO extraction_runs (document_id, status, provider, model)
          SELECT document_id, 'processing', provider, model

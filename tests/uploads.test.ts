@@ -502,6 +502,24 @@ describe("reading a stored letter", () => {
     logged.mockRestore();
   });
 
+  /** A reading as readLetter() resolves with one. */
+  const read = (result: ExtractionResult) => ({
+    call: {
+      provider: "mock",
+      model: "mock-letter-reader",
+      effort: null,
+      seconds: 1.5,
+      usage: null,
+    },
+    result,
+  });
+
+  /** KAN-63: the model_calls rows written, as their parameter lists. */
+  const modelCalls = () =>
+    (queryMock.mock.calls as unknown as [string, unknown[]][])
+      .filter(([sql]) => sql.includes("INSERT INTO model_calls"))
+      .map(([, params]) => params);
+
   // Claiming the run is also the ownership check, so knowing a document id is
   // not enough to spend a model call on somebody else's letter.
   it("claims a queued reading of an owned letter, and nothing else", async () => {
@@ -540,6 +558,7 @@ describe("reading a stored letter", () => {
   });
 
   it("writes the reading, the run and the letter as one unit", async () => {
+    // Both reader calls answer the same, so the judge is never called.
     queryOneMock.mockResolvedValue({ id: RUN_ID });
     readLetterMock.mockResolvedValue({
       call: {
@@ -581,7 +600,7 @@ describe("reading a stored letter", () => {
     const { ExtractionFailure } = await import("@/server/extraction");
     queryOneMock.mockResolvedValue({ id: RUN_ID });
     // A failure that would come out the same however often it was tried, so
-    // there is one attempt and one row.
+    // each of the two reader calls makes one attempt.
     readLetterMock.mockRejectedValue(
       new ExtractionFailure("page 1 was handed over without its bytes", {
         retryable: false,
@@ -593,7 +612,7 @@ describe("reading a stored letter", () => {
       readDocument(DOCUMENT_ID, USER_ID, PAGES, { pauseMs: 0 }),
     ).resolves.toBeUndefined();
 
-    expect(readLetterMock).toHaveBeenCalledTimes(1);
+    expect(readLetterMock).toHaveBeenCalledTimes(2);
     const calls = client.query.mock.calls as [string, unknown[]][];
     expect(calls).toHaveLength(2);
     expect(calls[0][0]).toContain("UPDATE extraction_runs");
@@ -615,56 +634,45 @@ describe("reading a stored letter", () => {
     expect(
       calls.some(([sql]) => sql.includes("INSERT INTO extracted_fields")),
     ).toBe(false);
+
+    // Each call is written down, with why it failed.
+    const recorded = modelCalls();
+    expect(recorded).toHaveLength(2);
+    expect(recorded.every((row) => row[4] === "failed")).toBe(true);
   });
 
   // KAN-59: a model that answered badly once usually does not twice running,
-  // so the letter is read again before anybody is told it failed, and every
-  // attempt is a row of its own.
-  it("reads the letter again after a failure worth retrying, one run per attempt", async () => {
+  // so the call is made again before anybody is told it failed. KAN-63: the
+  // attempt is a model_calls row under the same round, not a new round.
+  it("makes a call again after a failure worth retrying, one row per attempt", async () => {
     const { ExtractionFailure } = await import("@/server/extraction");
     queryOneMock.mockResolvedValue({ id: RUN_ID });
     readLetterMock
       .mockRejectedValueOnce(new ExtractionFailure("the Azure call failed"))
-      .mockResolvedValueOnce({
-        call: {
-          provider: "mock",
-          model: "mock-letter-reader",
-          effort: null,
-          seconds: 2,
-          usage: null,
-        },
-        result: reading(),
-      });
-    const client = transactionClient([{ id: "run-2" }]);
+      .mockResolvedValue(read(reading()));
+    const client = transactionClient();
 
     await readDocument(DOCUMENT_ID, USER_ID, PAGES, { pauseMs: 0 });
 
-    expect(readLetterMock).toHaveBeenCalledTimes(2);
-    const calls = client.query.mock.calls as [string, unknown[]][];
-
-    // The first attempt is closed as failed and the second opened, by the same
-    // reader, straight to processing.
-    expect(calls[0][0]).toContain("'failed'");
-    expect(calls[0][1]).toEqual([
-      RUN_ID,
-      "ExtractionFailure: the Azure call failed",
+    // Two reader calls, one of which needed a second attempt.
+    expect(readLetterMock).toHaveBeenCalledTimes(3);
+    const recorded = modelCalls();
+    expect(recorded.map((row) => row[4]).sort()).toEqual([
+      "failed",
+      "succeeded",
+      "succeeded",
     ]);
-    expect(calls[1][0]).toContain("INSERT INTO extraction_runs");
-    expect(calls[1][0]).toContain("'processing'");
-    expect(calls[1][1]).toEqual([RUN_ID]);
+    expect(recorded.every((row) => row[0] === RUN_ID)).toBe(true);
 
-    // The reading that worked is written on the second run, not the first.
-    const run = calls.find(([sql]) => sql.includes("'succeeded'"));
-    expect(run?.[1][0]).toBe("run-2");
-    // Nothing failed the letter on the way.
+    const calls = client.query.mock.calls as [string, unknown[]][];
     expect(
-      calls.some(
-        ([sql]) => sql.includes("UPDATE documents") && sql.includes("'failed'"),
-      ),
+      calls.some(([sql]) => sql.includes("INSERT INTO extraction_runs")),
     ).toBe(false);
+    const run = calls.find(([sql]) => sql.includes("'succeeded'"));
+    expect(run?.[1][0]).toBe(RUN_ID);
   });
 
-  it("fails the letter only after the last attempt fails", async () => {
+  it("fails the letter once a call has used every attempt, without another round", async () => {
     const { ExtractionFailure } = await import("@/server/extraction");
     queryOneMock.mockResolvedValue({ id: RUN_ID });
     readLetterMock.mockRejectedValue(
@@ -676,18 +684,15 @@ describe("reading a stored letter", () => {
 
     await readDocument(DOCUMENT_ID, USER_ID, PAGES, { pauseMs: 0 });
 
-    expect(readLetterMock).toHaveBeenCalledTimes(MAX_READING_ATTEMPTS);
-    const calls = client.query.mock.calls as [string, unknown[]][];
-    const opened = calls.filter(([sql]) =>
-      sql.includes("INSERT INTO extraction_runs"),
-    );
-    expect(opened).toHaveLength(MAX_READING_ATTEMPTS - 1);
-    const closed = calls.filter(
-      ([sql]) =>
-        sql.includes("UPDATE extraction_runs") && sql.includes("'failed'"),
-    );
-    expect(closed).toHaveLength(MAX_READING_ATTEMPTS);
+    // Both reader calls, every attempt each.
+    expect(readLetterMock).toHaveBeenCalledTimes(2 * MAX_READING_ATTEMPTS);
+    expect(modelCalls()).toHaveLength(2 * MAX_READING_ATTEMPTS);
 
+    const calls = client.query.mock.calls as [string, unknown[]][];
+    // The service is failing, and reading the letter again would not help.
+    expect(
+      calls.some(([sql]) => sql.includes("INSERT INTO extraction_runs")),
+    ).toBe(false);
     const failedLetter = calls.filter(
       ([sql]) => sql.includes("UPDATE documents") && sql.includes("'failed'"),
     );
@@ -697,18 +702,129 @@ describe("reading a stored letter", () => {
 
   // An error that is not a reading failure is a bug or a database refusing a
   // write, and another model call fixes neither.
-  it("does not read again after an error nobody expected", async () => {
+  it("does not make a call again after an error nobody expected", async () => {
     queryOneMock.mockResolvedValue({ id: RUN_ID });
     readLetterMock.mockRejectedValue(new TypeError("bytes is undefined"));
     const client = transactionClient();
 
     await readDocument(DOCUMENT_ID, USER_ID, PAGES, { pauseMs: 0 });
 
-    expect(readLetterMock).toHaveBeenCalledTimes(1);
+    expect(readLetterMock).toHaveBeenCalledTimes(2);
     const calls = client.query.mock.calls as [string, unknown[]][];
     expect(
       calls.some(([sql]) => sql.includes("INSERT INTO extraction_runs")),
     ).toBe(false);
+  });
+
+  // KAN-63: the scheme, end to end, with the reader answering on cue.
+  it("reads with the reader twice and calls the judge only when the two differ", async () => {
+    const { READER, JUDGE } = await import("@/server/extraction/scheme");
+    queryOneMock.mockResolvedValue({ id: RUN_ID });
+    const other = reading([
+      { key: "reference", value: "4412 9990 2", status: "confirmed" },
+    ]);
+    readLetterMock
+      .mockResolvedValueOnce(read(reading()))
+      .mockResolvedValueOnce(read(other))
+      .mockResolvedValueOnce(read(reading()));
+    const client = transactionClient();
+
+    await readDocument(DOCUMENT_ID, USER_ID, PAGES, { pauseMs: 0 });
+
+    expect(readLetterMock.mock.calls.map(([, cell]) => cell)).toEqual([
+      READER,
+      READER,
+      JUDGE,
+    ]);
+    expect(modelCalls().map((row) => row[1])).toEqual([
+      "reader",
+      "reader",
+      "judge",
+    ]);
+
+    // The judge matched the first reading, so its reference is the one kept.
+    const calls = client.query.mock.calls as [string, unknown[]][];
+    const reference = calls.find(
+      ([sql, params]) =>
+        sql.includes("INSERT INTO extracted_fields") &&
+        params[1] === "reference",
+    );
+    expect(reference?.[1][2]).toBe("4412 8890 2");
+    const document = calls.find(([sql]) => sql.includes("UPDATE documents"));
+    expect(document?.[0]).toContain("'needs-review'");
+  });
+
+  it("reads the letter again from the start when the judge matches neither, up to the last round", async () => {
+    const { MAX_ROUNDS } = await import("@/server/extraction/scheme");
+    queryOneMock.mockResolvedValue({ id: RUN_ID });
+    let n = 0;
+    // Every call gives a reference no other call gave.
+    readLetterMock.mockImplementation(async () =>
+      read(
+        reading([
+          { key: "reference", value: `REF ${++n}`, status: "confirmed" },
+        ]),
+      ),
+    );
+    const client = transactionClient([{ id: "run-next" }]);
+
+    await readDocument(DOCUMENT_ID, USER_ID, PAGES, { pauseMs: 0 });
+
+    expect(readLetterMock).toHaveBeenCalledTimes(3 * MAX_ROUNDS);
+    const calls = client.query.mock.calls as [string, unknown[]][];
+    const opened = calls.filter(([sql]) =>
+      sql.includes("INSERT INTO extraction_runs"),
+    );
+    expect(opened).toHaveLength(MAX_ROUNDS - 1);
+    const closed = calls.filter(
+      ([sql]) =>
+        sql.includes("UPDATE extraction_runs") && sql.includes("'failed'"),
+    );
+    expect(closed).toHaveLength(MAX_ROUNDS);
+    expect(closed.at(-1)?.[1][1]).toContain("SchemeUndecided");
+    expect(closed.at(-1)?.[1][1]).toContain("reference");
+    expect(calls.at(-1)?.[0]).toContain("UPDATE documents");
+    expect(calls.at(-1)?.[0]).toContain("'failed'");
+  });
+
+  it("fails the letter when the decided due date is not confirmed", async () => {
+    queryOneMock.mockResolvedValue({ id: RUN_ID });
+    readLetterMock.mockResolvedValue(
+      read(
+        reading([
+          { key: "due_date", value: "2026-08-15", status: "uncertain" },
+        ]),
+      ),
+    );
+    const client = transactionClient();
+
+    await readDocument(DOCUMENT_ID, USER_ID, PAGES, { pauseMs: 0 });
+
+    const calls = client.query.mock.calls as [string, unknown[]][];
+    expect(calls[0][1][1]).toContain("UnsureOfWhatMatters");
+    expect(calls[0][1][1]).toContain("due_date");
+    expect(calls.at(-1)?.[0]).toContain("'failed'");
+    expect(
+      calls.some(([sql]) => sql.includes("INSERT INTO extracted_fields")),
+    ).toBe(false);
+  });
+
+  it("stores an unsure reference and still makes the letter ready to check", async () => {
+    queryOneMock.mockResolvedValue({ id: RUN_ID });
+    readLetterMock.mockResolvedValue(
+      read(
+        reading([
+          { key: "reference", value: "4412 8890 2", status: "uncertain" },
+        ]),
+      ),
+    );
+    const client = transactionClient();
+
+    await readDocument(DOCUMENT_ID, USER_ID, PAGES, { pauseMs: 0 });
+
+    const calls = client.query.mock.calls as [string, unknown[]][];
+    const document = calls.find(([sql]) => sql.includes("UPDATE documents"));
+    expect(document?.[0]).toContain("'needs-review'");
   });
 
   // It runs after the response has gone out, so there is nobody left to throw

@@ -15,11 +15,11 @@
  * returns is validated against the contract in src/lib/contract/extraction.ts
  * before it goes anywhere near the database.
  *
- * One reading per letter. This release makes one model call that succeeds and
- * everything after it is ordinary code, so there is no second model and nothing
- * that searches over what was read; see docs/scope.md. A call that fails is
- * made again, which is a second attempt at the same reading and not a second
- * opinion.
+ * A provider makes one call. How many calls a letter gets, with which model at
+ * which effort, and how their answers are put together is the reading scheme
+ * (./scheme.ts, decided in docs/extraction.md); a provider only knows how to
+ * make the call it is asked for. A call that fails is made again, which is a
+ * second attempt at the same call and not a second opinion.
  */
 
 import "server-only";
@@ -44,8 +44,8 @@ export type ExtractionInput = {
  * rejection and no repair: a letter is never turned away for being the wrong
  * sort of document, a photograph is never refused for being blurred, and nobody
  * is asked to take it again. So a failure here is our side failing. The same
- * photographs are read again a couple of times first (src/server/uploads.ts),
- * and only when every try has failed is the document marked failed.
+ * call is made again a couple of times first (src/server/uploads.ts), and
+ * only when every try has failed is the document marked failed.
  *
  * `message` is developer text. It is stored with the run and never shown; the
  * sentence a person reads is worded once, in src/lib/contract/api.ts, so that
@@ -91,6 +91,8 @@ export type TokenUsage = {
  */
 export type ExtractionOutcome = {
   payload: unknown;
+  /** KAN-63: the exact model the call was made with; null for a reader without one. */
+  model: string | null;
   /** The reasoning effort the call was made at; null for a reader without one. */
   effort: string | null;
   /** Null when nothing was billed, as with the mock. */
@@ -101,7 +103,7 @@ export type ExtractionOutcome = {
 export interface DocumentExtractionProvider {
   /** Stored on every run so accuracy figures can name what produced them. */
   readonly name: string;
-  /** The exact model identifier, when there is one. */
+  /** The model a letter is read with by default, when there is one. */
   readonly model: string | null;
 
   /**
@@ -112,7 +114,10 @@ export interface DocumentExtractionProvider {
    * bug in the provider, and the caller records it as a failed reading just
    * the same.
    */
-  extract(input: ExtractionInput): Promise<ExtractionOutcome>;
+  extract(
+    input: ExtractionInput,
+    cell?: { model: string; effort: string },
+  ): Promise<ExtractionOutcome>;
 }
 
 export type { ExtractionResult };

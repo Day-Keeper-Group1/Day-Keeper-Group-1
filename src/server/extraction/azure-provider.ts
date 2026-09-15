@@ -1,8 +1,10 @@
 /**
  * The real reader: one call to a vision model on RACE's Azure AI Foundry.
  *
- * The model, the reasoning effort and the prompt are not chosen here. They are
- * the current entry in docs/extraction.md, which in turn rests on an
+ * The models, the reasoning efforts and the prompt are not chosen here. The
+ * cell a call is made with comes from the scheme (./scheme.ts) and the prompt
+ * from the file beside this one; both are the current entry in
+ * docs/extraction.md, which in turn rests on an
  * experiment under experiments/module-01-extraction/. To change any of the
  * three, run an experiment, record the decision there, then change these
  * values to match; see ./AGENTS.md.
@@ -25,9 +27,7 @@ import {
   type ExtractionOutcome,
 } from "./provider";
 
-// KAN-46: chosen in docs/extraction.md, entry dated 2026-09-14. Change there first.
-export const AZURE_MODEL = "gpt-5.6-luna";
-export const AZURE_EFFORT = "medium";
+import { READER } from "./scheme";
 
 /**
  * The prompt, read once from the file beside this one. It is a file rather
@@ -53,9 +53,12 @@ function unfence(text: string): string {
 
 export class AzureExtractionProvider implements DocumentExtractionProvider {
   readonly name = "azure";
-  readonly model = AZURE_MODEL;
+  readonly model = READER.model;
 
-  async extract(input: ExtractionInput): Promise<ExtractionOutcome> {
+  async extract(
+    input: ExtractionInput,
+    cell: { model: string; effort: string } = READER,
+  ): Promise<ExtractionOutcome> {
     const { AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_API_KEY } = env();
     if (!AZURE_OPENAI_ENDPOINT || !AZURE_OPENAI_API_KEY) {
       throw new ExtractionFailure(
@@ -73,9 +76,14 @@ export class AzureExtractionProvider implements DocumentExtractionProvider {
       );
     }
 
+    // KAN-63: the SDK retries a failed request twice on its own by default.
+    // src/server/uploads.ts already makes a failed call again, and writes
+    // down each attempt; two layers of retrying would make up to nine
+    // requests out of what the table records as three.
     const client = new OpenAI({
       baseURL: AZURE_OPENAI_ENDPOINT,
       apiKey: AZURE_OPENAI_API_KEY,
+      maxRetries: 0,
     });
 
     const started = Date.now();
@@ -83,8 +91,8 @@ export class AzureExtractionProvider implements DocumentExtractionProvider {
     let usage: ExtractionOutcome["usage"] = null;
     try {
       const response = await client.responses.create({
-        model: AZURE_MODEL,
-        reasoning: { effort: AZURE_EFFORT },
+        model: cell.model,
+        reasoning: { effort: cell.effort as "medium" },
         input: [
           {
             role: "user",
@@ -124,6 +132,6 @@ export class AzureExtractionProvider implements DocumentExtractionProvider {
       );
     }
 
-    return { payload, effort: AZURE_EFFORT, usage, seconds };
+    return { payload, model: cell.model, effort: cell.effort, usage, seconds };
   }
 }

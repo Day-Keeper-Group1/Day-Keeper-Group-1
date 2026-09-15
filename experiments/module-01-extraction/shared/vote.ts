@@ -36,12 +36,14 @@
  */
 
 import { readFileSync } from "node:fs";
-import { actionWordOf } from "../../../src/lib/contract/fields";
+import {
+  identifiersAgree,
+  valuesAgree,
+} from "../../../src/server/extraction/agreement";
 import type { Model } from "./config";
 import { experimentFromArgv } from "./experiment";
 import { USD_TO_AUD, usdFor } from "./prices";
 import {
-  referenceIdentity,
   SCORED_WITH_IDENTIFIERS,
   scoredFieldsOf,
   type Score,
@@ -77,81 +79,25 @@ if (readerRepeats < 2 * trials) {
 }
 
 const short = (model: string) => model.replace("gpt-5.6-", "");
-const collapse = (s: string) => s.trim().replace(/\s+/g, " ").toLowerCase();
-const loose = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
-const isAbsent = (v: string | null, word: string) =>
-  v === null || v.trim().toLowerCase() === word.toLowerCase();
 
-/** Do two values of a field count as the same answer, with no key in hand? */
+/**
+ * Do two values of a field count as the same answer, with no key in hand?
+ *
+ * KAN-63: the rule is the product's, in src/server/extraction/agreement.ts,
+ * so this replay and the reading the product runs can never disagree about
+ * what agreeing means. The scores keep the identifiers list as one string of
+ * values joined by "; ", which is split back into a list here.
+ */
 function agree(
   field: ScoredField,
   a: string | null,
   b: string | null,
 ): boolean {
-  switch (field) {
-    case "due_date": {
-      const na = isAbsent(a, "Not applicable");
-      const nb = isAbsent(b, "Not applicable");
-      if (na || nb) return na && nb;
-      return a!.trim() === b!.trim();
-    }
-    case "amount": {
-      const na = isAbsent(a, "No payment required");
-      const nb = isAbsent(b, "No payment required");
-      if (na || nb) return na && nb;
-      const x = Number(a!.replace(/[^0-9.]/g, ""));
-      const y = Number(b!.replace(/[^0-9.]/g, ""));
-      if (!Number.isFinite(x) || !Number.isFinite(y))
-        return collapse(a!) === collapse(b!);
-      return Math.abs(x - y) < 0.005;
-    }
-    case "reference": {
-      const na = isAbsent(a, "Not applicable");
-      const nb = isAbsent(b, "Not applicable");
-      if (na || nb) return na && nb;
-      return referenceIdentity(a!) === referenceIdentity(b!);
-    }
-    case "issuer": {
-      if (a === null || b === null) return a === b;
-      const x = loose(a);
-      const y = loose(b);
-      return (
-        x.length > 0 &&
-        y.length > 0 &&
-        (x === y || x.includes(y) || y.includes(x))
-      );
-    }
-    case "action_required": {
-      if (a === null || b === null) return a === b;
-      const x = actionWordOf(a);
-      return x !== null && x === actionWordOf(b);
-    }
-    case "identifiers": {
-      // KAN-61: two lists agree when one is within the other, compared as the
-      // scorer compares values. The numbers the prompt says to leave out come
-      // and go between reads, and the product would take the union of the two
-      // lists; what has to match is that neither read names a number the other
-      // read gives differently. Two lists that each carry a value the other
-      // lacks disagree, and the judge is called.
-      const set = (v: string | null) =>
-        new Set(
-          (v ?? "")
-            .split("; ")
-            .filter(Boolean)
-            .map((s) =>
-              s
-                .toLowerCase()
-                .replace(/\s+/g, "")
-                .replace(/[·•.\u2013-]/g, "-"),
-            ),
-        );
-      const x = set(a);
-      const y = set(b);
-      const within = (p: Set<string>, q: Set<string>) =>
-        [...p].every((s) => q.has(s));
-      return within(x, y) || within(y, x);
-    }
+  if (field === "identifiers") {
+    const list = (v: string | null) => (v ?? "").split("; ").filter(Boolean);
+    return identifiersAgree(list(a), list(b));
   }
+  return valuesAgree(field, a, b);
 }
 
 type Decision = "agreed" | "judged" | "unresolved";

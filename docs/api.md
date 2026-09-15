@@ -424,7 +424,7 @@ file that is not an image. The upload is all-or-nothing.
 
 **The response carries no reading, because at the moment the files are stored
 nothing has looked at them.** The handler answers as soon as the photographs are
-in the bucket and the rows are written; the one model call happens after, and
+in the bucket and the rows are written; the reading happens after, and
 the letter sits at `processing` until it comes back.
 
 Validate on the server, not only in the file input: the `accept` attribute is a
@@ -438,7 +438,7 @@ from the other. It is one poll for the whole app, not one per screen
 (`src/components/layout/activity.tsx`): Home, the camera screen, the number on
 the Home tab and the message that says a letter is ready all read it.
 
-**How a letter is read.** The scheme is the newest entry in [`docs/extraction.md`](extraction.md): `gpt-5.6-luna` at `medium` reads the letter twice; if the two readings differ on a field, `gpt-5.6-terra` at `low` reads it once and the reading it matches is taken; if it matches neither, the letter is read again from the start, up to five rounds. Every model call is its own row in `extraction_runs`, so the table says how many calls a letter took and what each one said.
+**How a letter is read.** The scheme is the newest entry in [`docs/extraction.md`](extraction.md): `gpt-5.6-luna` at `medium` reads the letter twice; if the two readings differ on a field, `gpt-5.6-terra` at `low` reads it once and the reading it matches is taken; if it matches neither, the letter is read again from the start, up to five rounds. Each round is a row in `extraction_runs`, and every model call under it, every attempt included, is a row in `model_calls`, so the tables say how many calls a letter took, with which model, and what each one said.
 
 **Everything that can happen while a letter is read.** None of these is an HTTP error. The upload has already answered `201`, and the screen learns the outcome from the letter's `status` the next time it polls `GET /api/home`, which answers `200` whatever the outcome. The reason a reading failed is written to `failure_detail` on its run and never leaves the server.
 

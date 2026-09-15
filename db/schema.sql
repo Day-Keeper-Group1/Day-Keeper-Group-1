@@ -301,6 +301,39 @@ CREATE UNIQUE INDEX extraction_runs_one_success_per_document
 CREATE UNIQUE INDEX extraction_runs_one_under_way_per_document
   ON extraction_runs (document_id) WHERE status IN ('queued', 'processing');
 
+-- KAN-63: every model call a reading made.
+--
+-- A letter is read under the scheme in docs/extraction.md: two reader calls a
+-- round, a judge call when they differ, and a failed call made again. The
+-- extraction_runs row is the round and carries the decided reading; these rows
+-- are the calls under it, one per attempt, so the table says how many calls a
+-- letter took, with which model, what each one answered and what it cost.
+-- slot tells the two reader calls of a round apart.
+CREATE TABLE model_calls (
+  id                uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  extraction_run_id uuid NOT NULL REFERENCES extraction_runs(id) ON DELETE CASCADE,
+  role              text NOT NULL,
+  slot              integer NOT NULL,
+  attempt           integer NOT NULL,
+  status            text NOT NULL,
+  model             text,
+  effort            text,
+  -- The reading as the contract validator passed it; null for a call that failed.
+  raw_response      jsonb,
+  failure_detail    text,
+  input_tokens      integer,
+  reasoning_tokens  integer,
+  output_tokens     integer,
+  duration_ms       integer,
+  created_at        timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT model_calls_role CHECK (role IN ('reader', 'judge')),
+  CONSTRAINT model_calls_status CHECK (status IN ('succeeded', 'failed')),
+  CONSTRAINT model_calls_failed_has_detail
+    CHECK ((status = 'failed') = (failure_detail IS NOT NULL))
+);
+
+CREATE INDEX model_calls_run_idx ON model_calls (extraction_run_id);
+
 -- One field of one reading.
 --
 -- field_key is text rather than an enum because the six contract fields are a

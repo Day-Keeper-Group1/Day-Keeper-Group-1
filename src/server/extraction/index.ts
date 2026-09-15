@@ -61,9 +61,12 @@ export type Reading = {
  * Rejects with ExtractionFailure when the reader failed or answered outside
  * the contract. The message says which, in a sentence.
  */
-export async function readLetter(input: ExtractionInput): Promise<Reading> {
+export async function readLetter(
+  input: ExtractionInput,
+  cell?: { model: string; effort: string },
+): Promise<Reading> {
   const provider = extractionProvider();
-  const outcome = await provider.extract(input);
+  const outcome = await provider.extract(input, cell);
 
   const parsed = safeParseExtractionResult(outcome.payload);
   if (!parsed.success) {
@@ -75,12 +78,12 @@ export async function readLetter(input: ExtractionInput): Promise<Reading> {
   return {
     call: {
       provider: provider.name,
-      model: provider.model,
+      model: outcome.model,
       effort: outcome.effort,
       seconds: outcome.seconds,
       usage: outcome.usage,
     },
-    result: { ...parsed.data, provider: provider.name, model: provider.model },
+    result: { ...parsed.data, provider: provider.name, model: outcome.model },
   };
 }
 
