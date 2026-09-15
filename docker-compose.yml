@@ -26,9 +26,13 @@ services:
       POSTGRES_PASSWORD: daykeeper_local_dev
       POSTGRES_DB: daykeeper
     ports:
-      # Deliberately not 5432: a teammate may already run Postgres locally for
-      # another unit, and a port collision is a bad first five minutes.
-      - "55432:5432"
+      # KAN-66: every host port here is below 49152. Windows reserves blocks of
+      # a hundred ports at a time from 49152 to 65535 each time it starts
+      # (WinNAT, which Docker Desktop and WSL use), and a reserved port cannot be
+      # bound: the container fails with "access forbidden" and the app with
+      # ECONNREFUSED. 55432 was hit that way on 15 September 2026. Not 5432
+      # either: a teammate may already run Postgres locally for another unit.
+      - "15432:5432"
     volumes:
       - daykeeper_pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -57,10 +61,10 @@ services:
       MINIO_ROOT_USER: daykeeper
       MINIO_ROOT_PASSWORD: daykeeper_local_dev
     ports:
-      # Move the MinIO host ports to a less contested pair because Windows can
-      # refuse a bind on the default local ports after a network change.
-      - "59020:9000"
-      - "59021:9001"
+      # KAN-66: below 49152 for the reason given under db, and not 9000 and
+      # 9001, which other tools on a laptop often hold.
+      - "19020:9000"
+      - "19021:9001"
     volumes:
       - daykeeper_storage:/data
     healthcheck:
@@ -72,7 +76,7 @@ services:
   # A database viewer on http://localhost:8080, so nobody has to install a
   # client to look at the tables. Server: db, user/password/database: daykeeper.
   #
-  # MinIO brings its own viewer on http://localhost:59021, same credentials,
+  # MinIO brings its own viewer on http://localhost:19021, same credentials,
   # which is where to look when a photograph is meant to have been stored.
   adminer:
     image: adminer:5

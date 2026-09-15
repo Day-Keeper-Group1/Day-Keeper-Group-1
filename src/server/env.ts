@@ -46,7 +46,7 @@ const envSchema = z.object({
    * be the host we signed. On a laptop both are localhost and this can be left
    * alone. They part company the moment the app itself runs in a container,
    * where the server says `http://storage:9000` and the browser must still say
-   * `http://localhost:59020`; a signed URL made with the wrong one comes back
+   * `http://localhost:19020`; a signed URL made with the wrong one comes back
    * as an access error that looks like a permissions bug and is not.
    */
   STORAGE_PUBLIC_ENDPOINT: z.string().optional(),

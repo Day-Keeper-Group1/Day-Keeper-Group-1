@@ -20,7 +20,7 @@ cd Day-Keeper-Group-1
 
 npm ci                    # installs exactly what the lockfile says
 cp .env.example .env.local
-docker compose up -d      # Postgres on 55432, a database viewer on 8080
+docker compose up -d      # Postgres on 15432, a database viewer on 8080
 docker compose ps         # wait until db says "healthy", a few seconds
 npm run db:reset          # build the database and fill it with example data
 npm run dev
