@@ -22,11 +22,13 @@ photographs the letter, and the date it carries becomes a task, a place on a
 calendar, and three reminders. That is the whole of it.
 
 #why[
-  *One thing to know before the screens.* The prototype has a fixed fictional
-  today: *Monday 10 August 2026*. Every date in the screenshots is relative to
-  that. The water bill was due on the fifth, so it is late. The pension form is
-  due on the eleventh, so it is not. The prototype wears this date in its
-  toolbar so nobody has to guess.
+  *One thing to know before the screens.* The screenshots were taken from an
+  earlier version of the prototype, which kept a fixed fictional today:
+  *Monday 10 August 2026*. Every date in them is relative to that. The water
+  bill was due on the fifth, so it is late. The pension form is due on the
+  eleventh, so it is not. The prototype now works from the day it is opened,
+  and `?today=` in its address pins another. Its toolbar says which day it is
+  on, so nobody has to guess.
 ]
 
 #part("What she gets back")
