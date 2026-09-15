@@ -30,10 +30,15 @@ vi.mock("@/server/storage", () => ({
 vi.mock("@/server/extraction", () => {
   class ExtractionFailure extends Error {
     readonly retryable: boolean;
-    constructor(message: string, options: { retryable?: boolean } = {}) {
+    readonly usage: unknown;
+    constructor(
+      message: string,
+      options: { retryable?: boolean; usage?: unknown } = {},
+    ) {
       super(message);
       this.name = "ExtractionFailure";
       this.retryable = options.retryable ?? true;
+      this.usage = options.usage ?? null;
     }
   }
 
@@ -583,8 +588,12 @@ describe("reading a stored letter", () => {
     const run = calls.find(([sql]) => sql.includes("UPDATE extraction_runs"));
     expect(run?.[0]).toContain("'succeeded'");
     expect(run?.[1][0]).toBe(RUN_ID);
-    // The call's own record of how long it took, in milliseconds.
-    expect(run?.[1][4]).toBe(1500);
+    // KAN-63: the round's totals are added up from its model_calls rows and
+    // timed by the database's clock, as the round closes.
+    expect(run?.[0]).toContain("FROM model_calls");
+    expect(run?.[0]).toContain(
+      "duration_ms = (extract(epoch FROM now() - started_at)",
+    );
 
     const document = calls.find(([sql]) => sql.includes("UPDATE documents"));
     expect(document?.[0]).toContain("'needs-review'");
@@ -698,6 +707,52 @@ describe("reading a stored letter", () => {
     );
     expect(failedLetter).toHaveLength(1);
     expect(calls.at(-1)?.[0]).toContain("UPDATE documents");
+  });
+
+  // KAN-63: the model answered and the answer was refused, so the call was
+  // billed, and the record of what the reading cost counts it.
+  it("keeps the tokens and cost of a call that failed after the model answered", async () => {
+    const { ExtractionFailure } = await import("@/server/extraction");
+    queryOneMock.mockResolvedValue({ id: RUN_ID });
+    readLetterMock.mockRejectedValue(
+      new ExtractionFailure(
+        "the model answered with something that is not JSON",
+        {
+          retryable: false,
+          usage: {
+            input_tokens: 18_700,
+            cached_tokens: 0,
+            reasoning_tokens: 300,
+            output_tokens: 770,
+          },
+        },
+      ),
+    );
+    transactionClient();
+
+    await readDocument(DOCUMENT_ID, USER_ID, PAGES, { pauseMs: 0 });
+
+    const [row] = modelCalls();
+    expect(row[4]).toBe("failed");
+    // input, cached, reasoning, output, cost
+    expect(row.slice(9, 13)).toEqual([18_700, 0, 300, 770]);
+    expect(row[13]).toBeCloseTo(18_700 * 2e-7 + 770 * 1.2e-6, 10);
+  });
+
+  it("leaves tokens and cost empty for a call that never reached the model", async () => {
+    const { ExtractionFailure } = await import("@/server/extraction");
+    queryOneMock.mockResolvedValue({ id: RUN_ID });
+    readLetterMock.mockRejectedValue(
+      new ExtractionFailure("AZURE_OPENAI_API_KEY must be set", {
+        retryable: false,
+      }),
+    );
+    transactionClient();
+
+    await readDocument(DOCUMENT_ID, USER_ID, PAGES, { pauseMs: 0 });
+
+    const [row] = modelCalls();
+    expect(row.slice(9, 14)).toEqual([null, null, null, null, null]);
   });
 
   // An error that is not a reading failure is a bug or a database refusing a

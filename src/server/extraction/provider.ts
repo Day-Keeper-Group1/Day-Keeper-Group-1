@@ -63,10 +63,22 @@ export class ExtractionFailure extends Error {
    */
   readonly retryable: boolean;
 
-  constructor(message: string, options: { retryable?: boolean } = {}) {
+  /**
+   * KAN-63: what the call used, when the model answered and the answer was
+   * then refused (not JSON, or outside the contract). That call was billed
+   * all the same, and the record of what a reading cost has to count it. Null
+   * when the call never reached the model.
+   */
+  readonly usage: TokenUsage | null;
+
+  constructor(
+    message: string,
+    options: { retryable?: boolean; usage?: TokenUsage | null } = {},
+  ) {
     super(message);
     this.name = "ExtractionFailure";
     this.retryable = options.retryable ?? true;
+    this.usage = options.usage ?? null;
   }
 }
 
@@ -75,9 +87,14 @@ export class ExtractionFailure extends Error {
  * already includes `reasoning_tokens`; they are kept as reported rather than
  * separated, so a number here can be compared with an experiment report
  * directly. The order is the order the tokens happen in.
+ *
+ * KAN-63: `cached_tokens` is the part of `input_tokens` Azure served from its
+ * cache, which is billed at a tenth of the price, so a cost can be worked out
+ * from the usage alone (./prices.ts).
  */
 export type TokenUsage = {
   input_tokens: number;
+  cached_tokens: number;
   reasoning_tokens: number;
   output_tokens: number;
 };

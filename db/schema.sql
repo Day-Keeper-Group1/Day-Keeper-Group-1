@@ -248,17 +248,25 @@ CREATE TABLE document_pages (
 -- ---------------------------------------------------------------------------
 -- Extraction
 --
--- One model call looks at a letter's photographs and returns the six fields
--- (src/lib/contract/fields.ts). The reading is recorded whether it worked or
--- not, along with exactly what the provider sent back. Keeping the failures is
--- what makes an accuracy figure honest: a table holding only the readings that
--- worked can be quoted to say anything.
+-- A letter's photographs are read under the scheme in docs/extraction.md and
+-- come back as the six fields (src/lib/contract/fields.ts). The reading is
+-- recorded whether it worked or not. Keeping the failures is what makes an
+-- accuracy figure honest: a table holding only the readings that worked can be
+-- quoted to say anything.
 --
--- One row per attempt. KAN-59: a reading that fails in a way worth trying
--- again is tried again, up to three attempts in all (src/server/uploads.ts),
--- and each attempt is its own row, so the table says how many calls a letter
--- took and what each one said. There is still no retake by the person
--- (docs/scope.md).
+-- KAN-63: one extraction_runs row per round of the scheme. A round is two
+-- reader calls, and a judge call when they differ; each of those calls, and
+-- each attempt at one, is a model_calls row under the round. A round whose
+-- readings cannot be decided is closed as failed and the next round is a new
+-- row, so the table says how many rounds a letter took and why each one ended.
+-- The API reads a round only to find the one that succeeded; everything else
+-- on it is the record of what happened, for whoever has to find out. There is
+-- still no retake by the person (docs/scope.md).
+--
+-- The totals on a round (judged, tokens, cost, duration) are written when the
+-- round closes, from its model_calls rows, so the grid answers "what did this
+-- round take" without a query. document_reading_totals, below model_calls,
+-- adds the rounds of a letter up.
 --
 -- One reading per letter all the same. The two unique indexes below the table
 -- are not bookkeeping: at most one run per letter ever succeeds, which is what
@@ -274,19 +282,37 @@ CREATE TABLE extraction_runs (
   document_id    uuid NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
   status         run_status NOT NULL DEFAULT 'queued',
   provider       text NOT NULL,      -- which implementation of the reader ran
-  model          text,               -- the exact model id, so a figure can name what produced it
+  -- The reader's exact model id, so a figure can name what produced it. Only
+  -- the reader's: whether a judge was called, and with which model, is
+  -- `judged` and the round's model_calls rows.
+  model          text,
   -- The shape the payload was written in (CONTRACT_VERSION in
   -- src/lib/contract/extraction.ts). Stored per run rather than assumed,
   -- because the contract will change, and a stored payload read back weeks
   -- later has to be able to say which rules it was written under.
   contract_version text,
   failure_detail text,
-  -- Exactly what the provider returned, before we validated or reshaped it.
-  -- When a reading looks wrong, this is the only place that can say whether the
-  -- model or our parsing was at fault.
+  -- KAN-63: the reading the round decided, as one document: the fields each
+  -- taken from the readings that agreed, the numbers of both readings put
+  -- together. Not any one call's answer; each call's own answer is its
+  -- model_calls row. Null for a round that decided nothing.
   raw_response   jsonb,
+  -- KAN-63: whether this round called the judge, because its two readings
+  -- differed.
+  judged         boolean NOT NULL DEFAULT false,
+  -- KAN-63: every call of the round added up, failed attempts included when
+  -- the model reported what they used. Output includes reasoning, as Azure
+  -- reports it. Null when no call reported any (the mock).
+  input_tokens   integer,
+  output_tokens  integer,
+  -- KAN-63: those calls at list price, in US dollars
+  -- (src/server/extraction/prices.ts). An estimate, not an invoice.
+  estimated_cost_usd numeric(12, 8),
   started_at     timestamptz NOT NULL DEFAULT now(),
   finished_at    timestamptz,
+  -- KAN-63: how long the round took by the clock, from its start to the moment
+  -- it closed: both reader calls, the judge, every attempt and every pause
+  -- between attempts.
   duration_ms    integer,
   -- A failure that does not say anything is a row nobody can act on, and a
   -- detail on a run that succeeded is a contradiction. Both directions are
@@ -309,6 +335,12 @@ CREATE UNIQUE INDEX extraction_runs_one_under_way_per_document
 -- are the calls under it, one per attempt, so the table says how many calls a
 -- letter took, with which model, what each one answered and what it cost.
 -- slot tells the two reader calls of a round apart.
+--
+-- Tokens are as Azure reported them: cached_tokens is the part of
+-- input_tokens served from its cache, and output_tokens includes
+-- reasoning_tokens. A call that failed after the model answered (not JSON, or
+-- outside the contract) was still billed, so its tokens and cost are kept too;
+-- one that never reached the model has none.
 CREATE TABLE model_calls (
   id                uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   extraction_run_id uuid NOT NULL REFERENCES extraction_runs(id) ON DELETE CASCADE,
@@ -322,8 +354,11 @@ CREATE TABLE model_calls (
   raw_response      jsonb,
   failure_detail    text,
   input_tokens      integer,
+  cached_tokens     integer,
   reasoning_tokens  integer,
   output_tokens     integer,
+  -- At list price, in US dollars (src/server/extraction/prices.ts).
+  estimated_cost_usd numeric(12, 8),
   duration_ms       integer,
   created_at        timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT model_calls_role CHECK (role IN ('reader', 'judge')),
@@ -333,6 +368,35 @@ CREATE TABLE model_calls (
 );
 
 CREATE INDEX model_calls_run_idx ON model_calls (extraction_run_id);
+
+-- KAN-63: what reading each letter took, every round added up, one row a
+-- letter.
+--
+-- A view rather than columns on documents, for two reasons. It is worked out
+-- from the rounds each time it is read, so it cannot disagree with them, and
+-- no code has to remember to keep it up to date on every way a reading can
+-- end. And documents is what the API and the screens read; these figures are
+-- for whoever is looking into what a reading cost, and live beside the tables
+-- they come from rather than among the columns a person is shown.
+--
+-- duration_ms runs from the first round's start to the last round's close.
+-- A letter still being read has no close yet, so its duration is null.
+CREATE VIEW document_reading_totals AS
+SELECT d.id                                          AS document_id,
+       d.issuer,
+       d.status,
+       d.uploaded_at,
+       count(r.id)::integer                          AS rounds,
+       (count(*) FILTER (WHERE r.judged))::integer   AS judged_rounds,
+       sum(r.input_tokens)::integer                  AS input_tokens,
+       sum(r.output_tokens)::integer                 AS output_tokens,
+       sum(r.estimated_cost_usd)                     AS estimated_cost_usd,
+       CASE WHEN bool_and(r.finished_at IS NOT NULL)
+            THEN (extract(epoch FROM max(r.finished_at) - min(r.started_at)) * 1000)::integer
+       END                                           AS duration_ms
+  FROM documents d
+  JOIN extraction_runs r ON r.document_id = d.id
+ GROUP BY d.id;
 
 -- One field of one reading.
 --

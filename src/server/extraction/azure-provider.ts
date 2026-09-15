@@ -111,6 +111,8 @@ export class AzureExtractionProvider implements DocumentExtractionProvider {
       if (response.usage) {
         usage = {
           input_tokens: response.usage.input_tokens,
+          cached_tokens:
+            response.usage.input_tokens_details?.cached_tokens ?? 0,
           reasoning_tokens:
             response.usage.output_tokens_details?.reasoning_tokens ?? 0,
           output_tokens: response.usage.output_tokens,
@@ -129,6 +131,7 @@ export class AzureExtractionProvider implements DocumentExtractionProvider {
     } catch {
       throw new ExtractionFailure(
         "the model answered with something that is not JSON",
+        { usage },
       );
     }
 

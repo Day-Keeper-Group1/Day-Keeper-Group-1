@@ -494,6 +494,11 @@ const paths = {
                       "Tokens as the provider reported them. output_tokens already includes reasoning_tokens.",
                     properties: {
                       input_tokens: { type: "integer" },
+                      cached_tokens: {
+                        type: "integer",
+                        description:
+                          "The part of input_tokens served from Azure's cache.",
+                      },
                       reasoning_tokens: { type: "integer" },
                       output_tokens: { type: "integer" },
                     },
@@ -511,6 +516,7 @@ const paths = {
               seconds: 12.1,
               usage: {
                 input_tokens: 25077,
+                cached_tokens: 0,
                 reasoning_tokens: 216,
                 output_tokens: 589,
               },

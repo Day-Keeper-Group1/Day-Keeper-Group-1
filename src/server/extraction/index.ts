@@ -72,6 +72,7 @@ export async function readLetter(
   if (!parsed.success) {
     throw new ExtractionFailure(
       `the reader answered outside the contract: ${parsed.error.issues[0]?.message ?? "invalid"}`,
+      { usage: outcome.usage },
     );
   }
 

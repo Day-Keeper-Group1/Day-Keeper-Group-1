@@ -44,7 +44,9 @@ import {
   extractionProvider,
   readLetter,
   type Reading,
+  type TokenUsage,
 } from "@/server/extraction";
+import { estimatedCostUsd } from "@/server/extraction/prices";
 import { deleteObjects, putObject, uploadObjectKey } from "@/server/storage";
 import {
   type Cell,
@@ -430,17 +432,8 @@ export async function readDocument(
       return;
     }
 
-    // The round took as long as its slower reader call plus the judge, which
-    // is what the person waited, measured by the calls themselves.
-    const seconds =
-      Math.max(first.reading.call.seconds, second.reading.call.seconds) +
-      (judge?.ok ? judge.reading.call.seconds : 0);
-
     try {
-      await writeReading(runId, documentId, userId, {
-        call: { ...first.reading.call, seconds },
-        result: decision.result,
-      });
+      await writeReading(runId, documentId, userId, decision.result);
     } catch (error) {
       // The readings came back and the database would not take the decision.
       // Reading the letter again would buy the same answer and the same
@@ -488,7 +481,14 @@ async function callWithAttempts(
         `[uploads] reading document ${documentId} failed: ${role} ${slot}, attempt ${attempt} of ${MAX_READING_ATTEMPTS}`,
         error,
       );
-      await recordCall(runId, { role, slot, attempt, cell, detail });
+      await recordCall(runId, {
+        role,
+        slot,
+        attempt,
+        cell,
+        detail,
+        usage: error instanceof ExtractionFailure ? error.usage : null,
+      });
 
       const worthAnotherTry =
         attempt < MAX_READING_ATTEMPTS &&
@@ -508,7 +508,12 @@ async function callWithAttempts(
  *
  * Swallows its own failure. The row is the record of a call that already
  * happened; a database refusing it must not turn a reading that worked into
- * one that failed.
+ * one that failed. The round's totals are added up from these rows when it
+ * closes, so a row that could not be written is missing from them too, and the
+ * log line below is the record of that.
+ *
+ * KAN-63: a failed call keeps its tokens and cost when the model answered
+ * before the answer was refused, because that call was billed.
  */
 async function recordCall(
   runId: string,
@@ -517,29 +522,37 @@ async function recordCall(
     slot: number;
     attempt: number;
     cell: Cell;
-  } & ({ reading: Reading } | { detail: string }),
+  } & ({ reading: Reading } | { detail: string; usage: TokenUsage | null }),
 ): Promise<void> {
   const reading = "reading" in call ? call.reading : null;
+  const model = reading?.call.model ?? call.cell.model;
+  const usage = reading
+    ? reading.call.usage
+    : "usage" in call
+      ? call.usage
+      : null;
   try {
     await query(
       `INSERT INTO model_calls
          (extraction_run_id, role, slot, attempt, status, model, effort,
-          raw_response, failure_detail, input_tokens, reasoning_tokens,
-          output_tokens, duration_ms)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+          raw_response, failure_detail, input_tokens, cached_tokens,
+          reasoning_tokens, output_tokens, estimated_cost_usd, duration_ms)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
       [
         runId,
         call.role,
         call.slot,
         call.attempt,
         reading ? "succeeded" : "failed",
-        reading?.call.model ?? call.cell.model,
+        model,
         reading?.call.effort ?? call.cell.effort,
         reading ? JSON.stringify(reading.result) : null,
         "detail" in call ? call.detail : null,
-        reading?.call.usage?.input_tokens ?? null,
-        reading?.call.usage?.reasoning_tokens ?? null,
-        reading?.call.usage?.output_tokens ?? null,
+        usage?.input_tokens ?? null,
+        usage?.cached_tokens ?? null,
+        usage?.reasoning_tokens ?? null,
+        usage?.output_tokens ?? null,
+        estimatedCostUsd(model, usage),
         reading ? Math.round(reading.call.seconds * 1000) : null,
       ],
     );
@@ -564,6 +577,29 @@ function failureDetail(error: unknown): string {
 }
 
 /**
+ * KAN-63: the totals a round is closed with, as the SET clause of the UPDATE
+ * that closes it: whether it called the judge, what its calls used and cost
+ * (their model_calls rows added up), and how long it took by the database's
+ * clock, from the round's start to now.
+ *
+ * Every way a round ends goes through an UPDATE that includes this, so there is
+ * one definition of what the totals mean. The model_calls rows are already
+ * committed by then: recordCall writes each one outside any transaction.
+ */
+export const ROUND_TOTALS = `
+  judged = EXISTS (SELECT 1 FROM model_calls c
+                    WHERE c.extraction_run_id = extraction_runs.id
+                      AND c.role = 'judge'),
+  input_tokens = (SELECT sum(c.input_tokens) FROM model_calls c
+                   WHERE c.extraction_run_id = extraction_runs.id),
+  output_tokens = (SELECT sum(c.output_tokens) FROM model_calls c
+                    WHERE c.extraction_run_id = extraction_runs.id),
+  estimated_cost_usd = (SELECT sum(c.estimated_cost_usd) FROM model_calls c
+                         WHERE c.extraction_run_id = extraction_runs.id),
+  finished_at = now(),
+  duration_ms = (extract(epoch FROM now() - started_at) * 1000)::integer`;
+
+/**
  * Close a round that failed and open the next, as one unit, and return the
  * new run's id. The new run is written straight to 'processing', because the
  * call is about to be made by the code that wrote it: there is no moment at
@@ -582,8 +618,7 @@ async function startNextAttempt(
       await client.query(
         `UPDATE extraction_runs
             SET status = 'failed',
-                failure_detail = $2,
-                finished_at = now()
+                failure_detail = $2,${ROUND_TOTALS}
           WHERE id = $1`,
         [runId, detail],
       );
@@ -620,9 +655,8 @@ async function writeReading(
   runId: string,
   documentId: string,
   userId: string,
-  reading: Reading,
+  result: ExtractionResult,
 ): Promise<void> {
-  const result = reading.result;
   const columns = columnsFromReading(result);
 
   await transaction(async (client) => {
@@ -660,19 +694,9 @@ async function writeReading(
               model = $2,
               contract_version = $3,
               raw_response = $4,
-              failure_detail = NULL,
-              finished_at = now(),
-              duration_ms = $5
+              failure_detail = NULL,${ROUND_TOTALS}
         WHERE id = $1`,
-      [
-        runId,
-        result.model,
-        result.contract_version,
-        JSON.stringify(result),
-        // The call's own record of how long it took, measured by the provider
-        // rather than by arithmetic across two clocks.
-        Math.round(reading.call.seconds * 1000),
-      ],
+      [runId, result.model, result.contract_version, JSON.stringify(result)],
     );
 
     await client.query(
@@ -718,8 +742,7 @@ async function recordFailedReading(
       await client.query(
         `UPDATE extraction_runs
             SET status = 'failed',
-                failure_detail = $2,
-                finished_at = now()
+                failure_detail = $2,${ROUND_TOTALS}
           WHERE id = $1`,
         [runId, detail],
       );
