@@ -128,7 +128,29 @@ One row per distinct wrong value. The count is how many reads gave it, split by 
 
 ## Discussion
 
-Not yet written: the results have not been read together yet.
+Being read together on 15 September; rulings are added here as they are made.
+
+**06-parking-infringement-notice leaves scope.** luna read the registration number 9XK·7QJ as 9XR·7QJ in 47 of 50 reads, every one marked confirmed, and the scheme returned that wrong plate in 4 of 25 trials with both reads agreeing. The same plate on 07-penalty-reminder-notice was read right 50 of 50 times. The notice is a narrow receipt strip in a small monospaced face, and a person would rarely photograph one for this product. It is not worth the prompt work it would take.
+
+**25-postal-collection-card leaves scope.** The "Collect by" line is blank, so the card carries no date even when it is read right, and the product has nothing to put on the calendar for it. The blank line was still read as unreadable in 7 of 50 luna reads and 11 of 25 terra reads after the prompt said a blank label is not unreadable. Both reasons are enough on their own.
+
+**13-product-recall-notice leaves scope.** The ten digit registration number 9512653343 is printed unspaced in bold at the end of a sentence, and the letter's ABN, 13 512 653 343, shares its last nine digits. luna copied the number wrong in 8 of 50 reads, adding a digit or two inside the repeating 3343 or turning a 3 into a 5; terra read it right 25 of 25 times, and the scheme sent 14 of 25 trials to the person and returned no wrong value. Reading a number like this reliably needs a reader that can notice it is unsure and look closer, which means a tool the model can call and a loop around the call, not a line in the prompt. That is a later version of the reading step, not this one, and 06's registration plate is the same kind of problem. Neither is worked on this semester.
+
+**09-specialist-account-statement passes.** Its one miss in 75 reads is luna copying the line under the surgeon's name into the issuer, "Andrew Reid Ophthalmic Surgeon · Consulting Rooms", and dropping the "Mr". The name is right; the scorer's containment rule cannot see that because of the dropped "Mr". Counted as read right.
+
+The three letters taken out, 06, 13 and 25, are recorded as out of scope in `data/synthetic-letters/README.md`, each row saying why. Fifteen letters stay in scope.
+
+**Misses that are not the reader's.** Reading the tallied misses against the pages, they fall into four kinds, and only the third is a reading error.
+
+The first kind is the prompt's own wording. The new definition of `reference` says "the one the letter tells them to quote", and on a letter that never says which number to quote, terra took that literally and answered Not applicable: 15 of 25 reads on 19-outpatient-appointment-letter, 12 of 25 on 14-super-annual-member-statement, 11 of 25 on 10-private-health-annual-statement, every one confirmed. luna did so 4 times on 19 and never on the other two. In 05, under the older wording, all three letters read their reference right in every read. The identifiers list on those same reads named the number. The wording has to say that when the letter names no number to quote, the reference is the number that belongs to the person.
+
+The second kind is the scorer holding the value to the key's spelling when the page supports the model's. On 21-dispensed-medicine-label the label prints "Ref #6429746 DFD"; every one of the 75 reads answered "#6429746 DFD", the key holds "6429746 DFD", and the scorer marked all 75 wrong. On 25-postal-collection-card 13 reads gave the article number with the spaces the barcode line prints between every character, and the scorer, which collapses runs of whitespace but does not remove it, marked them wrong. Both are the model copying the page as told.
+
+The third kind is a reading error, and it is the three letters above: the plate on 06, the long number on 13, the blank line on 25.
+
+The fourth kind is the vote scheme's rule for the identifiers list. Two reads count as agreeing on the list only when they name the same set of values, and the values the prompt says to leave out, a post office payment code, an NMI, an offence code, come and go between reads. So the pair disagreed on the list in 160 of 450 trials, 98 of those went to the person with the judge matching neither, and on the six fields alone the scheme sent 4 trials to the person. On the letters that held, that is where the "to the person" column comes from; every required number was in every list. The product would take the union of the two lists, and the rule should say that.
+
+None of the four is answered inside this experiment. The first is a prompt change, the second a scorer change, the fourth a change to `shared/vote.ts`; each is made, and marked, before the next run.
 
 ## Reproducing this
 
