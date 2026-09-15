@@ -59,7 +59,7 @@ The short version, so you know when to go and read it:
 ```bash
 npm ci                    # installs exactly what package-lock.json says; never rewrites it
 cp .env.example .env.local
-docker compose up -d      # Postgres on 55432, MinIO on 59020; viewers on 8080 and 59021
+docker compose up -d      # Postgres on 15432, MinIO on 19020; viewers on 8080 and 19021
 npm run db:reset          # rebuild the schema from db/schema.sql, empty the bucket, then seed both
 npm run dev               # http://localhost:3000
 npm test                  # the contract tests
