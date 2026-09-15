@@ -1,6 +1,6 @@
 # 07-reference-by-belonging
 
-Not yet run. Set up 15 September 2026, against RACE's Azure AI Foundry endpoint.
+Run 15 September 2026 against RACE's Azure AI Foundry endpoint.
 
 ## Motivation
 
@@ -25,7 +25,87 @@ Re-marked under the new scorer and scheme, 06's kept reads give 417 of 450 trial
 
 ## Results
 
-Not yet run.
+Run 15 September 2026, 10:21 to 10:32 Melbourne time. 898 calls made in this run and 2 kept from the set-up probes; 900 scored, 0 without a valid reply.
+
+| Model | Effort | Letters all right | Fields right | Wrong and confirmed | Input tokens | Output tokens | Reasoning tokens | Seconds | Cost per letter |
+|---|---|---|---|---|---|---|---|---|---|
+| luna | medium | 598/600 (100%) | 3596/3600 | 2 | 18681 | 769 | 391 | 8.5 | \$0.0014 (A\$0.0020) |
+| terra | low | 300/300 (100%) | 1800/1800 | 0 | 18681 | 310 | 112 | 5.2 | \$0.0100 (A\$0.0138) |
+
+### Every letter
+
+| Letter | luna medium | terra low | All reads | Wrong and confirmed |
+|---|---|---|---|---|
+| 01-electricity-bill | 40/40 (100%) | 20/20 (100%) | 60/60 (100%) | 0 |
+| 02-gas-bill | 40/40 (100%) | 20/20 (100%) | 60/60 (100%) | 0 |
+| 03-water-bill | 40/40 (100%) | 20/20 (100%) | 60/60 (100%) | 0 |
+| 05-animal-registration-overdue-notice | 40/40 (100%) | 20/20 (100%) | 60/60 (100%) | 0 |
+| 07-penalty-reminder-notice | 40/40 (100%) | 20/20 (100%) | 60/60 (100%) | 0 |
+| 08-welfare-information-request | 40/40 (100%) | 20/20 (100%) | 60/60 (100%) | 0 |
+| 09-specialist-account-statement | 40/40 (100%) | 20/20 (100%) | 60/60 (100%) | 0 |
+| 10-private-health-annual-statement | 40/40 (100%) | 20/20 (100%) | 60/60 (100%) | 0 |
+| 12-failure-to-vote-notice | 40/40 (100%) | 20/20 (100%) | 60/60 (100%) | 0 |
+| 14-super-annual-member-statement | 40/40 (100%) | 20/20 (100%) | 60/60 (100%) | 0 |
+| 15-insurance-key-facts-sheet | 40/40 (100%) | 20/20 (100%) | 60/60 (100%) | 0 |
+| 16-driver-licence-renewal-notice | **38/40 (95%)** | 20/20 (100%) | **58/60 (97%)** | 2 |
+| 19-outpatient-appointment-letter | 40/40 (100%) | 20/20 (100%) | 60/60 (100%) | 0 |
+| 21-dispensed-medicine-label | 40/40 (100%) | 20/20 (100%) | 60/60 (100%) | 0 |
+| 23-home-insurance-renewal | 40/40 (100%) | 20/20 (100%) | 60/60 (100%) | 0 |
+
+A letter read 40/40 times bounds its per-read miss rate at 7% (95%, exact binomial).
+
+**This run: 900 calls, \$3.84 (A\$5.32) in total.**
+
+Cost is Azure's public list price multiplied by the tokens Azure reported per call. Prices are from LiteLLM's model price table (https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json, commit 9eaf15bc, 2026-09-07). The exchange rate USD 1 = AUD 1.3861 is from Frankfurter (European Central Bank rates) (https://api.frankfurter.dev/v1/latest?base=USD&symbols=AUD, 2026-09-08). What RACE pays per token is not known to the team, so this is an estimate at list, not an invoice. Seconds were measured with several calls in flight; the experiment's Design section says how many.
+
+### Every miss
+
+| Model | Effort | Letter | Repeat | Field | Key | Model said | Status |
+|---|---|---|---|---|---|---|---|
+| luna | medium | 16-driver-licence-renewal-notice | 11 | reference | 05 502 615 | 812 46 305 | uncertain |
+| luna | medium | 16-driver-licence-renewal-notice | 11 | identifiers | 05 502 615; 812 466 305 | 05 502 615; 812 46 305 |  |
+| luna | medium | 16-driver-licence-renewal-notice | 34 | reference | 05 502 615 | 812 46 305 | uncertain |
+| luna | medium | 16-driver-licence-renewal-notice | 34 | identifiers | 05 502 615; 812 466 305 | 05 502 615; 812 46 305 |  |
+
+### The vote scheme
+
+Reader luna medium, twice; judge terra low when the two reads differ. 20 trials per letter.
+
+| Letter | Trials | Pair agreed on every field | Judge called | Right | Wrong | To person | Cost per letter |
+|---|---|---|---|---|---|---|---|
+| 01-electricity-bill | 20 | 17/20 (85%) | 3 | 20/20 (100%) | 0 | 0 | \$0.0054 (A\$0.0074) |
+| 02-gas-bill | 20 | 17/20 (85%) | 3 | 20/20 (100%) | 0 | 0 | \$0.0047 (A\$0.0066) |
+| 03-water-bill | 20 | 16/20 (80%) | 4 | 20/20 (100%) | 0 | 0 | \$0.0076 (A\$0.0105) |
+| 05-animal-registration-overdue-notice | 20 | 20/20 (100%) | 0 | 20/20 (100%) | 0 | 0 | \$0.0021 (A\$0.0029) |
+| 07-penalty-reminder-notice | 20 | 19/20 (95%) | 1 | 20/20 (100%) | 0 | 0 | \$0.0036 (A\$0.0050) |
+| 08-welfare-information-request | 20 | 20/20 (100%) | 0 | 20/20 (100%) | 0 | 0 | \$0.0023 (A\$0.0031) |
+| 09-specialist-account-statement | 20 | 20/20 (100%) | 0 | 20/20 (100%) | 0 | 0 | \$0.0029 (A\$0.0041) |
+| 10-private-health-annual-statement | 20 | 20/20 (100%) | 0 | 20/20 (100%) | 0 | 0 | \$0.0035 (A\$0.0049) |
+| 12-failure-to-vote-notice | 20 | 20/20 (100%) | 0 | 20/20 (100%) | 0 | 0 | \$0.0021 (A\$0.0029) |
+| 14-super-annual-member-statement | 20 | 20/20 (100%) | 0 | 20/20 (100%) | 0 | 0 | \$0.0029 (A\$0.0040) |
+| 15-insurance-key-facts-sheet | 20 | 20/20 (100%) | 0 | 20/20 (100%) | 0 | 0 | \$0.0021 (A\$0.0030) |
+| 16-driver-licence-renewal-notice | 20 | 11/20 (55%) | 9 | **19/20 (95%)** | 0 | 1 | \$0.0048 (A\$0.0067) |
+| 19-outpatient-appointment-letter | 20 | 11/20 (55%) | 9 | 20/20 (100%) | 0 | 0 | \$0.0083 (A\$0.0115) |
+| 21-dispensed-medicine-label | 20 | 20/20 (100%) | 0 | 20/20 (100%) | 0 | 0 | \$0.0019 (A\$0.0026) |
+| 23-home-insurance-renewal | 20 | 20/20 (100%) | 0 | 20/20 (100%) | 0 | 0 | \$0.0033 (A\$0.0046) |
+
+**All letters: 300 trials, 299/300 (100%) right, 0 wrong, 1 to the person. The judge was called in 29 trials (10%).**
+
+Cost per letter over all trials, as the scheme would have paid it: \$0.0038 (A\$0.0053).
+
+### Where the pair disagreed
+
+| Field | Pairs that disagreed | Judge sided with the right read | Judge sided with a wrong read | Judge matched neither |
+|---|---|---|---|---|
+| reference | 12 | 11 | 0 | 1 |
+| identifiers | 22 | 22 | 0 | 0 |
+
+### Every trial not right
+
+| Letter | Trial | Outcome | Field | Read 1 | Read 2 | Judge | Decided |
+|---|---|---|---|---|---|---|---|
+| 16-driver-licence-renewal-notice | 6 | to person | reference | 812 46 305 | 812 466 305 | 05 502 615 | unresolved |
+| 16-driver-licence-renewal-notice | 6 | to person | identifiers | 05 502 615; 812 46 305 | 05 502 615; 812 466 305 | 05 502 615; 812 466 305 | judged |
 
 ## Discussion
 

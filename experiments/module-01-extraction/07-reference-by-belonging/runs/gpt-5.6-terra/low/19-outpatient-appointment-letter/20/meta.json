@@ -1,0 +1,11 @@
+{
+  "model": "gpt-5.6-terra",
+  "effort": "low",
+  "letter": "19-outpatient-appointment-letter",
+  "repeat": 20,
+  "pages": ["page-01.png", "page-02.png"],
+  "image_detail": "auto",
+  "started_at": "2026-09-15T00:31:58.327Z",
+  "seconds": 4.867,
+  "ok": true
+}

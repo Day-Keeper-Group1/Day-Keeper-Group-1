@@ -1,0 +1,11 @@
+{
+  "model": "gpt-5.6-luna",
+  "effort": "medium",
+  "letter": "14-super-annual-member-statement",
+  "repeat": 9,
+  "pages": ["page-01.png", "page-02.png", "page-03.png"],
+  "image_detail": "auto",
+  "started_at": "2026-09-15T00:26:46.847Z",
+  "seconds": 6.701,
+  "ok": true
+}

@@ -1,0 +1,11 @@
+{
+  "model": "gpt-5.6-luna",
+  "effort": "medium",
+  "letter": "02-gas-bill",
+  "repeat": 10,
+  "pages": ["page-01.png", "page-02.png"],
+  "image_detail": "auto",
+  "started_at": "2026-09-15T00:22:01.435Z",
+  "seconds": 10.448,
+  "ok": true
+}

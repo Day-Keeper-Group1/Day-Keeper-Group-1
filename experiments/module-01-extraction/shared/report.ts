@@ -146,7 +146,7 @@ console.log(
     `Prices are from ${PRICE_SOURCE_NAME} (${PRICE_SOURCE}, commit ${PRICE_SOURCE_COMMIT}, ${PRICES_AS_OF}). ` +
     `The exchange rate USD 1 = AUD ${USD_TO_AUD} is from ${FX_SOURCE_NAME} (${FX_SOURCE}, ${FX_AS_OF}). ` +
     `What RACE pays per token is not known to the team, so this is an estimate at list, not an invoice. ` +
-    `Seconds were measured with four calls in flight.`,
+    `Seconds were measured with several calls in flight; the experiment's Design section says how many.`,
 );
 
 const misses = scores.filter(

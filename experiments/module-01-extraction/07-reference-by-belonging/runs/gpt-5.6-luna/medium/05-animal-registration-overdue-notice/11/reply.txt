@@ -1,0 +1,72 @@
+{
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "animal registration renewal overdue notice",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Calderfield City Council",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Pay Calderfield City Council",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "due_date",
+      "value": "2026-05-28",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "amount",
+      "value": "$23.00",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "44637",
+      "status": "confirmed",
+      "confidence": 0.99
+    }
+  ],
+  "identifiers": [
+    {
+      "label": "Animal number",
+      "value": "44637",
+      "status": "confirmed"
+    },
+    {
+      "label": "Microchip number",
+      "value": "999014100441675",
+      "status": "confirmed"
+    },
+    {
+      "label": "Lifetime Tag Number",
+      "value": "96951",
+      "status": "confirmed"
+    }
+  ],
+  "open_payload": {
+    "animal_name": "Biscuit",
+    "animal_type": "Cat",
+    "breed": "Domestic Short Hair",
+    "colour_marks": "Black and white",
+    "sex": "Female",
+    "desexed": "Yes",
+    "date_of_birth": "22/11/2015",
+    "date_of_issue": "14 May 2026",
+    "renewal_notice_issued": "9 March 2026",
+    "registration_expired": "10 April 2026",
+    "registration_fee": "$46.00",
+    "pensioner_concession": "-$23.00",
+    "payment_term": "within 14 days of the date of this notice"
+  }
+}
