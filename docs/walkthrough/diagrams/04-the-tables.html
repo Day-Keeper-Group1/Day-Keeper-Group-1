@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>The ten tables</title>
+<title>The twelve tables</title>
 <link rel="stylesheet" href="_style.css">
 <style>
   /* A schema map wants more width than the portrait diagrams: it lands on the
@@ -10,9 +10,9 @@
      drawn against these coordinates. */
   .sheet { width: 2150px; }
 
-  .canvas { position: relative; width: 2074px; height: 1104px; margin-top: 14px; }
+  .canvas { position: relative; width: 2074px; height: 1150px; margin-top: 14px; }
 
-  svg.wires { position: absolute; inset: 0; width: 2074px; height: 1104px; }
+  svg.wires { position: absolute; inset: 0; width: 2074px; height: 1150px; }
   svg.wires g { fill: none; stroke: var(--line); stroke-width: 2.5; }
   svg.wires marker path { fill: var(--line); stroke: none; }
   svg.wires text { fill: var(--dim); stroke: none; font-family: var(--sans); }
@@ -55,26 +55,27 @@
 </head>
 <body>
 <div class="sheet">
-  <h1>The ten tables, and which step writes each</h1>
+  <h1>The twelve tables, and which step writes each</h1>
 
   <div class="canvas">
 
-    <svg class="wires" viewBox="0 0 2074 1104" aria-hidden="true">
+    <svg class="wires" viewBox="0 0 2074 1150" aria-hidden="true">
       <defs>
         <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
           <path d="M 0 0 L 10 5 L 0 10 z"/>
         </marker>
       </defs>
       <g marker-end="url(#a)">
-        <path d="M 240 212 L 320 212"/>
-        <path d="M 542 212 L 622 212"/>
-        <path d="M 844 212 L 924 212"/>
-        <path d="M 1750 212 L 1830 212"/>
-        <path d="M 735 190 L 735 158 Q 735 146 747 146 L 1327 146 Q 1339 146 1339 158 L 1339 186"/>
-        <path d="M 433 190 L 433 124 Q 433 112 445 112 L 1629 112 Q 1641 112 1641 124 L 1641 186"/>
+        <path d="M 240 212 L 280 212"/>
+        <path d="M 502 212 L 542 212"/>
+        <path d="M 764 212 L 804 212"/>
+        <path d="M 1812 212 L 1852 212"/>
+        <path d="M 655 190 L 655 158 Q 655 146 667 146 L 1429 146 Q 1441 146 1441 158 L 1441 186"/>
+        <path d="M 1179 146 L 1179 186"/>
+        <path d="M 131 190 L 131 124 Q 131 112 143 112 L 1691 112 Q 1703 112 1703 124 L 1703 186"/>
       </g>
-      <text x="1037" y="105" font-size="15" text-anchor="middle">a task remembers the letter it came from</text>
-      <text x="1037" y="140" font-size="14" text-anchor="middle">the exact prompt, kept</text>
+      <text x="917" y="105" font-size="15" text-anchor="middle">a task remembers the letter it came from</text>
+      <text x="1048" y="140" font-size="14" text-anchor="middle">the round's decided reading, field by field and number by number</text>
     </svg>
 
     <!-- ---------- the journey ---------- -->
@@ -132,17 +133,17 @@
         <li>updated_at</li>
       </ul>
     </div>
-    <div class="note" style="left:22px; top:584px">
+    <div class="note" style="left:22px; top:596px">
       One letter, however many sheets. The reading fills <code>issuer</code>
       down to <code>reference</code> the moment it succeeds, and only from
-      confident values: a hedged date stays NULL here.
+      confident values.
     </div>
 
-    <div class="tbl" style="left:324px; top:190px">
+    <div class="tbl" style="left:284px; top:190px">
       <h2>document_pages<span class="badges"><b>1</b></span></h2>
       <ul>
         <li class="key">id</li>
-        <li>document_id <span class="fk">&rarr; documents</span></li>
+        <li>document_id</li>
         <li class="star">page_number</li>
         <li>storage_path</li>
         <li>mime_type</li>
@@ -152,35 +153,63 @@
         <li>created_at</li>
       </ul>
     </div>
-    <div class="note" style="left:324px; top:464px">
+    <div class="note" style="left:284px; top:476px">
       One photographed sheet. The bytes live in the bucket and the row holds
-      the key. <code>page_number</code> is the order she took them, which is
-      the order the letter is shown in.
+      the key.
     </div>
 
-    <div class="tbl" style="left:626px; top:190px">
+    <div class="tbl" style="left:546px; top:190px">
       <h2>extraction_runs<span class="badges"><b>2</b></span></h2>
       <ul>
         <li class="key">id</li>
-        <li>document_id <span class="fk">&rarr; documents</span></li>
+        <li>document_id</li>
         <li>status</li>
         <li>provider</li>
         <li>model</li>
         <li>contract_version</li>
         <li>failure_detail</li>
         <li class="star">raw_response</li>
+        <li>judged</li>
+        <li>input_tokens</li>
+        <li>output_tokens</li>
+        <li>estimated_cost_usd</li>
         <li>started_at</li>
         <li>finished_at</li>
         <li>duration_ms</li>
       </ul>
     </div>
-    <div class="note" style="left:626px; top:512px">
-      One row per try, and at most one that worked. Failures are rows
-      too: a table holding only the readings that worked can be quoted to say
-      anything.
+    <div class="note" style="left:546px; top:620px">
+      One round of reading. A round that cannot decide is a failed row, and
+      the next round is a new one.
     </div>
 
-    <div class="tbl" style="left:928px; top:190px">
+    <div class="tbl" style="left:808px; top:190px">
+      <h2>model_calls<span class="badges"><b>2</b></span></h2>
+      <ul>
+        <li class="key">id</li>
+        <li>extraction_run_id</li>
+        <li class="star">role</li>
+        <li>slot</li>
+        <li>attempt</li>
+        <li>status</li>
+        <li>model</li>
+        <li>effort</li>
+        <li>raw_response</li>
+        <li>failure_detail</li>
+        <li>input_tokens</li>
+        <li>cached_tokens</li>
+        <li>reasoning_tokens</li>
+        <li>output_tokens</li>
+        <li>estimated_cost_usd</li>
+        <li>duration_ms</li>
+        <li>created_at</li>
+      </ul>
+    </div>
+    <div class="note" style="left:808px; top:668px">
+      Every call of a round: two readers, and a judge when they differ.
+    </div>
+
+    <div class="tbl" style="left:1070px; top:190px">
       <h2>extracted_fields<span class="badges"><b>2</b></span></h2>
       <ul>
         <li class="key">id</li>
@@ -191,36 +220,32 @@
         <li>confidence</li>
       </ul>
     </div>
-    <div class="note" style="left:928px; top:392px">
+    <div class="note" style="left:1070px; top:404px">
       Nobody edits a reading, so the reading is the only writer here. An
-      uncertain row keeps the model's value for the accuracy work, and every
-      screen treats it as no value at all.
+      uncertain row keeps the value, and no screen shows it.
     </div>
 
-    <div class="tbl" style="left:1230px; top:190px">
-      <h2>ai_prompt_logs<span class="badges"><b>2</b></span></h2>
+    <div class="tbl" style="left:1332px; top:190px">
+      <h2 style="font-size:13.5px">extracted_identifiers<span class="badges"><b>2</b></span></h2>
       <ul>
         <li class="key">id</li>
         <li>extraction_run_id</li>
-        <li>provider</li>
-        <li>model</li>
-        <li class="star">prompt</li>
-        <li>prompt_tokens</li>
-        <li>completion_tokens</li>
-        <li>created_at</li>
+        <li>position</li>
+        <li class="star">label</li>
+        <li>value</li>
+        <li>status</li>
       </ul>
     </div>
-    <div class="note" style="left:1230px; top:440px">
-      Every prompt sent to a model, so an accuracy figure can be reproduced
-      and a wrong reading argued about with the evidence on the table.
+    <div class="note" style="left:1332px; top:404px">
+      Every number the letter prints, under the label printed beside it.
     </div>
 
-    <div class="tbl" style="left:1532px; top:190px">
+    <div class="tbl" style="left:1594px; top:190px">
       <h2>tasks<span class="badges"><b>4</b><b>6</b></span></h2>
       <ul>
         <li class="key">id</li>
         <li>user_id <span class="fk">&rarr; users</span></li>
-        <li>document_id <span class="fk">&rarr; documents</span></li>
+        <li>document_id</li>
         <li>title</li>
         <li>issuer</li>
         <li>due_date</li>
@@ -231,17 +256,16 @@
         <li>updated_at</li>
       </ul>
     </div>
-    <div class="note" style="left:1532px; top:512px">
-      Her yes writes this row. <code>state</code> is the tick, the one fact a
-      person controls. Overdue is never stored: it is arithmetic done while a
-      screen draws, from the tick and today's date in her zone.
+    <div class="note" style="left:1594px; top:524px">
+      Her yes writes this row. <code>state</code> is the tick. Overdue is
+      never stored: it is worked out from the tick and today's date.
     </div>
 
-    <div class="tbl" style="left:1834px; top:190px">
+    <div class="tbl" style="left:1856px; top:190px">
       <h2>reminders<span class="badges"><b>4</b><b>5</b></span></h2>
       <ul>
         <li class="key">id</li>
-        <li>task_id <span class="fk">&rarr; tasks</span></li>
+        <li>task_id</li>
         <li class="star">scheduled_for</li>
         <li>channel</li>
         <li class="star">status</li>
@@ -249,15 +273,14 @@
         <li>created_at</li>
       </ul>
     </div>
-    <div class="note" style="left:1834px; top:416px">
-      Rows, not a rule evaluated when somebody looks. Ticking writes nothing
-      here. When a row's moment arrives, the clock reads the task: still open
-      means send, already done means write <i>skipped</i>.
+    <div class="note" style="left:1856px; top:428px">
+      Rows, not a rule. When a row's moment arrives, the clock reads the task:
+      still open means send, done means <i>skipped</i>.
     </div>
 
     <!-- ---------- off the path ---------- -->
 
-    <div class="tbl aside" style="left:22px; top:744px">
+    <div class="tbl aside" style="left:22px; top:800px">
       <h2>users</h2>
       <ul>
         <li class="key">id</li>
@@ -272,12 +295,12 @@
         <li>updated_at</li>
       </ul>
     </div>
-    <div class="note" style="left:302px; top:744px; width:200px">
+    <div class="note" style="left:262px; top:800px; width:240px">
       The timezone is why &ldquo;9 am&rdquo; means anything. Every date in
       the product is a calendar day in somebody's zone.
     </div>
 
-    <div class="tbl aside" style="left:626px; top:744px">
+    <div class="tbl aside" style="left:546px; top:800px">
       <h2>sessions</h2>
       <ul>
         <li class="key">id</li>
@@ -289,12 +312,12 @@
         <li>user_agent</li>
       </ul>
     </div>
-    <div class="note" style="left:906px; top:744px; width:200px">
+    <div class="note" style="left:786px; top:800px; width:240px">
       The cookie carries a token. This row is the session, so signing out or
       deactivating an account ends it at once.
     </div>
 
-    <div class="tbl aside" style="left:1230px; top:744px">
+    <div class="tbl aside" style="left:1070px; top:800px">
       <h2>audit_logs</h2>
       <ul>
         <li class="key">id</li>
@@ -306,9 +329,28 @@
         <li>created_at</li>
       </ul>
     </div>
-    <div class="note" style="left:1510px; top:744px; width:200px">
+    <div class="note" style="left:1310px; top:800px; width:240px">
       Who did what, to which record. It has nowhere to put the contents of a
       letter, and that is the point rather than an omission.
+    </div>
+
+    <div class="tbl aside" style="left:1594px; top:800px">
+      <h2>ai_prompt_logs</h2>
+      <ul>
+        <li class="key">id</li>
+        <li>extraction_run_id</li>
+        <li>provider</li>
+        <li>model</li>
+        <li>prompt</li>
+        <li>prompt_tokens</li>
+        <li>completion_tokens</li>
+        <li>created_at</li>
+      </ul>
+    </div>
+    <div class="note" style="left:1834px; top:800px; width:240px">
+      Nothing writes it yet. The prompt is one file,
+      <code>src/server/extraction/prompt.md</code>, which a test holds equal
+      to the experiment's.
     </div>
 
     <div class="legend">
@@ -316,7 +358,8 @@
       <span><i class="sw hi"></i> the column the design turns on</span>
       <span><i class="sw dim"></i> off the path a letter travels</span>
       <span>step 3 appears on no badge: checking writes nothing</span>
-      <span>drawn from <code>db/schema.sql</code>, the only definition there is</span>
+      <span>one view, <code>document_reading_totals</code>, adds up a letter's rounds</span>
+      <span>drawn from <code>db/schema.sql</code></span>
     </div>
 
   </div>

@@ -33,7 +33,7 @@ never changes, so the browser fetches it straight from the bucket, and the row
 keeps only the key for finding it.
 
 #step(2, "The system reads it")
-#writes(`extraction_runs`, `extracted_fields`, `ai_prompt_logs`)
+#writes(`extraction_runs`, `model_calls`, `extracted_fields`, `extracted_identifiers`)
 
 #spread("figures/05-notification.png",
   [The reading finished while the phone was in her bag. The message is what
@@ -51,9 +51,11 @@ keeps only the key for finding it.
   the amount due, by 15 August, \$347.60, reference 9201~4471~88.
 
   The six questions, and the rule that a reader must answer all six every
-  time, are in #raw("src/lib/contract/fields.ts"). The call and its exact
-  prompt are stored in #t("extraction_runs") and #t("ai_prompt_logs"), so a
-  wrong answer can always be traced to the call that produced it.
+  time, are in #raw("src/lib/contract/fields.ts"). Every call is a row in
+  #t("model_calls"), with what it answered and what it cost, under its round
+  in #t("extraction_runs"), so a wrong answer can always be traced to the
+  call that produced it. The prompt is one file,
+  #raw("src/server/extraction/prompt.md").
 
   On this bill the model was sure of all six. It is not always. Each answer
   carries a verdict: #raw("confirmed"), or #raw("uncertain") when it has a
@@ -232,8 +234,10 @@ that rate, so the failure path is exercised every day.
 
 A model call that goes wrong is made again first, up to three tries in all,
 while the letter still says "reading…". Each try is its own row in
-#t("extraction_runs"), so the table shows how many calls a letter took. Only
-when the last try fails is she told.
+#t("model_calls"), so the table shows how many calls a letter took. When the
+two readings and the judge all disagree, the whole letter is read again, up to
+five rounds, each its own row in #t("extraction_runs"). Only when the last try
+or the last round fails is she told.
 
 After that, a failed reading is the end of the road. The letter keeps its
 photographs and says plainly that it could not be read. There is no prompt to
