@@ -33,7 +33,7 @@ never changes, so the browser fetches it straight from the bucket, and the row
 keeps only the key for finding it.
 
 #step(2, "The system reads it")
-#writes(`extraction_runs`, `extracted_fields`, `ai_prompt_logs`)
+#writes(`extraction_runs`, `model_calls`, `extracted_fields`, `extracted_identifiers`)
 
 #spread("figures/05-notification.png",
   [The reading finished while the phone was in her bag. The message is what
@@ -41,19 +41,21 @@ keeps only the key for finding it.
 )[
   The upload screen closes at once. She puts the phone down.
 
-  About ten seconds later it buzzes: _Your letter is ready to check. Nothing
+  About twenty seconds later it buzzes: _Your letter is ready to check. Nothing
   happens until you look at it._
 
-  In those ten seconds the product did its one clever thing. A vision model
-  looked at the three photographs and answered six questions: what kind of
+  In those twenty seconds the product did its one clever thing. A vision model
+  looked at the three photographs, twice, and answered six questions: what kind of
   letter this is, who sent it, what she has to do, by when, how much, and what
   reference to quote. For this bill: an electricity bill, from AGL Energy, pay
   the amount due, by 15 August, \$347.60, reference 9201~4471~88.
 
   The six questions, and the rule that a reader must answer all six every
-  time, are in #raw("src/lib/contract/fields.ts"). The call and its exact
-  prompt are stored in #t("extraction_runs") and #t("ai_prompt_logs"), so a
-  wrong answer can always be traced to the call that produced it.
+  time, are in #raw("src/lib/contract/fields.ts"). Every call is a row in
+  #t("model_calls"), with what it answered and what it cost, under its round
+  in #t("extraction_runs"), so a wrong answer can always be traced to the
+  call that produced it. The prompt is one file,
+  #raw("src/server/extraction/prompt.md").
 
   On this bill the model was sure of all six. It is not always. Each answer
   carries a verdict: #raw("confirmed"), or #raw("uncertain") when it has a
@@ -66,15 +68,17 @@ keeps only the key for finding it.
   #v(3pt)
   #set text(font: sans, size: 8.5pt, fill: ink-dim)
   #set par(justify: false, leading: 0.5em)
-  A second bill, written to go wrong: the model was not sure of the due date,
-  and could not read the reference at all.
+  A second bill, written to go wrong: the model was not sure of the
+  reference number.
 ]
 
 #why[
   *A value the model was not sure of is never offered as a guess.* Show her a
-  half sure date in grey and she will approve it with a nod. So it is not
-  shown at all, and the card says so in a sentence. A date nobody really
-  checked has no way to reach the calendar.
+  half sure number in grey and she will approve it with a nod. So the row is
+  not drawn at all. A date or an amount is different: left out, the card
+  would say the letter has no date or nothing to pay. So if the model is not
+  sure of either, the reading fails and she sees the red row instead. A date
+  nobody really checked has no way to reach the calendar.
 ]
 
 #step(3, "She checks it")
@@ -230,8 +234,10 @@ that rate, so the failure path is exercised every day.
 
 A model call that goes wrong is made again first, up to three tries in all,
 while the letter still says "reading…". Each try is its own row in
-#t("extraction_runs"), so the table shows how many calls a letter took. Only
-when the last try fails is she told.
+#t("model_calls"), so the table shows how many calls a letter took. When the
+two readings and the judge all disagree, the whole letter is read again, up to
+five rounds, each its own row in #t("extraction_runs"). Only when the last try
+or the last round fails is she told.
 
 After that, a failed reading is the end of the road. The letter keeps its
 photographs and says plainly that it could not be read. There is no prompt to

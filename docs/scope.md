@@ -12,7 +12,7 @@ the list below, this document wins and that document is wrong.
    every photograph in an upload belongs to that one letter.
 3. The upload is checked for the two things code can check: the file is an image we can
    read, and it is not larger than the limit.
-4. One model call. A vision model looks at the photographs and returns the six fields.
+4. One reading step. A vision model looks at the photographs twice, and a third time when the two readings differ, and returns the six fields. How the readings are put together is [`extraction.md`](extraction.md).
 5. Everything after that is ordinary code.
 6. A screen shows what was read. It shows; it never asks. Nothing on it is editable and
    nothing on it is a question.
@@ -53,7 +53,8 @@ can be shown, measured and corrected, and a half-covered one can only be describ
 
 Postgres holds the data and an object store holds the photographs. The reading returns
 six fields and may return more, with the extra kept in `open_payload`. A value the model
-was not sure of arrives as no value at all, and the screen says so in a sentence rather
-than offering an empty box. A task's tick is its only state, and whether a task is
+was not sure of never reaches a screen, and nobody is offered an empty box to fill in;
+[`src/lib/contract/extraction.ts`](../src/lib/contract/extraction.ts) says what happens
+to it instead. A task's tick is its only state, and whether a task is
 overdue is worked out from the clock when a reminder fires rather than stored. The theme
 is Eucalypt and Wattle, and every rule in [`theme.md`](theme.md) still holds.

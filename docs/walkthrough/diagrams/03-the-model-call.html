@@ -68,7 +68,7 @@
   <div class="call">
     <div class="chead">
       <span class="nm">The reading</span>
-      <span class="tr">Runs once per upload, on the pages of one letter.</span>
+      <span class="tr">Runs once per upload: two readings, and a third when they differ.</span>
     </div>
 
     <div class="flow">
@@ -91,8 +91,7 @@
             </li>
             <li>
               <div class="h">due_date &middot; amount &middot; reference</div>
-              <div class="s">the three that turn a letter into something a calendar and a bank can act on,
-                plus an optional due_time when the page prints one.</div>
+              <div class="s">the three that turn a letter into something a calendar and a bank can act on.</div>
             </li>
           </ul>
         </div>
@@ -103,15 +102,15 @@
       <div class="io">
         <div class="cap">Out</div>
         <div class="box"><div class="d">six fields, each with a status</div></div>
-        <div class="sub">Confirmed or unreadable. A value the model was not sure of is not offered as a guess,
-          and the screen says so in a sentence.</div>
+        <div class="sub">Confirmed or unreadable. A value the model was not sure of is not offered as a guess;
+          a date or amount it was not sure of fails the reading.</div>
       </div>
     </div>
 
     <div class="costs">
       <span class="cost hot">vision tokens, the expensive part of the product</span>
-      <span class="cost">the photographs are looked at once and once only</span>
-      <span class="cost">about ten seconds</span>
+      <span class="cost">two readings, and a third only when they differ</span>
+      <span class="cost">about twenty seconds</span>
     </div>
 
   </div>

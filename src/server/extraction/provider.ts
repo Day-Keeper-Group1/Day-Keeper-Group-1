@@ -15,11 +15,11 @@
  * returns is validated against the contract in src/lib/contract/extraction.ts
  * before it goes anywhere near the database.
  *
- * One reading per letter. This release makes one model call that succeeds and
- * everything after it is ordinary code, so there is no second model and nothing
- * that searches over what was read; see docs/scope.md. A call that fails is
- * made again, which is a second attempt at the same reading and not a second
- * opinion.
+ * A provider makes one call. How many calls a letter gets, with which model at
+ * which effort, and how their answers are put together is the reading scheme
+ * (./scheme.ts, decided in docs/extraction.md); a provider only knows how to
+ * make the call it is asked for. A call that fails is made again, which is a
+ * second attempt at the same call and not a second opinion.
  */
 
 import "server-only";
@@ -44,8 +44,8 @@ export type ExtractionInput = {
  * rejection and no repair: a letter is never turned away for being the wrong
  * sort of document, a photograph is never refused for being blurred, and nobody
  * is asked to take it again. So a failure here is our side failing. The same
- * photographs are read again a couple of times first (src/server/uploads.ts),
- * and only when every try has failed is the document marked failed.
+ * call is made again a couple of times first (src/server/uploads.ts), and
+ * only when every try has failed is the document marked failed.
  *
  * `message` is developer text. It is stored with the run and never shown; the
  * sentence a person reads is worded once, in src/lib/contract/api.ts, so that
@@ -63,10 +63,41 @@ export class ExtractionFailure extends Error {
    */
   readonly retryable: boolean;
 
-  constructor(message: string, options: { retryable?: boolean } = {}) {
+  /**
+   * KAN-63: what the call used, when the model answered and the answer was
+   * then refused (not JSON, or outside the contract). That call was billed
+   * all the same, and the record of what a reading cost has to count it. Null
+   * when the call never reached the model.
+   */
+  readonly usage: TokenUsage | null;
+
+  /**
+   * KAN-63: what the model said, when it answered and the answer was refused:
+   * the parsed JSON when it was JSON outside the contract, the text as it came
+   * when it was not JSON at all. Kept so a failed call can be read afterwards
+   * and the reason found in what the model actually sent. Undefined when the
+   * call never reached the model.
+   */
+  readonly answer: unknown;
+
+  /** KAN-63: how long the call took, when the model answered. Null otherwise. */
+  readonly seconds: number | null;
+
+  constructor(
+    message: string,
+    options: {
+      retryable?: boolean;
+      usage?: TokenUsage | null;
+      answer?: unknown;
+      seconds?: number | null;
+    } = {},
+  ) {
     super(message);
     this.name = "ExtractionFailure";
     this.retryable = options.retryable ?? true;
+    this.usage = options.usage ?? null;
+    this.answer = options.answer;
+    this.seconds = options.seconds ?? null;
   }
 }
 
@@ -75,9 +106,14 @@ export class ExtractionFailure extends Error {
  * already includes `reasoning_tokens`; they are kept as reported rather than
  * separated, so a number here can be compared with an experiment report
  * directly. The order is the order the tokens happen in.
+ *
+ * KAN-63: `cached_tokens` is the part of `input_tokens` Azure served from its
+ * cache, which is billed at a tenth of the price, so a cost can be worked out
+ * from the usage alone (./prices.ts).
  */
 export type TokenUsage = {
   input_tokens: number;
+  cached_tokens: number;
   reasoning_tokens: number;
   output_tokens: number;
 };
@@ -91,6 +127,8 @@ export type TokenUsage = {
  */
 export type ExtractionOutcome = {
   payload: unknown;
+  /** KAN-63: the exact model the call was made with; null for a reader without one. */
+  model: string | null;
   /** The reasoning effort the call was made at; null for a reader without one. */
   effort: string | null;
   /** Null when nothing was billed, as with the mock. */
@@ -101,7 +139,7 @@ export type ExtractionOutcome = {
 export interface DocumentExtractionProvider {
   /** Stored on every run so accuracy figures can name what produced them. */
   readonly name: string;
-  /** The exact model identifier, when there is one. */
+  /** The model a letter is read with by default, when there is one. */
   readonly model: string | null;
 
   /**
@@ -112,7 +150,10 @@ export interface DocumentExtractionProvider {
    * bug in the provider, and the caller records it as a failed reading just
    * the same.
    */
-  extract(input: ExtractionInput): Promise<ExtractionOutcome>;
+  extract(
+    input: ExtractionInput,
+    cell?: { model: string; effort: string },
+  ): Promise<ExtractionOutcome>;
 }
 
 export type { ExtractionResult };

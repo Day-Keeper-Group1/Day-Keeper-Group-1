@@ -26,8 +26,9 @@ import type { PlanLine } from "@/lib/review-plan";
  * The review screen shows, it never asks.
  *
  * There are no inputs here on purpose. A value the model was not sure of never
- * reaches this screen (it arrives as an absent value), so there is nothing to
- * interrogate the person about, and nothing here is editable. The person's
+ * reaches this screen (src/lib/contract/extraction.ts says what happens to it
+ * instead), so there is nothing to interrogate the person about, and nothing
+ * here is editable. The person's
  * whole job on this screen is recognition: does this match the letter? Yes is
  * a tap, and that is the only control. See src/lib/contract/api.ts.
  */

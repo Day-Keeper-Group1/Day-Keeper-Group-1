@@ -144,8 +144,8 @@ async function main() {
     // Wipe in dependency order. The seed is idempotent: run it as often as you
     // like and you get the same world back.
     await db.query(
-      `TRUNCATE audit_logs, ai_prompt_logs, reminders, tasks,
-                extracted_fields, extraction_runs, document_pages, documents,
+      `TRUNCATE audit_logs, reminders, tasks,
+                extracted_fields, model_calls, extraction_runs, document_pages, documents,
                 sessions, users RESTART IDENTITY CASCADE`,
     );
 

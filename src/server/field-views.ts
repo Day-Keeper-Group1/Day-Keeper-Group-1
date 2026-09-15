@@ -58,10 +58,9 @@ export function fieldLabel(key: string): string {
 /**
  * One stored field, as the browser receives it.
  *
- * `uncertain` collapses to `unreadable` and loses its value on the way out,
- * because the product treats a hedge and a blank alike and nobody is asked to
- * adjudicate a model's hesitation (src/lib/contract/extraction.ts). The stored
- * row keeps both apart, which is what makes it evaluation data.
+ * `uncertain` collapses to `unreadable` and loses its value on the way out. The
+ * rule and its reason are in src/lib/contract/extraction.ts, beside the
+ * statuses.
  *
  * A confident due date is printed the way the review screen says dates,
  * "15 Aug 2026". A confident due date that is not a date at all, which is what a

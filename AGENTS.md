@@ -39,7 +39,7 @@ The gain is in [`src/lib/contract/`](src/lib/contract/). Those types are the agr
 
 One dependency set, one deployment, one test run, and one place to look when something is wrong. Four of the five of us have not shipped a web application before, and every one of those is worth more to a beginner than it is to an experienced team.
 
-Extraction runs in a route handler because a reading takes about ten seconds: the request answers immediately and the interface polls. If a reading ever takes minutes, that gets revisited and a queue appears.
+Extraction runs in a route handler because a reading takes about twenty seconds: the request answers immediately and the interface polls. If a reading ever takes minutes, that gets revisited and a queue appears.
 
 ## The look
 

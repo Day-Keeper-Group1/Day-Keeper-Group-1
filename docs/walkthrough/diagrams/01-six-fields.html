@@ -146,7 +146,7 @@
 
     <div class="letter">
       <div class="frame"><img src="source-images/SYN-0001-p1.png" alt=""></div>
-      <div class="cap"><b>One letter, photographed</b>read once, and nobody is asked for a second opinion</div>
+      <div class="cap"><b>One letter, photographed</b>read by the model, and nobody is asked to fill anything in</div>
     </div>
 
     <div class="to">
@@ -163,9 +163,9 @@
         <div class="row"><span class="k">document_type</span><span class="v">Electricity bill</span><span class="tag">confirmed</span></div>
         <div class="row"><span class="k">issuer</span><span class="v">Example Energy</span><span class="tag">confirmed</span></div>
         <div class="row"><span class="k">action_required</span><span class="v">Pay the total amount due</span><span class="tag">confirmed</span></div>
-        <div class="row hedged"><span class="k">due_date</span><span class="v">24 Aug 2026</span><span class="tag warn">uncertain</span></div>
+        <div class="row"><span class="k">due_date</span><span class="v">24 Aug 2026</span><span class="tag">confirmed</span></div>
         <div class="row"><span class="k">amount</span><span class="v">$82.42</span><span class="tag">confirmed</span></div>
-        <div class="row gone"><span class="k">reference</span><span class="v none">(nothing)</span><span class="tag bad">unreadable</span></div>
+        <div class="row hedged"><span class="k">reference</span><span class="v">4471 88</span><span class="tag warn">uncertain</span></div>
       </div>
     </div>
 
@@ -182,9 +182,9 @@
         <div class="row"><span class="k">document_type</span><span class="v">Electricity bill</span><span class="tag">confirmed</span></div>
         <div class="row"><span class="k">issuer</span><span class="v">Example Energy</span><span class="tag">confirmed</span></div>
         <div class="row"><span class="k">action_required</span><span class="v">Pay the total amount due</span><span class="tag">confirmed</span></div>
-        <div class="ghost">the row is not drawn at all; an empty row invites an answer nobody is asking for</div>
+        <div class="row"><span class="k">due_date</span><span class="v">24 Aug 2026</span><span class="tag">confirmed</span></div>
         <div class="row"><span class="k">amount</span><span class="v">$82.42</span><span class="tag">confirmed</span></div>
-        <div class="ghost">the same here, and for the same reason: on this side of the wall there are only two states</div>
+        <div class="ghost">the reference row is not drawn at all; an empty row invites an answer nobody is asking for</div>
       </div>
     </div>
 
@@ -201,16 +201,11 @@
 
     <div class="conseq box note">
       <div class="inner">
-        <div class="task">
-          <div class="h">Pay the total amount due</div>
-          <div class="s">Example Energy</div>
-          <span class="chip">No date</span>
-        </div>
         <div>
-          <div class="t">So the letter becomes a task with no date</div>
+          <div class="t">A date or an amount is never left out like this</div>
           <div class="d">
-            The date never reached a screen, so nothing is scheduled: no reminder, no dot on the calendar.
-            It stays on the list until she ticks it, and the list is the reminder.
+            Left out, the card would say the letter has no date or nothing to pay. If the model is not sure
+            of either, the reading fails and she sees the red row instead.
           </div>
         </div>
       </div>

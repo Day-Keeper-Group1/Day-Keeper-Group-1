@@ -48,6 +48,7 @@
  *   npm run m1:score 01-full-grid
  */
 
+import { referenceIdentity } from "../../../src/server/extraction/agreement";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import {
@@ -135,8 +136,9 @@ export function amountCorrect(
  * barcode line with a space after every character, and a reader told to
  * copy the page as printed is right to keep them.
  */
-export const referenceIdentity = (s: string) =>
-  s.trim().replace(/^#\s*/, "").replace(/\s+/g, "").toLowerCase();
+// KAN-63: the definition moved to the product, which compares references the
+// same way when it decides between readings.
+export { referenceIdentity };
 
 export function referenceCorrect(
   got: string | null,
