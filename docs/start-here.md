@@ -32,7 +32,7 @@ You need Node 20.17 or newer, npm 11 or newer, and Docker Desktop.
 ```bash
 npm ci                    # exactly what package-lock.json says
 cp .env.example .env.local
-docker compose up -d      # Postgres on 55432, MinIO on 59020, viewers on 8080 and 59021
+docker compose up -d      # Postgres on 15432, MinIO on 19020, viewers on 8080 and 19021
 docker compose ps         # wait until db says "healthy", usually a few seconds
 npm run db:reset          # build the schema, make the bucket, seed both
 npm test                  # the contract tests
@@ -45,7 +45,7 @@ The database viewer is at http://localhost:8080. Server `db`, user, password and
 database are all `daykeeper`. That is the quickest way to see what the seed put
 in the tables.
 
-The storage viewer is at http://localhost:59021, user and password `daykeeper`
+The storage viewer is at http://localhost:19021, user and password `daykeeper`
 and `daykeeper_local_dev`. Photographs land in the `daykeeper` bucket, the
 seeded ones included, and this is where to look when you want to know whether
 an upload really stored anything.
@@ -63,8 +63,10 @@ passes. Wait for `docker compose ps` to show `healthy` and run it again.
 **Port 8080 is already in use.** Something else on your machine has it; it is a
 popular port. Change the left-hand number under `adminer` in
 `docker-compose.yml` to something free, for example `8081:8080`. Postgres is on
-55432 rather than 5432 for the same reason, and storage on 59020 and 59021
+15432 rather than 5432 for the same reason, and storage on 19020 and 19021
 rather than 9000 and 9001, so those rarely collide.
+
+**On Windows, a container will not start and says "access forbidden", or the app says `ECONNREFUSED` though Docker is running.** Windows reserves blocks of ports from 49152 to 65535 each time it starts, and nothing can bind a reserved port. Every port this project publishes is below 49152 for that reason. If you changed a port yourself, keep it below 49152; `netsh interface ipv4 show excludedportrange protocol=tcp` lists what Windows has reserved today. If you pulled a version with the old ports (55432, 59020, 59021) in your `.env.local`, change them to 15432, 19020 and 19021 and run `docker compose up -d` again.
 
 **`npm run db:reset` says it cannot reach storage.** The MinIO container is not
 running. `docker compose up -d` starts it along with everything else; it is the
