@@ -47,3 +47,9 @@ Made up, not taken from any source: the health service name Thornhurst Health an
 ### reference
 
 **UR 6938509.** Page 1, top right, inside the bordered box under the contact block: a barcode with one line printed under it in a typewriter face, "UR 6938509". There is no colon after "UR", the whole line is set in the same face and size, and nothing else on either page labels this number. The number does not appear again on either page. It is the only reference number on the letter, and the contract asks for the reference the person must quote, so the key is that line as it is printed, with "UR" and the spacing the page shows.
+
+### identifiers
+
+Every number the letter prints that identifies her, something she holds, or this matter, each under the label printed beside it, written as printed. The first list is the numbers a reading must find; the reference is one of them, and a reading that gives any of them as the reference is right. The experiments score whether every number in the first list is found.
+
+- **UR 6938509.** page 1, top right, inside the bordered barcode box, the one line printed under the barcode in a letter spaced typewriter face, reading UR then one space then the seven digits; there is no colon and no cell boundary between label and value.

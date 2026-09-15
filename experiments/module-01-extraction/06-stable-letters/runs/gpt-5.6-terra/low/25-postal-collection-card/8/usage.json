@@ -1,0 +1,12 @@
+{
+  "input_tokens": 6537,
+  "input_tokens_details": {
+    "cache_write_tokens": 0,
+    "cached_tokens": 6534
+  },
+  "output_tokens": 470,
+  "output_tokens_details": {
+    "reasoning_tokens": 268
+  },
+  "total_tokens": 7007
+}

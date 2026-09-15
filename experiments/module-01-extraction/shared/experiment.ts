@@ -1,5 +1,6 @@
 /**
- * An experiment is four files in a numbered folder.
+ * An experiment is four files in a numbered folder, five when it replays
+ * the vote scheme.
  *
  * Everything that changes from one experiment to the next is a file you can
  * read without running anything, and nothing else is allowed to vary. So
@@ -12,6 +13,13 @@
  *                 number on a line gives that cell its own repeat count
  *   repeats.txt   how many times each cell reads each letter, unless the
  *                 cell's line in cells.txt says otherwise
+ *   scheme.txt    how the reads are put together into one answer: which
+ *                 cell reads twice, which cell is read when the two differ,
+ *                 and how many more times a trial that ends undecided is
+ *                 tried. Only experiments that replay the scheme have one.
+ *                 It is the fifth variable, written down since 15 September
+ *                 2026 because an orchestration nobody records is a change
+ *                 nobody can see in a diff.
  *
  * The code that reads these, calls the model, marks the answers and prints
  * the table lives in this folder and is shared by every experiment. Scoring
@@ -32,6 +40,19 @@ import {
 
 export type Cell = { model: Model; effort: Effort; repeats?: number };
 
+/** The vote scheme, from scheme.txt. */
+export type Scheme = {
+  /** The cell read twice per trial. */
+  reader: { model: Model; effort: Effort };
+  /** The cell read once more when the two reads differ. */
+  judge: { model: Model; effort: Effort };
+  /**
+   * How many more times a trial that ends with a field undecided is tried
+   * before it goes to the person. 0 means once and done.
+   */
+  retries: number;
+};
+
 export type Experiment = {
   /** The folder name, e.g. "01-full-grid". */
   name: string;
@@ -39,6 +60,8 @@ export type Experiment = {
   letters: string[];
   cells: Cell[];
   repeats: number;
+  /** Present when the folder has a scheme.txt. */
+  scheme?: Scheme;
   runsDir: string;
   scoresFile: string;
   promptFile: string;
@@ -95,6 +118,40 @@ export function loadExperiment(name: string): Experiment {
     return { model, effort, repeats } as Cell;
   });
 
+  const schemeFile = resolve(dir, "scheme.txt");
+  let scheme: Scheme | undefined;
+  if (existsSync(schemeFile)) {
+    const entries = new Map<string, string[]>();
+    for (const line of lines(schemeFile)) {
+      const [key, ...rest] = line.split(/\s+/);
+      entries.set(key, rest);
+    }
+    const cellOf = (key: string) => {
+      const v = entries.get(key);
+      if (!v || v.length !== 2) {
+        throw new Error(
+          `${name}/scheme.txt needs a line "${key} <model> <effort>"`,
+        );
+      }
+      const [model, effort] = v;
+      const found = cells.find((c) => c.model === model && c.effort === effort);
+      if (!found) {
+        throw new Error(
+          `${name}/scheme.txt names ${key} ${model} ${effort}, which is not a cell in cells.txt`,
+        );
+      }
+      return { model: found.model, effort: found.effort };
+    };
+    const retriesText = entries.get("retries")?.[0];
+    const retries = Number(retriesText);
+    if (!Number.isInteger(retries) || retries < 0) {
+      throw new Error(
+        `${name}/scheme.txt needs a line "retries <whole number>"`,
+      );
+    }
+    scheme = { reader: cellOf("reader"), judge: cellOf("judge"), retries };
+  }
+
   const repeatLines = lines(need("repeats.txt"));
   const repeats = Number(repeatLines[0]);
   if (!Number.isInteger(repeats) || repeats < 1) {
@@ -109,6 +166,7 @@ export function loadExperiment(name: string): Experiment {
     letters: lines(need("letters.txt")),
     cells,
     repeats,
+    scheme,
     runsDir: resolve(dir, "runs"),
     scoresFile: resolve(dir, "scores.json"),
     promptFile: need("prompt.md"),

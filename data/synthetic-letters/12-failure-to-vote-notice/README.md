@@ -42,3 +42,10 @@ Made up, not taken from any source: the office name Ballot Administration Office
 ### reference
 
 **NV2026-732810.** Page 1, top right, the last line of the title block, under the red due date: "Notice number NV2026-732810". It is printed only once on the page. The contract asks for the reference, account or customer number the person must quote. The notice number identifies this notice, and this notice is what she has to complete and return.
+
+### identifiers
+
+Every number the letter prints that identifies her, something she holds, or this matter, each under the label printed beside it, written as printed. The first list is the numbers a reading must find; the reference is one of them, and a reading that gives any of them as the reference is right. The experiments score whether every number in the first list is found.
+
+- **Elector ID 2700 3381.** page 1, left column, the line immediately under the barcode and immediately above "Mrs M A Wilson".
+- **Notice number NV2026-732810.** page 1, top right title block, the line directly under the red "Due Date: 14 July 2026".

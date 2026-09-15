@@ -34,6 +34,15 @@ export type GroundTruth = {
   due_date: string | null;
   amount: number | null;
   reference: string | null;
+  /**
+   * KAN-58: every identifier the letter prints, as printed. `required` marks
+   * the ones a reading must find: her account, customer, member, licence,
+   * registration, notice, infringement or claim numbers. The rest (a payment
+   * method's own reference, a meter number, an invoice or statement number, a
+   * one-time access code) may be listed or not. Absent for a letter whose list
+   * has not been written.
+   */
+  identifiers?: { label: string; value: string; required: boolean }[];
   also_accepted?: Partial<{
     issuer: string[];
     action_required: string[];

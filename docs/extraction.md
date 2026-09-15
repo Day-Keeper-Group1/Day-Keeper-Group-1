@@ -4,6 +4,28 @@ What the reading step calls, and why. Newest decision on top. Each entry says wh
 
 The code in `src/server/extraction/` follows this file, not the other way round. To change the prompt, the model or the effort there: run an experiment under `experiments/module-01-extraction/`, add an entry here that cites its report, then change the code to match.
 
+## 2026-09-15 · the scheme, prompt and letters the product builds against, confirmed
+
+**Scheme.** `gpt-5.6-luna` at `medium` reads the letter twice. If the two reads agree on every field, that is the answer. If they differ on a field, `gpt-5.6-terra` at `low` reads the letter once with the same prompt, and the value it matches is taken. If it matches neither read, the letter is read again from the start, up to five times in all. If the fifth attempt still has a field undecided, the reading fails and the product shows its read-failed state. What counts as agreeing is code, [`experiments/module-01-extraction/shared/vote.ts`](../experiments/module-01-extraction/shared/vote.ts); the scheme file is [`07-reference-by-belonging/scheme.txt`](../experiments/module-01-extraction/07-reference-by-belonging/scheme.txt) with retries raised from 0 to 5.
+
+**Prompt.** [`07-reference-by-belonging/prompt.md`](../experiments/module-01-extraction/07-reference-by-belonging/prompt.md). `tests/extraction-prompt.test.ts` fails when the copy the server reads differs from it.
+
+**Letters.** [`07-reference-by-belonging/letters.txt`](../experiments/module-01-extraction/07-reference-by-belonging/letters.txt), fifteen letters. Which letters left scope and why: [`data/synthetic-letters/README.md`](../data/synthetic-letters/README.md).
+
+**Cost.** One letter under the scheme, at list price: about 18,700 input tokens and 770 output tokens per luna read, 310 output per terra read, A\$0.0053 a letter over all trials of 07. Per-read figures and the price sources are in [`07-reference-by-belonging/REPORT.md`](../experiments/module-01-extraction/07-reference-by-belonging/REPORT.md), Results.
+
+**Basis.** [`07-reference-by-belonging/REPORT.md`](../experiments/module-01-extraction/07-reference-by-belonging/REPORT.md): 300 trials, 0 wrong; 299 right and 1 undecided without retry, 299 of 299 right with retries replayed. The retry has been replayed from kept reads, not run live.
+
+**Status: confirmed**, 15 September 2026. The code in `src/server/extraction/` makes one luna read today; building the scheme is a product ticket.
+
+## 2026-09-15 · the prompt gains three rules and the list of identifiers, provisional until 06 is run
+
+**Prompt** as in `src/server/extraction/prompt.md`, which experiment 06 will read with the scheme below. Three rules were added because the misses both reads agreed on in 05 were all of the same kind: a rule the prompt had not stated, supplied by the model. Due date and amount follow the action: only Pay has an amount; only Pay, Attend, Return form and Collect have a due date; No action has neither. A label with nothing written after it means the letter gives no value, not that the value is unreadable. A date may be worked out from a period only when the letter asks for the action and counts the period from a printed date. The prompt also asks for every identifier the letter prints, each under its printed label, which the contract, the storage and the screens carry since KAN-58.
+
+**Basis** [05-vote-on-unseen-letters/REPORT.md](../experiments/module-01-extraction/05-vote-on-unseen-letters/REPORT.md), the misses tallied there on 09, 21 and 25. The letters in scope were cut to eighteen the same day: every letter where the issuer, the action, the due date or the amount has more than one printed answer left, see `data/synthetic-letters/README.md`.
+
+**Status: provisional.** Experiment 06 reads the eighteen with this prompt and the scheme. The entry that replaces this one names the letters that read right in every trial.
+
 ## 2026-09-15 · gpt-5.6-luna at medium, read twice, terra at low when the two reads differ, provisional
 
 **Model** `gpt-5.6-luna` at `medium`, twice per letter; `gpt-5.6-terra` at `low` once, only when the two reads disagree on a field. **Prompt** as in [`experiments/module-01-extraction/05-vote-on-unseen-letters/prompt.md`](../experiments/module-01-extraction/05-vote-on-unseen-letters/prompt.md): the action-word definition of `action_required` from 04, with its examples.

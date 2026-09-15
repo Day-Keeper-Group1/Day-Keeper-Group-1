@@ -5,5 +5,22 @@
   "action_required": "Return form to Public Payments Office",
   "due_date": "2026-08-04",
   "amount": null,
-  "reference": "PPO-5002-9891"
+  "reference": "PPO-5002-9891",
+  "identifiers": [
+    {
+      "label": "Customer Reference Number",
+      "value": "PPO-5002-9891",
+      "required": true
+    },
+    {
+      "label": "Provider reference",
+      "value": "PPO-7143-4935",
+      "required": false
+    },
+    {
+      "label": "One-time access code",
+      "value": "VRJF86",
+      "required": false
+    }
+  ]
 }

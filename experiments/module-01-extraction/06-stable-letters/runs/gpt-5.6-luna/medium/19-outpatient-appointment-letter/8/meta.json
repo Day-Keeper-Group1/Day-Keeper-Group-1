@@ -1,0 +1,11 @@
+{
+  "model": "gpt-5.6-luna",
+  "effort": "medium",
+  "letter": "19-outpatient-appointment-letter",
+  "repeat": 8,
+  "pages": ["page-01.png", "page-02.png"],
+  "image_detail": "auto",
+  "started_at": "2026-09-14T19:37:18.789Z",
+  "seconds": 6.553,
+  "ok": true
+}

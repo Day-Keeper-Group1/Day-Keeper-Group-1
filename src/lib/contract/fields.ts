@@ -70,11 +70,11 @@ export const FIELD_DESCRIPTIONS: Record<ContractFieldKey, string> = {
   action_required:
     "What the person has to do. Start with one of these words, then name who or what in a few words: Pay, Attend, Return form, Collect, Take medicine, Stop using, Contact, No action. For example: Pay Example Energy; Attend Orthopaedic Clinic; Return form to Public Payments Office; Collect parcel from Calderfield Post Office; Take medicine perindopril each morning; Stop using heater; Contact a Support at Home provider. If the document asks for nothing, write No action.",
   due_date:
-    "The date the action is due, as ISO 8601 (YYYY-MM-DD). If the page shows an ambiguous format, resolve it in favour of Australian day-first convention and mark the field uncertain.",
+    "The date the action is due, as ISO 8601 (YYYY-MM-DD). Only Pay, Attend, Return form and Collect have one. Take the date printed for it; when the letter asks for the action and gives a period counted from a printed date (21 days from the date of this notice), work the date out. For No action, Take medicine, Stop using and Contact, and whenever no date is printed and no such period is given, write Not applicable. A label with nothing written after it means the letter gives no date; it is not unreadable. If the page shows an ambiguous format, resolve it in favour of Australian day-first convention and mark the field uncertain.",
   amount:
-    "The amount payable, exactly as written on the page including the currency symbol. Do not convert, round, or reformat.",
+    "The amount the letter asks the person to pay, exactly as written on the page including the currency symbol. Only Pay has one. For every other action write No payment required, even when the page prints a price already paid, a premium taken by direct debit, a benefit paid to the person or a balance of zero. Do not convert, round, or reformat.",
   reference:
-    "The reference, account, or customer number the person must quote. Keep the spacing as printed.",
+    "The reference, account, or customer number the person must quote: one of the letter's identifiers, the one that belongs to the person or to this matter. When the letter says which number to quote, that one; when it does not, the number that identifies the person or the matter, such as an account, customer, member, patient or notice number. While such a number is printed the reference is never Not applicable. Never a number that identifies the sender. Keep the spacing as printed.",
 };
 
 /**
@@ -113,8 +113,6 @@ export const OPTIONAL_FIELD_DESCRIPTIONS: Record<OptionalFieldKey, string> = {
  * It sits beside the six fields rather than among them because it is a list,
  * not a value, and because every existing reading, screen and experiment keeps
  * working without it: a reader that returns no list returns an empty one.
- * The reading prompt does not ask for the list yet, so this text is the
- * definition, not yet something a model is told.
  */
 export const IDENTIFIERS_DESCRIPTION =
   "Every number or code printed on the letter that identifies the person, something she holds, or this matter, and that she could be asked for when she contacts the sender or pays: account, customer, member, patient, reference, invoice, notice, claim, policy, licence, registration, card or property numbers. Give each one once, with the label printed beside it exactly as printed, and its value exactly as printed, keeping the spacing. Leave out anything that identifies the sender rather than her (ABN, biller code, phone, web address), dates, amounts, and codes printed in the page margin. The reference field is one of these: the one the letter tells the person to quote.";

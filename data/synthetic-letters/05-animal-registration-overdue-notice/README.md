@@ -40,3 +40,14 @@ Made up, not taken from any source: the council name Calderfield City Council, i
 ### reference
 
 **44637.** Page 1, the box with a red border at the top right, second row, "Animal number". The same number is printed in the "By phone" line under "HOW TO PAY" ("Please quote your animal number 44637"). The "By post" line also asks her to write her animal number on the back of her cheque or money order. The contract asks for the reference, account or customer number the person must quote, and this letter tells her to quote her animal number.
+
+### identifiers
+
+Every number the letter prints that identifies her, something she holds, or this matter, each under the label printed beside it, written as printed. The first list is the numbers a reading must find; the reference is one of them, and a reading that gives any of them as the reference is right. The experiments score whether every number in the first list is found.
+
+- **Animal number 44637.** page 1, red bordered box at top right, second row; the same number is printed again in the By phone line of HOW TO PAY.
+
+Also printed, and identifying something narrower: a payment method's own reference, a meter, an invoice or statement, a provider, or a one-time code. A reading may list these or leave them out.
+
+- **Microchip number 999014100441675.** page 1, ANIMAL DETAILS panel, right column, third row.
+- **Lifetime Tag Number 96951.** page 1, ANIMAL DETAILS panel, right column, fourth row.

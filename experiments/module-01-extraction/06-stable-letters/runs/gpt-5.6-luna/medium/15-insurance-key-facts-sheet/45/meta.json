@@ -1,0 +1,11 @@
+{
+  "model": "gpt-5.6-luna",
+  "effort": "medium",
+  "letter": "15-insurance-key-facts-sheet",
+  "repeat": 45,
+  "pages": ["page-01.png", "page-02.png"],
+  "image_detail": "auto",
+  "started_at": "2026-09-14T19:35:45.076Z",
+  "seconds": 5.924,
+  "ok": true
+}

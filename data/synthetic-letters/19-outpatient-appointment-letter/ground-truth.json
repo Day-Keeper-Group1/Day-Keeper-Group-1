@@ -5,5 +5,12 @@
   "action_required": "Attend Orthopaedic Clinic",
   "due_date": "2026-06-23",
   "amount": null,
-  "reference": "UR 6938509"
+  "reference": "UR 6938509",
+  "identifiers": [
+    {
+      "label": "UR",
+      "value": "6938509",
+      "required": true
+    }
+  ]
 }

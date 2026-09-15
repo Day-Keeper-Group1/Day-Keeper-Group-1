@@ -40,3 +40,14 @@ Made up, not taken from any source: the company name Quillhaven Insurance, the c
 ### reference
 
 **HB 1193 8188.** Page 1, the band headed "Policyholder and payment information", middle column, the label "Policy number" with "HB 1193 8188" in bold under it. It is printed once. The letters "HB" sit on the same line and in the same weight as the digits, so they are part of the value, and the key keeps them and the spacing. The contract asks for the reference, account or customer number the person must quote. This notice is a certificate for one policy, that number is the number the policy is kept under, and it is the first number printed in the band.
+
+### identifiers
+
+Every number the letter prints that identifies her, something she holds, or this matter, each under the label printed beside it, written as printed. The first list is the numbers a reading must find; the reference is one of them, and a reading that gives any of them as the reference is right. The experiments score whether every number in the first list is found.
+
+- **Policy number HB 1193 8188.** page 1, band headed "Policyholder and payment information", middle column, bold under the label.
+- **Customer number 70 976 319.** page 1, band headed "Policyholder and payment information", right column, bold under the label.
+
+Also printed, and identifying something narrower: a payment method's own reference, a meter, an invoice or statement, a provider, or a one-time code. A reading may list these or leave them out.
+
+- **Ref 0915 60028807 26.** page 1, "How to pay", BPAY box, second line under "Biller code: 9200041".

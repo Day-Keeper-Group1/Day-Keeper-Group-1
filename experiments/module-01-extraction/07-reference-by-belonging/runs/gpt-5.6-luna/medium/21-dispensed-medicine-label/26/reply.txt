@@ -1,0 +1,48 @@
+{
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "medicine label",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Ledworth Central Pharmacy",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Take medicine perindopril each morning",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "due_date",
+      "value": "Not applicable",
+      "status": "confirmed",
+      "confidence": 1.0
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 1.0
+    },
+    {
+      "key": "reference",
+      "value": "#6429746 DFD",
+      "status": "confirmed",
+      "confidence": 0.98
+    }
+  ],
+  "identifiers": [
+    {
+      "label": "Ref",
+      "value": "#6429746 DFD",
+      "status": "confirmed"
+    }
+  ],
+  "open_payload": {}
+}

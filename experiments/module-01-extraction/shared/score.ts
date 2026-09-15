@@ -5,15 +5,19 @@
  * worth reading. Five fields are scored:
  *
  *   due_date   the ISO string must match exactly. A letter with no due date
- *              must be reported as "Not applicable". A date the page only
- *              implies through a period ("within 14 days") is not a printed
- *              date, and the key for such a letter is null.
+ *              must be reported as "Not applicable". Since KAN-61 the
+ *              contract lets a date be worked out from a period the letter
+ *              counts from a printed date, but only for an action it asks
+ *              for; a "Terms: 14 days" line on a paid account gives no date,
+ *              and the key for such a letter is null.
  *   amount     the number must match, and the currency symbol must be there,
  *              because the contract says "including the currency symbol". A
  *              letter that asks for no money must be reported as
  *              "No payment required".
- *   reference  must match after collapsing runs of whitespace and ignoring
- *              case. The contract says keep the spacing as printed, and the
+ *   reference  must match after removing whitespace, a leading "#" and
+ *              case, against the key's reference or, where the key lists
+ *              identifiers, any identifier marked required (KAN-61: the
+ *              letter does not rank the numbers that belong to the person). The contract says keep the spacing as printed, and the
  *              key holds the number as printed without the label word beside
  *              it: "6429746 DFD", not "Ref #6429746 DFD". Letters printed as
  *              part of the number stay: "HB 1193 8188", and "UR 6938509"
@@ -24,6 +28,12 @@
  *   action_required
  *              must start with the same action word as the key; the words
  *              after it are not compared. See actionCorrect below.
+ *   identifiers
+ *              only where the experiment's prompt asks for the list: every
+ *              identifier the key marks required must be in it. Values are
+ *              compared without spaces, case, or the choice between a dot, a
+ *              middle dot and a dash, so "9XK-7QJ" finds "9XK·7QJ". Extra
+ *              identifiers are not penalised. See identifiersCorrect below.
  *
  * document_type is free text and is not scored; it is copied into
  * scores.json so a person can read it.
@@ -50,6 +60,7 @@ import {
   NOT_APPLICABLE,
 } from "../../../src/lib/contract/fields";
 import { experimentFromArgv, type Experiment } from "./experiment";
+import { asksForIdentifiers } from "./prompt";
 import { groundTruth, type GroundTruth } from "./samples";
 import { jobsOf, runDir, type RunMeta } from "./run";
 
@@ -60,7 +71,16 @@ export const SCORED = [
   "issuer",
   "action_required",
 ] as const;
-export type ScoredField = (typeof SCORED)[number];
+/** KAN-58: scored as well when the experiment's prompt asks for the list. */
+export const SCORED_WITH_IDENTIFIERS = [...SCORED, "identifiers"] as const;
+export type ScoredField = (typeof SCORED_WITH_IDENTIFIERS)[number];
+
+/** The fields a score was marked on. Older scores.json files predate the list. */
+export function scoredFieldsOf(score: {
+  scored?: readonly ScoredField[];
+}): readonly ScoredField[] {
+  return score.scored ?? SCORED;
+}
 
 export type Score = {
   model: string;
@@ -79,12 +99,13 @@ export type Score = {
   status: Record<string, string>;
   want: Record<string, string | number | null>;
   correct: Record<ScoredField, boolean>;
+  /** Which fields this run was marked on: the five, plus the list when asked. */
+  scored: ScoredField[];
   /** Wrong AND the model said `confirmed`: the answer a person would have seen. */
   wrong_and_confirmed: ScoredField[];
 };
 
 const loose = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
-const collapse = (s: string) => s.trim().replace(/\s+/g, " ").toLowerCase();
 
 export function dueDateCorrect(
   got: string | null,
@@ -108,6 +129,15 @@ export function amountCorrect(
   return Number.isFinite(number) && Math.abs(number - want) < 0.005;
 }
 
+/**
+ * KAN-61: a reference is compared without any whitespace and without a
+ * leading "#", because the page may print "Ref #6429746 DFD" or set a
+ * barcode line with a space after every character, and a reader told to
+ * copy the page as printed is right to keep them.
+ */
+export const referenceIdentity = (s: string) =>
+  s.trim().replace(/^#\s*/, "").replace(/\s+/g, "").toLowerCase();
+
 export function referenceCorrect(
   got: string | null,
   want: string | null,
@@ -115,7 +145,7 @@ export function referenceCorrect(
   if (got === null) return false;
   if (want === null)
     return got.trim().toLowerCase() === NOT_APPLICABLE.toLowerCase();
-  return collapse(got) === collapse(want);
+  return referenceIdentity(got) === referenceIdentity(want);
 }
 
 /**
@@ -128,6 +158,32 @@ export function actionCorrect(got: string | null, want: string): boolean {
   if (got === null) return false;
   const w = actionWordOf(want);
   return w !== null && actionWordOf(got) === w;
+}
+
+const identity = (s: string) =>
+  s
+    .toLowerCase()
+    .replace(/\s+/g, "")
+    .replace(/[·•.\u2013-]/g, "-");
+
+/**
+ * KAN-58: every required identifier in the key is somewhere in the reading's
+ * list. Labels are not compared, because "Account no." and "Account number"
+ * name the same number; values are, as `identity` normalises them.
+ */
+export function identifiersCorrect(
+  got: { value: string }[],
+  want: { value: string; required: boolean }[] | undefined,
+): boolean {
+  const found = got.map((id) => identity(id.value));
+  // A reading may keep a printed label prefix inside the value ("UR 6938509"
+  // for the key's "6938509"), so a value that ends with the key's is found.
+  return (want ?? [])
+    .filter((id) => id.required)
+    .every((id) => {
+      const w = identity(id.value);
+      return found.some((g) => g === w || (w.length >= 5 && g.endsWith(w)));
+    });
 }
 
 export function issuerCorrect(got: string | null, want: string): boolean {
@@ -164,6 +220,7 @@ function scoreOne(
   result: ExtractionResult | null,
   usage: unknown,
   key: GroundTruth,
+  withIdentifiers: boolean,
 ): Score {
   const got: Record<string, string | null> = {};
   const status: Record<string, string> = {};
@@ -172,7 +229,11 @@ function scoreOne(
     status[f.key] = f.status;
   }
 
-  const { also_accepted: alts = {}, ...plainKey } = key;
+  const { also_accepted: alts = {}, identifiers: keyIds, ...plainKey } = key;
+  const gotIds = (result?.identifiers ?? []).filter(
+    (id) => id.status === "confirmed" || id.status === "uncertain",
+  );
+  got.identifiers = gotIds.map((id) => id.value).join("; ") || null;
   const anyOf = <W>(
     fn: (got: string | null, want: W) => boolean,
     value: string | null,
@@ -188,12 +249,12 @@ function scoreOne(
       alts.due_date,
     ),
     amount: anyOf(amountCorrect, got.amount ?? null, key.amount, alts.amount),
-    reference: anyOf(
-      referenceCorrect,
-      got.reference ?? null,
-      key.reference,
-      alts.reference,
-    ),
+    // KAN-61: any identifier the key marks required is a right reference,
+    // because the letter does not rank the numbers that belong to the person.
+    reference: anyOf(referenceCorrect, got.reference ?? null, key.reference, [
+      ...(alts.reference ?? []),
+      ...(keyIds ?? []).filter((id) => id.required).map((id) => id.value),
+    ]),
     issuer: anyOf(issuerCorrect, got.issuer ?? null, key.issuer, alts.issuer),
     action_required: anyOf(
       actionCorrect,
@@ -201,7 +262,11 @@ function scoreOne(
       key.action_required,
       alts.action_required,
     ),
+    identifiers: withIdentifiers ? identifiersCorrect(gotIds, keyIds) : true,
   };
+  const scored: ScoredField[] = withIdentifiers
+    ? [...SCORED_WITH_IDENTIFIERS]
+    : [...SCORED];
 
   const u = usage as {
     input_tokens?: number;
@@ -227,10 +292,22 @@ function scoreOne(
       : null,
     got,
     status,
-    want: { ...plainKey },
+    want: {
+      ...plainKey,
+      identifiers:
+        (keyIds ?? [])
+          .filter((id) => id.required)
+          .map((id) => id.value)
+          .join("; ") || null,
+    },
     correct,
-    wrong_and_confirmed: SCORED.filter(
-      (f) => !correct[f] && status[f] === "confirmed",
+    scored,
+    // A list has no status of its own; a missed required number is counted
+    // as confirmed when the reading listed identifiers and still left it out.
+    wrong_and_confirmed: scored.filter((f) =>
+      f === "identifiers"
+        ? !correct[f] && gotIds.length > 0
+        : !correct[f] && status[f] === "confirmed",
     ),
   };
 }
@@ -241,6 +318,7 @@ function scoreOne(
  */
 export function scoreAll(experiment: Experiment): Score[] {
   const keys = new Map(groundTruth().map((row) => [row.sample_id, row]));
+  const withIdentifiers = asksForIdentifiers(experiment);
   const scores: Score[] = [];
   for (const job of jobsOf(experiment)) {
     const dir = runDir(experiment, job);
@@ -248,7 +326,12 @@ export function scoreAll(experiment: Experiment): Score[] {
     const key = keys.get(job.letter);
     if (!key) throw new Error(`no ground truth for letter "${job.letter}"`);
     const { meta, result, usage } = readRun(dir);
-    scores.push(scoreOne(meta, result, usage, key));
+    if (withIdentifiers && !key.identifiers) {
+      throw new Error(
+        `${experiment.name} asks for identifiers but "${job.letter}" has no identifiers in its ground-truth.json`,
+      );
+    }
+    scores.push(scoreOne(meta, result, usage, key, withIdentifiers));
   }
   return scores;
 }

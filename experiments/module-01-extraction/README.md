@@ -12,9 +12,9 @@ Two criteria, in order.
 
 **Then cheapest.** Among the cells that are stable, the one that costs least per letter. A cell that is not stable is not in the running, however cheap.
 
-## The four variables
+## The five variables
 
-An experiment is allowed to change exactly four things. Everything else is held the same across every experiment, so that when two experiments disagree the reason is one of these four and nothing else.
+An experiment is allowed to change exactly five things. Everything else is held the same across every experiment, so that when two experiments disagree the reason is one of these five and nothing else.
 
 | Variable | What it is | Why it is a variable |
 |---|---|---|
@@ -22,6 +22,7 @@ An experiment is allowed to change exactly four things. Everything else is held 
 | **The prompt** | What the model is told. | It has not changed yet. That does not make it a constant; it makes it a variable nobody has moved. |
 | **The cells** | Which model, at which reasoning effort. | This is the choice being made. |
 | **The repeats** | How many times each cell reads each letter. | One read cannot tell a real difference from ordinary variation. Asking again is how you find out which it was. |
+| **The scheme** | How the reads are put together into one answer: which cell reads twice, which cell is read when the two differ, and how many more times an undecided trial is tried. | The product does not take one read; it takes the answer the scheme returns. From 05 on the scheme lived only in the code, and it was written down as `scheme.txt` on 15 September 2026 so that a change to it shows in a diff like the other four. Experiments that do not replay the scheme have no such file. |
 
 ## The letters
 
@@ -38,6 +39,8 @@ Which letters are in scope, which were taken out and why, is recorded in [`data/
 | [`03-prompt-by-purpose/`](03-prompt-by-purpose/REPORT.md) | Same letters, ten reads, luna `medium`, luna `xhigh`, terra `low`; the prompt gains one section on choosing by what a number is for, not the word beside it. Does that stop the flipping? | Yes. luna `medium` and terra `low` read all fifteen right in 150 of 150 reads, zero wrong and confirmed; the ten stable letters did not drop a read. Screening only, and tested only on the pages that inspired the section. |
 | [`04-action-words/`](04-action-words/REPORT.md) | Fourteen letters (the rates notice is out of scope), ten reads, luna `medium` and terra `low`; `action_required` now starts with one of eight action words and is scored for the first time. Do the models follow the new definition, and do the other four fields stay full? | All 280 reads gave the right action word, and the eleven letters with a named payee got the key's exact words every time. terra `low` read 140 of 140 right. luna `medium` slipped twice, both on letters that ask for nothing: one uncertain due date, and one confirmed premium given as the amount on the health statement, the value 02 saw twenty one times and 03 saw never. |
 | [`05-vote-on-unseen-letters/`](05-vote-on-unseen-letters/REPORT.md) | Twenty five letters: the fourteen plus eleven the pipeline made that no experiment here had read. luna `medium` fifty reads and terra `low` twenty five per letter, replayed as twenty five trials of a vote scheme (luna twice; terra when the two differ). Does the prompt carry to letters it was not written against, and does the scheme catch what luna gets wrong? | On the fourteen, both cells stayed full except luna's known slip on the paid account (12 of 50) and four terra reads on the aged care statement. On the eleven, one letter was read right every time, three mostly, and six never by either cell: the two reads agree on the same wrong value, so the scheme returns it without calling terra. 429 of 625 trials right, 188 wrong with both reads agreeing, 8 sent to the person. The misses are the same kinds as before: a figure the letter reports taken as payable, a date worked out from a period, a voluntary request taken as a task, and a second number on the page taken as the reference. |
+| [`06-stable-letters/`](06-stable-letters/REPORT.md) | The eighteen letters left in scope after every letter was read again for fields with more than one printed answer; the prompt gains three rules (due date and amount follow the action, a blank label is not unreadable, a date may be worked out only for an action the letter asks for) and the list of identifiers; luna `medium` twice with terra `low` as judge, twenty five trials. Under the setup the product will use, which letters read right every time? | Nine of eighteen read right in every read of both cells, and the vote scheme was right in every trial on eleven. The Discussion sorted every miss into four kinds and only one was the reader's: the plate on the parking notice, the ten digit number on the recall notice and the blank line on the collection card, and those three letters left scope. The other three kinds, a reference definition read literally, a scorer stricter than the page, and a vote rule that called two lists apart over optional numbers, were fixed before 07. |
+| [`07-reference-by-belonging/`](07-reference-by-belonging/REPORT.md) | The fifteen letters left after 06, the same setup, the `reference` definition reworded and the scorer and vote rule fixed; twenty trials. Do the fifteen read right in every trial? | Fourteen of fifteen read right in every read of both cells, and the scheme was right in 299 of 300 trials with 0 wrong. The one letter short is the driver licence renewal: luna dropped a digit from the customer number in 2 of 40 reads, marked uncertain, and one trial went to the person. terra `low` read 300 of 300 right. |
 
 ## The report
 
@@ -45,7 +48,7 @@ Every experiment ends in one file, `REPORT.md`, in its own folder. It has four s
 
 **Motivation.** What the earlier experiments found, named by folder, and so what this run sets out to learn. Two or three sentences, written before the run. Say what was expected going in, plainly, and which number decides the next step. This is the section that shows the conclusion was not fitted to the result afterwards.
 
-**Design.** The four variables, one line each, with the ones that changed since the previous experiment marked as changed, plus anything else about how the run was made: calls in flight, a cell added after the run started, a model left out and why. A list, not a paragraph. The four files beside the report are the definition; this section is the reader's summary of them.
+**Design.** The five variables, one line each, with the ones that changed since the previous experiment marked as changed, plus anything else about how the run was made: calls in flight, a cell added after the run started, a model left out and why. A list, not a paragraph. The files beside the report are the definition; this section is the reader's summary of them.
 
 **Results.** The tables from `npm run m1:report`, pasted as they are: the per-cell table, the per-letter table with its bound sentence, the cost line with its sources, and every miss. Numbers and nothing else: no adjectives, no sentence that starts with "this shows". If a reader disagrees with the Discussion, the Results have to be something they can still accept.
 

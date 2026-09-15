@@ -45,3 +45,10 @@ Made up, not taken from any source: the registry name Driver and Vehicle Registr
 ### reference
 
 **05 502 615.** Page 1, the details table under the heading, first row, the label "Licence number". The "How to renew" section asks for it again under the online option: "You will need your licence number and your customer number." The contract asks for the reference, account or customer number the person must quote. The licence number is the first line of the identification block and it identifies the licence this notice is about. The page carries no payment code, and says so in the orange box: "Because a new photograph is required, this notice does not carry a payment code for phone or internet banking."
+
+### identifiers
+
+Every number the letter prints that identifies her, something she holds, or this matter, each under the label printed beside it, written as printed. The first list is the numbers a reading must find; the reference is one of them, and a reading that gives any of them as the reference is right. The experiments score whether every number in the first list is found.
+
+- **Licence number 05 502 615.** page 1, details table directly under the main heading, first row.
+- **Customer number 812 466 305.** page 1, details table directly under the main heading, second row.

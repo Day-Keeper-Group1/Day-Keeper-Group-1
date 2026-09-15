@@ -5,5 +5,12 @@
   "action_required": "Stop using heater",
   "due_date": null,
   "amount": null,
-  "reference": "9512653343"
+  "reference": "9512653343",
+  "identifiers": [
+    {
+      "label": "product registration number",
+      "value": "9512653343",
+      "required": true
+    }
+  ]
 }

@@ -37,3 +37,7 @@ Made up, not taken from any source: the insurer Quillhaven Insurance, the policy
 ### reference
 
 **Not applicable.** Neither page prints a policy number, an account number, a customer number or a payment reference. The box at the top right of page 1 holds only the insurer's name. The two lines at the end of page 2 name the insurer and give no number. The sheet describes a policy product, Quillhaven Home Advantage. It is not addressed to any named person. There is no number on it for the reader to quote.
+
+### identifiers
+
+**None.** Neither page prints a number that identifies a person, a policy or this matter. The sheet describes an insurance product and is not addressed to anyone, so there is no account, policy, certificate or customer number on it. The experiments score whether every number in this section's first list is found, and here that list is empty.

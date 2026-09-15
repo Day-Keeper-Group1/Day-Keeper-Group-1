@@ -41,3 +41,9 @@ Made up, not taken from any source: the company name Kettleworth Appliances Pty 
 ### reference
 
 **9512653343.** Page 1, under "What should I do?", step 3, in bold at the end of the sentence "You will need your product registration number 9512653343." The number is not printed anywhere else in the letter. The contract asks for the reference, account or customer number the person must quote. This is the number the letter tells her she will need when she calls the company or registers online.
+
+### identifiers
+
+Every number the letter prints that identifies her, something she holds, or this matter, each under the label printed beside it, written as printed. The first list is the numbers a reading must find; the reference is one of them, and a reading that gives any of them as the reference is right. The experiments score whether every number in the first list is found.
+
+- **product registration number 9512653343.** page 1, "What should I do?", numbered step 3, in bold at the end of the sentence "You will need your product registration number 9512653343.".

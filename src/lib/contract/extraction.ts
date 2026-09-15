@@ -130,13 +130,16 @@ export type ExtractedIdentifierPayload = z.infer<
  * seed and the stored rows together.
  *
  * `provider` and `model` are stored on every run so that an accuracy figure can
- * always name what produced it.
+ * always name what produced it. The code that made the call fills them in
+ * (see src/server/extraction/index.ts); the model is not asked for them, or
+ * for the version, so they default when a reply leaves them out. A reply that
+ * names a version is still held to the current one.
  */
 export const extractionResultSchema = z
   .object({
-    contract_version: z.literal(CONTRACT_VERSION),
-    provider: z.string().min(1),
-    model: z.string().nullable(),
+    contract_version: z.literal(CONTRACT_VERSION).default(CONTRACT_VERSION),
+    provider: z.string().min(1).default("unstated"),
+    model: z.string().nullable().default(null),
     fields: z.array(extractedFieldSchema).min(CONTRACT_FIELD_KEYS.length),
     // KAN-58: every number the letter prints; empty for a reader that returns
     // none, so older readers and stored payloads still parse.

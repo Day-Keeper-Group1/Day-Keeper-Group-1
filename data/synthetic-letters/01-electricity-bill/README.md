@@ -42,3 +42,16 @@ Made up, not taken from any source: the company names Example Energy Pty Ltd and
 ### reference
 
 **7960 963 636.** Page 1, "Your account" table, first row, "Account number". The same number is printed in the top left box under the pay-by date ("Account 7960 963 636"), at the bottom left of the tear-off slip ("ACCOUNT NUMBER"), and in the last payment column ("Your account number"). The contract asks for the reference, account or customer number the person must quote, and the number this bill identifies her account by is the account number.
+
+### identifiers
+
+Every number the letter prints that identifies her, something she holds, or this matter, each under the label printed beside it, written as printed. The first list is the numbers a reading must find; the reference is one of them, and a reading that gives any of them as the reference is right. The experiments score whether every number in the first list is found.
+
+- **Account number 7960 963 636.** page 1, left column, "Your account" table, first row; also top left box as "Account 7960 963 636", tear-off slip bottom left under "ACCOUNT NUMBER", and "How to pay" paystead column as "Your account number".
+
+Also printed, and identifying something narrower: a payment method's own reference, a meter, an invoice or statement, a provider, or a one-time code. A reading may list these or leave them out.
+
+- **NMI 60371335118.** page 1, left column, "Your account" table, second row; also page 2, "Your meter" table, first column.
+- **Ref 4969 3279 6092.** page 1, "How to pay", second column "Phone and internet banking", under "Biller code: 9200072".
+- **Ref 3676 4187 1668.** page 1, "How to pay", fourth column "Kelsworth Post"; repeated on the tear-off slip as "REF 3676 4187 1668".
+- **Example Energy Pty Ltd reference PPO-4357-4028.** page 1, "How to pay", fifth column "paystead".

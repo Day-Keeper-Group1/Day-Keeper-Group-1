@@ -5,5 +5,17 @@
   "action_required": "Return form to Ballot Administration Office",
   "due_date": "2026-07-14",
   "amount": null,
-  "reference": "NV2026-732810"
+  "reference": "NV2026-732810",
+  "identifiers": [
+    {
+      "label": "Elector ID",
+      "value": "2700 3381",
+      "required": true
+    },
+    {
+      "label": "Notice number",
+      "value": "NV2026-732810",
+      "required": true
+    }
+  ]
 }
