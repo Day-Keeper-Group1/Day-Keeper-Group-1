@@ -12,9 +12,9 @@ Two criteria, in order.
 
 **Then cheapest.** Among the cells that are stable, the one that costs least per letter. A cell that is not stable is not in the running, however cheap.
 
-## The four variables
+## The five variables
 
-An experiment is allowed to change exactly four things. Everything else is held the same across every experiment, so that when two experiments disagree the reason is one of these four and nothing else.
+An experiment is allowed to change exactly five things. Everything else is held the same across every experiment, so that when two experiments disagree the reason is one of these five and nothing else.
 
 | Variable | What it is | Why it is a variable |
 |---|---|---|
@@ -22,6 +22,7 @@ An experiment is allowed to change exactly four things. Everything else is held 
 | **The prompt** | What the model is told. | It has not changed yet. That does not make it a constant; it makes it a variable nobody has moved. |
 | **The cells** | Which model, at which reasoning effort. | This is the choice being made. |
 | **The repeats** | How many times each cell reads each letter. | One read cannot tell a real difference from ordinary variation. Asking again is how you find out which it was. |
+| **The scheme** | How the reads are put together into one answer: which cell reads twice, which cell is read when the two differ, and how many more times an undecided trial is tried. | The product does not take one read; it takes the answer the scheme returns. From 05 on the scheme lived only in the code, and it was written down as `scheme.txt` on 15 September 2026 so that a change to it shows in a diff like the other four. Experiments that do not replay the scheme have no such file. |
 
 ## The letters
 
@@ -47,7 +48,7 @@ Every experiment ends in one file, `REPORT.md`, in its own folder. It has four s
 
 **Motivation.** What the earlier experiments found, named by folder, and so what this run sets out to learn. Two or three sentences, written before the run. Say what was expected going in, plainly, and which number decides the next step. This is the section that shows the conclusion was not fitted to the result afterwards.
 
-**Design.** The four variables, one line each, with the ones that changed since the previous experiment marked as changed, plus anything else about how the run was made: calls in flight, a cell added after the run started, a model left out and why. A list, not a paragraph. The four files beside the report are the definition; this section is the reader's summary of them.
+**Design.** The five variables, one line each, with the ones that changed since the previous experiment marked as changed, plus anything else about how the run was made: calls in flight, a cell added after the run started, a model left out and why. A list, not a paragraph. The files beside the report are the definition; this section is the reader's summary of them.
 
 **Results.** The tables from `npm run m1:report`, pasted as they are: the per-cell table, the per-letter table with its bound sentence, the cost line with its sources, and every miss. Numbers and nothing else: no adjectives, no sentence that starts with "this shows". If a reader disagrees with the Discussion, the Results have to be something they can still accept.
 

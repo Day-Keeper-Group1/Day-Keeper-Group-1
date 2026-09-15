@@ -4,11 +4,14 @@
  * The scheme the product would run: read the letter twice with the reader
  * cell; if the two reads agree on every field, use them; if they disagree on
  * a field, read once more with the judge cell and take whichever of the two
- * the judge agrees with; if the judge agrees with neither, that field goes to
- * the person to decide. Agreement is judged on the values alone, the way the
+ * the judge agrees with; if the judge agrees with neither, the trial is
+ * undecided. An undecided trial is tried again, up to the number of retries
+ * the scheme allows; when the last attempt is still undecided, the letter
+ * goes to the person. Agreement is judged on the values alone, the way the
  * product would have to, with no answer key: the same normalisations the
  * scorer uses to compare a value with the key are used here to compare two
- * values with each other.
+ * values with each other. Nothing here is a model call with its own prompt:
+ * "judge" names the third read, and the comparison is mechanical.
  *
  * The experiment stores the reads as ordinary cells, so the scheme is
  * replayed from them rather than run live: trial k of a letter is the
@@ -18,11 +21,18 @@
  * read is kept whether the pair needed it or not, which is what lets the
  * judge cell be reported on its own as well.
  *
- * The first cell in cells.txt is the reader, the second the judge. The
- * number of trials is the judge cell's repeat count, and the reader needs
- * twice that.
+ * Which cell reads twice, which cell is the third read and how many retries
+ * a trial gets are in the experiment's scheme.txt. The number of trials is
+ * the judge cell's repeat count, and the reader needs twice that. A retried
+ * trial is replayed from the next trial's reads, which that trial then does
+ * not get, so a letter's trial count falls by one for each retry taken.
  *
  *   npm run m1:vote 05-vote-on-unseen-letters
+ *   npm run m1:vote 07-reference-by-belonging -- --retries 5
+ *
+ * The flag replays with a different retry count from the one in scheme.txt,
+ * to see what the same reads would have given under another scheme. The
+ * output says when it was used.
  */
 
 import { readFileSync } from "node:fs";
@@ -38,16 +48,26 @@ import {
   type ScoredField,
 } from "./score";
 
-const experiment = experimentFromArgv(process.argv.slice(2));
+const argv = process.argv.slice(2);
+const experiment = experimentFromArgv(argv);
 const scores = JSON.parse(
   readFileSync(experiment.scoresFile, "utf8"),
 ) as Score[];
 
-if (experiment.cells.length < 2) {
-  throw new Error(`${experiment.name} needs two cells: a reader and a judge`);
+if (!experiment.scheme) {
+  throw new Error(`${experiment.name} has no scheme.txt to replay`);
 }
-const reader = experiment.cells[0];
-const judge = experiment.cells[1];
+const scheme = experiment.scheme;
+const cellOf = (c: { model: string; effort: string }) =>
+  experiment.cells.find((x) => x.model === c.model && x.effort === c.effort)!;
+const reader = cellOf(scheme.reader);
+const judge = cellOf(scheme.judge);
+const retriesFlag = argv.indexOf("--retries");
+const retries =
+  retriesFlag >= 0 ? Number(argv[retriesFlag + 1]) : scheme.retries;
+if (!Number.isInteger(retries) || retries < 0) {
+  throw new Error(`--retries needs a whole number`);
+}
 const trials = judge.repeats ?? experiment.repeats;
 const readerRepeats = reader.repeats ?? experiment.repeats;
 if (readerRepeats < 2 * trials) {
@@ -137,7 +157,12 @@ function agree(
 type Decision = "agreed" | "judged" | "unresolved";
 type Trial = {
   letter: string;
+  /** The trial number the result is filed under. */
   trial: number;
+  /** The trial whose reads decided it: later than `trial` after a retry. */
+  readsOf: number;
+  /** How many attempts it took, 1 when it was decided first time. */
+  attempts: number;
   judgeCalled: boolean;
   /** Per field: how it was decided and whether the decided value is right. */
   fields: Partial<
@@ -158,13 +183,13 @@ const read = (
 const usd = (s: Score | undefined) =>
   s?.usage ? usdFor(s.model as Model, s.usage) : 0;
 
-const results: Trial[] = [];
-for (const letter of experiment.letters) {
-  for (let k = 1; k <= trials; k++) {
+/** One attempt at trial k of a letter, or undefined when its reads are missing. */
+function attempt(letter: string, k: number): Trial | undefined {
+  {
     const a = read(reader, letter, 2 * k - 1);
     const b = read(reader, letter, 2 * k);
     const t = read(judge, letter, k);
-    if (!a || !b) continue; // the matrix has not reached this trial yet
+    if (!a || !b) return undefined; // the matrix has not reached this trial yet
     const fields = {} as Trial["fields"];
     let judgeCalled = false;
     const scored = scoredFieldsOf(a);
@@ -194,13 +219,40 @@ for (const letter of experiment.letters) {
           : decided.some((d) => d.decision === "unresolved")
             ? "to person"
             : "right";
-    results.push({
+    return {
       letter,
       trial: k,
+      readsOf: k,
+      attempts: 1,
       judgeCalled,
       fields,
       outcome,
       usd: usd(a) + usd(b) + (judgeCalled ? usd(t) : 0),
+    };
+  }
+}
+
+const results: Trial[] = [];
+for (const letter of experiment.letters) {
+  for (let k = 1; k <= trials; k++) {
+    const first = attempt(letter, k);
+    if (!first) continue;
+    let last = first;
+    let spent = first.usd;
+    let tries = 1;
+    while (last.outcome === "to person" && tries <= retries && k < trials) {
+      const next = attempt(letter, k + 1);
+      if (!next) break;
+      k++;
+      tries++;
+      spent += next.usd;
+      last = next;
+    }
+    results.push({
+      ...last,
+      trial: first.trial,
+      attempts: tries,
+      usd: spent,
     });
   }
 }
@@ -214,8 +266,14 @@ const money = (v: number) =>
 
 console.log(`## The vote scheme on ${experiment.name}\n`);
 console.log(
-  `Reader ${short(reader.model)} ${reader.effort}, twice; judge ${short(judge.model)} ${judge.effort} when the two reads differ. ${trials} trials per letter.\n`,
+  `Reader ${short(reader.model)} ${reader.effort}, twice; judge ${short(judge.model)} ${judge.effort} when the two reads differ; ${retries === 0 ? "no retry" : `up to ${retries} ${retries === 1 ? "retry" : "retries"}`} of an undecided trial. ${trials} trials per letter${retries > 0 ? ", less one for each retry taken, since a retry is replayed from the next trial's reads" : ""}.`,
 );
+if (retries !== scheme.retries) {
+  console.log(
+    `\nReplayed with ${retries} retries where scheme.txt says ${scheme.retries}: the same reads, put together under a different scheme.`,
+  );
+}
+console.log();
 console.log(
   "| Letter | Trials | Pair agreed on every field | Judge called | Right | Wrong | To person | Cost per letter |",
 );
@@ -239,8 +297,9 @@ const wrong = count(results, "wrong");
 const person = count(results, "to person");
 const noReply = count(results, "no reply");
 const judged = results.filter((r) => r.judgeCalled).length;
+const retried = results.filter((r) => r.attempts > 1);
 console.log(
-  `\n**All letters: ${n} trials, ${pct(right, n)} right, ${wrong} wrong, ${person} to the person${noReply ? `, ${noReply} with no reply` : ""}. The judge was called in ${judged} trials (${Math.round((100 * judged) / Math.max(n, 1))}%).**`,
+  `\n**All letters: ${n} trials, ${pct(right, n)} right, ${wrong} wrong, ${person} to the person${noReply ? `, ${noReply} with no reply` : ""}. The judge was called in ${judged} trials (${Math.round((100 * judged) / Math.max(n, 1))}%).${retries > 0 ? ` ${retried.length} ${retried.length === 1 ? "trial was" : "trials were"} retried${retried.length ? `, and ${retried.filter((r) => r.outcome === "right").length} of those came out right` : ""}.` : ""}**`,
 );
 if (n > 0 && right === n) {
   const bound = 100 * (1 - 0.05 ** (1 / n));
@@ -288,16 +347,16 @@ if (bad.length) {
   );
   console.log("|---|---|---|---|---|---|---|---|");
   for (const r of bad) {
-    const a = read(reader, r.letter, 2 * r.trial - 1);
-    const b = read(reader, r.letter, 2 * r.trial);
-    const t = read(judge, r.letter, r.trial);
+    const a = read(reader, r.letter, 2 * r.readsOf - 1);
+    const b = read(reader, r.letter, 2 * r.readsOf);
+    const t = read(judge, r.letter, r.readsOf);
     for (const f of scoredFieldsOf(a ?? { scored: undefined })) {
       const d = r.fields[f];
       if (d === undefined || (d.decision === "agreed" && d.correct)) continue;
       const show = (s: Score | undefined) =>
         s?.ok ? String(s.got[f] ?? null) : "(no reply)";
       console.log(
-        `| ${r.letter} | ${r.trial} | ${r.outcome} | ${f} | ${show(a)} | ${show(b)} | ${d.decision === "agreed" ? "not called" : show(t)} | ${d.decision}${d.correct === false ? ", wrong" : ""} |`,
+        `| ${r.letter} | ${r.trial}${r.attempts > 1 ? ` (attempt ${r.attempts})` : ""} | ${r.outcome} | ${f} | ${show(a)} | ${show(b)} | ${d.decision === "agreed" ? "not called" : show(t)} | ${d.decision}${d.correct === false ? ", wrong" : ""} |`,
       );
     }
   }

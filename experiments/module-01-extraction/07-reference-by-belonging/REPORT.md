@@ -20,6 +20,7 @@ Re-marked under the new scorer and scheme, 06's kept reads give 417 of 450 trial
 - **Prompt** (changed): the product prompt as of 15 September, after 06. One definition differs from 06's prompt, `reference`, as the Motivation says; the text is in `src/lib/contract/fields.ts`.
 - **Cells**: luna `medium` and terra `low`, as in 06, with their own repeat counts: luna forty reads per letter, terra twenty.
 - **Repeats** (changed): twenty trials of the scheme per letter, replayed from the kept reads by `shared/vote.ts` as in 06. Twenty rather than twenty five so that the run takes about twenty minutes with ten calls in flight.
+- **Scheme**: as in 06, now written down in `scheme.txt`: luna `medium` twice, terra `low` when the two reads differ, no retry of an undecided trial. The file was added on 15 September after this run; it records what `shared/vote.ts` had done since 05, and nothing about the scheme changed for 07.
 - **Scoring** (changed): as in 06, with two changes made after 06 was read: a reference is compared without whitespace and without a leading "#", and two reads agree on the identifiers list when one list is within the other. Both changes re-mark 06 as well; its report keeps the marks it was read under, and the re-marked figures are given above.
 - 900 calls, ten in flight.
 

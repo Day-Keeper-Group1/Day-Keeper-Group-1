@@ -1,0 +1,16 @@
+# The vote scheme, as replayed by vote.ts in shared/. One line each.
+#
+#   reader   the cell read twice per trial
+#   judge    the cell read once more when the two reads differ; the value
+#            it matches is taken, and when it matches neither the trial is
+#            undecided
+#   retries  how many more times an undecided trial is tried before the
+#            letter goes to the person; 0 means once and done
+#
+# Written 15 September 2026, after 07: the scheme was the same from 05 on
+# but lived only in the code, and a variable nobody writes down is a change
+# nobody can see in a diff.
+
+reader   gpt-5.6-luna   medium
+judge    gpt-5.6-terra  low
+retries  0
