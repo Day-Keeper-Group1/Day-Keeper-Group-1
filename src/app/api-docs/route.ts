@@ -1,10 +1,11 @@
 import { fail } from "@/server/api/respond";
 
 /**
- * GET /api-docs — Swagger UI for the development reader endpoint.
+ * GET /api-docs — Swagger UI for every endpoint in docs/api.md.
  *
- * KAN-46. One page of HTML that loads Swagger UI from ./assets, which serves
- * the files from the swagger-ui-dist package rather than a CDN, so the page
+ * KAN-46, widened to the whole API by KAN-67. One page of HTML that loads
+ * Swagger UI from ./assets, which serves the files from the swagger-ui-dist
+ * package rather than a CDN, so the page
  * works with no internet and never runs a script from a host we do not
  * control. It reads /api/openapi.json.
  */
@@ -18,7 +19,7 @@ export function GET() {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>DayKeeper reader</title>
+  <title>DayKeeper API</title>
   <link rel="stylesheet" href="/api-docs/assets/swagger-ui.css">
 </head>
 <body>

@@ -1,10 +1,15 @@
 # API specification
 
-**None of this is built yet. This is the shape to build.**
+**Every endpoint here is built.** This document was written before any of them,
+because the interface, the reader and the database were going to be built by
+different people, and the only way that ends in something that fits together is
+to settle the seams before the parts. It stays the specification: a change to an
+endpoint changes this file first.
 
-It is written down first because the interface, the reader and the database are
-going to be built by different people, and the only way that ends in something
-that fits together is to settle the seams before the parts.
+To call the endpoints from a browser, run `npm run dev` and open `/api-docs`.
+Sign in there with `POST /api/auth/login` and every other call carries the
+session. That page is described in `src/server/api/openapi.ts`, and
+`tests/openapi.test.ts` fails when a route handler is missing from it.
 
 The surface below is the one in [`scope.md`](scope.md). That file says what this
 release builds; this one says what each request and each response looks like. If
@@ -1121,6 +1126,6 @@ would mean building the wrong thing twice.
 
 ## Development only: try the reader
 
-Two URLs exist while `NODE_ENV` is not `production`, and answer `404` when it is. Neither is part of the product API above; they let the reading step be tried from a browser before it is wired into `POST /api/documents`.
+Three URLs exist while `NODE_ENV` is not `production`, and answer `404` when it is. None is part of the product API above.
 
-`GET /api-docs` is a Swagger page. `POST /api/dev/extract` takes one or more photographed pages of one letter as the multipart field `pages`, calls whichever reader `AI_EXTRACTION_PROVIDER` names, validates the answer against the extraction contract, and returns `{ call, result }`: `result` is the contract shape with `provider` and `model` stamped by the code rather than taken from the model, and `call` is the call's own record, which reader, which model, at which effort, how many seconds, and the tokens it consumed as the provider reported them. Nothing is stored and no sign-in is asked for. Its OpenAPI description is `GET /api/openapi.json`. Sample letters are in `data/synthetic-letters/`.
+`GET /api-docs` is a Swagger page for every endpoint in this document, and for this one, from the description at `GET /api/openapi.json`. `POST /api/dev/extract` takes one or more photographed pages of one letter as the multipart field `pages`, calls whichever reader `AI_EXTRACTION_PROVIDER` names, validates the answer against the extraction contract, and returns `{ call, result }`: `result` is the contract shape with `provider` and `model` stamped by the code rather than taken from the model, and `call` is the call's own record, which reader, which model, at which effort, how many seconds, and the tokens it consumed as the provider reported them. Nothing is stored and no sign-in is asked for. It is a way to look at one reading on its own; the product reads a letter through `POST /api/documents`. Sample letters are in `data/synthetic-letters/`.
