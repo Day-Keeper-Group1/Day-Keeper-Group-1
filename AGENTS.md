@@ -6,7 +6,7 @@ DayKeeper (Group 1): an AI-powered life management system for people in vulnerab
 
 - [`docs/scope.md`](docs/scope.md): what this release builds, and what it deliberately does not. Where any other document describes behaviour that is not in it, that document is wrong.
 - [`docs/start-here.md`](docs/start-here.md): how to run the whole thing, what the seed contains, and where everything lives. Read this first.
-- [`docs/api.md`](docs/api.md): the API specification. **Not built yet**: this is the shape to build against, with the reasoning for the parts that look arbitrary.
+- [`docs/api.md`](docs/api.md): the API specification: every endpoint, what it takes and answers, and the reasoning for the parts that look arbitrary. Built; `/api-docs` in development is a Swagger page for trying each one, described in [`src/server/api/openapi.ts`](src/server/api/openapi.ts).
 - [`docs/theme.md`](docs/theme.md): the theme. The palette, the contrast measurements, and the rules that make this product readable by the people it is for. Read it before styling a screen.
 - [`docs/extraction.md`](docs/extraction.md): which model reads a letter, at which effort, with which prompt, and the experiment report each choice rests on. Newest decision on top. The code in `src/server/extraction/` changes only after this file does.
 - [`docs/project-description.md`](docs/project-description.md): the official project description, verbatim. Our requirements baseline; when wording conflicts, this file wins on what the product is for, and [`docs/scope.md`](docs/scope.md) says which part of it we are building now.
