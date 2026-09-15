@@ -44,7 +44,6 @@ import {
   extractionProvider,
   readLetter,
   type Reading,
-  type TokenUsage,
 } from "@/server/extraction";
 import { estimatedCostUsd } from "@/server/extraction/prices";
 import { deleteObjects, putObject, uploadObjectKey } from "@/server/storage";
@@ -487,7 +486,7 @@ async function callWithAttempts(
         attempt,
         cell,
         detail,
-        usage: error instanceof ExtractionFailure ? error.usage : null,
+        failure: error instanceof ExtractionFailure ? error : null,
       });
 
       const worthAnotherTry =
@@ -512,8 +511,9 @@ async function callWithAttempts(
  * closes, so a row that could not be written is missing from them too, and the
  * log line below is the record of that.
  *
- * KAN-63: a failed call keeps its tokens and cost when the model answered
- * before the answer was refused, because that call was billed.
+ * KAN-63: a call the model answered and whose answer was then refused keeps
+ * what the model said, how long it took, and its tokens and cost, because that
+ * call was billed and its answer is where the reason for the failure is.
  */
 async function recordCall(
   runId: string,
@@ -522,15 +522,16 @@ async function recordCall(
     slot: number;
     attempt: number;
     cell: Cell;
-  } & ({ reading: Reading } | { detail: string; usage: TokenUsage | null }),
+  } & (
+    { reading: Reading } | { detail: string; failure: ExtractionFailure | null }
+  ),
 ): Promise<void> {
   const reading = "reading" in call ? call.reading : null;
+  const failure = "failure" in call ? call.failure : null;
   const model = reading?.call.model ?? call.cell.model;
-  const usage = reading
-    ? reading.call.usage
-    : "usage" in call
-      ? call.usage
-      : null;
+  const usage = reading ? reading.call.usage : (failure?.usage ?? null);
+  const answer: unknown = reading ? reading.result : failure?.answer;
+  const seconds = reading ? reading.call.seconds : (failure?.seconds ?? null);
   try {
     await query(
       `INSERT INTO model_calls
@@ -546,14 +547,14 @@ async function recordCall(
         reading ? "succeeded" : "failed",
         model,
         reading?.call.effort ?? call.cell.effort,
-        reading ? JSON.stringify(reading.result) : null,
+        answer === undefined ? null : JSON.stringify(answer),
         "detail" in call ? call.detail : null,
         usage?.input_tokens ?? null,
         usage?.cached_tokens ?? null,
         usage?.reasoning_tokens ?? null,
         usage?.output_tokens ?? null,
         estimatedCostUsd(model, usage),
-        reading ? Math.round(reading.call.seconds * 1000) : null,
+        seconds === null ? null : Math.round(seconds * 1000),
       ],
     );
   } catch (error) {

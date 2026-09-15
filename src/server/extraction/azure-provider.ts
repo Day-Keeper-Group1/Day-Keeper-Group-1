@@ -131,7 +131,7 @@ export class AzureExtractionProvider implements DocumentExtractionProvider {
     } catch {
       throw new ExtractionFailure(
         "the model answered with something that is not JSON",
-        { usage },
+        { usage, answer: text, seconds },
       );
     }
 

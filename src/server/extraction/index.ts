@@ -70,9 +70,18 @@ export async function readLetter(
 
   const parsed = safeParseExtractionResult(outcome.payload);
   if (!parsed.success) {
+    // KAN-63: where in the answer it broke, as well as how, so the failure
+    // can be found in the stored answer without guessing which string was
+    // empty.
+    const issue = parsed.error.issues[0];
+    const at = issue?.path.length ? ` at ${issue.path.join(".")}` : "";
     throw new ExtractionFailure(
-      `the reader answered outside the contract: ${parsed.error.issues[0]?.message ?? "invalid"}`,
-      { usage: outcome.usage },
+      `the reader answered outside the contract${at}: ${issue?.message ?? "invalid"}`,
+      {
+        usage: outcome.usage,
+        answer: outcome.payload,
+        seconds: outcome.seconds,
+      },
     );
   }
 

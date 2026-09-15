@@ -339,8 +339,8 @@ CREATE UNIQUE INDEX extraction_runs_one_under_way_per_document
 -- Tokens are as Azure reported them: cached_tokens is the part of
 -- input_tokens served from its cache, and output_tokens includes
 -- reasoning_tokens. A call that failed after the model answered (not JSON, or
--- outside the contract) was still billed, so its tokens and cost are kept too;
--- one that never reached the model has none.
+-- outside the contract) was still billed, so its answer, duration, tokens and
+-- cost are kept too; one that never reached the model has none of them.
 CREATE TABLE model_calls (
   id                uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   extraction_run_id uuid NOT NULL REFERENCES extraction_runs(id) ON DELETE CASCADE,
@@ -350,7 +350,11 @@ CREATE TABLE model_calls (
   status            text NOT NULL,
   model             text,
   effort            text,
-  -- The reading as the contract validator passed it; null for a call that failed.
+  -- What the model answered. For a call that succeeded, the reading as the
+  -- contract validator passed it. For a call whose answer was refused, the
+  -- answer as it came: the JSON when it was JSON outside the contract (the
+  -- failure_detail names where), the text as a JSON string when it was not
+  -- JSON. Null only for a call that never reached the model.
   raw_response      jsonb,
   failure_detail    text,
   input_tokens      integer,

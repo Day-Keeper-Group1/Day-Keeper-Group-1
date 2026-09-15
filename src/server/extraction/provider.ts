@@ -71,14 +71,33 @@ export class ExtractionFailure extends Error {
    */
   readonly usage: TokenUsage | null;
 
+  /**
+   * KAN-63: what the model said, when it answered and the answer was refused:
+   * the parsed JSON when it was JSON outside the contract, the text as it came
+   * when it was not JSON at all. Kept so a failed call can be read afterwards
+   * and the reason found in what the model actually sent. Undefined when the
+   * call never reached the model.
+   */
+  readonly answer: unknown;
+
+  /** KAN-63: how long the call took, when the model answered. Null otherwise. */
+  readonly seconds: number | null;
+
   constructor(
     message: string,
-    options: { retryable?: boolean; usage?: TokenUsage | null } = {},
+    options: {
+      retryable?: boolean;
+      usage?: TokenUsage | null;
+      answer?: unknown;
+      seconds?: number | null;
+    } = {},
   ) {
     super(message);
     this.name = "ExtractionFailure";
     this.retryable = options.retryable ?? true;
     this.usage = options.usage ?? null;
+    this.answer = options.answer;
+    this.seconds = options.seconds ?? null;
   }
 }
 

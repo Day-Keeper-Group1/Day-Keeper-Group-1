@@ -31,14 +31,23 @@ vi.mock("@/server/extraction", () => {
   class ExtractionFailure extends Error {
     readonly retryable: boolean;
     readonly usage: unknown;
+    readonly answer: unknown;
+    readonly seconds: number | null;
     constructor(
       message: string,
-      options: { retryable?: boolean; usage?: unknown } = {},
+      options: {
+        retryable?: boolean;
+        usage?: unknown;
+        answer?: unknown;
+        seconds?: number | null;
+      } = {},
     ) {
       super(message);
       this.name = "ExtractionFailure";
       this.retryable = options.retryable ?? true;
       this.usage = options.usage ?? null;
+      this.answer = options.answer;
+      this.seconds = options.seconds ?? null;
     }
   }
 
@@ -711,12 +720,13 @@ describe("reading a stored letter", () => {
 
   // KAN-63: the model answered and the answer was refused, so the call was
   // billed, and the record of what the reading cost counts it.
-  it("keeps the tokens and cost of a call that failed after the model answered", async () => {
+  it("keeps the answer, duration, tokens and cost of a call that failed after the model answered", async () => {
     const { ExtractionFailure } = await import("@/server/extraction");
     queryOneMock.mockResolvedValue({ id: RUN_ID });
+    const answer = { fields: [], identifiers: [{ label: "", value: "UR 1" }] };
     readLetterMock.mockRejectedValue(
       new ExtractionFailure(
-        "the model answered with something that is not JSON",
+        "the reader answered outside the contract at identifiers.0.label: Too small",
         {
           retryable: false,
           usage: {
@@ -725,6 +735,8 @@ describe("reading a stored letter", () => {
             reasoning_tokens: 300,
             output_tokens: 770,
           },
+          answer,
+          seconds: 6.25,
         },
       ),
     );
@@ -734,9 +746,30 @@ describe("reading a stored letter", () => {
 
     const [row] = modelCalls();
     expect(row[4]).toBe("failed");
-    // input, cached, reasoning, output, cost
+    // What the model said, so the empty label can be seen afterwards.
+    expect(JSON.parse(row[7] as string)).toEqual(answer);
+    expect(row[8]).toContain("at identifiers.0.label");
+    // input, cached, reasoning, output, cost, duration
     expect(row.slice(9, 13)).toEqual([18_700, 0, 300, 770]);
     expect(row[13]).toBeCloseTo(18_700 * 2e-7 + 770 * 1.2e-6, 10);
+    expect(row[14]).toBe(6250);
+  });
+
+  it("keeps the text of an answer that was not JSON", async () => {
+    const { ExtractionFailure } = await import("@/server/extraction");
+    queryOneMock.mockResolvedValue({ id: RUN_ID });
+    readLetterMock.mockRejectedValue(
+      new ExtractionFailure(
+        "the model answered with something that is not JSON",
+        { retryable: false, answer: "Sorry, I cannot read this.", seconds: 2 },
+      ),
+    );
+    transactionClient();
+
+    await readDocument(DOCUMENT_ID, USER_ID, PAGES, { pauseMs: 0 });
+
+    const [row] = modelCalls();
+    expect(JSON.parse(row[7] as string)).toBe("Sorry, I cannot read this.");
   });
 
   it("leaves tokens and cost empty for a call that never reached the model", async () => {
@@ -752,7 +785,9 @@ describe("reading a stored letter", () => {
     await readDocument(DOCUMENT_ID, USER_ID, PAGES, { pauseMs: 0 });
 
     const [row] = modelCalls();
-    expect(row.slice(9, 14)).toEqual([null, null, null, null, null]);
+    // No answer, no tokens, no cost, no duration.
+    expect(row[7]).toBeNull();
+    expect(row.slice(9, 15)).toEqual([null, null, null, null, null, null]);
   });
 
   // An error that is not a reading failure is a bug or a database refusing a
