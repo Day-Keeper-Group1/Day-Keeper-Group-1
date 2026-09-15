@@ -41,11 +41,11 @@ keeps only the key for finding it.
 )[
   The upload screen closes at once. She puts the phone down.
 
-  About ten seconds later it buzzes: _Your letter is ready to check. Nothing
+  About twenty seconds later it buzzes: _Your letter is ready to check. Nothing
   happens until you look at it._
 
-  In those ten seconds the product did its one clever thing. A vision model
-  looked at the three photographs and answered six questions: what kind of
+  In those twenty seconds the product did its one clever thing. A vision model
+  looked at the three photographs, twice, and answered six questions: what kind of
   letter this is, who sent it, what she has to do, by when, how much, and what
   reference to quote. For this bill: an electricity bill, from AGL Energy, pay
   the amount due, by 15 August, \$347.60, reference 9201~4471~88.

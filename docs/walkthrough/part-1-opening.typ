@@ -75,7 +75,7 @@ engineering. That design is the one a funded team builds. This is the one five
 students finish in a semester, and the rest is written down and deferred rather
 than forgotten.
 
-What is left is one model call whose answer has a fixed shape, and after that a
+What is left is one reading step whose answer has a fixed shape, and after that a
 system made of tables, dates and a checkbox. The full list is
 #raw("docs/scope.md"), which every other document in this repository defers
 to.
@@ -124,7 +124,7 @@ doing its job.
     row-gutter: 4pt,
     piece("PostgreSQL")[Ten tables. Everything except the photographs.],
     piece("An S3 bucket")[The photographs. MinIO on a laptop, a real bucket later. Same protocol either way.],
-    piece("One model call")[It looks at the pages and returns six fields. Nothing else in the product calls a model.],
+    piece("One reading step")[A model looks at the pages twice, and a third time when the two readings differ, and returns six fields. Nothing else in the product calls a model.],
   ),
 )
 

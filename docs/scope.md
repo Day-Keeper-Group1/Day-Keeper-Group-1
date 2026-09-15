@@ -12,7 +12,7 @@ the list below, this document wins and that document is wrong.
    every photograph in an upload belongs to that one letter.
 3. The upload is checked for the two things code can check: the file is an image we can
    read, and it is not larger than the limit.
-4. One model call. A vision model looks at the photographs and returns the six fields.
+4. One reading step. A vision model looks at the photographs twice, and a third time when the two readings differ, and returns the six fields. How the readings are put together is [`extraction.md`](extraction.md).
 5. Everything after that is ordinary code.
 6. A screen shows what was read. It shows; it never asks. Nothing on it is editable and
    nothing on it is a question.
