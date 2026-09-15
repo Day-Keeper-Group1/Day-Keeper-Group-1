@@ -438,19 +438,27 @@ from the other. It is one poll for the whole app, not one per screen
 (`src/components/layout/activity.tsx`): Home, the camera screen, the number on
 the Home tab and the message that says a letter is ready all read it.
 
-**A reading that fails is tried again before anyone is told.** A model call
-that errors, answers with something that is not JSON, or answers outside the
-contract is made again, up to three attempts in all, and the letter stays
-`processing` (the screen says "reading…") until one works or the last one
-fails. Every attempt is its own row in `extraction_runs`, so the table says how
-many calls a letter took and what each one said; at most one of them ever
-succeeds (`db/schema.sql`). A failure that would come out the same however
-often it was tried, such as a page handed to the reader without its bytes, is
-not tried again. `readDocument()` in `src/server/uploads.ts` has the rule.
+**How a letter is read.** The scheme is the newest entry in [`docs/extraction.md`](extraction.md): `gpt-5.6-luna` at `medium` reads the letter twice; if the two readings differ on a field, `gpt-5.6-terra` at `low` reads it once and the reading it matches is taken; if it matches neither, the letter is read again from the start, up to five rounds. Every model call is its own row in `extraction_runs`, so the table says how many calls a letter took and what each one said.
 
-When the last attempt fails, the letter's status becomes `failed`, and nothing
-takes it further. Repair is out of scope, so there is no retry endpoint and no
-retake endpoint.
+**Everything that can happen while a letter is read.** None of these is an HTTP error. The upload has already answered `201`, and the screen learns the outcome from the letter's `status` the next time it polls `GET /api/home`, which answers `200` whatever the outcome. The reason a reading failed is written to `failure_detail` on its run and never leaves the server.
+
+| What happens | What the server does | Letter's status | What the screen shows |
+|---|---|---|---|
+| A model call fails: timeout, rate limit, network, an Azure error | That call is made again, up to three attempts in all, two seconds apart | `processing` | the row says "reading…" |
+| A model call answers with something that is not JSON | That call is made again, as above | `processing` | "reading…" |
+| A model call answers JSON outside the contract, such as a missing field | That call is made again, as above | `processing` | "reading…" |
+| A model call still fails on its third attempt | The whole letter fails at once; it does not go round the scheme again | `failed` | the red row with the failure sentence |
+| The reader is not configured, or a page reached it without its bytes | Not tried again; the letter fails at once | `failed` | the red row with the failure sentence |
+| The two luna readings agree on every field | That is the reading | `needs-review` | "ready to check" |
+| They differ, and the terra reading matches one of them | The matched reading is taken | `needs-review` | "ready to check" |
+| They differ, and the terra reading matches neither | The letter is read again from the start, up to five rounds | `processing` | "reading…" |
+| The fifth round still matches neither | The letter fails | `failed` | the red row with the failure sentence |
+| The decided reading's due date or amount is not `confirmed` | The letter fails; a date or amount left empty would read as "no date" or "nothing to pay" (`src/lib/contract/extraction.ts`) | `failed` | the red row with the failure sentence |
+| The decided reading has another field not `confirmed` | That field is stored and not shown; the rest of the reading stands | `needs-review` | "ready to check", without that row |
+| The reading is decided but the database will not store it | Not tried again; the letter fails | `failed` | the red row with the failure sentence |
+| The reading could not even be started in the database | Nothing is read; the letter fails | `failed` | the red row with the failure sentence |
+
+The failure sentence is `FAILURE_MESSAGE` in `src/lib/contract/api.ts`, the same for every row: the person is not told which of these happened, because none of them is something she can do anything about. A failed letter stays failed. Repair is out of scope, so there is no retry endpoint and no retake endpoint. `readDocument()` in `src/server/uploads.ts` has the rules.
 
 ## List letters
 

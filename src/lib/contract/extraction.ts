@@ -39,12 +39,25 @@ export const CONTRACT_VERSION = "2.0" as const;
  * validator below rejects a payload that leaves it out. See ./fields.ts on why
  * silence and "I could not read this" cannot be allowed to look alike.
  *
- * **The product treats `uncertain` exactly like `unreadable`.** The server
- * collapses it on the way out, and no screen, no response, no task and no
- * calendar entry ever carries a value the model was not sure of. Trusting the
- * model includes trusting its "I am not sure", and the person this product is
- * for is the one least equipped to adjudicate a model's hesitation; the full
- * argument is in ./api.ts.
+ * **What the product does with a field that is not `confirmed`.** This is the
+ * one place the rule is written; everything else points here.
+ *
+ * - `due_date` or `amount` not `confirmed` in the decided reading: the reading
+ *   fails, and the letter shows the failure sentence (FAILURE_MESSAGE in
+ *   ./api.ts). These two fields decide whether a task has a date, gets
+ *   reminders and asks for money. Left empty, the screen would say "No date on
+ *   this letter" about a letter that prints one, and a person would be told
+ *   there is nothing to pay or nothing to be on time for. A letter that truly
+ *   gives no date or asks for no money says so with a confident Not applicable
+ *   or No payment required, so this rule never touches it. Enforced in
+ *   readDocument() in src/server/uploads.ts.
+ * - Any other field not `confirmed`: the server collapses `uncertain` to
+ *   `unreadable` on the way out and the screen does not draw the row. No
+ *   screen, no response, no task and no calendar entry carries a value the
+ *   model was not sure of. Nobody is asked to fill it in, because the person
+ *   this product is for is the one least equipped to adjudicate a model's
+ *   hesitation; the argument for a screen that never asks is in ./api.ts.
+ *   Enforced in mapField() in src/server/field-views.ts.
  *
  * The two are kept apart in STORAGE because how often the model hedges, and what
  * it guesses when it does, is the evaluation data. Collapsing them in the

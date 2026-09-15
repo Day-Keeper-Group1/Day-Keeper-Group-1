@@ -200,8 +200,8 @@ export type IdentifierView = {
  * `label` is presentation, resolved from the field key on the server so that
  * every surface spells "Reference" the same way. See ./fields.ts.
  *
- * The browser never sees `uncertain`. The server collapses it to `unreadable` on
- * the way out, and why storage keeps the two apart is in ./extraction.ts.
+ * The browser never sees `uncertain`. What happens to a field that is not
+ * confirmed is ruled in one place, ./extraction.ts, beside the statuses.
  *
  * `value` is null exactly when status is `unreadable`. An empty string would
  * mean "the model read an empty string", which is a different fact.
@@ -286,9 +286,9 @@ export const MAX_PAGE_BYTES = 10 * 1024 * 1024;
  *
  * So the screen shows and it never asks. Rows the model read confidently are
  * displayed, read-only. A row with no value is not drawn at all, because an
- * empty box invites an answer nobody is asking for; the card states the absence
- * in one sentence instead: "This letter doesn't give a clear date. It's saved;
- * nothing goes on your calendar."
+ * empty box invites an answer nobody is asking for. A date or an amount the
+ * model was not sure of never reaches this screen as an empty row: the reading
+ * fails instead (./extraction.ts).
  *
  * What this buys is one invariant, and it is worth more than the exam was: a
  * date reaches the calendar from exactly two places, a confident read that a

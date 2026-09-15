@@ -25,7 +25,7 @@ export const QUOTE_NOTE = "The one to quote";
  * What a letter says, as it may be shown.
  *
  * A value the reader was not confident of never reaches a screen, so an
- * unreadable row is not drawn (src/lib/contract/api.ts). Two confident values
+ * unreadable row is not drawn (src/lib/contract/extraction.ts). Two confident values
  * have nothing to tell her and are not rows either: an appointment letter that
  * prints no reference number reports NOT_APPLICABLE, and a form with nothing
  * to pay reports NO_PAYMENT_REQUIRED. The spellings come from the contract so

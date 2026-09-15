@@ -53,7 +53,8 @@ can be shown, measured and corrected, and a half-covered one can only be describ
 
 Postgres holds the data and an object store holds the photographs. The reading returns
 six fields and may return more, with the extra kept in `open_payload`. A value the model
-was not sure of arrives as no value at all, and the screen says so in a sentence rather
-than offering an empty box. A task's tick is its only state, and whether a task is
+was not sure of never reaches a screen, and nobody is offered an empty box to fill in;
+[`src/lib/contract/extraction.ts`](../src/lib/contract/extraction.ts) says what happens
+to it instead. A task's tick is its only state, and whether a task is
 overdue is worked out from the clock when a reminder fires rather than stored. The theme
 is Eucalypt and Wattle, and every rule in [`theme.md`](theme.md) still holds.

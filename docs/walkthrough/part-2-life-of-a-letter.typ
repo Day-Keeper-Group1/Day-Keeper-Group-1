@@ -66,15 +66,17 @@ keeps only the key for finding it.
   #v(3pt)
   #set text(font: sans, size: 8.5pt, fill: ink-dim)
   #set par(justify: false, leading: 0.5em)
-  A second bill, written to go wrong: the model was not sure of the due date,
-  and could not read the reference at all.
+  A second bill, written to go wrong: the model was not sure of the
+  reference number.
 ]
 
 #why[
   *A value the model was not sure of is never offered as a guess.* Show her a
-  half sure date in grey and she will approve it with a nod. So it is not
-  shown at all, and the card says so in a sentence. A date nobody really
-  checked has no way to reach the calendar.
+  half sure number in grey and she will approve it with a nod. So the row is
+  not drawn at all. A date or an amount is different: left out, the card
+  would say the letter has no date or nothing to pay. So if the model is not
+  sure of either, the reading fails and she sees the red row instead. A date
+  nobody really checked has no way to reach the calendar.
 ]
 
 #step(3, "She checks it")
