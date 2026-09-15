@@ -67,10 +67,13 @@
   .toolbar .name { font-weight: 700; color: var(--ink); }
   .toolbar button { border: 1px solid var(--line); background: var(--bg-card); padding: 6px 14px; border-radius: 999px; font-size: 13px; cursor: pointer; color: var(--ink); }
   /* The sketch's clock, worn on the outside. Overdue, "was due", reminder
-     tenses, everything date-shaped in here is computed against this fictional
-     day, and anyone reading the sketch needs to know it without opening the
-     source. Filled from TODAY_* by script, so it cannot drift from the code. */
-  .toolbar .today { border: 1px dashed var(--line); background: var(--warn-bg); color: var(--warn-ink); padding: 6px 14px; border-radius: 999px; }
+     tenses, everything date-shaped in here is computed against this day, and
+     anyone reading the sketch needs to know it without opening the source.
+     KAN-59: it is the real date unless ?today= pins another, and the picker
+     beside it sets that pin. Filled from TODAY by script. */
+  .toolbar .today { display: inline-flex; align-items: center; gap: 8px; border: 1px dashed var(--line); background: var(--warn-bg); color: var(--warn-ink); padding: 4px 6px 4px 14px; border-radius: 999px; }
+  .toolbar .today input { font: inherit; font-size: 13px; color: var(--ink); background: var(--bg-card); border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; }
+  .toolbar .today a { color: var(--warn-ink); font-weight: 600; }
 
   /* ---------- phone frame ---------- */
   .phone-wrap { display: flex; justify-content: center; padding-bottom: 30px; }
@@ -221,7 +224,13 @@
   .dd-day { font-size: 13px; color: var(--ink-dim); font-weight: 600; margin-bottom: 8px; }
   .sheet .ent + .ent { border-top: 1px solid var(--line); padding-top: 12px; margin-top: 12px; }
   .sheet .t { font-size: 16.5px; font-weight: 700; }
-  .sheet .remind { display: flex; align-items: center; gap: 6px; font-size: 14.5px; color: var(--ink-dim); margin-bottom: 3px; }
+  /* KAN-59: a reminder's day opens the whole task, like its due day does, so
+     the box on top is what says this day is the reminder and not the day it
+     is due: the bell and the morning it goes out, then, in words, how far off
+     the due date is and which day it is. Words, not the gold dot, carry it. */
+  .remind-box { background: var(--warn-bg); border-radius: var(--radius-card); padding: 11px 12px; margin-bottom: 12px; }
+  .remind-box .remind { display: flex; align-items: center; gap: 6px; font-size: 13.5px; font-weight: 600; color: var(--warn-ink); margin-bottom: 4px; }
+  .remind-box .until { font-size: 16.5px; font-weight: 700; color: var(--ink); line-height: 1.35; }
   .strip { margin-top: 12px; }
   .cap2 { font-size: 12.5px; color: var(--ink-dim); margin-bottom: 7px; }
 
@@ -286,7 +295,7 @@
 
 <div class="toolbar">
   <span class="name">DayKeeper</span> <span>understanding sketch · G1 · live flow</span>
-  <span class="today" id="tb-today"></span>
+  <span class="today"><span id="tb-today"></span><input type="date" id="tb-date" aria-label="Pin the sketch's today"><a id="tb-real" href="?" hidden>real date</a></span>
   <button id="tb-reset" title="restart the demo">↺ Restart</button>
 </div>
 
@@ -506,209 +515,172 @@
       '" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICONS[name] + '</svg>';
   }
 
-  /* ---------- the letters this sketch can read ----------
+  /* ---------- the sketch's clock ----------
 
-     One upload is one letter, so the sketch hands out this list one entry per
-     upload: the first letter photographed comes back as the AGL bill, the
-     second as the Medicare form, and so on. How many photographs a letter is
-     made of is however many she took, because every photograph in an upload
-     belongs to that one letter.
+     KAN-59: today is the day the sketch is opened, so it never goes stale.
+     Every date below is written as a number of days from today and worked out
+     when the page starts, the way db/seed.ts builds the product's world. A day
+     is a 'YYYY-MM-DD' string, as it is in the product, so two days compare as
+     strings across the end of a month or a year.
 
-     `delay` is how long the reading takes. A few seconds here stands in for
-     the tens of seconds there: a vision model reading several pages is slow,
-     which is why the waiting state below is a state and not a spinner. */
+     ?today=2026-09-24 in the address pins another day, to rehearse a demo on
+     the day it will be given or to take screenshots that match. The toolbar
+     says which day the sketch is on, and its picker sets the pin.
 
-  const LETTERS = [
-    { who: 'AGL Energy', what: 'Electricity bill', delay: 5200,
-      facts: [
-        { k: 'From', v: 'AGL Energy' },
-        { k: 'What to do', v: 'Pay AGL Energy' },
-        { k: 'Due date', v: '15 Aug 2026' },
-        { k: 'Amount', v: '$347.60' },
-        { k: 'Account number', v: '9201 4471 88', id: true, quote: true }
-      ],
-      /* Two reminders, not three: this bill is due the 15th and the sketch's
-         today is the 10th, so the seven-day one would land in the past, and a
-         reminder in the past is never planned. The ladder and that rule are in
-         src/lib/contract/reminders.ts. The plan card and the calendar marks
-         below agree with it, which is the promise they keep everywhere. */
-      plan: [
-        { ico: 'bell', t: 'Remind you: Wed 12 Aug, 9 am' },
-        { ico: 'bell', t: 'Remind you: Fri 14 Aug, 9 am' },
-        { ico: 'calendar-days', t: 'On your calendar: due Sat 15 Aug' }
-      ],
-      task: { title: 'Pay AGL electricity bill', when: 'Sat 15 Aug', due: { mo: 8, d: 15 } },
-      marks: [ { mo: 8, d: 12, l: 'reminder' }, { mo: 8, d: 14, l: 'reminder' }, { mo: 8, d: 15, l: 'AGL due' } ],
-      agenda: { day: 'Saturday 15 August', line: 'Pay AGL electricity bill', sub: '$347.60 · ref 9201 4471 88' } },
+     Overdue is not a stored state: a row is overdue because its due date is
+     behind today, worked out at draw time, exactly as the real thing derives
+     it. */
+  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-    { who: 'Medicare', what: 'Claim form', delay: 7000,
-      facts: [
-        { k: 'From', v: 'Services Australia' },
-        { k: 'What to do', v: 'Return form to Services Australia' },
-        { k: 'Due date', v: '22 Aug 2026' },
-        { k: 'Claim number', v: 'CLM 30991 442', id: true, quote: true },
-        { k: 'Medicare card number', v: '2950 41873 1', id: true }
-      ],
-      plan: [
-        { ico: 'bell', t: 'Remind you: Sat 15 Aug, 9 am' },
-        { ico: 'bell', t: 'Remind you: Wed 19 Aug, 9 am' },
-        { ico: 'bell', t: 'Remind you: Fri 21 Aug, 9 am' },
-        { ico: 'calendar-days', t: 'On your calendar: due Sat 22 Aug' }
-      ],
-      task: { title: 'Return Medicare form', when: 'Sat 22 Aug', due: { mo: 8, d: 22 } },
-      marks: [ { mo: 8, d: 15, l: 'reminder' }, { mo: 8, d: 19, l: 'reminder' }, { mo: 8, d: 21, l: 'reminder' }, { mo: 8, d: 22, l: 'Medicare' } ],
-      agenda: { day: 'Saturday 22 August', line: 'Return Medicare form', sub: 'ref CLM 30991 442' } },
+  function pad(n) { return String(n).padStart(2, '0'); }
+  function isoOf(date) { return date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate()); }
+  function dateOf(day) { const p = day.split('-').map(Number); return new Date(p[0], p[1] - 1, p[2]); }
+  function addDays(day, n) { const d = dateOf(day); d.setDate(d.getDate() + n); return isoOf(d); }
+  /* Whole days from one day to another, rounded because a day with a
+     daylight saving change in it is an hour short or an hour long. */
+  function daysBetween(from, to) { return Math.round((dateOf(to) - dateOf(from)) / 86400000); }
+  /* "Wed 30 Sep": how every row, card and note writes a day. */
+  function shortDay(day) { const d = dateOf(day); return DAYS[d.getDay()].slice(0, 3) + ' ' + d.getDate() + ' ' + MONTHS[d.getMonth()].slice(0, 3); }
+  /* "Wednesday 30 September": the heading of a day's sheet. */
+  function longDay(day) { const d = dateOf(day); return DAYS[d.getDay()] + ' ' + d.getDate() + ' ' + MONTHS[d.getMonth()]; }
+  function monthOf(year, month) { return year + '-' + pad(month); }
 
-    /* The letter that asks for nothing: a statement to keep. Confirming it
-       files it in Your letters and makes no task, so nothing appears on
-       Home or the calendar. */
-    { who: 'Wattlebank Super', what: 'Annual statement', delay: 5800,
-      facts: [
-        { k: 'From', v: 'Wattlebank Super' },
-        { k: 'What to do', v: 'No action' },
-        { k: 'Member number', v: '7710 3342', id: true, quote: true }
-      ],
-      plan: [
-        { ico: 'file-text', t: "Nothing to do. It's kept in your letters." }
-      ],
-      task: null,
-      marks: [],
-      agenda: null },
+  const PIN = new URLSearchParams(location.search).get('today') || '';
+  const PINNED = /^\d{4}-\d{2}-\d{2}$/.test(PIN);
+  const TODAY = PINNED ? isoOf(dateOf(PIN)) : isoOf(new Date());
 
-    { who: 'VicRoads', what: 'Registration renewal', delay: 6200,
-      facts: [
-        { k: 'From', v: 'VicRoads' },
-        { k: 'What to do', v: 'Pay VicRoads' },
-        { k: 'Due date', v: '1 Sep 2026' },
-        { k: 'Amount', v: '$852.10' },
-        { k: 'Customer number', v: '8124 6630', id: true, quote: true },
-        { k: 'Registration number', v: '1AB 2CD', id: true },
-        { k: 'Vehicle identification number', v: '6T1BF3EK 0BU 101722', id: true }
-      ],
-      plan: [
-        { ico: 'bell', t: 'Remind you: Tue 25 Aug, 9 am' },
-        { ico: 'bell', t: 'Remind you: Sat 29 Aug, 9 am' },
-        { ico: 'bell', t: 'Remind you: Mon 31 Aug, 9 am' },
-        { ico: 'calendar-days', t: 'On your calendar: due Tue 1 Sep' }
-      ],
-      task: { title: 'Renew car registration', when: 'Tue 1 Sep', due: { mo: 9, d: 1 } },
-      marks: [ { mo: 8, d: 25, l: 'reminder' }, { mo: 8, d: 29, l: 'reminder' }, { mo: 8, d: 31, l: 'reminder' }, { mo: 9, d: 1, l: 'Rego due' } ],
-      agenda: { day: 'Tuesday 1 September', line: 'Renew car registration', sub: '$852.10 · rego 1AB 2CD' } },
+  /* ---------- reminders ----------
+     The ladder in src/lib/contract/reminders.ts: 9 am, seven, three and one
+     days before the due date. They are planned on the day a letter is saved,
+     and one that would land before that day is never planned, so a bill
+     checked five days before it is due gets two reminders, not three. */
+  const REMINDER_DAYS = [7, 3, 1];
+  function planReminders(due, savedOn) {
+    return REMINDER_DAYS.map(n => addDays(due, -n)).filter(day => day >= savedOn);
+  }
 
-    /* The appointment: the letter that prints a time of day, so the calendar
-       shows the time. The reminders are the same three as everything else. */
-    { who: 'Dr Patel', what: 'Appointment letter', delay: 6800,
-      facts: [
-        { k: 'From', v: 'Dr A. Patel, GP clinic' },
-        { k: 'What to do', v: 'Attend GP appointment' },
-        { k: 'When', v: 'Fri 4 Sep, 10:30 am' }
-      ],
-      plan: [
-        { ico: 'bell', t: 'Remind you: Thu 3 Sep, 9 am' },
-        { ico: 'calendar-days', t: 'On your calendar: Fri 4 Sep, 10:30 am' }
-      ],
-      task: { title: 'Appointment with Dr Patel', when: 'Fri 4 Sep', due: { mo: 9, d: 4 } },
-      marks: [ { mo: 9, d: 3, l: 'reminder' }, { mo: 9, d: 4, l: 'Dr Patel' } ],
-      agenda: { day: 'Friday 4 September', line: 'Appointment with Dr Patel', sub: '10:30 am · GP clinic' } },
+  /* ---------- the letters ----------
 
-    { who: 'Yarra Council', what: 'Rates notice', delay: 7500,
-      facts: [
-        { k: 'From', v: 'City of Yarra' },
-        { k: 'What to do', v: 'Pay City of Yarra' },
-        { k: 'Due date', v: '31 Aug 2026' },
-        { k: 'Amount', v: '$612.40' },
-        { k: 'Assessment number', v: '88 3120 7', id: true, quote: true }
-      ],
-      plan: [
-        { ico: 'bell', t: 'Remind you: Mon 24 Aug, 9 am' },
-        { ico: 'bell', t: 'Remind you: Fri 28 Aug, 9 am' },
-        { ico: 'bell', t: 'Remind you: Sun 30 Aug, 9 am' },
-        { ico: 'calendar-days', t: 'On your calendar: due Mon 31 Aug' }
-      ],
-      task: { title: 'Pay council rates', when: 'Mon 31 Aug', due: { mo: 8, d: 31 } },
-      marks: [ { mo: 8, d: 24, l: 'reminder' }, { mo: 8, d: 28, l: 'reminder' }, { mo: 8, d: 30, l: 'reminder' }, { mo: 8, d: 31, l: 'Rates due' } ],
-      agenda: { day: 'Monday 31 August', line: 'Pay council rates', sub: '$612.40 · ref 88 3120 7' } },
+     One description per letter: what the reading found, nothing else.
+     Everything drawn from a letter is worked out from it, the rows under
+     "What it says", the plan card, the task, its reminders and its dots, so a
+     date is written once and the places it shows cannot disagree.
 
-    /* The letter that names no date. This is the landing pad for everything
-       the reading could not pin to a day, whatever the reason: the task
-       exists, sits in the list with "No date", never reminds, never touches
-       the calendar. The list itself is the reminder. */
-    { who: 'Carlton Community Centre', what: 'Membership form', delay: 5600,
-      facts: [
-        { k: 'From', v: 'Carlton Community Centre' },
-        { k: 'What to do', v: 'Return form to Carlton Community Centre' },
-        { k: 'Member number', v: '2214', id: true, quote: true }
-      ],
-      plan: [
-        { ico: 'file-text', t: "No date on this letter. It's saved; nothing goes on your calendar." }
-      ],
-      task: { title: 'Return community centre form', when: 'No date' },
-      marks: [],
-      agenda: null }
+     `due` is days from today. `time` makes the letter an appointment. A letter
+     with no `due` names no date. `action: 'No action'` asks for nothing and
+     makes no task. `numbers` is every number the letter prints, label first,
+     and the first is the one to quote. `pages` is how many photographs it was
+     taken in; a letter photographed in the sketch has however many she took. */
+
+  /* Margaret's letters from the weeks before today, already checked. Between
+     them they put a task under every heading Home has, and a dot on the
+     calendar most days of the month, so all of it can be seen on first open:
+     overdue, a reminder going out this morning, the next seven days, an
+     appointment with a time, one done already, one with no date, one that
+     prints three numbers, and a statement that asked for nothing. */
+  const SAVED = [
+    { who: 'Services Australia', what: 'Pension review form', action: 'Return form to Services Australia', due: -3, pages: 2,
+      numbers: [['Customer reference number', 'CRN 2201 8845'], ['Letter reference', 'PRV 5520 1178']] },
+    /* Due in three days, so its three-day reminder goes out this morning. */
+    { who: 'Yarra Valley Water', what: 'Water bill', action: 'Pay Yarra Valley Water', due: 3, amount: '$89.20', pages: 1,
+      numbers: [['Account number', '5501 2280']] },
+    /* KAN-58: a letter that prints three numbers, so the way several numbers
+       are shown can be seen without photographing anything. */
+    { who: 'VicRoads', what: 'Driver licence renewal', action: 'Pay VicRoads', due: 6, amount: '$96.50', pages: 1,
+      numbers: [['Customer number', '8124 6630'], ['Licence number', '0550 2615'], ['Licence card number', 'P4471 2290']] },
+    { who: 'Dr Patel', what: 'Appointment letter', from: 'Dr A. Patel, GP clinic', action: 'Attend GP appointment', due: 12, time: '10:30 am', pages: 1 },
+    { who: 'City of Yarra', what: 'Rates notice', action: 'Pay City of Yarra', due: 24, amount: '$612.40', pages: 2,
+      numbers: [['Assessment number', '88 3120 7']] },
+    /* The letter that names no date. The task exists, sits in the list with
+       "No date", never reminds, never touches the calendar. */
+    { who: 'Carlton Community Centre', what: 'Membership form', action: 'Return form to Carlton Community Centre', pages: 1,
+      numbers: [['Member number', '2214']] },
+    /* Paid last week and ticked off, so a done row is on the list. */
+    { who: 'Telstra', what: 'Phone bill', action: 'Pay Telstra', due: -8, amount: '$79.00', pages: 1, done: true,
+      numbers: [['Account number', '3301 7720']] },
+    /* A statement to keep: in Your letters, and nowhere else. */
+    { who: 'HCF', what: 'Private health statement', action: 'No action', pages: 2,
+      numbers: [['Membership number', '4418 2206']] }
   ];
+
+  /* Read already and waiting for her nod, so Home opens on something to
+     check and the review screen is one tap away. */
+  const WAITING = [
+    /* Due in five days: its seven-day reminder would already be behind her,
+       so the plan card lists two. */
+    { who: 'AGL Energy', what: 'Electricity bill', action: 'Pay AGL Energy', due: 5, amount: '$347.60', pages: 2,
+      numbers: [['Account number', '9201 4471 88']] },
+    /* The letter that asks for nothing. Saving it makes no task, so nothing
+       appears on Home or the calendar. */
+    { who: 'Wattlebank Super', what: 'Annual statement', action: 'No action', pages: 3,
+      numbers: [['Member number', '7710 3342']] }
+  ];
+
+  /* What the camera hands out, one letter per upload, in this order. The
+     photographs are there to show the mechanism: sent, read, ready, checked,
+     on the calendar. `delay` is how long the reading takes. A few seconds
+     here stands in for the tens of seconds there: a vision model reading
+     several pages is slow, which is why the waiting state below is a state
+     and not a spinner. */
+  const UPLOADS = [
+    { who: 'Medicare', what: 'Claim form', from: 'Services Australia', action: 'Return form to Services Australia', due: 7, delay: 5200,
+      numbers: [['Claim number', 'CLM 30991 442'], ['Medicare card number', '2950 41873 1']] },
+    { who: 'VicRoads', what: 'Registration renewal', action: 'Pay VicRoads', due: 18, amount: '$852.10', delay: 7000,
+      numbers: [['Customer number', '8124 6630'], ['Registration number', '1AB 2CD'], ['Vehicle identification number', '6T1BF3EK 0BU 101722']] },
+    /* An appointment the day after tomorrow: only its one-day reminder is
+       still ahead of her. */
+    { who: 'Northside Physio', what: 'Appointment letter', from: 'Northside Physiotherapy', action: 'Attend physio appointment', due: 2, time: '2:15 pm', delay: 5800 }
+  ];
+
+  /* A description with its day worked out against today. */
+  function resolve(spec) {
+    return Object.assign({}, spec, { due: spec.due === undefined ? null : addDays(TODAY, spec.due) });
+  }
+
+  function asksForNothing(L) { return L.action === 'No action'; }
+
+  /* What it says, one row a fact, in the order src/lib/facts.ts draws them.
+     An appointment's day and time are one row, "When". */
+  function factsOf(L) {
+    const f = [{ k: 'From', v: L.from || L.who }, { k: 'What to do', v: L.action }];
+    if (L.due) f.push(L.time ? { k: 'When', v: shortDay(L.due) + ', ' + L.time } : { k: 'Due date', v: shortDay(L.due) });
+    if (L.amount) f.push({ k: 'Amount', v: L.amount });
+    (L.numbers || []).forEach((n, i) => f.push({ k: n[0], v: n[1], id: true, quote: i === 0 }));
+    return f;
+  }
+
+  /* The plan card, planned from today, the day the save would happen. The
+     wording is src/lib/contract/reminders.ts and src/lib/review-plan.ts. */
+  function planOf(L) {
+    if (asksForNothing(L)) return [{ ico: 'file-text', t: "Nothing to do. It's kept in your letters." }];
+    if (!L.due) return [{ ico: 'file-text', t: "No date on this letter. It's saved; nothing goes on your calendar." }];
+    return planReminders(L.due, TODAY).map(day => ({ ico: 'bell', t: 'Remind you: ' + shortDay(day) + ', 9 am' }))
+      .concat([{ ico: 'calendar-days', t: L.time ? 'On your calendar: ' + shortDay(L.due) + ', ' + L.time : 'On your calendar: due ' + shortDay(L.due) }]);
+  }
+
+  /* The task a saved letter makes, or null when it asks for nothing. */
+  function taskOf(L, id, pages, savedOn) {
+    if (asksForNothing(L)) return null;
+    return { id: id, who: L.who, what: L.what, action: L.action, due: L.due, time: L.time || null, done: !!L.done,
+      reminders: L.due ? planReminders(L.due, savedOn) : [], pages: pages, facts: factsOf(L) };
+  }
+
+  function letterOf(L, pages) {
+    return { who: L.who, what: L.what, due: L.due, pages: pages, facts: factsOf(L) };
+  }
 
   /* ---------- state ----------
      The queue holds letters that have been sent to be read and not yet
      confirmed: 'reading' while the model has them, 'ready' once the reading
      lands. Nothing else lives in there. */
-  let queue = [];        // {id, idx, pages, state:'reading'|'ready'}
-  let tasks = [];        // confirmed tasks: {id, title, when, done, marks, agenda}
-  let letters = [];      // every letter she has: {who, what, due, when, pages, facts}
-  let nextRead = 0, photos = 0, uid = 0, current = null, selDay = null, calMo = 8, calYr = 2026;
+  let queue = [];        // {id, letter, pages, state:'reading'|'ready'}
+  let tasks = [];        // saved tasks: {id, who, what, action, due, time, done, reminders, pages, facts}
+  let letters = [];      // every letter she has saved: {who, what, due, pages, facts}
+  let nextRead = 0, photos = 0, uid = 0, current = null, selDay = null;
+  let calMo = 1, calYr = 2026;
   let timers = [], toastTimer = null;
   let sheetTask = null;  // the task the sheet is open on, when it is not a day
-
-  const INITIAL_TASKS = [
-    { id: 'w', who: 'Yarra Valley Water', what: 'Water bill', title: 'Pay water bill', when: 'Wed 5 Aug', due: { mo: 8, d: 5 }, done: false, marks: [ { mo: 8, d: 5, l: 'Water due' } ],
-      agenda: { day: 'Wednesday 5 August', line: 'Pay water bill', sub: '$89.20 · ref 5501 2280' },
-      pages: 1,
-      facts: [
-        { k: 'From', v: 'Yarra Valley Water' },
-        { k: 'What to do', v: 'Pay Yarra Valley Water' },
-        { k: 'Due date', v: 'Wed 5 Aug' },
-        { k: 'Amount', v: '$89.20' },
-        { k: 'Account number', v: '5501 2280', id: true, quote: true }
-      ] },
-    { id: 'p', who: 'Services Australia', what: 'Pension review form', title: 'Return pension review form', when: 'Tue 11 Aug', due: { mo: 8, d: 11 }, done: false, marks: [ { mo: 8, d: 11, l: 'Form due' } ],
-      agenda: { day: 'Tuesday 11 August', line: 'Return pension review form', sub: 'Services Australia' },
-      pages: 2,
-      facts: [
-        { k: 'From', v: 'Services Australia' },
-        { k: 'What to do', v: 'Return form to Services Australia' },
-        { k: 'Due date', v: 'Tue 11 Aug' },
-        { k: 'Customer reference number', v: 'CRN 2201 8845', id: true, quote: true },
-        { k: 'Letter reference', v: 'PRV 5520 1178', id: true }
-      ] },
-    /* KAN-58: a letter that prints three numbers, there on first open, so the
-       way several numbers are shown can be seen without photographing
-       anything. Same customer number as the registration renewal the camera
-       hands out third: one person, one customer number. */
-    { id: 'l', who: 'VicRoads', what: 'Driver licence renewal', title: 'Renew driver licence', when: 'Fri 28 Aug', due: { mo: 8, d: 28 }, done: false, marks: [ { mo: 8, d: 28, l: 'Licence due' } ],
-      agenda: { day: 'Friday 28 August', line: 'Renew driver licence', sub: '$96.50 · customer 8124 6630' },
-      pages: 1,
-      facts: [
-        { k: 'From', v: 'VicRoads' },
-        { k: 'What to do', v: 'Pay VicRoads' },
-        { k: 'Due date', v: 'Fri 28 Aug' },
-        { k: 'Amount', v: '$96.50' },
-        { k: 'Customer number', v: '8124 6630', id: true, quote: true },
-        { k: 'Licence number', v: '0550 2615', id: true },
-        { k: 'Licence card number', v: 'P4471 2290', id: true }
-      ] }
-  ];
-
-  /* Your letters starts with a past: the three seeded tasks' letters, plus one
-     from July so the month folders are visible on first open. */
-  const INITIAL_LETTERS = [
-    { who: 'Telstra', what: 'Phone bill', due: { mo: 7, d: 14 }, when: 'Tue 14 Jul', pages: 1,
-      facts: [ { k: 'From', v: 'Telstra' }, { k: 'What to do', v: 'Pay Telstra' }, { k: 'Amount', v: '$79.00' } ] },
-    { who: 'Yarra Valley Water', what: 'Water bill', due: { mo: 8, d: 5 }, when: 'Wed 5 Aug', pages: 1,
-      facts: [ { k: 'From', v: 'Yarra Valley Water' }, { k: 'What to do', v: 'Pay Yarra Valley Water' }, { k: 'Amount', v: '$89.20' }, { k: 'Account number', v: '5501 2280', id: true, quote: true } ] },
-    { who: 'Services Australia', what: 'Pension review form', due: { mo: 8, d: 11 }, when: 'Tue 11 Aug', pages: 2,
-      facts: [ { k: 'From', v: 'Services Australia' }, { k: 'What to do', v: 'Return form to Services Australia' }, { k: 'Customer reference number', v: 'CRN 2201 8845', id: true, quote: true }, { k: 'Letter reference', v: 'PRV 5520 1178', id: true } ] },
-    { who: 'VicRoads', what: 'Driver licence renewal', due: { mo: 8, d: 28 }, when: 'Fri 28 Aug', pages: 1,
-      facts: [ { k: 'From', v: 'VicRoads' }, { k: 'What to do', v: 'Pay VicRoads' }, { k: 'Amount', v: '$96.50' }, { k: 'Customer number', v: '8124 6630', id: true, quote: true }, { k: 'Licence number', v: '0550 2615', id: true }, { k: 'Licence card number', v: 'P4471 2290', id: true } ] }
-  ];
 
   /* ---------- signing in ---------- */
   function signIn() { go('home'); }
@@ -718,7 +690,7 @@
      upload is MAX_PAGES in src/lib/contract/api.ts. */
   function addPhoto() {
     const hint = document.getElementById('cam-d');
-    if (nextRead >= LETTERS.length) { hint.textContent = 'that is every letter the sketch has'; return; }
+    if (nextRead >= UPLOADS.length) { hint.textContent = 'that is every letter the sketch has'; return; }
     photos++;
     hint.textContent = 'the camera stays open, keep going';
     renderPages();
@@ -740,8 +712,8 @@
      photographs are sent, so there is something honest to look at while the
      model has them, and it is still there when she comes back. */
   function uploadLetter() {
-    if (!photos || nextRead >= LETTERS.length) return;
-    const it = { id: ++uid, idx: nextRead++, pages: photos, state: 'reading' };
+    if (!photos || nextRead >= UPLOADS.length) return;
+    const it = { id: ++uid, letter: resolve(UPLOADS[nextRead++]), pages: photos, state: 'reading' };
     /* In the order she photographed them: the first letter sent is the first
        one on the list, and the first one she is asked to check. */
     queue.push(it);
@@ -751,7 +723,7 @@
       it.state = 'ready';
       renderAll();
       scheduleToast();
-    }, LETTERS[it.idx].delay));
+    }, it.letter.delay));
   }
 
   /* ---------- the message when a reading lands ----------
@@ -771,13 +743,12 @@
     }, 1500);
   }
 
-  /* ---------- review ---------- */
   /* ---------- checking one letter after another ----------
      Nothing about a run of checks is kept once she leaves the review screen.
      While she stays on it, `run` remembers only where to land when the last
      letter is saved: the month of the last task saved, or Your letters if
      none of them made a task. Any other screen clears it (go, below). */
-  let run = null;     // { anyTask, month }
+  let run = null;     // { anyTask, month: 'YYYY-MM' }
   let flashTimer = null;
 
   /* The note after a save: shown, then gone by itself. */
@@ -793,7 +764,7 @@
     const it = queue.find(q => q.id === id && q.state === 'ready');
     if (!it) return;
     current = it;
-    const L = LETTERS[it.idx];
+    const L = it.letter;
     const waiting = queue.filter(q => q.state === 'ready').length;
     document.getElementById('review-left').textContent =
       waiting > 1 ? waiting + ' left to check' : 'Last one to check';
@@ -802,9 +773,9 @@
        recognition: does this match the letter? Why the screen shows rather
        than asks, and why there is no correction anywhere in the product, is
        in src/lib/contract/api.ts. */
-    document.getElementById('facts').innerHTML = factRows(L.facts);
+    document.getElementById('facts').innerHTML = factRows(factsOf(L));
     document.getElementById('review-photos').innerHTML = photoStrip(it.pages, 'letter');
-    document.getElementById('plan').innerHTML = L.plan.map(p =>
+    document.getElementById('plan').innerHTML = planOf(L).map(p =>
       '<div class="plan-row"><span class="ico">' + icon(p.ico, 17) + '</span>' + p.t + '</div>').join('');
     go('review');
   }
@@ -816,22 +787,22 @@
      them made a task. */
   function confirmItem() {
     if (!current) { go('calendar'); return; }
-    const L = LETTERS[current.idx];
+    const L = current.letter;
     if (!run) run = { anyTask: false, month: null };
     queue = queue.filter(q => q.id !== current.id);
-    const action = (L.facts.find(f => f.k === 'What to do') || {}).v || L.task && L.task.title;
+    const task = taskOf(L, 't' + current.id, current.pages, TODAY);
     let note;
-    if (L.task) {
-      tasks.unshift({ id: 't' + current.id, who: L.who, what: L.what, title: L.task.title, when: L.task.when, due: L.task.due, done: false, marks: L.marks, agenda: L.agenda, pages: current.pages, facts: L.facts });
+    if (task) {
+      tasks.push(task);
       run.anyTask = true;
-      if (L.task.due) run.month = L.task.due.mo;
-      note = L.task.due
-        ? 'Saved. ' + action + ' is on your calendar for ' + L.task.when + '.'
-        : 'Saved. ' + action + ' is on your list, with no date.';
+      if (task.due) run.month = task.due.slice(0, 7);
+      note = task.due
+        ? 'Saved. ' + L.action + ' is on your calendar for ' + shortDay(task.due) + '.'
+        : 'Saved. ' + L.action + ' is on your list, with no date.';
     } else {
       note = 'Saved. ' + L.who + ' · ' + L.what + ' is kept in your letters.';
     }
-    letters.push({ who: L.who, what: L.what, due: L.task && L.task.due || null, when: L.task && L.task.due ? L.task.when : null, pages: current.pages, facts: L.facts });
+    letters.push(letterOf(L, current.pages));
     current = null;
     renderAll();
 
@@ -839,7 +810,7 @@
     if (next) { openReview(next.id); flash(note); return; }
 
     const landing = run.anyTask ? 'calendar' : 'letters';
-    if (run.month) { calMo = run.month; calYr = TODAY_YR; }
+    if (run.month) { calYr = Number(run.month.slice(0, 4)); calMo = Number(run.month.slice(5, 7)); }
     go(landing);
     flash(note);
   }
@@ -854,7 +825,7 @@
         q.pages + (q.pages === 1 ? ' photo' : ' photos') +
         '<div class="st">reading…</div></span></div>';
 
-    const L = LETTERS[q.idx];
+    const L = q.letter;
     const pg = q.pages > 1 ? ' · ' + q.pages + ' pages' : '';
     return '<div class="item ready" onclick="openReview(' + q.id + ')"><span class="thumb"></span><span class="txt">' +
       L.who + ' · ' + L.what + '<div class="st">ready to check' + pg + '</div></span><span class="go">check →</span></div>';
@@ -917,7 +888,7 @@
      to un-write it when she unticks. The tick is the one thing the row keeps;
      the column is in db/schema.sql. */
   function isLate(t) {
-    return !t.done && t.due && (t.due.mo * 100 + t.due.d) < (TODAY_MO * 100 + TODAY_D);
+    return !t.done && t.due !== null && t.due < TODAY;
   }
 
   /* KAN-58: what a letter says, one row a fact.
@@ -944,21 +915,24 @@
     return f ? f.v : null;
   }
 
+  /* The day a task is due as a row writes it, with the time when it has one. */
+  function whenOf(t) {
+    return t.due ? shortDay(t.due) + (t.time ? ', ' + t.time : '') : 'No date';
+  }
+
   function taskRow(t, inSheet) {
     const late = isLate(t);
     const stay = inSheet ? 'true' : 'false';
     /* Overdue is told in words ("was due"), not in colour: src/lib/contract/api.ts. */
     /* A dateless task never had reminders, so its done face does not claim
        any were switched off. */
-    const when = t.done ? (t.due ? 'Done · reminders off' : 'Done') : late ? 'was due ' + t.when : t.when;
+    const when = t.done ? (t.due ? 'Done · reminders off' : 'Done') : late ? 'was due ' + whenOf(t) : whenOf(t);
     /* The first line is what to do and the second is who asked and when, in
        the letter's own words, as the finished row draws it
-       (src/components/task-row.tsx). A task whose letter gave neither shows
-       its title on the first line and the date alone on the second. */
-    const doing = factOf(t, 'What to do') || t.title;
+       (src/components/task-row.tsx). */
     const who = factOf(t, 'From');
     return '<div class="row' + (t.done ? ' done' : late ? ' late' : '') + '"><span class="dot" onclick="toggleDone(\'' + t.id + '\', ' + stay + ')">' + icon('check', 15, 3) + '</span>' +
-      '<span class="txt" onclick="openTask(\'' + t.id + '\')"><span class="doing">' + doing + '</span>' +
+      '<span class="txt" onclick="openTask(\'' + t.id + '\')"><span class="doing">' + t.action + '</span>' +
       '<span class="when">' + (who ? who + ' · ' : '') + when + '</span></span></div>';
   }
 
@@ -982,14 +956,11 @@
      in it, because a bill from last week is not "Today". */
   const LATER_SHOWN = 3;
   function homeTasks(list) {
-    const key = due => due.mo * 100 + due.d;
-    const todayKey = TODAY_MO * 100 + TODAY_D;
-    const end = new Date(TODAY_YR, TODAY_MO - 1, TODAY_D + 7);
-    const weekEnd = (end.getMonth() + 1) * 100 + end.getDate();
+    const weekEnd = addDays(TODAY, 7);
     const today = [], week = [], later = [];
     list.forEach(t => {
-      if (isLate(t) || (t.due && key(t.due) === todayKey)) today.push(t);
-      else if (t.due && key(t.due) > todayKey && key(t.due) <= weekEnd) week.push(t);
+      if (isLate(t) || t.due === TODAY) today.push(t);
+      else if (t.due && t.due > TODAY && t.due <= weekEnd) week.push(t);
       else later.push(t);
     });
     return taskGroup(today.some(isLate) ? 'Needs doing' : 'Today', today) +
@@ -1001,8 +972,9 @@
      the overdue pinned above and the dateless below whatever month shows, as
      tasksForMonth in src/lib/calendar.ts. */
   function calendarTasks(list) {
+    const shown = monthOf(calYr, calMo);
     const overdue = list.filter(isLate);
-    const inMonth = list.filter(t => !isLate(t) && t.due && calYr === TODAY_YR && t.due.mo === calMo);
+    const inMonth = list.filter(t => !isLate(t) && t.due && t.due.slice(0, 7) === shown);
     const undated = list.filter(t => !isLate(t) && !t.due);
     return taskGroup('Still to do', overdue) +
       taskGroup(MONTHS[calMo - 1], inMonth, { empty: 'Nothing due in ' + MONTHS[calMo - 1] }) +
@@ -1013,8 +985,7 @@
      an overdue date is smaller than every upcoming one, so late rows surface
      to the top of the home list without a single line of pinning code. */
   function tasksInOrder() {
-    return tasks.slice().sort((a, b) =>
-      (a.due ? a.due.mo * 100 + a.due.d : 9999) - (b.due ? b.due.mo * 100 + b.due.d : 9999));
+    return tasks.slice().sort((a, b) => (a.due || '9999').localeCompare(b.due || '9999'));
   }
 
   function toggleDone(id, fromSheet) {
@@ -1035,7 +1006,7 @@
     const t = tasks.find(x => x.id === id);
     if (!t) return;
     sheetTask = id;
-    let h = '<div class="dd-day">' + (t.who ? t.who + ' · ' + t.what : t.title) + '</div>';
+    let h = '<div class="dd-day">' + t.who + ' · ' + t.what + '</div>';
     h += '<div class="ent">' + taskRow(t, true);
     h += factRows(t.facts);
     h += photoStrip(t.pages || 1, 'task');
@@ -1089,21 +1060,19 @@
     renderLetters();
   }
 
-  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-
   /* Your letters: months as folders, newest month first, days ascending
      inside, the dateless at the end. The names are what the reading found
      (who, what); nothing is renamed anywhere, the "file system" is a view over
      the same letters. */
   function renderLetters() {
     const withDate = letters.filter(l => l.due).sort((a, b) =>
-      (b.due.mo - a.due.mo) || (a.due.d - b.due.d));
+      b.due.slice(0, 7).localeCompare(a.due.slice(0, 7)) || a.due.localeCompare(b.due));
     const dateless = letters.filter(l => !l.due);
-    let h = '', month = -1;
+    let h = '', month = '';
     withDate.forEach(l => {
-      if (l.due.mo !== month) {
-        month = l.due.mo;
-        h += '<div class="folder-h">' + icon('folder', 16) + MONTHS[month - 1] + ' 2026</div>';
+      if (l.due.slice(0, 7) !== month) {
+        month = l.due.slice(0, 7);
+        h += '<div class="folder-h">' + icon('folder', 16) + MONTHS[Number(month.slice(5, 7)) - 1] + ' ' + month.slice(0, 4) + '</div>';
       }
       h += letterRow(l);
     });
@@ -1117,7 +1086,7 @@
 
   function letterRow(l) {
     const i = letters.indexOf(l);
-    const st = l.when ? 'due ' + l.when : '';
+    const st = l.due ? 'due ' + shortDay(l.due) : '';
     return '<div class="item ready" onclick="openLetter(' + i + ')"><span class="thumb"></span><span class="txt">' +
       l.who + ' · ' + l.what + (st ? '<div class="st">' + st + '</div>' : '') + '</span><span class="go">open →</span></div>';
   }
@@ -1138,36 +1107,35 @@
     document.getElementById('sheet').classList.add('show');
   }
 
-  /* The sketch's fictional "today" is Monday 10 August 2026. A specific day,
-     because overdue is not a stored state: a row is overdue because its due
-     date is behind today, worked out at draw time, exactly as the real thing
-     derives it. The seed is arranged around this day on purpose: the water
-     bill (due the 5th) is already late, the pension form (the 11th) is not. */
-  const TODAY_MO = 8, TODAY_D = 10, TODAY_YR = 2026;
+  function todaysMonth() { return TODAY.slice(0, 7); }
 
   function goToday() {
-    if (calMo === TODAY_MO && calYr === TODAY_YR) return;
+    if (monthOf(calYr, calMo) === todaysMonth()) return;
     closeDay();
-    calMo = TODAY_MO; calYr = TODAY_YR;
+    calYr = Number(TODAY.slice(0, 4)); calMo = Number(TODAY.slice(5, 7));
     renderCalendar();
   }
 
   function renderCalendar() {
+    const shown = monthOf(calYr, calMo);
+    /* Every task marks the day it is due, and each day one of its reminders
+       goes out. The day of the month is the last two characters of a day. */
     const tags = {};
-    /* Marks store month and day only, so gate on the sketch's one year:
-       without this, August 2027 would redraw 2026's dots and the day sheet
-       would talk about them in the wrong tense. */
-    tasks.forEach(t => (t.marks || []).forEach(m => { if (calYr === TODAY_YR && m.mo === calMo) (tags[m.d] = tags[m.d] || []).push(m.l); }));
+    const mark = (day, kind) => { if (day.slice(0, 7) === shown) (tags[Number(day.slice(8))] = tags[Number(day.slice(8))] || []).push(kind); };
+    tasks.forEach(t => {
+      t.reminders.forEach(day => mark(day, 'rem'));
+      if (t.due) mark(t.due, 'due');
+    });
     if (selDay && !tags[selDay]) selDay = null;
     document.getElementById('cal-title').textContent = MONTHS[calMo - 1] + ' ' + calYr;
-    document.getElementById('today-btn').classList.toggle('home', calMo === TODAY_MO && calYr === TODAY_YR);
+    document.getElementById('today-btn').classList.toggle('home', shown === todaysMonth());
     const offset = (new Date(calYr, calMo - 1, 1).getDay() + 6) % 7;   /* Monday-first grid */
     const days = new Date(calYr, calMo, 0).getDate();
     let h = ['M','T','W','T','F','S','S'].map(d => '<div class="dow">' + d + '</div>').join('');
     for (let i = 0; i < offset; i++) h += '<div class="d"></div>';
     for (let d = 1; d <= days; d++) {
       if (tags[d]) {
-        const dots = tags[d].slice(0, 3).map(l => '<span class="cdot ' + (l === 'reminder' ? 'rem' : 'due') + '"></span>').join('');
+        const dots = tags[d].slice(0, 3).map(kind => '<span class="cdot ' + kind + '"></span>').join('');
         h += '<div class="d has' + (selDay === d ? ' sel' : '') + '" onclick="openDay(' + d + ')">' + d + '<span class="dots">' + dots + '</span></div>';
       } else {
         h += '<div class="d">' + d + '<span class="dots"></span></div>';
@@ -1189,41 +1157,54 @@
     renderCalendar();
   }
 
-  /* ---------- day sheet ---------- */
+  /* ---------- day sheet ----------
+     Every task on the day tapped, whole: the tick, what its letter said, and
+     the photographs, whether the day is the one it is due or one of its
+     reminders. KAN-59: a reminder's day used to show only a line and a title,
+     and she had to find the due day to read the rest. */
   function openDay(d) {
     selDay = d;
     renderCalendar();
-    const DOW = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const day = monthOf(calYr, calMo) + '-' + pad(d);
     const entries = [];
-    tasks.forEach(t => (t.marks || []).forEach(m => { if (calYr === TODAY_YR && m.mo === calMo && m.d === d) entries.push({ t: t, l: m.l }); }));
+    tasks.forEach(t => {
+      if (t.reminders.includes(day)) entries.push({ t: t, reminder: true });
+      if (t.due === day) entries.push({ t: t, reminder: false });
+    });
     if (!entries.length) return;
-    let h = '<div class="dd-day">' + DOW[new Date(calYr, calMo - 1, d).getDay()] + ' ' + d + ' ' + MONTHS[calMo - 1] + '</div>';
+    let h = '<div class="dd-day">' + longDay(day) + '</div>';
     entries.forEach(e => {
-      const t = e.t;
-      const past = (calYr * 10000 + calMo * 100 + d) < (TODAY_YR * 10000 + TODAY_MO * 100 + TODAY_D);
-      if (e.l === 'reminder') {
-        /* The clock checks the tick at the moment it rings; this line is that
-           check, drawn. A reminder for a ticked-off task has nothing to say,
-           and one whose morning has passed is history, not a plan. */
-        const line = t.done ? icon('bell-off', 16) + 'No reminder, this is already done'
-                   : past   ? icon('bell', 16) + 'A reminder went out this morning, 9 am'
-                   :          icon('bell', 16) + 'A reminder goes out this morning, 9 am';
-        h += '<div class="ent"><div class="remind">' + line + '</div>' +
-             '<div class="t">' + t.title + '</div><div class="cap2">due ' + t.when + '</div></div>';
-        return;
-      }
+      h += '<div class="ent">';
+      if (e.reminder) h += reminderBox(e.t, day);
       /* The same tick as the home list, in the same place she found the task.
          Operations follow visibility: wherever the row is drawn, the tick
          works, however long ago the day was. */
-      h += '<div class="ent">' + taskRow(t, true);
-      h += factRows(t.facts);
-      h += photoStrip(t.pages || 1, 'task');
+      h += taskRow(e.t, true);
+      h += factRows(e.t.facts);
+      h += photoStrip(e.t.pages || 1, 'task');
       h += '</div>';
     });
     h += '<button class="btn ghost" onclick="closeDay()">Close</button>';
     document.getElementById('sheet').innerHTML = h;
     document.getElementById('sheet-mask').classList.add('show');
     document.getElementById('sheet').classList.add('show');
+  }
+
+  /* KAN-59: what makes a reminder's day read as a reminder and not as the day
+     the task is due. The first line is the reminder itself, in the tense the
+     clock gives it (sheetLine in src/lib/calendar.ts): a reminder for a
+     ticked-off task has nothing to say, and one whose morning has passed is
+     history, not a plan. The second line is what the reminder is about, said
+     from that morning: how far off the due day is, and which day that is. */
+  function reminderBox(t, day) {
+    const line = t.done ? icon('bell-off', 16) + 'No reminder, this is already done'
+               : day < TODAY ? icon('bell', 16) + 'A reminder went out this morning, 9 am'
+               :               icon('bell', 16) + 'A reminder goes out this morning, 9 am';
+    const n = daysBetween(day, t.due);
+    const until = t.time
+      ? (n === 1 ? 'Appointment tomorrow, ' : 'Appointment in ' + n + ' days, on ') + shortDay(t.due) + ' at ' + t.time
+      : (n === 1 ? 'Due tomorrow, ' : 'Due in ' + n + ' days, on ') + shortDay(t.due);
+    return '<div class="remind-box"><div class="remind">' + line + '</div><div class="until">' + until + '</div></div>';
   }
 
   function closeDay() {
@@ -1257,25 +1238,41 @@
   }
   document.querySelectorAll('.nav button').forEach(b => b.addEventListener('click', () => { if (b.dataset.s) go(b.dataset.s); }));
 
-  /* ---------- reset ---------- */
+  /* ---------- reset ----------
+     KAN-59: the sketch starts full. Margaret's saved letters are on Home, the
+     calendar and Your letters, and two readings are waiting to be checked, so
+     every screen has something on it before anything is photographed. */
   function reset() {
     timers.forEach(clearTimeout); timers = [];
     if (toastTimer) clearTimeout(toastTimer);
     document.getElementById('toast').classList.remove('show');
-    queue = []; tasks = INITIAL_TASKS.map(t => Object.assign({}, t));
-    letters = INITIAL_LETTERS.map(l => Object.assign({}, l));
-    nextRead = 0; photos = 0; current = null; selDay = null; run = null; calMo = 8; calYr = 2026;
+    uid = 0;
+    queue = WAITING.map(spec => ({ id: ++uid, letter: resolve(spec), pages: spec.pages, state: 'ready' }));
+    /* Saved weeks ago, before any of their reminders, so each has all three
+       it was planned with, as db/seed.ts plans them. */
+    const savedOn = addDays(TODAY, -30);
+    tasks = []; letters = [];
+    SAVED.map(resolve).forEach((L, i) => {
+      const t = taskOf(L, 's' + i, L.pages, savedOn);
+      if (t) tasks.push(t);
+      letters.push(letterOf(L, L.pages));
+    });
+    nextRead = 0; photos = 0; current = null; selDay = null; run = null;
+    calYr = Number(TODAY.slice(0, 4)); calMo = Number(TODAY.slice(5, 7));
     document.getElementById('cam-d').textContent = 'the camera stays open, keep going';
     renderPages(); renderAll(); go('signin');
   }
   document.getElementById('tb-reset').addEventListener('click', reset);
 
-  /* The toolbar wears the sketch's fictional clock, derived from the same
-     TODAY_* constants everything else compares against. */
+  /* The toolbar wears the sketch's clock, and the picker beside it pins
+     another day by reloading with ?today=. */
   document.getElementById('tb-today').textContent =
-    'sketch "today": ' +
-    new Date(TODAY_YR, TODAY_MO - 1, TODAY_D).toLocaleDateString('en-AU',
-      { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+    'sketch "today"' + (PINNED ? ', pinned: ' : ': ') +
+    dateOf(TODAY).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+  const picker = document.getElementById('tb-date');
+  picker.value = TODAY;
+  picker.addEventListener('change', () => { if (picker.value) location.search = '?today=' + picker.value; });
+  document.getElementById('tb-real').hidden = !PINNED;
 
   document.querySelectorAll('[data-icon]').forEach(el => {
     el.innerHTML = icon(el.dataset.icon, Number(el.dataset.size) || 20, Number(el.dataset.weight) || 2);
