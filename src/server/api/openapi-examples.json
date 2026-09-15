@@ -1,0 +1,478 @@
+{
+  "sessionUser": {
+    "id": "9738f31a-e7aa-420e-b8b7-e60eb2e7d502",
+    "email": "margaret@example.com",
+    "displayName": "Margaret Whitfield",
+    "role": "user",
+    "timeZone": "Australia/Melbourne"
+  },
+  "me": {
+    "user": {
+      "id": "9738f31a-e7aa-420e-b8b7-e60eb2e7d502",
+      "email": "margaret@example.com",
+      "displayName": "Margaret Whitfield",
+      "role": "user",
+      "timeZone": "Australia/Melbourne"
+    }
+  },
+  "meAnonymous": {
+    "user": null
+  },
+  "signedOut": {
+    "signedOut": true
+  },
+  "registerInvalid": {
+    "error": {
+      "code": "invalid_request",
+      "message": "Please check the details below.",
+      "fields": {
+        "displayName": "Please enter your name.",
+        "email": "Please check that email address.",
+        "password": "Please use at least 8 characters."
+      }
+    }
+  },
+  "registerConflict": {
+    "error": {
+      "code": "conflict",
+      "message": "There is already an account with that email address."
+    }
+  },
+  "loginWrong": {
+    "error": {
+      "code": "unauthenticated",
+      "message": "That email and password do not match."
+    }
+  },
+  "unauthenticated": {
+    "error": {
+      "code": "unauthenticated",
+      "message": "Please sign in."
+    }
+  },
+  "uploaded": {
+    "id": "71f29144-40b4-49af-a9d0-f36ae7519ff1",
+    "issuer": null,
+    "documentType": null,
+    "label": "Photographed Wed 16 Sep at 3:52 am, 1 page",
+    "status": "processing",
+    "uploadedAt": "2026-09-15T17:52:52.746Z",
+    "pageCount": 1
+  },
+  "uploadInvalid": {
+    "error": {
+      "code": "invalid_request",
+      "message": "Please attach at least one photo."
+    }
+  },
+  "documents": [
+    {
+      "id": "0fbe969e-fe0a-4d3d-9934-df7e9862d193",
+      "issuer": "Dr A. Patel, GP clinic",
+      "documentType": "Medical letter",
+      "label": "Dr A. Patel, GP clinic · Medical letter",
+      "status": "confirmed",
+      "dueDate": "2026-10-12",
+      "dueTime": "10:30",
+      "amount": "No payment required",
+      "reference": "Clinic ref 8871",
+      "uploadedAt": "2026-09-14T17:52:25.925Z",
+      "pageCount": 1
+    },
+    {
+      "id": "0327fe0a-6ef7-4eba-bb57-200dcceaa957",
+      "issuer": "Yarra Valley Water",
+      "documentType": "Utility bill",
+      "label": "Yarra Valley Water · Utility bill",
+      "status": "confirmed",
+      "dueDate": "2026-09-21",
+      "amount": "$89.20",
+      "reference": "5501 2280",
+      "uploadedAt": "2026-09-11T17:52:25.925Z",
+      "pageCount": 1
+    },
+    {
+      "id": "7c687eb2-68fc-4b83-838a-760ab5ac3c4e",
+      "issuer": "Services Australia",
+      "documentType": "Government letter",
+      "label": "Services Australia · Government letter",
+      "status": "confirmed",
+      "dueDate": "2026-09-13",
+      "amount": "No payment required",
+      "reference": "CRN 2201 8845",
+      "uploadedAt": "2026-09-06T17:52:25.925Z",
+      "pageCount": 2
+    }
+  ],
+  "document": {
+    "id": "71f29144-40b4-49af-a9d0-f36ae7519ff1",
+    "issuer": "Example Energy",
+    "documentType": "electricity bill",
+    "label": "Example Energy · electricity bill",
+    "status": "needs-review",
+    "dueDate": "2026-08-24",
+    "amount": "$82.42",
+    "reference": "7960 963 636",
+    "uploadedAt": "2026-09-15T17:52:52.746Z",
+    "pageCount": 1,
+    "fields": [
+      {
+        "key": "document_type",
+        "label": "Document type",
+        "value": "electricity bill",
+        "status": "confirmed"
+      },
+      {
+        "key": "issuer",
+        "label": "From",
+        "value": "Example Energy",
+        "status": "confirmed"
+      },
+      {
+        "key": "action_required",
+        "label": "What to do",
+        "value": "Pay Example Energy",
+        "status": "confirmed"
+      },
+      {
+        "key": "due_date",
+        "label": "Due date",
+        "value": "24 Aug 2026",
+        "status": "confirmed"
+      },
+      {
+        "key": "amount",
+        "label": "Amount",
+        "value": "$82.42",
+        "status": "confirmed"
+      },
+      {
+        "key": "reference",
+        "label": "Reference",
+        "value": "7960 963 636",
+        "status": "confirmed"
+      }
+    ],
+    "identifiers": [
+      {
+        "label": "Account number",
+        "value": "7960 963 636",
+        "isReference": true
+      },
+      {
+        "label": "NMI",
+        "value": "60371335118",
+        "isReference": false
+      },
+      {
+        "label": "Payment code",
+        "value": "9200104",
+        "isReference": false
+      },
+      {
+        "label": "Ref",
+        "value": "3676 4187 1668",
+        "isReference": false
+      }
+    ],
+    "pages": [
+      {
+        "id": "d8dc6409-b5c1-4d57-8d05-51542fa8a9bf",
+        "pageNumber": 1,
+        "url": "/api/documents/71f29144-40b4-49af-a9d0-f36ae7519ff1/pages/1"
+      }
+    ]
+  },
+  "documentNotFound": {
+    "error": {
+      "code": "not_found",
+      "message": "Letter not found."
+    }
+  },
+  "pageLocation": "http://localhost:19020/daykeeper/uploads/9738f31a-e7aa-420e-b8b7-e60eb2e7d502/0fbe969e-fe0a-4d3d-9934-df7e9862d193/1.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=daykeeper%2F20260915%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260915T175249Z&X-Amz-Expires=900&X-Amz-Signature=...&X-Amz-SignedHeaders=host&x-amz-checksum-mode=ENABLED&x-id=GetObject",
+  "confirmed": {
+    "documentId": "71f29144-40b4-49af-a9d0-f36ae7519ff1",
+    "task": {
+      "id": "5d8e3832-d53d-414b-a7ae-a39f23874cb6",
+      "title": "Pay Example Energy",
+      "documentId": "71f29144-40b4-49af-a9d0-f36ae7519ff1",
+      "issuer": "Example Energy",
+      "dueDate": "2026-08-24",
+      "status": "overdue",
+      "reminders": []
+    }
+  },
+  "confirmConflict": {
+    "error": {
+      "code": "conflict",
+      "message": "This letter is already saved."
+    }
+  },
+  "tasks": [
+    {
+      "id": "3a7c9238-c6df-4109-95d0-a4008f647bd3",
+      "title": "Return form to Services Australia",
+      "documentId": "7c687eb2-68fc-4b83-838a-760ab5ac3c4e",
+      "issuer": "Services Australia",
+      "dueDate": "2026-09-13",
+      "status": "overdue",
+      "reminders": [
+        {
+          "id": "44245655-6b86-4f83-878f-75c8bd3afdca",
+          "scheduledFor": "2026-09-05T23:00:00.000Z",
+          "localDate": "2026-09-06",
+          "localTime": "09:00",
+          "channel": "in_app",
+          "status": "sent"
+        },
+        {
+          "id": "95a16d64-6b5b-4495-adcc-089e04f6cf7f",
+          "scheduledFor": "2026-09-09T23:00:00.000Z",
+          "localDate": "2026-09-10",
+          "localTime": "09:00",
+          "channel": "in_app",
+          "status": "sent"
+        },
+        {
+          "id": "62bce076-52b1-409f-8a9e-d340fb011383",
+          "scheduledFor": "2026-09-11T23:00:00.000Z",
+          "localDate": "2026-09-12",
+          "localTime": "09:00",
+          "channel": "in_app",
+          "status": "sent"
+        }
+      ]
+    },
+    {
+      "id": "f54f15a8-d37e-4f68-9aeb-c8367b719e59",
+      "title": "Pay Yarra Valley Water",
+      "documentId": "0327fe0a-6ef7-4eba-bb57-200dcceaa957",
+      "issuer": "Yarra Valley Water",
+      "dueDate": "2026-09-21",
+      "status": "upcoming",
+      "reminders": [
+        {
+          "id": "8013dd86-1c12-4dcc-8454-7aa1d3eefdf9",
+          "scheduledFor": "2026-09-13T23:00:00.000Z",
+          "localDate": "2026-09-14",
+          "localTime": "09:00",
+          "channel": "in_app",
+          "status": "sent"
+        },
+        {
+          "id": "c6658f2c-f65b-48de-a332-84b20d38f7fb",
+          "scheduledFor": "2026-09-17T23:00:00.000Z",
+          "localDate": "2026-09-18",
+          "localTime": "09:00",
+          "channel": "in_app",
+          "status": "scheduled"
+        },
+        {
+          "id": "8ef37135-2e26-4738-8b4f-11aab39efe1c",
+          "scheduledFor": "2026-09-19T23:00:00.000Z",
+          "localDate": "2026-09-20",
+          "localTime": "09:00",
+          "channel": "in_app",
+          "status": "scheduled"
+        }
+      ]
+    }
+  ],
+  "task": {
+    "id": "3a7c9238-c6df-4109-95d0-a4008f647bd3",
+    "title": "Return form to Services Australia",
+    "documentId": "7c687eb2-68fc-4b83-838a-760ab5ac3c4e",
+    "issuer": "Services Australia",
+    "dueDate": "2026-09-13",
+    "status": "overdue",
+    "reminders": [
+      {
+        "id": "44245655-6b86-4f83-878f-75c8bd3afdca",
+        "scheduledFor": "2026-09-05T23:00:00.000Z",
+        "localDate": "2026-09-06",
+        "localTime": "09:00",
+        "channel": "in_app",
+        "status": "sent"
+      },
+      {
+        "id": "95a16d64-6b5b-4495-adcc-089e04f6cf7f",
+        "scheduledFor": "2026-09-09T23:00:00.000Z",
+        "localDate": "2026-09-10",
+        "localTime": "09:00",
+        "channel": "in_app",
+        "status": "sent"
+      },
+      {
+        "id": "62bce076-52b1-409f-8a9e-d340fb011383",
+        "scheduledFor": "2026-09-11T23:00:00.000Z",
+        "localDate": "2026-09-12",
+        "localTime": "09:00",
+        "channel": "in_app",
+        "status": "sent"
+      }
+    ],
+    "fields": [
+      {
+        "key": "document_type",
+        "label": "Document type",
+        "value": "Government letter",
+        "status": "confirmed"
+      },
+      {
+        "key": "issuer",
+        "label": "From",
+        "value": "Services Australia",
+        "status": "confirmed"
+      },
+      {
+        "key": "action_required",
+        "label": "What to do",
+        "value": "Return form to Services Australia",
+        "status": "confirmed"
+      },
+      {
+        "key": "due_date",
+        "label": "Due date",
+        "value": "13 Sep 2026",
+        "status": "confirmed"
+      },
+      {
+        "key": "amount",
+        "label": "Amount",
+        "value": "No payment required",
+        "status": "confirmed"
+      },
+      {
+        "key": "reference",
+        "label": "Reference",
+        "value": "CRN 2201 8845",
+        "status": "confirmed"
+      }
+    ],
+    "identifiers": [
+      {
+        "label": "Customer reference number",
+        "value": "CRN 2201 8845",
+        "isReference": true
+      },
+      {
+        "label": "Letter reference",
+        "value": "PRV 5520 1178",
+        "isReference": false
+      }
+    ],
+    "pageCount": 2
+  },
+  "taskCompleted": {
+    "id": "3a7c9238-c6df-4109-95d0-a4008f647bd3",
+    "title": "Return form to Services Australia",
+    "documentId": "7c687eb2-68fc-4b83-838a-760ab5ac3c4e",
+    "issuer": "Services Australia",
+    "dueDate": "2026-09-13",
+    "status": "completed",
+    "reminders": [
+      {
+        "id": "44245655-6b86-4f83-878f-75c8bd3afdca",
+        "scheduledFor": "2026-09-05T23:00:00.000Z",
+        "localDate": "2026-09-06",
+        "localTime": "09:00",
+        "channel": "in_app",
+        "status": "sent"
+      },
+      {
+        "id": "95a16d64-6b5b-4495-adcc-089e04f6cf7f",
+        "scheduledFor": "2026-09-09T23:00:00.000Z",
+        "localDate": "2026-09-10",
+        "localTime": "09:00",
+        "channel": "in_app",
+        "status": "sent"
+      },
+      {
+        "id": "62bce076-52b1-409f-8a9e-d340fb011383",
+        "scheduledFor": "2026-09-11T23:00:00.000Z",
+        "localDate": "2026-09-12",
+        "localTime": "09:00",
+        "channel": "in_app",
+        "status": "sent"
+      }
+    ]
+  },
+  "taskReopened": {
+    "id": "3a7c9238-c6df-4109-95d0-a4008f647bd3",
+    "title": "Return form to Services Australia",
+    "documentId": "7c687eb2-68fc-4b83-838a-760ab5ac3c4e",
+    "issuer": "Services Australia",
+    "dueDate": "2026-09-13",
+    "status": "overdue",
+    "reminders": [
+      {
+        "id": "44245655-6b86-4f83-878f-75c8bd3afdca",
+        "scheduledFor": "2026-09-05T23:00:00.000Z",
+        "localDate": "2026-09-06",
+        "localTime": "09:00",
+        "channel": "in_app",
+        "status": "sent"
+      },
+      {
+        "id": "95a16d64-6b5b-4495-adcc-089e04f6cf7f",
+        "scheduledFor": "2026-09-09T23:00:00.000Z",
+        "localDate": "2026-09-10",
+        "localTime": "09:00",
+        "channel": "in_app",
+        "status": "sent"
+      },
+      {
+        "id": "62bce076-52b1-409f-8a9e-d340fb011383",
+        "scheduledFor": "2026-09-11T23:00:00.000Z",
+        "localDate": "2026-09-12",
+        "localTime": "09:00",
+        "channel": "in_app",
+        "status": "sent"
+      }
+    ]
+  },
+  "home": {
+    "counts": {
+      "needsReview": 0,
+      "processing": 0,
+      "failed": 0
+    },
+    "inbox": [],
+    "tasks": [
+      {
+        "id": "3a7c9238-c6df-4109-95d0-a4008f647bd3",
+        "title": "Return form to Services Australia",
+        "documentId": "7c687eb2-68fc-4b83-838a-760ab5ac3c4e",
+        "issuer": "Services Australia",
+        "dueDate": "2026-09-13",
+        "status": "overdue",
+        "reminders": [
+          {
+            "id": "44245655-6b86-4f83-878f-75c8bd3afdca",
+            "scheduledFor": "2026-09-05T23:00:00.000Z",
+            "localDate": "2026-09-06",
+            "localTime": "09:00",
+            "channel": "in_app",
+            "status": "sent"
+          },
+          {
+            "id": "95a16d64-6b5b-4495-adcc-089e04f6cf7f",
+            "scheduledFor": "2026-09-09T23:00:00.000Z",
+            "localDate": "2026-09-10",
+            "localTime": "09:00",
+            "channel": "in_app",
+            "status": "sent"
+          },
+          {
+            "id": "62bce076-52b1-409f-8a9e-d340fb011383",
+            "scheduledFor": "2026-09-11T23:00:00.000Z",
+            "localDate": "2026-09-12",
+            "localTime": "09:00",
+            "channel": "in_app",
+            "status": "sent"
+          }
+        ]
+      }
+    ]
+  }
+}
