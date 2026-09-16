@@ -42,6 +42,14 @@ tick.
   the schema.
 - Modules 2 and 3. Email and voice are the next phase in the baseline's own wording.
 
+## Module 2 development foundation
+
+Email integration development has started separately from the release above.
+The first slice is a server-only mailbox interface, validated plain-text email
+input, a deterministic mock mailbox and an extraction boundary reusing the six
+fields. It does not connect a mailbox, monitor mail or create tasks yet.
+[`email-integration.md`](email-integration.md) records the proposed delivery tickets.
+
 ## Why this shape
 
 The path above is the one where everything goes right: the credentials are correct, the
