@@ -109,12 +109,26 @@ render on a machine that has never uploaded anything, which is what showing the
 product needs, and every `document_pages.storage_path` names an object that is
 really there.
 
+### A second world, for recording a demo
+
+`npm run demo:reset` plants a different world in the same database: one account
+(`demo@example.com` / `daykeeper`) with two letters already checked and both
+tasks already ticked, and nothing waiting. It is the frame a demo recording
+starts on, and running it again between takes puts that frame back.
+
+Its two letters take their fields from the fixture's own `ground-truth.json`,
+so the screen and the photograph tell the same story down to the date and the
+account number. The two seeds are alternatives, not layers: whichever you run
+last is the world you have.
+
 ## Commands
 
 | | |
 |---|---|
 | `npm run db:reset` | rebuild the schema from `db/schema.sql`, empty the bucket, then seed both. In that order: the seed writes photographs, so emptying afterwards would delete them |
 | `npm run db:seed` | reseed without touching the schema |
+| `npm run demo:reset` | the same three steps, but planting the demo recording's starting frame instead of Margaret's world |
+| `npm run demo:seed` | replant that frame without touching the schema |
 | `npm run storage:reset` | make the bucket exist and empty it, without touching the database. The seeded photographs go with it; `npm run db:reset` puts both sides back |
 | `npm test` | the contract tests |
 | `npm run typecheck` | `tsc --noEmit` |
@@ -166,6 +180,8 @@ One rule, so you never have to open a file to find out where it may be used:
 ```
 db/schema.sql             the database, and the only definition of it
 db/seed.ts                Margaret's world
+db/demo-seed.ts           the frame a demo recording starts on
+db/seed-lib.ts            what both seeds are made of
 
 src/lib/contract/         the agreement. Import from here, do not restate it.
   fields.ts                 the six fields (and the optional due_time), labels, meanings

@@ -17,6 +17,8 @@
     "db:reset": "tsx db/reset.ts && tsx scripts/storage-reset.ts && tsx db/seed.ts",
     "db:schema": "tsx db/reset.ts",
     "db:seed": "tsx db/seed.ts",
+    "demo:reset": "tsx db/reset.ts && tsx scripts/storage-reset.ts && tsx db/demo-seed.ts",
+    "demo:seed": "tsx db/demo-seed.ts",
     "storage:reset": "tsx scripts/storage-reset.ts",
     "test": "vitest run",
     "test:watch": "vitest",
