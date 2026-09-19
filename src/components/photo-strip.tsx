@@ -2,8 +2,9 @@
 
 // KAN-59: the photographs of a letter, small in a row, and one at a time across the whole screen.
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Dialog } from "@base-ui/react/dialog";
+import { TransformComponent, TransformWrapper } from "react-zoom-pan-pinch";
 
 /**
  * The address of one photograph. It checks who is asking and then redirects to
@@ -89,19 +90,25 @@ export function PhotoStrip({
 }
 
 /**
- * One photograph at a time, as wide as the screen.
+ * One photograph at a time, as large as the screen, and as close as she wants.
  *
  * The prototype's `.viewer`: a dark screen, "Photo 1 of 2" and Close along the
- * top, the page as wide as the phone, and a line under it saying how to turn
- * and how to read closer. The left and right thirds of the page turn it, which
- * is a bigger target than any arrow, and they are simply absent on the first
- * and the last page so a tap there does nothing rather than something
- * surprising. Pinching is the browser's own, which is why nothing here zooms.
+ * top, the page in the middle and a line under it saying what she can do.
+ *
+ * Reading closer is ours, not the browser's. Pinching the browser zooms the
+ * whole screen, Close included, and a computer has no pinch at all, so the
+ * page is zoomed inside its own frame by react-zoom-pan-pinch: pinch or the
+ * wheel to zoom at that spot, drag to move, double-tap or double-click to go in
+ * and back out, and three buttons for anyone who would rather press something.
+ *
+ * Pages turn with the round buttons at either side or the arrow keys. The
+ * buttons go away while the page is zoomed, so a drag near the edge moves the
+ * page instead of turning it, and a new page always opens whole.
  *
  * A dialog of its own, so it can open over a sheet that is itself a dialog:
  * Close and Escape shut the photograph and leave the sheet where it was.
  */
-function PhotoViewer({
+export function PhotoViewer({
   documentId,
   count,
   page,
@@ -112,11 +119,37 @@ function PhotoViewer({
   page: number | null;
   onPage: (page: number | null) => void;
 }) {
+  /** Whether the page is bigger than it opened at. */
+  const [zoomed, setZoomed] = useState(false);
+
+  // The frame's size, so the page can be drawn exactly as big as fits. An
+  // image stretched over the whole frame would zoom its dark margins too, and
+  // a drag could then carry the page out of sight.
+  const [frame, setFrame] = useState<{ width: number; height: number } | null>(
+    null,
+  );
+  // A callback ref, because the dialog mounts its content after this
+  // component has rendered: the frame is measured when it actually appears.
+  const observer = useRef<ResizeObserver | null>(null);
+  const frameRef = useCallback((element: HTMLDivElement | null) => {
+    observer.current?.disconnect();
+    observer.current = null;
+    if (!element) return;
+    observer.current = new ResizeObserver(([entry]) => {
+      const { width, height } = entry.contentRect;
+      setFrame({ width, height });
+    });
+    observer.current.observe(element);
+  }, []);
+
   const turn = useCallback(
     (step: number) => {
       if (page === null) return;
       const next = page + step;
-      if (next >= 1 && next <= count) onPage(next);
+      if (next >= 1 && next <= count) {
+        setZoomed(false);
+        onPage(next);
+      }
     },
     [page, count, onPage],
   );
@@ -132,11 +165,17 @@ function PhotoViewer({
     return () => window.removeEventListener("keydown", onKey);
   }, [page, turn]);
 
+  const roundButton =
+    "flex size-12 items-center justify-center rounded-full border-2 border-primary-foreground bg-[rgba(12,12,16,0.6)] text-xl font-bold leading-none disabled:opacity-40";
+
   return (
     <Dialog.Root
       open={page !== null}
       onOpenChange={(open) => {
-        if (!open) onPage(null);
+        if (!open) {
+          setZoomed(false);
+          onPage(null);
+        }
       }}
     >
       <Dialog.Portal>
@@ -151,39 +190,103 @@ function PhotoViewer({
             </Dialog.Close>
           </div>
 
-          <div className="relative flex min-h-0 flex-1 items-center justify-center">
-            {page !== null ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+          <div
+            ref={frameRef}
+            className="relative min-h-0 flex-1 overflow-hidden"
+          >
+            {page !== null && frame ? (
+              <TransformWrapper
+                // A fresh frame per page, so every page opens whole.
                 key={page}
-                src={pageUrl(documentId, page)}
-                alt={`Photo ${page} of ${count}`}
-                className="size-full object-contain"
-              />
-            ) : null}
-            {page !== null && page > 1 ? (
-              <button
-                type="button"
-                onClick={() => turn(-1)}
-                aria-label="Previous photo"
-                className="absolute inset-y-0 left-0 w-1/3"
-              />
-            ) : null}
-            {page !== null && page < count ? (
-              <button
-                type="button"
-                onClick={() => turn(1)}
-                aria-label="Next photo"
-                className="absolute inset-y-0 right-0 w-1/3"
-              />
+                minScale={1}
+                maxScale={8}
+                centerOnInit
+                // The library multiplies this by the wheel's travel: one notch of a
+                // mouse (100) adds 0.3 to the scale.
+                wheel={{ step: 0.003 }}
+                doubleClick={{ mode: "toggle", step: 1.2 }}
+                onTransform={(_, state) => setZoomed(state.scale > 1.01)}
+              >
+                {({ zoomIn, zoomOut, resetTransform }) => (
+                  <>
+                    <TransformComponent
+                      wrapperStyle={{ width: "100%", height: "100%" }}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={pageUrl(documentId, page)}
+                        alt={`Photo ${page} of ${count}`}
+                        draggable={false}
+                        style={{
+                          maxWidth: frame.width,
+                          maxHeight: frame.height,
+                        }}
+                        className="block select-none"
+                      />
+                    </TransformComponent>
+
+                    {!zoomed && page > 1 ? (
+                      <button
+                        type="button"
+                        onClick={() => turn(-1)}
+                        aria-label="Previous photo"
+                        className={`${roundButton} absolute top-1/2 left-3 -translate-y-1/2`}
+                      >
+                        ‹
+                      </button>
+                    ) : null}
+                    {!zoomed && page < count ? (
+                      <button
+                        type="button"
+                        onClick={() => turn(1)}
+                        aria-label="Next photo"
+                        className={`${roundButton} absolute top-1/2 right-3 -translate-y-1/2`}
+                      >
+                        ›
+                      </button>
+                    ) : null}
+
+                    <div className="absolute right-3 bottom-3 flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => zoomOut(0.5)}
+                        disabled={!zoomed}
+                        aria-label="Zoom out"
+                        className={roundButton}
+                      >
+                        −
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => resetTransform()}
+                        disabled={!zoomed}
+                        className={`${roundButton} w-auto px-4 text-sub`}
+                      >
+                        Fit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => zoomIn(0.5)}
+                        aria-label="Zoom in"
+                        className={roundButton}
+                      >
+                        +
+                      </button>
+                    </div>
+                  </>
+                )}
+              </TransformWrapper>
             ) : null}
           </div>
 
           {/* `.vhint`: 12.5px, faded, under the page. */}
           <p className="shrink-0 px-[18px] pt-2.5 pb-3.5 text-center text-label opacity-70">
-            {count > 1
-              ? "Tap the sides to turn the page. Pinch to read closer."
-              : "Pinch to read closer."}
+            <span className="md:hidden">
+              Pinch or double-tap to read closer. Drag to move.
+            </span>
+            <span className="hidden md:inline">
+              Scroll or double-click to read closer. Drag to move.
+            </span>
           </p>
         </Dialog.Popup>
       </Dialog.Portal>
