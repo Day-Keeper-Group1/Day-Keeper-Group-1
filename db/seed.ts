@@ -29,10 +29,10 @@
 import { randomUUID } from "node:crypto";
 import { readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
-import { deflateSync } from "node:zlib";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { Client } from "pg";
 import { config } from "dotenv";
+import { hostIsLocal } from "../src/lib/local-host";
 import { refuseIfRealAccounts } from "./real-accounts";
 import {
   ScriptStorage,
@@ -62,9 +62,7 @@ if (!DATABASE_URL) {
 // The same guard db/reset.ts has, for the same reason plus one more: the seed
 // truncates every table, and it plants a development session with a token that
 // is printed in this file. Neither belongs anywhere shared.
-const isLocal = /@(localhost|127\.0\.0\.1|host\.docker\.internal)[:/]/.test(
-  DATABASE_URL,
-);
+const isLocal = hostIsLocal(DATABASE_URL);
 if (!isLocal && process.env.DK_ALLOW_REMOTE_RESET !== "yes") {
   console.error(
     `Refusing to seed a database that is not local.\n\n` +
@@ -104,13 +102,22 @@ const LETTERS_DIR = "data/synthetic-letters";
  * amounts, and the seeded fields are the ones the interface needs. Only the
  * kind of letter matches, which is what a photograph on a card conveys.
  *
- * A letter with more pages than its folder has sheets cycles through the folder
- * again. Only Services Australia does, whose notice is one sheet.
+ * A letter with more pages than its folder has sheets cycles through the
+ * folder again. None does at present: the two-page letter borrows a two-page
+ * folder.
+ *
+ * These three are also the three whose photographs this repository actually
+ * holds. Everything under data/ is a Git LFS pointer whose object was never
+ * pushed, and readPageImage() falls back to the walkthrough's copies, which
+ * cover six samples and not the twenty-six folders. Choosing from those six
+ * cost nothing, because only the kind of letter has to match — and it fixed a
+ * mismatch that was already there, where a GP appointment was illustrated by a
+ * specialist's paid account.
  */
 const PAGE_SOURCES = {
-  servicesAustralia: "08-welfare-information-request",
-  waterBill: "03-water-bill",
-  medical: "09-specialist-account-statement",
+  government: "04-council-rates-notice",
+  utilityBill: "01-electricity-bill",
+  appointment: "19-outpatient-appointment-letter",
 } as const;
 
 /** PNG's first eight bytes, which readPageImage() holds each fixture to. */
@@ -244,7 +251,7 @@ async function main() {
         ["Letter reference", "PRV 5520 1178"],
       ],
       pages: 2,
-      pageSource: PAGE_SOURCES.servicesAustralia,
+      pageSource: PAGE_SOURCES.government,
       uploadedDaysAgo: 9,
     });
 
@@ -258,7 +265,7 @@ async function main() {
       reference: "5501 2280",
       identifiers: [["Account number", "5501 2280"]],
       pages: 1,
-      pageSource: PAGE_SOURCES.waterBill,
+      pageSource: PAGE_SOURCES.utilityBill,
       uploadedDaysAgo: 4,
     });
 
@@ -275,7 +282,7 @@ async function main() {
       amount: NO_PAYMENT_REQUIRED,
       reference: "Clinic ref 8871",
       pages: 1,
-      pageSource: PAGE_SOURCES.medical,
+      pageSource: PAGE_SOURCES.appointment,
       uploadedDaysAgo: 1,
     });
 
@@ -315,15 +322,8 @@ Seeded.
     one overdue and two pages long, one due in the next seven days, and one
     appointment with a time of day
 
-${
-  PLACEHOLDER_PAGES
-    ? `Every page above is a drawn placeholder, not a photograph: the images in
-data/synthetic-letters are Git LFS pointers on this clone. Photograph a letter
-in the app to see a real one read, checked and put on the calendar.`
-    : `Every page above has a real photograph in the bucket, borrowed from
-data/synthetic-letters. Photograph a letter in the app to see it read,
-checked and put on the calendar.`
-}
+Every page above has a real photograph in the bucket. Photograph a letter in
+the app to see one read, checked and put on the calendar.
 `);
   } catch (error) {
     await db.query("ROLLBACK");
@@ -380,128 +380,100 @@ function pageFiles(folder: string): string[] {
   return files;
 }
 
-/**
- * Draw a page instead of reading one.
- *
- * The escape hatch for a clone whose letter images cannot be fetched: the
- * pointers are in the repository but the objects behind them are not on the
- * LFS server, so `git lfs pull` answers 404 and no amount of local fixing
- * produces the pictures. Waiting for whoever has them blocks every other
- * screen, because the seed is one transaction and a letter without pages is
- * not a letter.
- *
- * So the pages become a plainly fake sheet of paper: a striped off-white
- * rectangle with a border, at roughly the proportions of an A4 page. It is
- * deliberately not a picture of a letter. Anyone who sees one on Home should
- * read it as "this database was seeded without the real images", not as a
- * letter that failed to photograph.
- *
- * Off by default, because a seed that silently invents data is worse than a
- * seed that stops. DK_SEED_PLACEHOLDER_IMAGES=yes turns it on, and the run
- * says so on stderr.
- *
- * Written by hand because the project has no image library and does not need
- * one for this: a PNG is a signature, a header, one deflated block of scanlines
- * and an end marker, each carrying its own CRC.
- */
-const PLACEHOLDER_PAGES = process.env.DK_SEED_PLACEHOLDER_IMAGES === "yes";
+/** Where the letter images that are not in Git LFS live. */
+const SOURCE_IMAGES_DIR = "docs/walkthrough/diagrams/source-images";
 
-const CRC_TABLE = (() => {
-  const table = new Int32Array(256);
-  for (let n = 0; n < 256; n++) {
-    let c = n;
-    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
-    table[n] = c;
-  }
-  return table;
-})();
-
-function pngChunk(type: string, data: Buffer): Buffer {
-  const length = Buffer.alloc(4);
-  length.writeUInt32BE(data.length);
-
-  const body = Buffer.concat([Buffer.from(type, "ascii"), data]);
-  let c = 0xffffffff;
-  for (const byte of body) c = CRC_TABLE[(c ^ byte) & 0xff] ^ (c >>> 8);
-
-  const crc = Buffer.alloc(4);
-  crc.writeUInt32BE((c ^ 0xffffffff) >>> 0);
-  return Buffer.concat([length, body, crc]);
-}
-
-function drawPlaceholderPage(): Buffer {
-  const width = 620;
-  const height = 877;
-
-  // One scanline per row, each led by a filter byte of 0 (no filtering).
-  const scanlines = Buffer.alloc(height * (width * 3 + 1));
-  let at = 0;
-  for (let y = 0; y < height; y++) {
-    scanlines[at++] = 0;
-    for (let x = 0; x < width; x++) {
-      const border = x < 8 || y < 8 || x >= width - 8 || y >= height - 8;
-      const stripe = (x + y) % 64 < 32;
-      const rgb = border
-        ? [0x6b, 0x6b, 0x63]
-        : stripe
-          ? [0xf2, 0xef, 0xe6]
-          : [0xe6, 0xe1, 0xd4];
-      scanlines[at++] = rgb[0];
-      scanlines[at++] = rgb[1];
-      scanlines[at++] = rgb[2];
-    }
-  }
-
-  const ihdr = Buffer.alloc(13);
-  ihdr.writeUInt32BE(width, 0);
-  ihdr.writeUInt32BE(height, 4);
-  ihdr[8] = 8; // bit depth
-  ihdr[9] = 2; // colour type: truecolour
-  // bytes 10-12 stay zero: deflate, the only filter method, no interlacing.
-
-  return Buffer.concat([
-    PNG_MAGIC,
-    pngChunk("IHDR", ihdr),
-    pngChunk("IDAT", deflateSync(scanlines)),
-    pngChunk("IEND", Buffer.alloc(0)),
-  ]);
-}
-
-let placeholderPage: Buffer | null = null;
-let placeholderAnnounced = false;
-
-/**
- * One page file, as bytes, with the single failure worth naming caught here:
- * a clone made without Git LFS holds a small text pointer where each image
- * should be, and uploading that puts 130 bytes of text behind every letter.
- */
-function readPageImage(file: string): Buffer {
-  const bytes = readFileSync(file);
-  if (!bytes.subarray(0, PNG_MAGIC.length).equals(PNG_MAGIC)) {
-    if (PLACEHOLDER_PAGES) {
-      if (!placeholderAnnounced) {
-        console.warn(
-          "DK_SEED_PLACEHOLDER_IMAGES=yes: the letter images are Git LFS\n" +
-            "pointers, so every page is a drawn placeholder. The letters and\n" +
-            "tasks are real seed data; only the pictures are not.",
-        );
-        placeholderAnnounced = true;
-      }
-      placeholderPage ??= drawPlaceholderPage();
-      return placeholderPage;
-    }
-
-    throw new Error(
-      `${file} is not a PNG.\n\n` +
-        `The synthetic letters are stored with Git LFS, and this is the\n` +
-        `pointer file that stands in for one. Run 'git lfs pull' and seed again.\n\n` +
-        `If 'git lfs pull' answers 404, the objects were never pushed and no\n` +
-        `local fix will produce them; ask whoever added the letters to run\n` +
-        `'git lfs push origin main --all'. To seed without the pictures in the\n` +
-        `meantime, set DK_SEED_PLACEHOLDER_IMAGES=yes.`,
+/** The sample a fixture folder is, e.g. "SYN-0012". Its own answer key says. */
+function sampleId(folder: string): string | null {
+  try {
+    const path = resolve(
+      process.cwd(),
+      LETTERS_DIR,
+      folder,
+      "ground-truth.json",
     );
+    const id: unknown = JSON.parse(readFileSync(path, "utf8")).sample_id;
+    return typeof id === "string" ? id : null;
+  } catch {
+    return null;
   }
-  return bytes;
+}
+
+/**
+ * The same page, from the copy of it that Git LFS never got hold of.
+ *
+ * `.gitattributes` hands `data/**\/*.png` to LFS and nothing else, so the
+ * letters under data/ are pointers on a clone whose objects were never pushed
+ * — and ours were not. The same sheets also sit in the walkthrough's source
+ * images, as ordinary files in ordinary commits, because a document needed to
+ * show them. That copy is the one that survived.
+ *
+ * Matched by the sample id each folder declares rather than by a table written
+ * here: the folder numbering and the sample numbering are not the same
+ * sequence (SYN-0020 is folder 25), and a table would have to be right about
+ * that twice.
+ *
+ * Returns null rather than throwing, so the caller can say the useful thing
+ * about a page that is missing from both places.
+ */
+function sourceImage(folder: string, sheet: number): Buffer | null {
+  const id = sampleId(folder);
+  if (!id) return null;
+
+  const dir = resolve(process.cwd(), SOURCE_IMAGES_DIR);
+  let names: string[];
+  try {
+    names = readdirSync(dir);
+  } catch {
+    return null;
+  }
+
+  // `${id}-` and not startsWith(id): SYN-0019 and SYN-0019B are two samples.
+  const mine = names
+    .filter((name) => name.startsWith(`${id}-`) || name === `${id}.png`)
+    .sort();
+  const named = mine.find((name) => new RegExp(`-p${sheet}(\\D|$)`).test(name));
+  const file = named ?? (sheet === 1 ? mine[0] : undefined);
+  if (!file) return null;
+
+  const bytes = readFileSync(resolve(dir, file));
+  return bytes.subarray(0, PNG_MAGIC.length).equals(PNG_MAGIC) ? bytes : null;
+}
+
+let borrowedAnnounced = false;
+
+/**
+ * One page, as bytes, from wherever a real one can be found.
+ *
+ * The failure worth naming is caught here: a clone made without Git LFS holds
+ * a small text pointer where each image should be, and uploading that puts 130
+ * bytes of text behind every letter.
+ */
+function readPageImage(file: string, folder: string, sheet: number): Buffer {
+  const bytes = readFileSync(file);
+  if (bytes.subarray(0, PNG_MAGIC.length).equals(PNG_MAGIC)) return bytes;
+
+  const borrowed = sourceImage(folder, sheet);
+  if (borrowed) {
+    if (!borrowedAnnounced) {
+      console.warn(
+        `The letters under ${LETTERS_DIR} are Git LFS pointers on this clone,\n` +
+          `so their photographs are being read from ${SOURCE_IMAGES_DIR}\n` +
+          `instead. Same letters, different copy.`,
+      );
+      borrowedAnnounced = true;
+    }
+    return borrowed;
+  }
+
+  throw new Error(
+    `${file} is not a PNG, and ${sampleId(folder) ?? folder} is not in\n` +
+      `${SOURCE_IMAGES_DIR} either.\n\n` +
+      `The synthetic letters are stored with Git LFS, and this is the pointer\n` +
+      `file that stands in for one. Run 'git lfs pull' and seed again. If that\n` +
+      `answers 404 the objects were never pushed, and no local fix will produce\n` +
+      `them: ask whoever added the letters to run 'git lfs push origin main --all'.`,
+  );
 }
 
 /**
@@ -534,7 +506,11 @@ async function insertPages(
 
   for (let pageNumber = 1; pageNumber <= pages; pageNumber++) {
     // Cycle when the letter has more pages than the folder has sheets.
-    const bytes = readPageImage(files[(pageNumber - 1) % files.length]);
+    // Cycle when the letter has more pages than the folder has sheets, and
+    // tell readPageImage which sheet this is so it can find the same one
+    // among the walkthrough's copies.
+    const sheet = ((pageNumber - 1) % files.length) + 1;
+    const bytes = readPageImage(files[sheet - 1], source, sheet);
     const storagePath = `uploads/${userId}/${documentId}/${pageNumber}.png`;
 
     await storage.s3.send(
