@@ -75,10 +75,28 @@ const configured = Boolean(
   endpoint && process.env.STORAGE_ACCESS_KEY && process.env.STORAGE_SECRET_KEY,
 );
 
-/** Any HTTP answer means it is there; only a network error means it is not. */
+/** A bucket on this machine, or one somewhere else. They fail differently. */
+const isLocal = /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\]|storage)[:/]/.test(
+  endpoint ?? "",
+);
+
+/**
+ * Any HTTP answer means it is there; only a network error means it is not.
+ *
+ * The timeout has to suit the slower of the two. A container on this machine
+ * answers in a millisecond, and a bucket on the other side of the internet
+ * spends most of a second on DNS and a TLS handshake before it says anything,
+ * more on a cold connection or a bad cafe. Two seconds was enough for the
+ * container and not for the bucket, so the round trip — the only test here
+ * that proves a signed link actually loads — quietly stopped running against
+ * the real one while reporting itself as skipped for being unreachable.
+ *
+ * A skip that is really a timeout is worse than a failure: the suite stays
+ * green and the thing it was guarding stops being guarded.
+ */
 async function reachable(url: string): Promise<boolean> {
   try {
-    await fetch(url, { signal: AbortSignal.timeout(2000) });
+    await fetch(url, { signal: AbortSignal.timeout(isLocal ? 2000 : 10_000) });
     return true;
   } catch {
     return false;
@@ -91,7 +109,12 @@ if (!storageIsUp) {
   console.warn(
     `[storage.test] skipping the round trip: nothing is answering at ${
       endpoint ?? "(STORAGE_ENDPOINT unset)"
-    }. Start it with: docker compose up -d`,
+    }.\n` +
+      (isLocal
+        ? "  Start it with: docker compose up -d"
+        : "  That is a hosted bucket, so docker compose will not help. Check\n" +
+          "  STORAGE_ENDPOINT, STORAGE_ACCESS_KEY and STORAGE_SECRET_KEY in\n" +
+          "  .env.local, and that this machine can reach the internet."),
   );
 }
 

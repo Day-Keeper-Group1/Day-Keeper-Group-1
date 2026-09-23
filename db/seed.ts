@@ -29,6 +29,7 @@
 import { randomUUID } from "node:crypto";
 import { readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
+import { deflateSync } from "node:zlib";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { Client } from "pg";
 import { config } from "dotenv";
@@ -161,12 +162,54 @@ async function main() {
       [margaretId, operatorId, password, APP_TIME_ZONE],
     );
 
-    // The development session. See DEV_SESSION_TOKEN above.
-    await db.query(
-      `INSERT INTO sessions (user_id, token_hash, expires_at, user_agent)
-       VALUES ($1, $2, now() + interval '30 days', 'seed: development session')`,
-      [margaretId, hashSessionToken(DEV_SESSION_TOKEN)],
-    );
+    // One account each, so that testing together does not mean five people
+    // sharing Margaret and stepping on each other's ticks. Ordinary users:
+    // this release builds no other kind of screen. The passwords are the name
+    // and 123, which clears validatePasswordStrength's eight characters and is
+    // not pretending to be a secret. Local databases only.
+    const TEAM = [
+      { name: "Sai", email: "saiii@example.com", password: "Saiii123" },
+      { name: "Gerry", email: "gerry@example.com", password: "Gerry123" },
+      { name: "Xceed", email: "xceed@example.com", password: "Xceed123" },
+      { name: "Jason", email: "jason@example.com", password: "Jason123" },
+      { name: "Hiruni", email: "hiruni@example.com", password: "Hiruni123" },
+    ] as const;
+
+    for (const member of TEAM) {
+      await db.query(
+        `INSERT INTO users (email, display_name, password_hash, role, timezone)
+              VALUES ($1, $2, $3, 'user', $4)`,
+        [
+          member.email,
+          member.name,
+          await hashPassword(member.password),
+          APP_TIME_ZONE,
+        ],
+      );
+    }
+
+    // The development session, on a local database and nowhere else. See
+    // DEV_SESSION_TOKEN above.
+    //
+    // Not gated on DK_ALLOW_REMOTE_RESET, because that variable answers a
+    // different question. It asks whether the operator meant to point a
+    // destructive script at a database that is not on this machine, and there
+    // are good reasons to say yes: a free-tier database standing in for the
+    // Docker one while it is still empty. None of those reasons are a reason to
+    // plant a thirty-day session whose token is a string literal in a file in
+    // the repository. Anyone who has read the repository would be signed in as
+    // Margaret, without a password, on whatever host that database is serving.
+    //
+    // So the guard says whether this may run at all, and this says where the
+    // token may land. Saying yes to the first must not quietly answer the
+    // second.
+    if (isLocal) {
+      await db.query(
+        `INSERT INTO sessions (user_id, token_hash, expires_at, user_agent)
+         VALUES ($1, $2, now() + interval '30 days', 'seed: development session')`,
+        [margaretId, hashSessionToken(DEV_SESSION_TOKEN)],
+      );
+    }
 
     // ---- Three letters already checked --------------------------------------
     // Overdue, due this week, and an appointment later on. These are the three
@@ -244,17 +287,34 @@ Seeded.
   Sign in as        margaret@example.com / daykeeper
   Operator account  operator@example.com / daykeeper
 
-  Dev session       Cookie: dk_session=${DEV_SESSION_TOKEN}
+  Team accounts     saiii@example.com  / Saiii123
+                    gerry@example.com  / Gerry123
+                    xceed@example.com  / Xceed123
+                    jason@example.com  / Jason123
+                    hiruni@example.com / Hiruni123
+
+  Dev session       ${
+    isLocal
+      ? `Cookie: dk_session=${DEV_SESSION_TOKEN}
                     (Margaret, valid 30 days. Lets you call authenticated
-                    endpoints before sign-in is built. Local databases only.)
+                    endpoints before sign-in is built. Local databases only.)`
+      : `not planted: this database is not local, and the token is
+                    a literal in db/seed.ts. Sign in with a password.`
+  }
 
   3 letters checked, and nothing waiting to be checked:
     one overdue and two pages long, one due in the next seven days, and one
     appointment with a time of day
 
-Every page above has a real photograph in the bucket, borrowed from
+${
+  PLACEHOLDER_PAGES
+    ? `Every page above is a drawn placeholder, not a photograph: the images in
+data/synthetic-letters are Git LFS pointers on this clone. Photograph a letter
+in the app to see a real one read, checked and put on the calendar.`
+    : `Every page above has a real photograph in the bucket, borrowed from
 data/synthetic-letters. Photograph a letter in the app to see it read,
-checked and put on the calendar.
+checked and put on the calendar.`
+}
 `);
   } catch (error) {
     await db.query("ROLLBACK");
@@ -312,6 +372,96 @@ function pageFiles(folder: string): string[] {
 }
 
 /**
+ * Draw a page instead of reading one.
+ *
+ * The escape hatch for a clone whose letter images cannot be fetched: the
+ * pointers are in the repository but the objects behind them are not on the
+ * LFS server, so `git lfs pull` answers 404 and no amount of local fixing
+ * produces the pictures. Waiting for whoever has them blocks every other
+ * screen, because the seed is one transaction and a letter without pages is
+ * not a letter.
+ *
+ * So the pages become a plainly fake sheet of paper: a striped off-white
+ * rectangle with a border, at roughly the proportions of an A4 page. It is
+ * deliberately not a picture of a letter. Anyone who sees one on Home should
+ * read it as "this database was seeded without the real images", not as a
+ * letter that failed to photograph.
+ *
+ * Off by default, because a seed that silently invents data is worse than a
+ * seed that stops. DK_SEED_PLACEHOLDER_IMAGES=yes turns it on, and the run
+ * says so on stderr.
+ *
+ * Written by hand because the project has no image library and does not need
+ * one for this: a PNG is a signature, a header, one deflated block of scanlines
+ * and an end marker, each carrying its own CRC.
+ */
+const PLACEHOLDER_PAGES = process.env.DK_SEED_PLACEHOLDER_IMAGES === "yes";
+
+const CRC_TABLE = (() => {
+  const table = new Int32Array(256);
+  for (let n = 0; n < 256; n++) {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    table[n] = c;
+  }
+  return table;
+})();
+
+function pngChunk(type: string, data: Buffer): Buffer {
+  const length = Buffer.alloc(4);
+  length.writeUInt32BE(data.length);
+
+  const body = Buffer.concat([Buffer.from(type, "ascii"), data]);
+  let c = 0xffffffff;
+  for (const byte of body) c = CRC_TABLE[(c ^ byte) & 0xff] ^ (c >>> 8);
+
+  const crc = Buffer.alloc(4);
+  crc.writeUInt32BE((c ^ 0xffffffff) >>> 0);
+  return Buffer.concat([length, body, crc]);
+}
+
+function drawPlaceholderPage(): Buffer {
+  const width = 620;
+  const height = 877;
+
+  // One scanline per row, each led by a filter byte of 0 (no filtering).
+  const scanlines = Buffer.alloc(height * (width * 3 + 1));
+  let at = 0;
+  for (let y = 0; y < height; y++) {
+    scanlines[at++] = 0;
+    for (let x = 0; x < width; x++) {
+      const border = x < 8 || y < 8 || x >= width - 8 || y >= height - 8;
+      const stripe = (x + y) % 64 < 32;
+      const rgb = border
+        ? [0x6b, 0x6b, 0x63]
+        : stripe
+          ? [0xf2, 0xef, 0xe6]
+          : [0xe6, 0xe1, 0xd4];
+      scanlines[at++] = rgb[0];
+      scanlines[at++] = rgb[1];
+      scanlines[at++] = rgb[2];
+    }
+  }
+
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(width, 0);
+  ihdr.writeUInt32BE(height, 4);
+  ihdr[8] = 8; // bit depth
+  ihdr[9] = 2; // colour type: truecolour
+  // bytes 10-12 stay zero: deflate, the only filter method, no interlacing.
+
+  return Buffer.concat([
+    PNG_MAGIC,
+    pngChunk("IHDR", ihdr),
+    pngChunk("IDAT", deflateSync(scanlines)),
+    pngChunk("IEND", Buffer.alloc(0)),
+  ]);
+}
+
+let placeholderPage: Buffer | null = null;
+let placeholderAnnounced = false;
+
+/**
  * One page file, as bytes, with the single failure worth naming caught here:
  * a clone made without Git LFS holds a small text pointer where each image
  * should be, and uploading that puts 130 bytes of text behind every letter.
@@ -319,10 +469,27 @@ function pageFiles(folder: string): string[] {
 function readPageImage(file: string): Buffer {
   const bytes = readFileSync(file);
   if (!bytes.subarray(0, PNG_MAGIC.length).equals(PNG_MAGIC)) {
+    if (PLACEHOLDER_PAGES) {
+      if (!placeholderAnnounced) {
+        console.warn(
+          "DK_SEED_PLACEHOLDER_IMAGES=yes: the letter images are Git LFS\n" +
+            "pointers, so every page is a drawn placeholder. The letters and\n" +
+            "tasks are real seed data; only the pictures are not.",
+        );
+        placeholderAnnounced = true;
+      }
+      placeholderPage ??= drawPlaceholderPage();
+      return placeholderPage;
+    }
+
     throw new Error(
       `${file} is not a PNG.\n\n` +
         `The synthetic letters are stored with Git LFS, and this is the\n` +
-        `pointer file that stands in for one. Run 'git lfs pull' and seed again.`,
+        `pointer file that stands in for one. Run 'git lfs pull' and seed again.\n\n` +
+        `If 'git lfs pull' answers 404, the objects were never pushed and no\n` +
+        `local fix will produce them; ask whoever added the letters to run\n` +
+        `'git lfs push origin main --all'. To seed without the pictures in the\n` +
+        `meantime, set DK_SEED_PLACEHOLDER_IMAGES=yes.`,
     );
   }
   return bytes;
