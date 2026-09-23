@@ -3,9 +3,16 @@
  *
  * There are no migrations in this project. schema.sql is the truth, and this
  * script makes the database match it by dropping everything and starting again.
- * That is only safe because there is no production data; see
- * db/schema.sql for why we chose it and what has to
- * change before the first real user exists.
+ * See db/schema.sql for why we chose that and what has to change before it
+ * stops being workable.
+ *
+ * It used to say here that this is safe because there is no production data.
+ * There is now: the app is deployed, people have registered on it, and this
+ * script would drop their accounts as readily as anything else. Two guards
+ * stand in front of it — one asking whether the operator meant a database that
+ * is not on this machine, and one asking the database whether it holds accounts
+ * nobody seeded. db/real-accounts.ts says why the second is the one that
+ * matters.
  *
  *   npm run db:reset
  */
@@ -14,6 +21,8 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { Client } from "pg";
 import { config } from "dotenv";
+
+import { refuseIfRealAccounts } from "./real-accounts";
 
 config({ path: ".env.local", quiet: true });
 config({ path: ".env", quiet: true });
@@ -47,6 +56,11 @@ if (!isLocal && process.env.DK_ALLOW_REMOTE_RESET !== "yes") {
 }
 
 async function main() {
+  await refuseIfRealAccounts(
+    DATABASE_URL!,
+    "Rebuilding the schema drops every table, and takes them with it.",
+  );
+
   const sql = readFileSync(resolve(process.cwd(), "db/schema.sql"), "utf8");
   const db = new Client({ connectionString: DATABASE_URL });
   await db.connect();

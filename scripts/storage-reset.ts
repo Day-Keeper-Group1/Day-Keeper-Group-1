@@ -31,6 +31,8 @@
 
 import { DeleteObjectsCommand, ListObjectsV2Command } from "@aws-sdk/client-s3";
 import { config } from "dotenv";
+
+import { refuseIfRealAccounts } from "../db/real-accounts";
 import {
   ensureBucket,
   storageFromEnv,
@@ -87,6 +89,27 @@ async function emptyBucket(): Promise<number> {
 }
 
 async function main() {
+  // The photographs in this bucket belong to the rows in that database, so a
+  // database holding accounts nobody seeded means a bucket holding their
+  // letters. Checking the database to decide about the bucket looks indirect
+  // and is the only evidence there is: an object gives no sign of who it
+  // belongs to, and asking the bucket "are these real?" has no answer.
+  //
+  // A database that cannot be reached stops this too, which is the right way
+  // round: unable to tell is not permission to delete.
+  const databaseUrl = process.env.DATABASE_URL;
+  if (!databaseUrl) {
+    console.error(
+      "DATABASE_URL is not set, so there is no way to tell whose photographs\n" +
+        "these are. Copy .env.example to .env.local first.",
+    );
+    process.exit(1);
+  }
+  await refuseIfRealAccounts(
+    databaseUrl,
+    `Every object in '${bucket}' is one of their letters.`,
+  );
+
   await ensureBucket(storage);
   const removed = await emptyBucket();
   console.log(

@@ -33,6 +33,7 @@ import { deflateSync } from "node:zlib";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { Client } from "pg";
 import { config } from "dotenv";
+import { refuseIfRealAccounts } from "./real-accounts";
 import {
   ScriptStorage,
   ensureBucket,
@@ -130,6 +131,14 @@ function isoDaysFromNow(days: number): string {
 }
 
 async function main() {
+  // The seed truncates every table before it writes, so it destroys exactly
+  // what a reset does. db/real-accounts.ts explains why this asks the database
+  // rather than trusting DK_ALLOW_REMOTE_RESET.
+  await refuseIfRealAccounts(
+    DATABASE_URL!,
+    "The seed empties every table before it writes.",
+  );
+
   const storage = storageFromEnv();
   // On a fresh machine the bucket may not exist yet, and `npm run db:seed`
   // alone skips the script that makes it. Cheap, and the seed cannot write a
