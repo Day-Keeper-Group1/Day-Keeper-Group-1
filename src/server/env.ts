@@ -126,11 +126,6 @@ export function env(): Env {
   return cached;
 }
 
-/** True when running against the local Docker database rather than anything shared. */
-export function isLocalDatabase(): boolean {
-  return /localhost|127\.0\.0\.1/.test(env().DATABASE_URL);
-}
-
 /** The endpoint to sign browser-facing URLs with. See STORAGE_PUBLIC_ENDPOINT. */
 export function publicStorageEndpoint(): string {
   return env().STORAGE_PUBLIC_ENDPOINT || env().STORAGE_ENDPOINT;

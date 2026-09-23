@@ -33,6 +33,7 @@ import { DeleteObjectsCommand, ListObjectsV2Command } from "@aws-sdk/client-s3";
 import { config } from "dotenv";
 
 import { refuseIfRealAccounts } from "../db/real-accounts";
+import { hostIsLocal } from "../src/lib/local-host";
 import {
   ensureBucket,
   storageFromEnv,
@@ -49,7 +50,7 @@ const { s3, bucket, endpoint } = storage;
  * The same guard `db/reset.ts` has, and for the same reason: this empties a
  * bucket. Pointing it at anything shared has to be deliberate.
  */
-const isLocal = /^https?:\/\/(localhost|127\.0\.0\.1)([:/]|$)/.test(endpoint);
+const isLocal = hostIsLocal(endpoint);
 if (!isLocal && process.env.DK_ALLOW_REMOTE_RESET !== "yes") {
   console.error(
     `Refusing to empty a bucket that is not local.\n\n` +

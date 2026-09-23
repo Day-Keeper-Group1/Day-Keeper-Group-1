@@ -12,6 +12,7 @@
 
 import "server-only";
 import { Pool, types, type PoolClient, type QueryResultRow } from "pg";
+import { hostIsLocal } from "@/lib/local-host";
 import { env } from "./env";
 
 /**
@@ -128,10 +129,7 @@ export function pool(): Pool {
      * asking for it there fails to connect rather than quietly falling back.
      */
     const url = env().DATABASE_URL;
-    const isLocal =
-      /@(localhost|127\.0\.0\.1|\[::1\]|host\.docker\.internal|db)[:/]/.test(
-        url,
-      );
+    const isLocal = hostIsLocal(url);
 
     globalForDb.__daykeeperPool = new Pool({
       connectionString: url,

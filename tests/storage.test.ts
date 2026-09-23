@@ -15,6 +15,8 @@
 
 import { config } from "dotenv";
 import { describe, expect, it } from "vitest";
+
+import { hostIsLocal } from "@/lib/local-host";
 import {
   deleteObjects,
   putObject,
@@ -76,9 +78,7 @@ const configured = Boolean(
 );
 
 /** A bucket on this machine, or one somewhere else. They fail differently. */
-const isLocal = /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\]|storage)[:/]/.test(
-  endpoint ?? "",
-);
+const isLocal = hostIsLocal(endpoint ?? "");
 
 /**
  * Any HTTP answer means it is there; only a network error means it is not.

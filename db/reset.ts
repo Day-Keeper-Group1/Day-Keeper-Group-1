@@ -22,6 +22,8 @@ import { resolve } from "node:path";
 import { Client } from "pg";
 import { config } from "dotenv";
 
+import { hostIsLocal } from "../src/lib/local-host";
+
 import { refuseIfRealAccounts } from "./real-accounts";
 
 config({ path: ".env.local", quiet: true });
@@ -43,9 +45,7 @@ if (!DATABASE_URL) {
  * Pointing it anywhere other than a local database takes a deliberate
  * environment variable.
  */
-const isLocal = /@(localhost|127\.0\.0\.1|host\.docker\.internal)[:/]/.test(
-  DATABASE_URL,
-);
+const isLocal = hostIsLocal(DATABASE_URL);
 if (!isLocal && process.env.DK_ALLOW_REMOTE_RESET !== "yes") {
   console.error(
     `Refusing to reset a database that is not local.\n\n` +
