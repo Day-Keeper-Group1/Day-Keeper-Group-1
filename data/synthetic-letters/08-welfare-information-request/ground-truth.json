@@ -3,7 +3,7 @@
   "document_type": "welfare_information_request_notice",
   "issuer": "Public Payments Office",
   "action_required": "Return form to Public Payments Office",
-  "due_date": "2026-08-04",
+  "due_date": "2026-11-02",
   "amount": null,
   "reference": "PPO-5002-9891",
   "identifiers": [
@@ -22,5 +22,8 @@
       "value": "VRJF86",
       "required": false
     }
-  ]
+  ],
+  "also_accepted": {
+    "action_required": ["Contact Public Payments Office"]
+  }
 }
