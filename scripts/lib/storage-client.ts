@@ -28,6 +28,7 @@ export type ScriptStorage = {
 export function storageFromEnv(): ScriptStorage {
   const endpoint = process.env.STORAGE_ENDPOINT;
   const bucket = process.env.STORAGE_BUCKET ?? "daykeeper";
+  const region = process.env.STORAGE_REGION ?? "us-east-1";
   const accessKeyId = process.env.STORAGE_ACCESS_KEY;
   const secretAccessKey = process.env.STORAGE_SECRET_KEY;
 
@@ -40,11 +41,13 @@ export function storageFromEnv(): ScriptStorage {
 
   return {
     // Buckets addressed by path rather than by subdomain, and a region the
-    // protocol demands and MinIO ignores. Both choices match
-    // src/server/storage.ts, which is where the reasoning is written down.
+    // protocol demands, MinIO ignores and a real bucket does not. Both choices
+    // match src/server/storage.ts, which is where the reasoning is written
+    // down. The default mirrors STORAGE_REGION in env.ts, which this file
+    // cannot import.
     s3: new S3Client({
       endpoint,
-      region: "us-east-1",
+      region,
       forcePathStyle: true,
       credentials: { accessKeyId, secretAccessKey },
     }),

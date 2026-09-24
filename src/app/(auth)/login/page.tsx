@@ -70,7 +70,15 @@ export default function LoginPage() {
         <CardDescription>Welcome back to DayKeeper.</CardDescription>
       </CardHeader>
       <CardContent>
-        <form className="space-y-4" onSubmit={handleSubmit}>
+        {/*
+          A form with no method is a GET, which puts every field in the URL. That
+          is the browser's fallback whenever this page's JavaScript has not run
+          yet or has failed, so the moment hydration is late the password is in
+          the address bar, the history, the access log and the Referer header.
+          handleSubmit prevents the default and never lets it happen; method
+          says what happens when handleSubmit is not there to.
+        */}
+        <form className="space-y-4" method="post" onSubmit={handleSubmit}>
           {error && (
             // An icon and a heading as well as the colour: theme.md's rule is
             // that colour is never the only thing carrying a message.
