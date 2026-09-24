@@ -1,0 +1,11 @@
+{
+  "model": "gpt-5.6-luna",
+  "effort": "medium",
+  "letter": "01-electricity-bill",
+  "repeat": 33,
+  "pages": ["page-01.png", "page-02.png"],
+  "image_detail": "auto",
+  "started_at": "2026-09-15T22:45:21.807Z",
+  "seconds": 8.783,
+  "ok": true
+}

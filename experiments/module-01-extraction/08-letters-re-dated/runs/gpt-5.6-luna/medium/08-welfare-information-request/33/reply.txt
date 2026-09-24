@@ -1,0 +1,73 @@
+{
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "government letter",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Public Payments Office",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Return form to Public Payments Office",
+      "status": "uncertain",
+      "confidence": 0.78
+    },
+    {
+      "key": "due_date",
+      "value": "2026-11-02",
+      "status": "confirmed",
+      "confidence": 0.98
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "PPO-5002-9891",
+      "status": "confirmed",
+      "confidence": 0.99
+    }
+  ],
+  "identifiers": [
+    {
+      "label": "Customer Reference Number",
+      "value": "PPO-5002-9891",
+      "status": "confirmed"
+    },
+    {
+      "label": "Provider reference",
+      "value": "PPO-7143-4935",
+      "status": "confirmed"
+    },
+    {
+      "label": "One-time access code",
+      "value": "VRJF86",
+      "status": "confirmed"
+    }
+  ],
+  "open_payload": {
+    "letter_date": "12 October 2026",
+    "recipient": "Mrs M A Wilson",
+    "income_stream_provider": "Wattlebank Super",
+    "product_name": "Account-Based Pension",
+    "commenced": "1 September 2019",
+    "requested_information": "The balance of the income stream on 1 July 2026, or the account closing date if the account has closed",
+    "response_period": "21 days from the date of the notice",
+    "consequence_of_non_response": "The pension can be suspended or cancelled",
+    "legislation": "Section 196 of the Social Security (Administration) Act 1999",
+    "ongoing_reporting_period": "Within 14 days of a change in circumstances",
+    "review_period": "Within 13 weeks of being told about the decision",
+    "contact_phone": "(03) 5550 0257",
+    "online_website": "public-payments-office.example",
+    "online_access_url": "public-payments-office.example/accesscode"
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "prescription medicine label",
+      "status": "confirmed",
+      "confidence": 0.98
+    },
+    {
+      "key": "issuer",
+      "value": "Ledworth Central Pharmacy",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Take medicine perindopril arginine 5 mg tablets each morning",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "due_date",
+      "value": "Not applicable",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.94
+    },
+    {
+      "key": "reference",
+      "value": "#6429746 DFD",
+      "status": "confirmed",
+      "confidence": 0.98
+    }
+  ],
+  "identifiers": [
+    {
+      "label": "Ref",
+      "value": "#6429746 DFD",
+      "status": "confirmed"
+    }
+  ],
+  "open_payload": {
+    "patient": "Margaret Wilson",
+    "active_ingredient": "Perindopril arginine 5 mg tablets",
+    "brand_name": "Perindopril arginine",
+    "directions": "Take 1 tablet in the morning; take at least half an hour before food",
+    "quantity": "30 tablets",
+    "expiry_date": "09/2028",
+    "date": "08/07/26",
+    "prescriber": "Dr Susan Patel",
+    "number_of_repeats": "0",
+    "dispensary_check": "R.T.",
+    "full_cost_of_medicine": "$19.42",
+    "label_price": "$7.70",
+    "address": "12 Ashmead St, Calderfield VIC 3999",
+    "phone": "(03) 5550 9722"
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "penalty reminder notice",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Calderfield City Council",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Pay Calderfield City Council",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "due_date",
+      "value": "2026-11-05",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "amount",
+      "value": "$72.00",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "7717145263",
+      "status": "confirmed",
+      "confidence": 0.99
+    }
+  ],
+  "identifiers": [
+    {
+      "label": "Infringement no.",
+      "value": "7717145263",
+      "status": "confirmed"
+    },
+    {
+      "label": "Registration no.",
+      "value": "9XK-7QJ",
+      "status": "confirmed"
+    },
+    {
+      "label": "Ref",
+      "value": "4797 2573 7796",
+      "status": "confirmed"
+    }
+  ],
+  "open_payload": {
+    "recipient": "Mrs M A Wilson",
+    "penalty_reminder_notice_date": "15 October 2026",
+    "original_due_date": "6 October 2026",
+    "offence_date": "08/09/2026",
+    "offence_time": "12:41 PM",
+    "offence_location": "Marlow Street, Calderfield",
+    "vehicle": "TOYOTA SEDAN GREY",
+    "offence": "Parking for longer than indicated (offence code 701)",
+    "legislation": "Road Safety Road Rules 2017 r 205(1)",
+    "infringement_penalty": "$42.00",
+    "penalty_reminder_notice_fee": "$30.00",
+    "biller_code": "9200104"
+  }
+}
