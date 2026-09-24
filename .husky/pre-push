@@ -1,3 +1,12 @@
+# Git LFS uploads large files from its own pre-push hook, which it installs in
+# .git/hooks. Husky points git at .husky/_ instead, so that hook never ran and
+# every push sent only the small pointer files: the letter images under data/
+# sat on one laptop for weeks while every clone got pointers. Upload them here.
+# First, because it reads the list of refs being pushed from standard input.
+if command -v git-lfs >/dev/null 2>&1; then
+  git lfs pre-push "$@"
+fi
+
 # Whole-project type checking: too slow to run on every commit, too cheap to
 # leave for a CI round trip. About ten seconds. In a genuine emergency,
 # git push --no-verify skips it and CI still catches it.

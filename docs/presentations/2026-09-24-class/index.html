@@ -1,0 +1,1007 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DayKeeper, Group 1</title>
+<link rel="stylesheet" href="assets/fonts/fonts.css">
+<style>
+  :root{
+    /* Eucalypt & Wattle (docs/theme.md), plus a projection layer.
+       The two values marked (proj) run darker than the product's,
+       because a projector in a lit room eats the bottom of the range. */
+    --paper:#f4f0e4;
+    --paper-2:#ebe4d2;
+    --ink:#1c1a15;
+    --ink-2:#3a3d33;        /* (proj) product uses #454b41 */
+    --rule:#6f6a52;         /* (proj) product uses #8a8265 */
+    --euc:#17452c;
+    --euc-deep:#0c2a1a;
+    --euc-soft:#d9e5d5;
+    --on-deep:#f3efe2;
+    --on-deep-2:#a9bfa4;
+    --wattle:#b87500;
+    --ok:#0f5130; --ok-bg:#d3e7d9;
+    --no:#8c0d07; --no-bg:#fbe6e2;
+    --bank:#fbe27a; --post:#a7eebf;
+
+    --display:'Bricolage Grotesque','Segoe UI',system-ui,sans-serif;
+    --body:'Source Serif 4',Georgia,'Times New Roman',serif;
+    --data:'IBM Plex Mono',Consolas,'Cascadia Mono',monospace;
+
+    /* one scale, ratio 1.25 */
+    --t0:13px; --t1:17px; --t2:21px; --t3:26px; --t4:33px;
+    --t5:41px; --t6:52px; --t7:65px; --t8:81px; --t9:101px;
+  }
+
+  html,body{margin:0;height:100%;background:#0a0b0a;overflow:hidden}
+  #stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+  .deck{position:relative;width:1280px;height:720px;transform-origin:center center}
+  section{position:absolute;inset:0;background:var(--paper);color:var(--ink);
+    font:var(--t2)/1.45 var(--body);box-sizing:border-box;display:none;padding:46px 64px 0}
+  /* content sits centred in the frame: a slide with a short body should not
+     hang from the top edge with 200px of dead paper under it */
+  section.on{display:flex;flex-direction:column;justify-content:center}
+  section.deep{background:var(--euc-deep);color:var(--on-deep)}
+  section.flush{padding:0}
+
+  /* the utility face carries every label, number and identifier */
+  .lab{font:600 var(--t0)/1 var(--data);letter-spacing:.17em;text-transform:uppercase;color:var(--ink-2)}
+  .lab.on-deep{color:var(--on-deep-2)}
+  .mono{font-family:var(--data);font-size:.82em;letter-spacing:.01em}
+
+  h1{font:800 var(--t9)/.95 var(--display);font-stretch:86%;letter-spacing:-.03em;margin:0;color:var(--euc)}
+  h2{font:800 var(--t7)/.98 var(--display);font-stretch:86%;letter-spacing:-.025em;margin:0;
+    color:var(--euc);text-wrap:balance}
+  h2.sm{font-size:var(--t6)}
+  .deep h1,.deep h2{color:var(--on-deep)}
+
+  .eyebrow{display:flex;align-items:center;gap:14px;margin-bottom:26px}
+  .eyebrow .tag{background:var(--wattle);color:#fff;padding:5px 12px;
+    font:600 var(--t0)/1 var(--data);letter-spacing:.17em;text-transform:uppercase}
+  .eyebrow .tag.eval{background:var(--euc)}
+  .eyebrow.stacked{margin-bottom:11px}
+  .lede{font:var(--t4)/1.3 var(--body);color:var(--ink-2);margin:16px 0 0;text-wrap:balance}
+  .note{font:var(--t2)/1.4 var(--body);color:var(--ink-2)}
+
+  /* The references belong to the page, not to a footer. Kept in the flow they
+     are centred together with everything above them; pinned to the bottom they
+     were invisible to flex centring and pushed the body low. */
+  .refs{margin-top:26px;font:var(--t0)/1.45 var(--body);color:var(--ink-2)}
+  section:not(.flush){padding-bottom:30px}
+  .refs p{margin:0 0 2px;padding-left:20px;text-indent:-20px}
+  .num{position:absolute;right:22px;bottom:13px;font:500 12px var(--data);color:var(--ink-2);opacity:.5}
+  .deep .num{color:var(--on-deep-2)}
+  .nav{position:fixed;top:0;bottom:0;width:20%;cursor:pointer;z-index:5}
+  .nav.l{left:0}.nav.r{right:0}
+
+  svg{display:block}
+  svg text{font-family:var(--body)}
+  .d-t{font:800 17px var(--display);font-stretch:86%;fill:var(--euc)}
+  .d-s{font:14px var(--body);fill:var(--ink-2)}
+  .d-l{font:600 12px var(--data);letter-spacing:.09em;text-transform:uppercase;fill:var(--ink-2)}
+  .d-j{font:11.5px var(--data);fill:var(--ink)}
+  .d-box{fill:#fbf8f0;stroke:var(--rule);stroke-width:2}
+  .d-box-g{fill:var(--euc-soft);stroke:var(--euc);stroke-width:2}
+  .d-box-r{fill:var(--no-bg);stroke:var(--no);stroke-width:2}
+  .d-box-d{fill:none;stroke:var(--rule);stroke-width:2;stroke-dasharray:8 6}
+  .d-line{stroke:var(--ink-2);stroke-width:2.2;fill:none;marker-end:url(#tip)}
+  .d-json{fill:#fff;stroke:#cfc7b2;stroke-width:1.5}
+
+  /* ---------- A1 title ---------- */
+  #a1.on{display:flex;flex-direction:column;justify-content:center}
+  .roster{display:grid;grid-template-columns:repeat(5,1fr);gap:0;margin-top:44px;
+    border-top:2px solid var(--rule)}
+  .roster div{padding:16px 16px 0 0;border-right:2px solid var(--rule)}
+  .roster div:last-child{border-right:0}
+  .roster b{display:block;font:800 var(--t3)/1.1 var(--display);font-stretch:86%;color:var(--euc)}
+  .roster span{display:block;margin-top:5px;font:600 11.5px/1.35 var(--data);
+    letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2)}
+
+  /* ---------- A2 what DayKeeper is ----------
+     The picture carries the idea nobody says out loud; the words on the right
+     are the pitch: who it is for, what reaches them, where it all lands. */
+  #a2.on{display:grid;grid-template-columns:508px 1fr;padding:0}
+  .shot{position:relative;overflow:hidden;background:var(--euc-deep);margin:0}
+  .shot img{width:100%;height:100%;object-fit:cover;display:block}
+  .a2-body{padding:0 64px 0 60px;display:flex;flex-direction:column;justify-content:center;
+    height:100%;box-sizing:border-box}
+  .arrivals{margin:30px 0 0;border-top:2px solid var(--rule)}
+  .arrival{display:grid;grid-template-columns:150px 1fr auto;align-items:baseline;gap:20px;
+    padding:17px 0;border-bottom:2px solid var(--rule)}
+  .arrival .what{font:var(--t5)/1.1 var(--body)}
+  /* the two channels not built yet stay on the page, a step quieter */
+  .arrival.later .what{color:var(--rule)}
+  .arrival .tag{background:var(--wattle);color:#fff;padding:5px 10px;align-self:center;
+    font:600 11.5px/1 var(--data);letter-spacing:.14em;text-transform:uppercase}
+  .horizon-loud{background:var(--euc-deep);color:var(--on-deep);padding:17px 26px;
+    display:flex;align-items:baseline;gap:18px;margin-top:30px}
+  .horizon-loud b{font:800 var(--t4)/1 var(--display);font-stretch:86%;letter-spacing:-.02em}
+
+  /* ---------- A3 five things ----------
+     Four of the five answers sit inside one small payment card spanning 8% of
+     the page height; numbered badges will not fit there at any readable size.
+     So the boxes stay on the letter and leader lines fan the answers out.
+     The letter sits on the RIGHT: every box is near its left edge, so the lines
+     leave through the letter's own margin and cross none of its content. The
+     list is ordered the way the letter reads, top to bottom, so no line crosses
+     another either. */
+  #a3{padding:0}
+  #a3.on{display:block}
+  .bill-wrap{position:absolute;left:700px;top:16px;width:487px;height:688px}
+  .bill-wrap img{width:487px;height:688px;display:block;
+    border:2px solid var(--rule);background:#fff;box-sizing:border-box}
+  .rb{position:absolute;border:1.5px solid var(--no);box-sizing:border-box}
+  .leads{position:absolute;inset:0;pointer-events:none}
+  .leads path{fill:none;stroke:var(--no);stroke-width:1.5}
+  .leads circle{fill:var(--no)}
+  .a3-left{position:absolute;left:64px;top:0;width:496px;height:100%}
+  .a3-left h2{position:absolute;top:56px;right:0;font-size:var(--t5);text-align:right}
+  .five{position:absolute;top:180px;left:0;right:0}
+  .five .fl{height:88px;display:flex;flex-direction:column;justify-content:center;
+    align-items:flex-end;border-bottom:2px solid var(--rule);padding-right:26px}
+  .five .fl:first-child{border-top:2px solid var(--rule)}
+  .five .v{font:var(--t4)/1.15 var(--body);margin-top:6px}
+  .five .v.mono{font-family:var(--data);font-size:var(--t3);letter-spacing:.01em}
+
+  /* ---------- The Theme ----------
+     Each row is a picture the audience can check for themselves, next to the
+     finding it answers to. Row 3's two buttons are not drawings: they are the
+     same control rebuilt from each prototype's own CSS, so the colour, the
+     corner radius and the minimum height are the real values. */
+  .med{margin-top:24px;border-top:2px solid var(--rule)}
+  .med-row{display:grid;grid-template-columns:500px 1fr;align-items:center;gap:40px;
+    padding:17px 0;border-bottom:2px solid var(--rule)}
+  .med-row .why{margin:0;font:var(--t2)/1.35 var(--body)}
+  .th-duo{display:flex;align-items:flex-end;gap:22px}
+  .th-duo .one{text-align:center}
+  .th-duo .cap{display:block;margin-top:9px;font:600 11px/1.3 var(--data);
+    letter-spacing:.11em;text-transform:uppercase;color:var(--ink-2)}
+  .th-ct{display:block;width:200px;padding:13px 0;text-align:center;
+    font:700 var(--t2)/1 var(--body);background:var(--paper);border:1px solid var(--rule)}
+  /* the glare halo spreads all four ways, so this row is inset a little or the
+     bloom runs into the slide's left margin and reads as a smudge */
+  .med-row.glare .th-duo{padding-left:14px}
+  .th-gl{display:block;width:150px;height:70px}
+  .th-btn{display:flex;align-items:center;justify-content:center;
+    padding:16px 22px;font:700 18px/1 system-ui,'Segoe UI',sans-serif;
+    border:none;box-sizing:border-box;white-space:nowrap}
+
+  /* ---------- T3 the dataset ----------
+     Was a wide band of letters with text above and below it, which boxed the
+     page in. Now the wall is a column on the right and the words breathe on
+     the left. 26 thumbnails at 7 across, 4 down: the last row is two short,
+     which reads as a wall still being built rather than a mistake. */
+  #t3{padding:0}
+  #t3.on{display:grid;grid-template-columns:836px 1fr}
+  .t3-left{padding:0 48px 0 64px;display:flex;flex-direction:column;justify-content:center}
+  .t3-count{display:flex;align-items:baseline;gap:13px}
+  .t3-count b{font:800 var(--t6)/1 var(--display);font-stretch:86%;letter-spacing:-.02em;color:var(--euc)}
+  .t3-count span{font:var(--t3)/1.2 var(--body)}
+  .t3-note{margin:5px 0 0;font:var(--t1)/1.35 var(--body);color:var(--ink-2)}
+  .t3-src{margin-top:26px;border-top:2px solid var(--rule);padding-top:13px}
+  .t3-src p{margin:0 0 3px;padding-left:18px;text-indent:-18px;
+    font:12px/1.4 var(--body);color:var(--ink-2)}
+  .wall{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;align-content:center;
+    height:100%;padding:0 64px 0 0;box-sizing:border-box}
+  /* 4 by 5 fills exactly, so the block reads as a wall and not as a row that
+     ran out. The count in the words is the real 26; the wall is a sample. */
+  .wall img{width:92px;height:130px;display:block;box-sizing:border-box;
+    border:1px solid #cfc7b2;background:#fff}
+
+  /* ---------- T5 answer key ---------- */
+  .keys{display:grid;grid-template-columns:1fr 150px 1fr;align-items:center;gap:0 22px;margin-top:26px}
+  pre.json{margin:0;padding:20px 22px;background:var(--paper-2);
+    font:var(--t1)/1.6 var(--data);white-space:pre}
+  pre.json .k{color:#6b4a12}
+  pre.json .s{color:var(--euc);font-weight:600}
+  .keys .mid{text-align:center}
+  .keys .mid b{display:block;font:800 var(--t6)/1 var(--display);color:var(--euc)}
+
+  /* ---------- T6 five variables ---------- */
+  .vars{margin-top:30px;border-top:2px solid var(--rule)}
+  .vars .v{display:grid;grid-template-columns:44px 250px 1fr;align-items:baseline;gap:20px;
+    padding:17px 0;border-bottom:2px solid var(--rule)}
+  .vars .v .i{font:700 var(--t2)/1 var(--data);color:var(--ink-2)}
+  .vars .v .n{font:800 var(--t4)/1 var(--display);font-stretch:86%;letter-spacing:-.02em;color:var(--euc)}
+  .vars .v.hit{background:var(--euc-deep);border-bottom-color:var(--euc-deep);
+    padding-left:18px;padding-right:18px;margin-left:-18px;margin-right:-18px}
+  .vars .v.hit .i{color:var(--on-deep-2)}
+  .vars .v.hit .n{color:var(--on-deep)}
+  .vars .v.hit .d{color:var(--on-deep-2)}
+  .vars .d{color:var(--ink-2);font-size:var(--t2)}
+
+  /* ---------- T8 verdicts ---------- */
+  .quote{font:var(--t4)/1.25 var(--body);margin:10px 0 0;max-width:42ch}
+  .naming{display:flex;align-items:flex-end;gap:34px;margin:24px 0 30px}
+  .naming p{font:var(--t3)/1.35 var(--body);color:var(--ink-2);margin:0 0 6px;max-width:24ch}
+  .verdicts{display:flex;flex-direction:column;gap:16px}
+  .verdict{display:grid;grid-template-columns:9px 1fr 128px;align-items:center;gap:0 28px}
+  .verdict .stripe{align-self:stretch}
+  .verdict pre{margin:0;padding:15px 0 15px 24px;font:var(--t2)/1.5 var(--data);
+    background:var(--paper-2);white-space:pre}
+  .verdict .k{color:#6b4a12}
+  .verdict .mark{font:600 var(--t4)/1 var(--data);letter-spacing:.08em}
+  .pass .stripe{background:var(--ok)} .pass .mark{color:var(--ok)} .pass pre .s{color:var(--ok);font-weight:600}
+  .fail .stripe{background:var(--no)} .fail .mark{color:var(--no)} .fail pre .s{color:var(--no);font-weight:600}
+  .rule-note{margin:24px 0 0;font:var(--t2)/1.4 var(--body)}
+  .rule-note b{font-family:var(--data);font-weight:600;font-size:var(--t1);
+    letter-spacing:.06em;background:var(--no-bg);color:var(--no);padding:3px 9px}
+
+  /* ---------- T9 results ---------- */
+  .scoreline{display:flex;align-items:baseline;gap:22px;margin-bottom:22px}
+  .scoreline .big{font:800 var(--t8)/1 var(--display);font-stretch:86%;letter-spacing:-.03em;color:var(--euc)}
+  table{border-collapse:collapse;width:100%}
+  .tbl{font:var(--t1)/1.35 var(--body)}
+  .tbl th{font:600 11.5px/1 var(--data);letter-spacing:.12em;text-transform:uppercase;
+    color:var(--ink-2);text-align:left;padding:0 10px 8px 0;border-bottom:2px solid var(--rule)}
+  .tbl td{padding:9px 10px 9px 0;border-bottom:1px solid #d7d0bd}
+  .tbl .n{text-align:right;font-family:var(--data);font-size:var(--t1);
+    font-variant-numeric:tabular-nums;white-space:nowrap}
+  .tbl tr.total td{font-weight:700;border-top:2px solid var(--rule);border-bottom:0;padding-top:9px}
+  .tbl tr.total .n{color:var(--euc)}
+
+  /* ---------- T10 OCR ---------- */
+  #ocr-lines{margin:0;font:14px/1.32 var(--data);columns:2;column-gap:26px;white-space:pre-wrap;
+    background:#fff;border:2px solid var(--rule);padding:12px 16px;height:352px;overflow:hidden}
+  mark.b{background:var(--bank);color:var(--ink)}
+  mark.p{background:var(--post);color:var(--ink)}
+  .verdict-line{margin:18px 0 0;font:800 var(--t5)/1.1 var(--display);font-stretch:86%;
+    letter-spacing:-.02em;color:var(--no)}
+
+  /* ---------- T11 cost ---------- */
+  .costs{display:grid;grid-template-columns:1fr 1fr;gap:0;margin-top:46px;border-top:2px solid var(--rule)}
+  .cost{padding:34px 40px 30px 0;border-right:2px solid var(--rule)}
+  .cost:last-child{border-right:0;padding-left:44px}
+  .cost .fig{font:800 var(--t9)/1 var(--display);font-stretch:86%;letter-spacing:-.04em;color:var(--euc)}
+  .cost .what{font:var(--t4)/1.2 var(--body);margin:10px 0 6px}
+
+  /* ---------- G the line ----------
+     The spine is the work itself, one artifact handed to the next, which is
+     also the version control strategy read top to bottom. Names hang off both
+     sides and repeat freely: a person appears at every point they act. */
+  .flow{margin-top:16px;display:grid;grid-template-columns:1fr 372px 1fr;gap:0 30px}
+  .flow .hl{text-align:right;padding-bottom:8px}
+  .flow .hc{text-align:center;padding-bottom:8px}
+  .flow .hr{padding-bottom:8px}
+  .fl-l{text-align:right;align-self:center;padding:6px 0}
+  .fl-r{align-self:center;padding:6px 0}
+  .fl-c{position:relative;display:flex;align-items:center;justify-content:center;padding:12px 0}
+  .fl-c::before{content:'';position:absolute;left:50%;top:0;bottom:0;width:2px;
+    margin-left:-1px;background:var(--rule)}
+  .flow .fl-c.first::before{top:50%}
+  .flow .fl-c.last::before{bottom:50%}
+  .fl-c:not(.last)::after{content:'';position:absolute;left:50%;bottom:0;margin-left:-5px;
+    border-left:5px solid transparent;border-right:5px solid transparent;
+    border-top:9px solid var(--rule)}
+  .fl-box{position:relative;width:100%;box-sizing:border-box;text-align:center;
+    border:2px solid var(--euc);background:var(--euc-soft);padding:9px 14px}
+  .fl-box b{display:block;font:800 var(--t3)/1.1 var(--display);font-stretch:86%;color:var(--euc)}
+  .fl-box span{display:block;margin-top:3px;font:600 11.5px/1 var(--data);
+    letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2)}
+  .fl-box.gate{background:var(--euc-deep);border-color:var(--euc-deep)}
+  .fl-box.gate b{color:var(--on-deep)}
+  .fl-box.gate span{color:var(--on-deep-2)}
+  .fl-l b,.fl-r b{display:block;font:800 var(--t3)/1.1 var(--display);font-stretch:86%;color:var(--euc)}
+  .fl-l p,.fl-r p{margin:3px 0 0;font:var(--t1)/1.3 var(--body);color:var(--ink-2)}
+  .fl-box span.ver{text-transform:none;letter-spacing:.06em;font-size:12.5px}
+  /* the two gates of one pull request sit side by side, so the spine keeps
+     an even rhythm instead of stretching around a tall cell */
+  .fl-two{display:flex;gap:26px}
+  .fl-two > span{flex:1}
+  .lanes{display:flex;gap:9px;justify-content:flex-end}
+  .lane{border:2px solid var(--rule);background:#fbf8f0;padding:7px 13px;text-align:left}
+  .lane b{display:block;font:800 var(--t2)/1.05 var(--display);font-stretch:86%;color:var(--euc)}
+  .lane span{display:block;margin-top:2px;font:600 11px/1 var(--data);letter-spacing:.12em;
+    text-transform:uppercase;color:var(--ink-2)}
+  .fl-note{font:var(--t1)/1.3 var(--body);color:var(--ink-2)}
+
+  /* ---------- E closing ----------
+     The last page adds nothing new. The staircase on the left, the words I say
+     on the right, in three beats so my eye finds its place while reading. */
+  #e .row{display:flex;align-items:center;gap:52px}
+  .say{font:var(--t2)/1.5 var(--body);color:var(--ink)}
+  .say p{margin:0 0 20px}
+  .say p:last-child{margin-bottom:0}
+  .say p span{display:block;padding-left:24px;text-indent:-24px}
+  .say .end{font:800 var(--t4)/1.2 var(--display);font-stretch:86%;color:var(--euc);margin-top:6px}
+
+  /* ---------- Q ---------- */
+  .qtbl{font:var(--t2)/1.3 var(--body);margin-top:26px}
+  .qtbl th{font:600 11.5px/1 var(--data);letter-spacing:.12em;text-transform:uppercase;
+    color:var(--ink-2);text-align:left;padding:0 20px 9px 0;border-bottom:2px solid var(--rule)}
+  .qtbl td{padding:9px 20px 9px 0;border-bottom:1px solid #d7d0bd;vertical-align:top}
+  .qtbl td:first-child{color:var(--ink-2);width:46%}
+  .qtbl td:last-child{font-weight:600}
+</style>
+</head>
+<body>
+<div class="nav l" title="previous"></div><div class="nav r" title="next"></div>
+<div id="stage"><div class="deck" id="deck">
+
+<!-- 1 · A1 title -->
+<section id="a1">
+  <p class="lab" style="margin:0 0 20px">RMIT COSC2648 IT Project &nbsp;·&nbsp; Group 1 &nbsp;·&nbsp; 24 September 2026</p>
+  <h1>DayKeeper</h1>
+  <p style="font:var(--t4)/1.3 var(--body);color:var(--ink-2);margin:20px 0 0">
+    Photograph a letter. Get your calendar.</p>
+  <!-- left to right is the order the work moves in: product, build, build, test, ship -->
+  <div class="roster">
+    <div><b>Gerry</b><span>Product Manager<br>Scrum Master</span></div>
+    <div><b>Jason</b><span>Technical Lead</span></div>
+    <div><b>Xceed</b><span>Full Stack</span></div>
+    <div><b>Hiruni</b><span>QA and Testing Lead</span></div>
+    <div><b>Sai</b><span>DevOps</span></div>
+  </div>
+  <p style="margin:34px 0 0;font:var(--t2)/1.5 var(--body);color:var(--ink-2)">
+    <span class="lab">Client</span>&nbsp; Prof. Mohammad Patwary
+    &nbsp;&nbsp;&nbsp;<span class="lab">Supervisor</span>&nbsp; Dr Golnoush Abaei</p>
+</section>
+
+<!-- 2 · A2 Margaret -->
+<section id="a2" class="flush">
+  <figure class="shot">
+    <img src="assets/people/butler-upper.jpg" alt="A robot butler in a suit, standing in a living room with a towel over its arm">
+  </figure>
+  <div class="a2-body">
+    <p class="lab" style="margin:0 0 16px">For people in vulnerable groups</p>
+    <h2 class="sm">One place for everything life sends you</h2>
+    <div class="arrivals">
+      <div class="arrival"><span class="lab">A letter</span><span class="what">Pay this</span><span class="tag">This semester</span></div>
+      <div class="arrival later"><span class="lab">An email</span><span class="what">Book that</span></div>
+      <div class="arrival later"><span class="lab">A phone call</span><span class="what">Reply by Friday</span></div>
+    </div>
+    <div class="horizon-loud">
+      <span class="lab on-deep">DayKeeper</span>
+      <b>One calendar. Nothing missed.</b>
+    </div>
+  </div>
+</section>
+
+<!-- 3 · A3 five things to read -->
+<section id="a3">
+  <div class="a3-left">
+    <h2>One letter,<br>five things to read</h2>
+    <div class="five">
+      <div class="fl"><span class="lab">Who sent it</span><span class="v">Example Energy</span></div>
+      <div class="fl"><span class="lab">How much</span><span class="v">$81.29</span></div>
+      <div class="fl"><span class="lab">What to do</span><span class="v">Pay</span></div>
+      <div class="fl"><span class="lab">When</span><span class="v">2 November 2026</span></div>
+      <div class="fl"><span class="lab">The number to quote</span><span class="v mono">7960 963 636</span></div>
+    </div>
+  </div>
+
+  <div class="bill-wrap">
+    <img src="assets/letter-01/page-01.png" alt="An electricity bill, page one">
+    <div class="rb" style="left:5.87%;top:3.40%;width:18.77%;height:5.03%"></div>
+    <div class="rb" style="left:7.43%;top:19.65%;width:12.32%;height:2.99%"></div>
+    <div class="rb" style="left:7.76%;top:24.20%;width:5.21%;height:1.08%"></div>
+    <div class="rb" style="left:7.43%;top:25.51%;width:12.32%;height:1.79%"></div>
+    <div class="rb" style="left:7.43%;top:27.92%;width:13.08%;height:1.18%"></div>
+  </div>
+
+  <svg class="leads" viewBox="0 0 1280 720" width="1280" height="720" aria-hidden="true">
+    <path d="M729,57 H709 L580,224 H564"/><circle cx="560" cy="224" r="4"/>
+    <path d="M736,162 H716 L580,312 H564"/><circle cx="560" cy="312" r="4"/>
+    <path d="M738,186 H718 L580,400 H564"/><circle cx="560" cy="400" r="4"/>
+    <path d="M736,198 H716 L580,488 H564"/><circle cx="560" cy="488" r="4"/>
+    <path d="M736,212 H716 L580,576 H564"/><circle cx="560" cy="576" r="4"/>
+  </svg>
+</section>
+
+<!-- 4 · D demo -->
+<section id="d" class="deep flush">
+  <div style="display:flex;flex-direction:column;height:100%;justify-content:center;align-items:center;gap:20px">
+    <video id="demo" controls preload="metadata" poster="assets/demo-poster.png"
+      style="width:1120px;max-height:596px;background:#000">
+      <source src="assets/demo.mp4" type="video/mp4">
+    </video>
+    <p class="lab on-deep">Demo &nbsp;·&nbsp; 1 min 14 s</p>
+  </div>
+</section>
+
+<!-- 5 · The Theme -->
+<section id="theme">
+  <div class="eyebrow">
+    <span class="tag">Challenge</span><span class="lab">Our users cannot read a normal screen</span>
+  </div>
+  <div style="display:flex;align-items:baseline;gap:22px">
+    <h2 class="sm">The Theme</h2>
+    <p style="margin:0;font:var(--t3)/1.2 var(--body);color:var(--ink-2)">Every colour answers to an ageing eye.</p>
+  </div>
+
+  <div class="med">
+    <div class="med-row">
+      <div class="th-duo">
+        <span class="one">
+          <span class="th-ct" style="color:#6d6d6d">Pay by 2 Nov</span>
+          <span class="cap">WCAG AA &nbsp;4.5:1</span>
+        </span>
+        <span class="one">
+          <span class="th-ct" style="color:var(--ink)">Pay by 2 Nov</span>
+          <span class="cap">DayKeeper &nbsp;15.3:1</span>
+        </span>
+      </div>
+      <p class="why">Contrast sensitivity falls by up to <b>83%</b> by age 80, and WCAG's own AA level is calibrated to the typical eighty year old.</p>
+    </div>
+
+    <div class="med-row glare">
+      <div class="th-duo">
+        <span class="one">
+          <span class="th-gl" style="background:#fff;box-shadow:0 0 22px 9px rgba(255,255,255,.95)"></span>
+          <span class="cap">Pure white</span>
+        </span>
+        <span class="one">
+          <span class="th-gl" style="background:var(--paper);border:2px solid var(--rule)"></span>
+          <span class="cap">Our paper</span>
+        </span>
+      </div>
+      <p class="why">White grounds glare with cataract and macular degeneration.</p>
+    </div>
+
+    <div class="med-row">
+      <div class="th-duo">
+        <span class="one">
+          <span class="th-btn" style="background:#1b74c5;color:#fff;border-radius:17px">Looks right, save it</span>
+          <span class="cap">#1b74c5 &nbsp;first build</span>
+        </span>
+        <span class="one">
+          <span class="th-btn" style="background:#17452c;color:#f7f4ea;border-radius:10px;min-height:61px">Looks right, save it</span>
+          <span class="cap">#17452c &nbsp;now</span>
+        </span>
+      </div>
+      <p class="why">In a search task, a blue-yellow colour cue costs an older eye about <b>2400ms</b> more than a red-green one.</p>
+    </div>
+  </div>
+
+  <div class="refs">
+    <p>W3C. (2008). <em>Web accessibility for older users: A literature review</em>. w3.org/TR/wai-age-literature &nbsp;·&nbsp; W3C. (n.d.). <em>Understanding SC 1.4.3: Contrast (minimum)</em>. WCAG 2.2.</p>
+    <p>Tamura, S., &amp; Sato, K. (2020). Age-related changes in visual search. <em>Scientific Reports, 10</em>, 21328. &nbsp;·&nbsp; RNIB. (n.d.). <em>How to choose colour and contrast for printed materials</em>.</p>
+  </div>
+</section>
+
+<!-- 6 · T2 the stack -->
+<section id="t2">
+  <p class="lab" style="margin:0 0 20px">Everything behind one simple screen</p>
+  <h2 class="sm">The stack</h2>
+  <svg viewBox="0 0 1152 438" width="1152" height="438" role="img"
+    aria-label="Browser talks to one Next.js application, which talks to PostgreSQL, object storage and Azure AI Foundry">
+    <defs><marker id="tip" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#3a3d33"/></marker></defs>
+
+    <rect x="0" y="146" width="186" height="104" class="d-box-g"/>
+    <text x="93" y="184" class="d-t" text-anchor="middle">Browser</text>
+    <text x="93" y="207" class="d-s" text-anchor="middle">phone and desktop</text>
+    <text x="93" y="228" class="d-s" text-anchor="middle">responsive web app</text>
+
+    <path class="d-line" d="M188,198 L294,198"/>
+    <text x="241" y="188" class="d-l" text-anchor="middle">photo</text>
+
+    <rect x="298" y="120" width="268" height="158" class="d-box"/>
+    <text x="432" y="158" class="d-t" text-anchor="middle">Next.js</text>
+    <text x="432" y="182" class="d-s" text-anchor="middle">TypeScript and React</text>
+    <text x="432" y="204" class="d-s" text-anchor="middle">one app: pages and API</text>
+    <text x="432" y="226" class="d-s" text-anchor="middle">a read runs in the background</text>
+    <text x="432" y="248" class="d-s" text-anchor="middle">Swagger for all 15 endpoints</text>
+
+    <path class="d-line" d="M568,162 L680,104"/>
+    <rect x="602" y="125" width="44" height="15" fill="#f4f0e4"/>
+    <text x="624" y="137" class="d-l" text-anchor="middle">rows</text>
+    <path class="d-line" d="M568,198 L680,198"/>
+    <rect x="598" y="191" width="52" height="15" fill="#f4f0e4"/>
+    <text x="624" y="203" class="d-l" text-anchor="middle">files</text>
+    <path class="d-line" d="M568,236 L680,300"/>
+    <rect x="586" y="260" width="76" height="15" fill="#f4f0e4"/>
+    <text x="624" y="272" class="d-l" text-anchor="middle">photo in</text>
+
+    <rect x="684" y="64" width="232" height="76" class="d-box"/>
+    <text x="800" y="96" class="d-t" text-anchor="middle">PostgreSQL</text>
+    <text x="800" y="120" class="d-s" text-anchor="middle">letters, tasks, every model call</text>
+
+    <rect x="684" y="160" width="232" height="76" class="d-box"/>
+    <text x="800" y="192" class="d-t" text-anchor="middle">Object storage</text>
+    <text x="800" y="216" class="d-s" text-anchor="middle">the photographs</text>
+
+    <rect x="684" y="256" width="232" height="96" class="d-box-g"/>
+    <text x="800" y="288" class="d-t" text-anchor="middle">Azure AI Foundry</text>
+    <text x="800" y="311" class="d-s" text-anchor="middle">gpt-5.6-luna and gpt-5.6-terra</text>
+    <text x="800" y="333" class="d-s" text-anchor="middle">RMIT's key, vision in, JSON out</text>
+
+    <rect x="948" y="64" width="204" height="288" class="d-box-d"/>
+    <text x="1050" y="96" class="d-t" text-anchor="middle">Deployment</text>
+    <text x="1050" y="118" class="d-s" text-anchor="middle" font-style="italic">next</text>
+    <text x="1050" y="168" class="d-t" text-anchor="middle" font-size="15">Vercel</text>
+    <text x="1050" y="189" class="d-s" text-anchor="middle">the app</text>
+    <text x="1050" y="238" class="d-t" text-anchor="middle" font-size="15">Vercel Blob</text>
+    <text x="1050" y="259" class="d-s" text-anchor="middle">the photographs</text>
+    <text x="1050" y="308" class="d-t" text-anchor="middle" font-size="15">Neon</text>
+    <text x="1050" y="329" class="d-s" text-anchor="middle">PostgreSQL</text>
+
+    <line x1="0" y1="394" x2="1152" y2="394" stroke="#6f6a52" stroke-width="2"/>
+    <text x="0" y="424" class="d-l">Around it</text>
+    <text x="150" y="424" class="d-s">Docker</text>
+    <text x="250" y="424" class="d-s">Vitest, 274 tests</text>
+    <text x="440" y="424" class="d-s">GitHub</text>
+    <text x="545" y="424" class="d-s">Jira</text>
+    <text x="630" y="424" class="d-s">RapidOCR, for one test</text>
+  </svg>
+</section>
+
+<!-- 7 · T3 the dataset -->
+<section id="t3">
+  <div class="t3-left">
+    <div class="eyebrow stacked">
+      <span class="tag">Challenge</span><span class="lab">How do we know the LLM is right?</span>
+    </div>
+    <div class="eyebrow"><span class="tag eval">Eval &middot; dataset</span></div>
+    <h2 class="sm">We built the dataset first</h2>
+
+    <div style="margin-top:30px">
+      <div class="t3-count"><b>26</b><span>synthetic letters</span></div>
+      <p class="t3-note">each built from real regulation, with the sources written down</p>
+    </div>
+    <div style="margin-top:20px">
+      <div class="t3-count"><b>15</b><span>in this release</span></div>
+      <p class="t3-note">the rest are for later</p>
+    </div>
+
+    <div class="t3-src">
+      <p class="lab" style="margin:0 0 7px">Where the electricity bill comes from</p>
+      <p>Essential Services Commission. (2026). <em>Energy Retail Code of Practice</em> (Version 7), clause 63.</p>
+      <p>Essential Services Commission. (2022). <em>Guideline: Greenhouse gas disclosure on electricity customers' bills</em>.</p>
+      <p>Essential Services Commission. (2026, May). <em>Victorian Default Offer 2026 to 27: Final decision</em>.</p>
+      <p>Essential Services Commission. (2026). <em>Greenhouse gas coefficient for electricity bills, 2026</em>.</p>
+      <p>Department of Families, Fairness and Housing. (n.d.). <em>Annual electricity concession</em>.</p>
+      <p>Australian Energy Market Operator. (n.d.). <em>NMI allocation list</em>.</p>
+    </div>
+  </div>
+
+  <div class="wall">
+    <img src="assets/thumbs/01.png" alt="">
+    <img src="assets/thumbs/02.png" alt="">
+    <img src="assets/thumbs/03.png" alt="">
+    <img src="assets/thumbs/04.png" alt="">
+    <img src="assets/thumbs/05.png" alt="">
+    <img src="assets/thumbs/06.png" alt="">
+    <img src="assets/thumbs/07.png" alt="">
+    <img src="assets/thumbs/08.png" alt="">
+    <img src="assets/thumbs/09.png" alt="">
+    <img src="assets/thumbs/10.png" alt="">
+    <img src="assets/thumbs/11.png" alt="">
+    <img src="assets/thumbs/12.png" alt="">
+    <img src="assets/thumbs/13.png" alt="">
+    <img src="assets/thumbs/14.png" alt="">
+    <img src="assets/thumbs/15.png" alt="">
+    <img src="assets/thumbs/16.png" alt="">
+    <img src="assets/thumbs/17.png" alt="">
+    <img src="assets/thumbs/18.png" alt="">
+    <img src="assets/thumbs/19.png" alt="">
+    <img src="assets/thumbs/20.png" alt="">
+  </div>
+</section>
+
+<!-- 8 · T5 answer key -->
+<section id="t5">
+  <div class="eyebrow"><span class="tag eval">Eval &middot; ground truth</span></div>
+  <h2 class="sm">Every letter has an answer key</h2>
+  <div class="keys">
+    <div>
+      <p class="lab" style="margin:0 0 9px">ground-truth.json &nbsp;·&nbsp; written by hand</p>
+<pre class="json">{
+  <span class="k">"issuer"</span>: <span class="s">"Example Energy Pty Ltd"</span>,
+  <span class="k">"action_required"</span>: <span class="s">"Pay Example Energy"</span>,
+  <span class="k">"due_date"</span>: <span class="s">"2026-11-02"</span>,
+  <span class="k">"amount"</span>: <span class="s">81.29</span>,
+  <span class="k">"reference"</span>: <span class="s">"7960 963 636"</span>
+}</pre>
+    </div>
+    <div class="mid">
+      <b>=</b>
+      <p class="lab" style="margin:10px 0 0;line-height:1.5">code compares<br>field by field</p>
+    </div>
+    <div>
+      <p class="lab" style="margin:0 0 9px">what the LLM returned &nbsp;·&nbsp; 18 September</p>
+<pre class="json">{
+  <span class="k">"issuer"</span>: <span class="s">"Example Energy"</span>,
+  <span class="k">"action_required"</span>: <span class="s">"Pay Example Energy"</span>,
+  <span class="k">"due_date"</span>: <span class="s">"2026-11-02"</span>,
+  <span class="k">"amount"</span>: <span class="s">"$81.29"</span>,
+  <span class="k">"reference"</span>: <span class="s">"7960 963 636"</span>
+}</pre>
+    </div>
+  </div>
+  <div style="display:flex;gap:56px;margin-top:34px;border-top:2px solid var(--rule);padding-top:20px">
+    <p style="margin:0;font:var(--t3)/1.3 var(--body)"><b>No person marks it.</b>
+      <span style="color:var(--ink-2)">The test is exact.</span></p>
+    <p style="margin:0;font:var(--t3)/1.3 var(--body)"><b>It runs in bulk.</b>
+      <span style="color:var(--ink-2)">900 reads in one night.</span></p>
+  </div>
+</section>
+
+<!-- 9 · T6 five variables -->
+<section id="t6">
+  <div class="eyebrow"><span class="tag eval">Eval &middot; variables</span></div>
+  <h2 class="sm">An experiment may change five things</h2>
+  <div class="vars">
+    <div class="v"><span class="i">1</span><span class="n">Letters</span><span class="d">which ones are read</span></div>
+    <div class="v"><span class="i">2</span><span class="n">Model</span><span class="d">which model, at which reasoning effort</span></div>
+    <div class="v"><span class="i">3</span><span class="n">Prompt</span><span class="d">what the model is told</span></div>
+    <div class="v"><span class="i">4</span><span class="n">Repeats</span><span class="d">how many times each read is repeated</span></div>
+    <div class="v hit"><span class="i">5</span><span class="n">Scheme</span><span class="d">how the reads are combined into one answer &nbsp;·&nbsp; <b>the breakthrough</b></span></div>
+  </div>
+  <p class="note" style="margin-top:26px">Seven experiments so far. Everything else is held the same, so when two runs disagree the reason is one of these five.</p>
+</section>
+
+<!-- 10 · T7 voting -->
+<section id="t7">
+  <div class="eyebrow">
+    <span class="tag">Challenge</span><span class="lab">The LLM sometimes reads it wrong</span>
+  </div>
+  <div style="display:flex;align-items:baseline;gap:16px;margin-bottom:4px">
+    <h2 style="font-size:var(--t5)">Voting</h2>
+    <p style="margin:0;font:var(--t3)/1.2 var(--body);color:var(--ink-2)">run the same task several times, and let code compare the answers</p>
+  </div>
+  <p class="lab" style="margin:0 0 6px">One of Anthropic's five workflow patterns &nbsp;·&nbsp; parallelisation</p>
+  <svg viewBox="0 0 1152 396" width="1152" height="396" role="img"
+    aria-label="The photo is read twice by gpt-5.6-luna; code compares the two JSON answers; if they differ gpt-5.6-terra breaks the tie; if it matches neither the letter is read again, up to five rounds, then an error">
+    <defs><marker id="tip2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#3a3d33"/></marker></defs>
+    <g style="marker-end:url(#tip2)">
+      <path class="d-line" d="M112,166 L176,104" marker-end="url(#tip2)"/>
+      <path class="d-line" d="M112,206 L176,268" marker-end="url(#tip2)"/>
+      <path class="d-line" d="M392,112 L446,164" marker-end="url(#tip2)"/>
+      <path class="d-line" d="M392,260 L446,208" marker-end="url(#tip2)"/>
+      <path class="d-line" d="M618,168 L688,110" marker-end="url(#tip2)"/>
+      <path class="d-line" d="M618,204 L688,266" marker-end="url(#tip2)"/>
+      <path class="d-line" d="M798,246 L798,124" marker-end="url(#tip2)"/>
+      <path class="d-line" d="M910,300 L960,300" marker-end="url(#tip2)"/>
+      <path class="d-line" d="M1046,278 L1046,216" marker-end="url(#tip2)"/>
+      <path class="d-line" d="M1046,324 L1046,372 L56,372 L56,222" marker-end="url(#tip2)"/>
+    </g>
+
+    <rect x="6" y="150" width="106" height="72" class="d-box-g"/>
+    <text x="59" y="182" class="d-t" text-anchor="middle">Photo</text>
+    <text x="59" y="203" class="d-s" text-anchor="middle">of the letter</text>
+
+    <rect x="180" y="34" width="212" height="112" class="d-box"/>
+    <text x="196" y="58" class="d-t">gpt-5.6-luna</text>
+    <text x="196" y="78" class="d-s">reads it, effort medium</text>
+    <rect x="196" y="88" width="180" height="44" class="d-json"/>
+    <text x="206" y="105" class="d-j">"due_date": "2026-11-02"</text>
+    <text x="206" y="123" class="d-j">"amount": "$81.29"</text>
+
+    <rect x="180" y="226" width="212" height="112" class="d-box"/>
+    <text x="196" y="250" class="d-t">gpt-5.6-luna</text>
+    <text x="196" y="270" class="d-s">reads it again, same prompt</text>
+    <rect x="196" y="280" width="180" height="44" class="d-json"/>
+    <text x="206" y="297" class="d-j">"due_date": "2026-11-02"</text>
+    <text x="206" y="315" class="d-j">"amount": "$81.29"</text>
+
+    <text x="286" y="192" class="d-l" text-anchor="middle">at the same time</text>
+
+    <rect x="450" y="150" width="166" height="72" class="d-box-g"/>
+    <text x="533" y="182" class="d-t" text-anchor="middle">Code compares</text>
+    <text x="533" y="203" class="d-s" text-anchor="middle">field by field</text>
+
+    <text x="632" y="118" class="d-l">same</text>
+    <text x="612" y="286" class="d-l">different</text>
+
+    <rect x="692" y="40" width="212" height="80" class="d-box-g"/>
+    <text x="708" y="66" class="d-t">The answer</text>
+    <text x="708" y="88" class="d-s">that JSON is the reading</text>
+    <text x="708" y="108" class="d-s">9 letters in 10 stop here</text>
+
+    <rect x="692" y="250" width="212" height="96" class="d-box"/>
+    <text x="708" y="274" class="d-t">gpt-5.6-terra</text>
+    <text x="708" y="294" class="d-s">reads it once, effort low</text>
+    <rect x="708" y="304" width="180" height="30" class="d-json"/>
+    <text x="718" y="324" class="d-j">{ a third JSON }</text>
+
+    <text x="808" y="186" class="d-l">matches one</text>
+    <text x="808" y="204" class="d-l">of the two</text>
+
+    <rect x="964" y="270" width="164" height="60" class="d-box"/>
+    <text x="1046" y="296" class="d-t" text-anchor="middle" font-size="15">Matches</text>
+    <text x="1046" y="317" class="d-t" text-anchor="middle" font-size="15">neither</text>
+
+    <text x="1056" y="252" class="d-l">5th time</text>
+
+    <rect x="964" y="152" width="164" height="62" class="d-box-r"/>
+    <text x="1046" y="178" class="d-t" text-anchor="middle" font-size="15" fill="#8c0d07">Still failing</text>
+    <text x="1046" y="199" class="d-s" text-anchor="middle">error on screen</text>
+
+    <rect x="378" y="360" width="404" height="24" fill="#f4f0e4"/>
+    <text x="580" y="378" class="d-l" text-anchor="middle">the whole letter is read again, up to 5 rounds</text>
+  </svg>
+  <div class="refs">
+    <p>Anthropic. (2024, December). <em>Building effective agents</em>. anthropic.com/engineering/building-effective-agents</p>
+  </div>
+</section>
+
+<!-- 11 · T8 abstention -->
+<section id="t8">
+  <div class="eyebrow">
+    <span class="tag">Challenge</span><span class="lab">The LLM guesses when it is unsure</span>
+  </div>
+  <p class="lab" style="margin:0">Anthropic's method against hallucination</p>
+  <p class="quote">&ldquo;Allow the model to say &lsquo;I don't know&rsquo;&rdquo;</p>
+  <div class="naming">
+    <h2 style="font-size:var(--t8)">Abstention</h2>
+    <p>The model refuses to answer instead of guessing.</p>
+  </div>
+  <div class="verdicts">
+    <div class="verdict pass">
+      <div class="stripe"></div>
+      <pre>{ <span class="k">"key"</span>: "due_date",   <span class="k">"status"</span>: <span class="s">"confirmed"</span>, <span class="k">"confidence"</span>: 0.99 }</pre>
+      <div class="mark">PASS</div>
+    </div>
+    <div class="verdict fail">
+      <div class="stripe"></div>
+      <pre>{ <span class="k">"key"</span>: "reference",  <span class="k">"status"</span>: <span class="s">"uncertain"</span>, <span class="k">"confidence"</span>: 0.78 }</pre>
+      <div class="mark">FAIL</div>
+    </div>
+  </div>
+  <p class="rule-note">Two real replies from <span class="mono">gpt-5.6-luna</span>. Anything but <b>confirmed</b> fails the whole letter.</p>
+  <div class="refs">
+    <p>Anthropic. (n.d.). <em>Reduce hallucinations</em>. Claude Docs. platform.claude.com</p>
+    <p>Wen, B., Yao, J., Feng, S., Xu, C., Tsvetkov, Y., Howe, B., &amp; Wang, L. L. (2025). Know your limits: A survey of abstention in large language models. <em>TACL</em>. arxiv.org/abs/2407.18418</p>
+  </div>
+</section>
+
+<!-- 12 · T9 results -->
+<section id="t9">
+  <div class="eyebrow"><span class="tag eval">Eval &middot; result</span></div>
+  <p class="lab" style="margin:0 0 10px">Voting and abstention together</p>
+  <div class="scoreline">
+    <span class="big">100%</span>
+    <span style="font:var(--t3)/1.2 var(--body);color:var(--ink-2)">300 of 300 rounds right &nbsp;·&nbsp; 902 calls &nbsp;·&nbsp; 15 letter types &nbsp;·&nbsp; 0 wrong answers on screen</span>
+  </div>
+  <div style="display:flex;gap:44px">
+    <table class="tbl">
+      <thead><tr><th>Letter type</th><th class="n">Rounds</th><th class="n">Right</th><th class="n">terra</th></tr></thead>
+      <tbody>
+        <tr><td>Electricity bill</td><td class="n">20</td><td class="n">20</td><td class="n">3</td></tr>
+        <tr><td>Gas bill</td><td class="n">20</td><td class="n">20</td><td class="n">3</td></tr>
+        <tr><td>Water bill</td><td class="n">20</td><td class="n">20</td><td class="n">4</td></tr>
+        <tr><td>Animal registration overdue</td><td class="n">20</td><td class="n">20</td><td class="n">0</td></tr>
+        <tr><td>Penalty reminder notice</td><td class="n">20</td><td class="n">20</td><td class="n">1</td></tr>
+        <tr><td>Welfare information request</td><td class="n">20</td><td class="n">20</td><td class="n">0</td></tr>
+        <tr><td>Specialist account statement</td><td class="n">20</td><td class="n">20</td><td class="n">0</td></tr>
+        <tr><td>Private health statement</td><td class="n">20</td><td class="n">20</td><td class="n">0</td></tr>
+      </tbody>
+    </table>
+    <table class="tbl">
+      <thead><tr><th>Letter type</th><th class="n">Rounds</th><th class="n">Right</th><th class="n">terra</th></tr></thead>
+      <tbody>
+        <tr><td>Failure to vote notice</td><td class="n">20</td><td class="n">20</td><td class="n">0</td></tr>
+        <tr><td>Super member statement</td><td class="n">20</td><td class="n">20</td><td class="n">0</td></tr>
+        <tr><td>Insurance key facts sheet</td><td class="n">20</td><td class="n">20</td><td class="n">0</td></tr>
+        <tr><td>Driver licence renewal</td><td class="n">20</td><td class="n">20</td><td class="n">8</td></tr>
+        <tr><td>Outpatient appointment</td><td class="n">20</td><td class="n">20</td><td class="n">9</td></tr>
+        <tr><td>Dispensed medicine label</td><td class="n">20</td><td class="n">20</td><td class="n">0</td></tr>
+        <tr><td>Home insurance renewal</td><td class="n">20</td><td class="n">20</td><td class="n">0</td></tr>
+        <tr class="total"><td>All letters</td><td class="n">300</td><td class="n">300</td><td class="n">28 (9%)</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- 13 · T10 why not OCR -->
+<section id="t10">
+  <div class="eyebrow">
+    <span class="tag">Challenge</span><span class="lab">Why not OCR?</span>
+  </div>
+  <div style="display:flex;gap:30px">
+    <div style="flex:none;width:544px">
+      <p class="lab" style="margin:0 0 8px">On the page: <mark class="b">bank</mark> and <mark class="p">post</mark> are two clean columns</p>
+      <img src="assets/ocr/payment-panel.png" alt="The payment panel, bank column tinted yellow, post column tinted green"
+        style="width:544px;display:block;border:2px solid var(--rule);background:#fff">
+      <p style="margin:22px 0 0;font:var(--t3)/1.35 var(--body);max-width:30ch">
+        Which number sits under which heading is the whole meaning of this panel.</p>
+      <p class="note" style="margin:14px 0 0;font-size:var(--t1)">Give an LLM the text on the right and it is wrong before it starts.</p>
+    </div>
+    <div style="flex:1;min-width:0">
+      <p class="lab" style="margin:0 0 8px">After OCR (RapidOCR) &nbsp;·&nbsp; <span style="color:var(--no)">interleaved</span>, line by line</p>
+      <pre id="ocr-lines">How to pay
+Example Energy Pty LtdABN 87483733155
+DD
+<mark class="b">BANK</mark>
+CARD
+<mark class="p">POST</mark>
+PAY
+Directdebit
+<mark class="b">Phoneandinternet</mark>
+Byphoneoronline
+<mark class="p">Kelsworth Post</mark>
+paystead
+<mark class="b">banking</mark>
+Set up direct debit fromyour
+Pay by credit or debit card at
+<mark class="p">Payment code:9200104</mark>
+Makeregulardeductionsfrom
+bank account or card at
+<mark class="b">Biller code:9200072</mark>
+www.example-
+<mark class="p">Ref:3676 4187 1668</mark>
+<mark class="p">your Public Payments Office</mark>
+www.example-
+<mark class="b">Ref:496932796092</mark>
+energy.example,or call(03)
+<mark class="p">Pay in person at anyKelsworth</mark>
+payments.
+energy.example,or call(03)
+<mark class="b">Useyour ownbank&#x27;sphone or</mark>
+7010 0522 (24 hours).
+<mark class="p">Post outlet,orbyphone on(03)</mark>
+Call(03)7010 0522 to set this
+70100522.
+<mark class="b">internet banking service.</mark>
+<mark class="p">5550 3142.</mark>
+up.
+Example Energy Pty Ltd
+reference:PP0-4357-4028
+Your account number:7960
+963636</pre>
+    </div>
+  </div>
+  <p class="verdict-line">It is not a hallucination problem. The input data is wrong.</p>
+</section>
+
+<!-- 14 · T11 cost -->
+<section id="t11">
+  <h2 class="sm">What a letter costs to read</h2>
+  <div class="costs">
+    <div class="cost">
+      <div class="fig">1.4&cent;</div>
+      <p class="what">per letter, on average</p>
+      <p class="lab">two luna reads, terra on 1 in 10 &nbsp;·&nbsp; AUD, list price</p>
+    </div>
+    <div class="cost">
+      <div class="fig">35&cent;</div>
+      <p class="what">worst case</p>
+      <p class="lab">all five rounds, terra every time, no cache</p>
+    </div>
+  </div>
+  <p class="note" style="margin-top:34px">Measured from the same 900 calls, not estimated. Every call's tokens and cost are stored beside the letter, so the number keeps itself current.</p>
+</section>
+
+<!-- 15 · G the line -->
+<section id="g">
+  <div class="eyebrow">
+    <span class="tag">Challenge</span><span class="lab">Five people, five different strengths</span>
+  </div>
+  <h2 class="sm">From the client to production</h2>
+  <div class="flow">
+    <span class="lab hl">Who makes it</span><span class="lab hc">The line</span><span class="lab hr">Who reviews it</span>
+
+    <span class="fl-l"><b>Gerry</b><p>Talks to the client, tests with real people</p></span>
+    <span class="fl-c first"><span class="fl-box"><b>Prototype</b></span></span>
+    <span class="fl-r"><b>Everyone</b><p>The whole team, on purpose</p></span>
+
+    <span class="fl-l"><b>Each of us</b><p>For our own module</p></span>
+    <span class="fl-c"><span class="fl-box"><b>Technical design</b></span></span>
+    <span class="fl-r"><b>Jason</b><p>Settled before anyone writes code</p></span>
+
+    <span class="fl-l"><span class="lanes">
+      <span class="lane"><b>Jason</b><span>Letters</span></span>
+      <span class="lane"><b>Hiruni</b><span>Email</span></span>
+      <span class="lane"><b>Xceed</b><span>Voice</span></span>
+    </span><p class="fl-note" style="margin:9px 0 0">We are all full stack</p></span>
+    <span class="fl-c"><span class="fl-box"><b>Code</b><span>one ticket, one branch</span></span></span>
+    <span class="fl-r"></span>
+
+    <span class="fl-l"><p class="fl-note">The code and its tests,<br>written to Hiruni's testing rules</p></span>
+    <span class="fl-c"><span class="fl-box gate"><b>Pull request</b></span></span>
+    <span class="fl-r"><span class="fl-two">
+      <span><b>Hiruni</b><p>The tests</p></span>
+      <span><b>Sai</b><p>All of our code</p></span>
+    </span></span>
+
+    <span class="fl-l"><b>Sai</b><p>Deployment, our last line of defence</p></span>
+    <span class="fl-c last"><span class="fl-box"><b>main</b><span class="ver">tagged v0.1.0</span></span></span>
+    <span class="fl-r"><p class="fl-note">A tag means we can always go back to a version that worked</p></span>
+  </div>
+</section>
+
+<!-- 16 · E closing -->
+<section id="e">
+  <div class="eyebrow">
+    <span class="tag">Challenge</span><span class="lab">A vision bigger than one semester</span>
+  </div>
+  <div class="row">
+    <div style="flex:none;width:560px">
+      <svg viewBox="0 0 560 400" width="560" height="400" role="img"
+        aria-label="Five rising steps; step one is this semester, get the data right, and the agent butler sits at the top still dashed">
+        <g fill="#e3ddca" stroke="#6f6a52" stroke-width="2">
+          <rect x="112" y="210" width="104" height="110"/>
+          <rect x="224" y="166" width="104" height="154"/>
+          <rect x="336" y="122" width="104" height="198"/>
+          <rect x="448" y="78" width="104" height="242"/>
+        </g>
+        <rect x="0" y="254" width="104" height="66" fill="#0c2a1a"/>
+        <rect x="448" y="14" width="104" height="50" class="d-box-d"/>
+        <text x="500" y="36" class="d-t" text-anchor="middle" font-size="15">Agent</text>
+        <text x="500" y="55" class="d-t" text-anchor="middle" font-size="15">butler</text>
+        <!-- the label lives on the paper, not on the dark step: small text on a
+             dark fill is the one thing this theme never does -->
+        <text x="0" y="346" class="d-l">Step 1, this semester</text>
+        <text x="0" y="372" class="d-t" font-size="20">Get the data right</text>
+      </svg>
+    </div>
+    <div style="flex:1;min-width:0" class="say">
+      <p><span>Finally, one more challenge.</span>
+         <span>Our client has a much bigger vision: a fully automated agent butler.</span>
+         <span>That is the long-term goal.</span></p>
+      <p><span>AI engineering is an empirical science.</span>
+         <span>There is a lot of uncertainty, and there are governance problems to solve.</span>
+         <span>So we keep our references and our data, and we take it step by step.</span></p>
+      <p><span>This semester, step one: get the data right.</span>
+         <span class="end">Thank you.</span></p>
+    </div>
+  </div>
+</section>
+
+<!-- 17 · Q -->
+<section id="q">
+  <h1 style="font-size:var(--t8)">Questions</h1>
+  <table class="qtbl">
+    <thead><tr><th>Challenge</th><th>What we did</th></tr></thead>
+    <tbody>
+      <tr><td>Our users cannot read a normal screen</td><td>Every colour answers to an ageing eye, and carries a reference</td></tr>
+      <tr><td>How do we know the LLM is right?</td><td>26 synthetic letters with answer keys; code marks every read</td></tr>
+      <tr><td>The LLM sometimes reads it wrong</td><td>Voting: two reads compared by code, a third model to break ties</td></tr>
+      <tr><td>The LLM guesses when it is unsure</td><td>Abstention: not confirmed, not shown</td></tr>
+      <tr><td>Why not OCR?</td><td>The layout carries the meaning; OCR loses it</td></tr>
+      <tr><td>Five people, five different strengths</td><td>Every piece of work has a named reviewer, in a pull request</td></tr>
+      <tr><td>A vision bigger than one semester</td><td>Step by step. This semester, step one: get the data right</td></tr>
+    </tbody>
+  </table>
+</section>
+
+</div></div>
+
+<script>
+(function(){
+  const slides=[...document.querySelectorAll('section')];
+  let i=Math.max(0,Math.min(slides.length-1,parseInt(location.hash.slice(1)||'1',10)-1));
+  const deck=document.getElementById('deck');
+  function fit(){const s=Math.min(innerWidth/1280,innerHeight/720);deck.style.transform='scale('+s+')';}
+  function show(n){
+    i=(n+slides.length)%slides.length;
+    slides.forEach((s,k)=>s.classList.toggle('on',k===i));
+    location.hash=String(i+1);
+    let num=slides[i].querySelector('.num');
+    if(!num){num=document.createElement('div');num.className='num';slides[i].appendChild(num);}
+    num.textContent=(i+1)+' / '+slides.length;
+    const v=document.getElementById('demo');if(v&&slides[i].id!=='d')v.pause();
+    // The click zones sit over the outer fifth of the window, which is exactly
+    // where the video's controls reach. Turn them off while the demo is up.
+    navs.forEach(n=>n.style.pointerEvents=slides[i].id==='d'?'none':'');
+  }
+  const navs=[...document.querySelectorAll('.nav')];
+  document.querySelector('.nav.l').onclick=()=>show(i-1);
+  document.querySelector('.nav.r').onclick=()=>show(i+1);
+  addEventListener('keydown',e=>{
+    // On the demo slide space plays and pauses the video instead of turning the
+    // page, and it does it here rather than leaving it to the browser, so it
+    // works whether or not the video has been clicked. Arrows still move the
+    // deck, so there is always a way off this page.
+    if(e.key===' '&&slides[i].id==='d'){
+      e.preventDefault();
+      const v=document.getElementById('demo');
+      if(v){v.paused?v.play():v.pause();}
+      return;
+    }
+    if(['ArrowRight','PageDown',' '].includes(e.key)){e.preventDefault();show(i+1);}
+    if(['ArrowLeft','PageUp'].includes(e.key)){e.preventDefault();show(i-1);}
+    if(e.key==='Home')show(0);
+    if(e.key==='End')show(slides.length-1);
+    if(e.key==='f'||e.key==='F'){document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen();}
+  });
+  addEventListener('resize',fit);
+  addEventListener('hashchange',()=>{const n=parseInt(location.hash.slice(1)||'1',10)-1;if(n!==i&&n>=0&&n<slides.length)show(n);});
+  fit();show(i);
+})();
+</script>
+</body>
+</html>
