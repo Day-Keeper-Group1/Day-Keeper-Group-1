@@ -115,8 +115,9 @@ confirm that a letter with that id exists.
 
 There is no calendar endpoint, on purpose. See "The calendar".
 
-A person can now create their own account. The seed still plants two, so a
-checkout has somebody to sign in as before anyone has registered.
+A person can now create their own account. The seed still plants Margaret, an
+operator account and one empty account per teammate, so a checkout has somebody
+to sign in as before anyone has registered.
 
 ---
 

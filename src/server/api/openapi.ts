@@ -19,7 +19,7 @@ import examples from "./openapi-examples.json";
  */
 
 const API_MD =
-  "https://github.com/ZhenyingCui-Saiii/Day-Keeper-Group-1/blob/main/docs/api.md";
+  "https://github.com/Day-Keeper-Group1/Day-Keeper-Group-1/blob/main/docs/api.md";
 
 type Schema = Record<string, unknown>;
 

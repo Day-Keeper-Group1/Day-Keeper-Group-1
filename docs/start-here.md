@@ -9,7 +9,7 @@ it and where everything is.
 Three things, and deliberately only three:
 
 1. **A database and a bucket** everyone can run in one command: a schema that is
-   already settled, a small seed of letters already checked, and somewhere for the photographs themselves to live that behaves like the
+   already settled, a seed for showing the product, and somewhere for the photographs themselves to live that behaves like the
    real thing because it speaks the same protocol.
 2. **The contract**: the six fields, in TypeScript, with a validator. This is the
    agreement between whoever reads a document and whoever turns it into a task,
@@ -132,7 +132,10 @@ negotiable.
 `npm ci` installs them; there is nothing to set up. On commit, the staged files
 are formatted (Prettier, default style, config in `.prettierrc`) and linted,
 and the commit message is checked against the no-AI-attribution convention. On
-push, the whole project is type-checked. So the things CI would bounce a pull
+push, the files kept in Git LFS are uploaded and the whole project is
+type-checked. The LFS upload is there because husky moves git's hook directory,
+so the hook Git LFS installs for itself never runs; until 24 September 2026 every
+push sent the letter images as pointers only. So the things CI would bounce a pull
 request for are caught in seconds, locally, before they cost a round trip.
 
 `--no-verify` skips a hook in an emergency; CI still runs the same checks, so
@@ -257,5 +260,8 @@ It behaves that way on purpose. A reader that always succeeded instantly would
 produce an interface with no waiting state and nothing ever missing from a
 card, and both of those are states the product has to draw.
 
-Real providers are not implemented. `src/server/extraction/provider.ts` is the
-interface each one implements, and says why the seam is there.
+`AI_EXTRACTION_PROVIDER=azure` reads letters for real, through the school's Azure AI
+Foundry deployment, with the endpoint and key in `.env.local` (see
+`.env.example`). It reads with the scheme and the prompt [`extraction.md`](extraction.md)
+names. `src/server/extraction/provider.ts` is the interface each reader
+implements, and says why the seam is there.
