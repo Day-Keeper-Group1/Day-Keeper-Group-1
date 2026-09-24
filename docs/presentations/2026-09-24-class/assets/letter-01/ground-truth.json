@@ -1,0 +1,36 @@
+{
+  "sample_id": "SYN-0001",
+  "document_type": "electricity_bill",
+  "issuer": "Example Energy Pty Ltd",
+  "action_required": "Pay Example Energy",
+  "due_date": "2026-11-02",
+  "amount": 81.29,
+  "reference": "7960 963 636",
+  "identifiers": [
+    {
+      "label": "Account number",
+      "value": "7960 963 636",
+      "required": true
+    },
+    {
+      "label": "NMI",
+      "value": "60371335118",
+      "required": false
+    },
+    {
+      "label": "Ref",
+      "value": "4969 3279 6092",
+      "required": false
+    },
+    {
+      "label": "Ref",
+      "value": "3676 4187 1668",
+      "required": false
+    },
+    {
+      "label": "Example Energy Pty Ltd reference",
+      "value": "PPO-4357-4028",
+      "required": false
+    }
+  ]
+}

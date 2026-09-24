@@ -1,0 +1,282 @@
+[
+ {
+  "text": "How to pay",
+  "column": "other",
+  "x": 148,
+  "y": 2049,
+  "score": 0.956
+ },
+ {
+  "text": "Example Energy Pty LtdABN 87483733155",
+  "column": "other",
+  "x": 1667,
+  "y": 2074,
+  "score": 0.962
+ },
+ {
+  "text": "DD",
+  "column": "dd",
+  "x": 164,
+  "y": 2170,
+  "score": 0.999
+ },
+ {
+  "text": "BANK",
+  "column": "bank",
+  "x": 610,
+  "y": 2171,
+  "score": 0.989
+ },
+ {
+  "text": "CARD",
+  "column": "card",
+  "x": 1051,
+  "y": 2170,
+  "score": 0.998
+ },
+ {
+  "text": "POST",
+  "column": "post",
+  "x": 1490,
+  "y": 2170,
+  "score": 0.997
+ },
+ {
+  "text": "PAY",
+  "column": "pay",
+  "x": 1927,
+  "y": 2166,
+  "score": 0.997
+ },
+ {
+  "text": "Directdebit",
+  "column": "dd",
+  "x": 152,
+  "y": 2240,
+  "score": 0.999
+ },
+ {
+  "text": "Phoneandinternet",
+  "column": "bank",
+  "x": 594,
+  "y": 2240,
+  "score": 0.996
+ },
+ {
+  "text": "Byphoneoronline",
+  "column": "card",
+  "x": 1037,
+  "y": 2240,
+  "score": 0.999
+ },
+ {
+  "text": "Kelsworth Post",
+  "column": "post",
+  "x": 1476,
+  "y": 2238,
+  "score": 0.964
+ },
+ {
+  "text": "paystead",
+  "column": "pay",
+  "x": 1915,
+  "y": 2237,
+  "score": 0.998
+ },
+ {
+  "text": "banking",
+  "column": "bank",
+  "x": 589,
+  "y": 2274,
+  "score": 0.998
+ },
+ {
+  "text": "Set up direct debit fromyour",
+  "column": "dd",
+  "x": 152,
+  "y": 2293,
+  "score": 0.962
+ },
+ {
+  "text": "Pay by credit or debit card at",
+  "column": "card",
+  "x": 1033,
+  "y": 2292,
+  "score": 0.992
+ },
+ {
+  "text": "Payment code:9200104",
+  "column": "post",
+  "x": 1476,
+  "y": 2293,
+  "score": 0.992
+ },
+ {
+  "text": "Makeregulardeductionsfrom",
+  "column": "pay",
+  "x": 1919,
+  "y": 2293,
+  "score": 0.999
+ },
+ {
+  "text": "bank account or card at",
+  "column": "dd",
+  "x": 152,
+  "y": 2330,
+  "score": 0.958
+ },
+ {
+  "text": "Biller code:9200072",
+  "column": "bank",
+  "x": 593,
+  "y": 2332,
+  "score": 0.97
+ },
+ {
+  "text": "www.example-",
+  "column": "card",
+  "x": 1032,
+  "y": 2327,
+  "score": 0.998
+ },
+ {
+  "text": "Ref:3676 4187 1668",
+  "column": "post",
+  "x": 1476,
+  "y": 2330,
+  "score": 0.941
+ },
+ {
+  "text": "your Public Payments Office",
+  "column": "post",
+  "x": 1913,
+  "y": 2327,
+  "score": 0.959
+ },
+ {
+  "text": "www.example-",
+  "column": "dd",
+  "x": 150,
+  "y": 2369,
+  "score": 0.997
+ },
+ {
+  "text": "Ref:496932796092",
+  "column": "bank",
+  "x": 594,
+  "y": 2376,
+  "score": 0.989
+ },
+ {
+  "text": "energy.example,or call(03)",
+  "column": "card",
+  "x": 1032,
+  "y": 2366,
+  "score": 0.984
+ },
+ {
+  "text": "Pay in person at anyKelsworth",
+  "column": "post",
+  "x": 1478,
+  "y": 2369,
+  "score": 0.955
+ },
+ {
+  "text": "payments.",
+  "column": "pay",
+  "x": 1915,
+  "y": 2368,
+  "score": 0.998
+ },
+ {
+  "text": "energy.example,or call(03)",
+  "column": "dd",
+  "x": 146,
+  "y": 2399,
+  "score": 0.985
+ },
+ {
+  "text": "Useyour ownbank'sphone or",
+  "column": "bank",
+  "x": 594,
+  "y": 2412,
+  "score": 0.966
+ },
+ {
+  "text": "7010 0522 (24 hours).",
+  "column": "card",
+  "x": 1033,
+  "y": 2406,
+  "score": 0.97
+ },
+ {
+  "text": "Post outlet,orbyphone on(03)",
+  "column": "post",
+  "x": 1476,
+  "y": 2405,
+  "score": 0.969
+ },
+ {
+  "text": "Call(03)7010 0522 to set this",
+  "column": "pay",
+  "x": 1917,
+  "y": 2405,
+  "score": 0.955
+ },
+ {
+  "text": "70100522.",
+  "column": "dd",
+  "x": 148,
+  "y": 2440,
+  "score": 0.996
+ },
+ {
+  "text": "internet banking service.",
+  "column": "bank",
+  "x": 589,
+  "y": 2447,
+  "score": 0.972
+ },
+ {
+  "text": "5550 3142.",
+  "column": "post",
+  "x": 1476,
+  "y": 2444,
+  "score": 0.958
+ },
+ {
+  "text": "up.",
+  "column": "pay",
+  "x": 1917,
+  "y": 2447,
+  "score": 0.996
+ },
+ {
+  "text": "Example Energy Pty Ltd",
+  "column": "pay",
+  "x": 1917,
+  "y": 2477,
+  "score": 0.981
+ },
+ {
+  "text": "reference:PP0-4357-4028",
+  "column": "pay",
+  "x": 1919,
+  "y": 2521,
+  "score": 0.977
+ },
+ {
+  "text": "Your account number:7960",
+  "column": "pay",
+  "x": 1915,
+  "y": 2553,
+  "score": 0.967
+ },
+ {
+  "text": "963636",
+  "column": "pay",
+  "x": 1915,
+  "y": 2594,
+  "score": 0.999
+ }
+]
