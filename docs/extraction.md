@@ -6,7 +6,7 @@ The code in `src/server/extraction/` follows this file, not the other way round.
 
 ## 2026-09-24 · Contact has a due date, and the letters are re-dated, confirmed
 
-**What changed.** Two things, measured one at a time. The fifteen letters in scope were replaced by their re-dated versions, with deadlines in November 2026 (experiment 08, letters only). Then one sentence of the prompt: Contact joins Pay, Attend, Return form and Collect as an action that has a due date, so a letter that asks her to phone before a date keeps the date (experiment 09, prompt only). No action, Take medicine and Stop using still have none. Letter 08's answer key also accepts Contact as its action; its README says why.
+**What changed.** Two things, measured one at a time. The fifteen letters in scope were replaced by their re-dated versions, with deadlines in November 2026 (experiment 08, letters only). Then one sentence of the prompt: Contact joins Pay, Attend, Return form and Collect as an action that has a due date, so a letter that asks her to phone before a date keeps the date (experiment 09, prompt only). No action, Take medicine and Stop using still have none. Letter 08's answer key takes Contact as its action and also accepts Return form; its README says why.
 
 **Scheme.** Unchanged from the entry below.
 

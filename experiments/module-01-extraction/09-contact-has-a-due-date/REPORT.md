@@ -47,7 +47,7 @@ One sentence moved and one letter's answer key gained a second accepted word. Fi
 
 Two things this does not show. It says nothing about a Contact letter whose deadline is printed in a form this set does not contain; the only Contact reading in the fifteen is 08. And 300 trials all right bound the scheme's per-letter miss rate at 1.0% with 95% confidence over this mix of letters, which is the same bound 07 gave.
 
-Every reader chose Contact for 08 and none chose Return form, although the README argues for Return form as the first answer. That is worth a second look at the README, not a change in what counts as right: both words are accepted.
+Every reader chose Contact for 08 and none chose Return form. On 24 September, after this run, the key's first answer for 08 became Contact and Return form moved to the accepted list, and the README now argues for Contact. What counts as right did not change: both words are accepted, and re-marking gives the same numbers.
 
 ## Reproducing this
 

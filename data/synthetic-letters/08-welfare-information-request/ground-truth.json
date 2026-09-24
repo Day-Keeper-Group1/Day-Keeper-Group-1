@@ -2,7 +2,7 @@
   "sample_id": "SYN-0010",
   "document_type": "welfare_information_request_notice",
   "issuer": "Public Payments Office",
-  "action_required": "Return form to Public Payments Office",
+  "action_required": "Contact Public Payments Office",
   "due_date": "2026-11-02",
   "amount": null,
   "reference": "PPO-5002-9891",
@@ -24,6 +24,6 @@
     }
   ],
   "also_accepted": {
-    "action_required": ["Contact Public Payments Office"]
+    "action_required": ["Return form to Public Payments Office"]
   }
 }
