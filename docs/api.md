@@ -61,9 +61,8 @@ automatically by the browser. Everything except the auth endpoints answers
 
 Inside a handler, who is asking is answered by exactly one function:
 `requireUser()` from `src/server/auth/session.ts`. Nothing else reads the cookie
-or the sessions table. The seed plants a development session so protected
-endpoints can be called before sign-in exists; `npm run db:seed` prints the
-cookie to use.
+or the sessions table. To call a protected endpoint from curl or Postman, sign
+in through `POST /api/auth/login` and send the `dk_session` cookie it sets.
 
 **Wire formats.** A date is `'YYYY-MM-DD'`, a time of day is `'HH:mm'` in 24
 hours, an instant is ISO 8601 with a zone. `src/lib/contract/dates.ts` has the

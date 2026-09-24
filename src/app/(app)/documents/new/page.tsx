@@ -65,18 +65,33 @@ export default function UploadDocumentPage() {
 
   const atLimit = photos.length >= MAX_PAGES;
 
-  function addFile(selected: File | null) {
-    if (!selected || atLimit) return;
-    setPhotos((prev) => [
-      ...prev,
-      {
-        id: `${Date.now()}-${prev.length}`,
-        file: selected,
-        previewUrl: selected.type.startsWith("image/")
-          ? URL.createObjectURL(selected)
-          : null,
-      },
-    ]);
+  /**
+   * Add what she picked, however many that was. A phone's camera gives one
+   * photograph at a time; its photo library and a computer's file window give
+   * several at once. They are put in file name order, because a file window
+   * returns them in the order of its own choosing (on Windows the file clicked
+   * last comes first), while names from a camera or a scanner sort the way the
+   * pages were made. Anything past the tenth page is left out.
+   */
+  function addFiles(selected: FileList | null) {
+    if (!selected || selected.length === 0) return;
+    const picked = Array.from(selected).sort((a, b) =>
+      a.name.localeCompare(b.name, undefined, { numeric: true }),
+    );
+    setPhotos((prev) => {
+      const room = Math.max(0, MAX_PAGES - prev.length);
+      const stamp = Date.now();
+      return [
+        ...prev,
+        ...picked.slice(0, room).map((file, index) => ({
+          id: `${stamp}-${prev.length + index}`,
+          file,
+          previewUrl: file.type.startsWith("image/")
+            ? URL.createObjectURL(file)
+            : null,
+        })),
+      ];
+    });
   }
 
   function removePhoto(id: string) {
@@ -167,10 +182,13 @@ export default function UploadDocumentPage() {
         ref={inputRef}
         type="file"
         accept="image/*"
-        capture="environment"
+        // No `capture`: with it a phone opens the camera and nothing else.
+        // Without it she is offered the camera, her photo library and her
+        // files, and `multiple` lets the last two hand over several pages.
+        multiple
         className="sr-only"
         onChange={(event) => {
-          addFile(event.target.files?.[0] ?? null);
+          addFiles(event.target.files);
           if (inputRef.current) inputRef.current.value = "";
         }}
       />
