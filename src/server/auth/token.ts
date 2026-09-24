@@ -6,9 +6,9 @@
  * without salt is right here (and would be wrong for passwords): tokens are
  * 256 bits of randomness, so there is nothing to dictionary-attack.
  *
- * Deliberately not marked server-only, like password.ts: pure computation, and
- * the seed script needs it to plant the development session. Everything that
- * touches the database or the cookie lives in ./session.ts.
+ * Deliberately not marked server-only, like password.ts: pure computation, safe
+ * for a script running outside Next to import. Everything that touches the
+ * database or the cookie lives in ./session.ts.
  */
 
 import { createHash, randomBytes } from "node:crypto";

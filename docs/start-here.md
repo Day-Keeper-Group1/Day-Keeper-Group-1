@@ -74,52 +74,33 @@ service called `storage`.
 
 ### What the seed gives you
 
-Margaret's calendar after a few weeks: three letters she has already checked,
-and nothing waiting. Each sits under a different heading on Home:
+The seed exists for showing the product, and it holds only what cannot be made
+on the spot. Photographing a letter in front of someone shows it being read,
+checked and put on the calendar, so none of that is seeded. A reminder that is
+already due cannot be made that way: a letter photographed today has no seven
+day reminder until a week before its due date.
 
-- one **overdue**, two pages long, printing two numbers (so the letter shows
-  which one to quote)
-- one **due in the next seven days**
-- one **appointment with a time of day**, later on
+So Margaret has three letters whose reminders all fall on today, one on each
+rung of the seven, three and one day ladder, and two tasks she ticked off
+yesterday, which are there only to show the account has been used. Nothing is
+waiting to be checked. `db/seed.ts` is the inventory: what it prints when it
+runs is the list.
 
-Every other state is made by photographing a letter, which is the path that has
-to work anyway: it is read (the mock reader by default, see
-`AI_EXTRACTION_PROVIDER`), waits under To check on Home, is checked, and lands on
-the calendar. The mock also fails one letter in eight, after trying it three
-times, and hands out a statement that asks for nothing, which is saved without a
-task and kept in Your letters.
+The letters are real fixtures. Their photographs are the pages under
+`data/synthetic-letters`, and their fields come from that folder's
+`ground-truth.json`, so the screen and the photograph describe the same letter.
+The one exception is the due date of the three reminder letters, which is
+counted from today so the seed never goes stale.
 
-`db/seed.ts` is the inventory: what it prints when it runs is the list.
+The photographs are stored with Git LFS. If the seed says a page is not a PNG,
+your clone has the small pointer files instead: install git-lfs, run
+`git lfs pull`, and seed again.
 
-Two accounts: **margaret@example.com** and **operator@example.com**, both with
-the password `daykeeper`, already hashed in the database. They will work as soon
-as somebody builds sign-in.
+Accounts, all already hashed in the database:
 
-You do not have to wait for sign-in to call authenticated endpoints: the seed
-also plants a **development session** for Margaret and prints its cookie
-(`dk_session=...`) when it runs. Set that cookie in curl, Postman or your
-browser and `requireUser()` knows who you are. It only ever exists in a local
-database; the seed refuses to run anywhere else.
-
-Every seeded page has a real photograph behind it. The seed uploads them as it
-writes the rows, borrowing the synthetic letters in `data/synthetic-letters`
-(Git LFS, so run `git lfs pull` if yours are small text files) and picking for
-each letter the fixture closest to what its fields say it is. So the letters
-render on a machine that has never uploaded anything, which is what showing the
-product needs, and every `document_pages.storage_path` names an object that is
-really there.
-
-### A second world, for recording a demo
-
-`npm run demo:reset` plants a different world in the same database: one account
-(`demo@example.com` / `daykeeper`) with two letters already checked and both
-tasks already ticked, and nothing waiting. It is the frame a demo recording
-starts on, and running it again between takes puts that frame back.
-
-Its two letters take their fields from the fixture's own `ground-truth.json`,
-so the screen and the photograph tell the same story down to the date and the
-account number. The two seeds are alternatives, not layers: whichever you run
-last is the world you have.
+- **margaret@example.com** and **operator@example.com**, password `daykeeper`
+- one empty account per teammate, `<name>@example.com`, password `<Name>123`
+  (the seed prints them)
 
 ## Commands
 
@@ -127,8 +108,6 @@ last is the world you have.
 |---|---|
 | `npm run db:reset` | rebuild the schema from `db/schema.sql`, empty the bucket, then seed both. In that order: the seed writes photographs, so emptying afterwards would delete them |
 | `npm run db:seed` | reseed without touching the schema |
-| `npm run demo:reset` | the same three steps, but planting the demo recording's starting frame instead of Margaret's world |
-| `npm run demo:seed` | replant that frame without touching the schema |
 | `npm run storage:reset` | make the bucket exist and empty it, without touching the database. The seeded photographs go with it; `npm run db:reset` puts both sides back |
 | `npm test` | the contract tests |
 | `npm run typecheck` | `tsc --noEmit` |
@@ -179,9 +158,7 @@ One rule, so you never have to open a file to find out where it may be used:
 
 ```
 db/schema.sql             the database, and the only definition of it
-db/seed.ts                Margaret's world
-db/demo-seed.ts           the frame a demo recording starts on
-db/seed-lib.ts            what both seeds are made of
+db/seed.ts                Margaret's world, for showing the product
 
 src/lib/contract/         the agreement. Import from here, do not restate it.
   fields.ts                 the six fields (and the optional due_time), labels, meanings
