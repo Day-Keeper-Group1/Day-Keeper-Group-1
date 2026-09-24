@@ -1,6 +1,6 @@
 # 15 · Insurance key facts sheet
 
-Sample `SYN-0025`, printed in small type at the bottom right of each page, under the page number. Two pages. A Key Facts Sheet for a home building insurance policy from a fictional insurer, Quillhaven Insurance, prepared on 8 August 2026, with no recipient name or address printed on it. The answer key is [`ground-truth.json`](ground-truth.json).
+Sample `SYN-0025`, printed in small type at the bottom right of each page, under the page number. Two pages. A Key Facts Sheet for a home building insurance policy from a fictional insurer, Quillhaven Insurance, prepared on 24 October 2026, with no recipient name or address printed on it. The answer key is [`ground-truth.json`](ground-truth.json).
 
 ## Where it comes from
 
@@ -28,7 +28,7 @@ Made up, not taken from any source: the insurer Quillhaven Insurance, the policy
 
 ### due_date
 
-**Not applicable.** Neither page prints a pay by date, a due date, a reply by date or an appointment. The one date on the sheet is on page 1, top left, under the policy name: "Prepared on: 8 August 2026". It tells the reader when the sheet was prepared. The sheet asks for nothing, so there is no date to do anything by.
+**Not applicable.** Neither page prints a pay by date, a due date, a reply by date or an appointment. The one date on the sheet is on page 1, top left, under the policy name: "Prepared on: 24 October 2026". It tells the reader when the sheet was prepared. The sheet asks for nothing, so there is no date to do anything by.
 
 ### amount
 

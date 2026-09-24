@@ -4,6 +4,22 @@ What the reading step calls, and why. Newest decision on top. Each entry says wh
 
 The code in `src/server/extraction/` follows this file, not the other way round. To change the prompt, the model or the effort there: run an experiment under `experiments/module-01-extraction/`, add an entry here that cites its report, then change the code to match.
 
+## 2026-09-24 · Contact has a due date, and the letters are re-dated, confirmed
+
+**What changed.** Two things, measured one at a time. The fifteen letters in scope were replaced by their re-dated versions, with deadlines in November 2026 (experiment 08, letters only). Then one sentence of the prompt: Contact joins Pay, Attend, Return form and Collect as an action that has a due date, so a letter that asks her to phone before a date keeps the date (experiment 09, prompt only). No action, Take medicine and Stop using still have none. Letter 08's answer key also accepts Contact as its action; its README says why.
+
+**Scheme.** Unchanged from the entry below.
+
+**Prompt.** [`09-contact-has-a-due-date/prompt.md`](../experiments/module-01-extraction/09-contact-has-a-due-date/prompt.md). `tests/extraction-prompt.test.ts` fails when the copy the server reads differs from it.
+
+**Letters.** [`09-contact-has-a-due-date/letters.txt`](../experiments/module-01-extraction/09-contact-has-a-due-date/letters.txt), the same fifteen, re-dated. Experiments 01 to 07 read the earlier pages, at tag `v0.2.0`; see [`data/synthetic-letters/README.md`](../data/synthetic-letters/README.md).
+
+**Cost.** About A\$0.0052 a letter under the scheme, against A\$0.0053 before.
+
+**Basis.** [`08-letters-re-dated/REPORT.md`](../experiments/module-01-extraction/08-letters-re-dated/REPORT.md): the new letters under the old prompt, fourteen right, letter 08 wrong and confirmed in 16 of 20 trials, every miss its deadline thrown away. [`09-contact-has-a-due-date/REPORT.md`](../experiments/module-01-extraction/09-contact-has-a-due-date/REPORT.md): 900 of 900 reads right, 300 of 300 trials right with and without retries, letter 08 read as Contact with 2 November in all 60 reads.
+
+**Status: confirmed**, 24 September 2026. KAN-68.
+
 ## 2026-09-15 · the scheme, prompt and letters the product builds against, confirmed
 
 **Scheme.** `gpt-5.6-luna` at `medium` reads the letter twice. If the two reads agree on every field, that is the answer. If they differ on a field, `gpt-5.6-terra` at `low` reads the letter once with the same prompt, and the value it matches is taken. If it matches neither read, the letter is read again from the start, up to five times in all. If the fifth attempt still has a field undecided, the reading fails and the product shows its read-failed state. What counts as agreeing is code, [`src/server/extraction/agreement.ts`](../src/server/extraction/agreement.ts), which the experiments' vote replay imports; the scheme file is [`07-reference-by-belonging/scheme.txt`](../experiments/module-01-extraction/07-reference-by-belonging/scheme.txt) with retries raised from 0 to 5.

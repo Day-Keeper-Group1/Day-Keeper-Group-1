@@ -1,0 +1,66 @@
+{
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "government letter",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Public Payments Office",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Contact Public Payments Office",
+      "status": "confirmed",
+      "confidence": 0.93
+    },
+    {
+      "key": "due_date",
+      "value": "Not applicable",
+      "status": "confirmed",
+      "confidence": 0.96
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "PPO-5002-9891",
+      "status": "confirmed",
+      "confidence": 0.99
+    }
+  ],
+  "identifiers": [
+    {
+      "label": "Customer Reference Number",
+      "value": "PPO-5002-9891",
+      "status": "confirmed"
+    },
+    {
+      "label": "Provider reference",
+      "value": "PPO-7143-4935",
+      "status": "confirmed"
+    },
+    {
+      "label": "One-time access code",
+      "value": "V R J F 8 6",
+      "status": "confirmed"
+    }
+  ],
+  "open_payload": {
+    "notice_date": "12 October 2026",
+    "income_stream": "Wattlebank Super",
+    "product_name": "Account-Based Pension",
+    "commenced": "1 September 2019",
+    "requested_information": "Balance of the income stream on 1 July 2026, or the account closing date if closed",
+    "response_period": "21 days from the date of the notice",
+    "non_response_consequence": "Pension can be suspended or cancelled"
+  }
+}

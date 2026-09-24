@@ -1,0 +1,76 @@
+{
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "medical statement",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Mr Andrew Reid",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "No action",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "due_date",
+      "value": "Not applicable",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "709480",
+      "status": "confirmed",
+      "confidence": 0.99
+    }
+  ],
+  "identifiers": [
+    {
+      "label": "Account no.",
+      "value": "709480",
+      "status": "confirmed"
+    },
+    {
+      "label": "Patient Rebate Scheme no.",
+      "value": "4378 31830 2 / 9",
+      "status": "confirmed"
+    },
+    {
+      "label": "Ref",
+      "value": "8484 9007 5000",
+      "status": "confirmed"
+    }
+  ],
+  "open_payload": {
+    "account_status": "Paid in full",
+    "account_date": "30/06/2026",
+    "terms": "14 days",
+    "patient": "Mrs Margaret Anne Wilson",
+    "services": [
+      {
+        "date": "02/06/2026",
+        "item_no": "104",
+        "description": "Initial consultation – ophthalmology (cataract assessment)"
+      },
+      {
+        "date": "18/06/2026",
+        "item_no": "105",
+        "description": "Subsequent consultation – biometry review"
+      }
+    ],
+    "rebate_benefit": "$129.50"
+  }
+}

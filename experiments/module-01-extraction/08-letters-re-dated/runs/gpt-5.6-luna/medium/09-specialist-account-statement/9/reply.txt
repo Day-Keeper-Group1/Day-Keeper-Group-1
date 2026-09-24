@@ -1,0 +1,88 @@
+{
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "medical statement of account",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Mr Andrew Reid",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "No action",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "due_date",
+      "value": "Not applicable",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "709480",
+      "status": "confirmed",
+      "confidence": 0.99
+    }
+  ],
+  "identifiers": [
+    {
+      "label": "Account no.",
+      "value": "709480",
+      "status": "confirmed"
+    },
+    {
+      "label": "Patient Rebate Scheme no.",
+      "value": "4378 31830 2 / 9",
+      "status": "confirmed"
+    },
+    {
+      "label": "Ref:",
+      "value": "8484 9007 5000",
+      "status": "confirmed"
+    }
+  ],
+  "open_payload": {
+    "account_date": "30/06/2026",
+    "terms": "14 days",
+    "patient": "Mrs Margaret Anne Wilson",
+    "date_of_birth": "14/03/1948",
+    "referring_doctor": "Dr Susan Patel, Marmworth Medical Clinic",
+    "services": [
+      {
+        "date_of_service": "02/06/2026",
+        "item_no": "104",
+        "description": "Initial consultation – ophthalmology (cataract assessment)",
+        "fee": "$210.00",
+        "rebate": "$86.15"
+      },
+      {
+        "date_of_service": "18/06/2026",
+        "item_no": "105",
+        "description": "Subsequent consultation – biometry review",
+        "fee": "$105.00",
+        "rebate": "$43.35"
+      }
+    ],
+    "total_charge": "$315.00",
+    "patient_rebate_scheme_benefit": "$129.50",
+    "health_fund_benefit": "$0.00",
+    "out_of_pocket_cost": "$185.50",
+    "payments_received": "-$315.00",
+    "balance_due": "$0.00",
+    "payment_status": "Payment received with thanks. This account is paid in full.",
+    "benefit_note": "A benefit of $129.50 will be paid directly into your nominated bank account."
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "driver licence renewal notice",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Driver and Vehicle Registry",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Pay Driver and Vehicle Registry",
+      "status": "confirmed",
+      "confidence": 0.98
+    },
+    {
+      "key": "due_date",
+      "value": "2026-11-13",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "amount",
+      "value": "$96.50",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "812 466 305",
+      "status": "confirmed",
+      "confidence": 0.88
+    }
+  ],
+  "identifiers": [
+    {
+      "label": "Licence number",
+      "value": "05 502 615",
+      "status": "confirmed"
+    },
+    {
+      "label": "Customer number",
+      "value": "812 466 305",
+      "status": "confirmed"
+    }
+  ],
+  "open_payload": {
+    "date_of_notice": "2026-10-09",
+    "date_of_birth": "14/03/1948",
+    "licence_categories": "Car (C)",
+    "photograph_last_taken": "12/05/2021",
+    "licence_expires": "13 November 2026",
+    "renewal_term": "3 years",
+    "photograph_required": true,
+    "photograph_deadline": "within 3 months of paying"
+  }
+}

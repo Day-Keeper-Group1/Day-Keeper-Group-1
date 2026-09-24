@@ -2,6 +2,8 @@
 
 Each folder is one synthetic letter: its page images, the answer key it should yield (`ground-truth.json`), and a `README.md` that says where the letter comes from and where each of its six fields is printed. The letters were made by a generation pipeline outside this repository, for a fictional person, Mrs M A Wilson. No real person, account or amount is in them.
 
+**The fifteen letters in scope were re-dated on 16 September 2026** so that their deadlines fall in November 2026 rather than in the winter, and stay ahead of every demonstration this semester (KAN-71, brought in by KAN-68). Only the dates moved, and whatever a date drags with it: business days around Melbourne Cup Day, a usage period that lands in a new financial year, a penalty at a new penalty unit. Ten letters changed; five had no date to move and are byte for byte what they were. Letter 08 was rebuilt rather than re-dated, because the earlier version mixed two kinds of letter; its README says how. Each letter's README describes the page as it is now. **Experiments 01 to 07 read the earlier pages**, which are in git at tag `v0.2.0`; re-marking those experiments needs that checkout, because their replies carry the old dates. Experiment 08 onward reads these.
+
 This file records which letters are in scope for the current release, and why any letter was taken out. A letter that is out of scope keeps its folder. It is still a correct sample, and it will be useful when the product can handle what it asks for.
 
 | Letter | In scope | Why |

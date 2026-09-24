@@ -3,8 +3,8 @@
   "document_type": "electricity_bill",
   "issuer": "Example Energy Pty Ltd",
   "action_required": "Pay Example Energy",
-  "due_date": "2026-08-24",
-  "amount": 82.42,
+  "due_date": "2026-11-02",
+  "amount": 81.29,
   "reference": "7960 963 636",
   "identifiers": [
     {

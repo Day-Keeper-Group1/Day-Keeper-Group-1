@@ -1,0 +1,11 @@
+{
+  "model": "gpt-5.6-terra",
+  "effort": "low",
+  "letter": "08-welfare-information-request",
+  "repeat": 20,
+  "pages": ["page-01.png"],
+  "image_detail": "auto",
+  "started_at": "2026-09-15T22:54:08.462Z",
+  "seconds": 7.951,
+  "ok": true
+}

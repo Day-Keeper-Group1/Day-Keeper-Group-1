@@ -1,0 +1,68 @@
+{
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "insurance policy key facts sheet",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Quillhaven Insurance",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "No action",
+      "status": "confirmed",
+      "confidence": 0.95
+    },
+    {
+      "key": "due_date",
+      "value": "Not applicable",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "Not applicable",
+      "status": "confirmed",
+      "confidence": 0.95
+    }
+  ],
+  "identifiers": [],
+  "open_payload": {
+    "policy_name": "Quillhaven Home Advantage - Home Building",
+    "prepared_on": "24 October 2026",
+    "contact_phone": "(03) 7010 8804",
+    "website": "www.quillhaven-insurance.example",
+    "coverage": [
+      "Fire and Explosion",
+      "Storm",
+      "Accidental breakage",
+      "Earthquake",
+      "Lightning",
+      "Theft and Burglary",
+      "Malicious Damage",
+      "Impacts",
+      "Escape of liquid",
+      "Removal of debris",
+      "Alternative accommodation"
+    ],
+    "optional_cover": [
+      "Flood"
+    ],
+    "excluded_cover": [
+      "Actions of the sea"
+    ],
+    "standard_excess": "$750.00",
+    "cooling_off_period": "21 days"
+  }
+}

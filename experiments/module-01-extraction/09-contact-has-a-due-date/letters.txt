@@ -1,0 +1,22 @@
+# Which letters this experiment reads. One folder name per line, as it
+# appears in data/synthetic-letters/.
+# Blank lines and # lines are ignored.
+#
+# The same fifteen re-dated letters as experiment 08. Only prompt.md changed:
+# Contact joins the actions that have a due date (KAN-68).
+
+01-electricity-bill
+02-gas-bill
+03-water-bill
+05-animal-registration-overdue-notice
+07-penalty-reminder-notice
+08-welfare-information-request
+09-specialist-account-statement
+10-private-health-annual-statement
+12-failure-to-vote-notice
+14-super-annual-member-statement
+15-insurance-key-facts-sheet
+16-driver-licence-renewal-notice
+19-outpatient-appointment-letter
+21-dispensed-medicine-label
+23-home-insurance-renewal
