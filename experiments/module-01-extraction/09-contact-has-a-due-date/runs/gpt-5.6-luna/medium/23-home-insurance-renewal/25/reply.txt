@@ -1,0 +1,77 @@
+{
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "insurance renewal notice",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Quillhaven Insurance",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Pay Quillhaven Insurance",
+      "status": "confirmed",
+      "confidence": 0.98
+    },
+    {
+      "key": "due_date",
+      "value": "2026-11-20",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "amount",
+      "value": "$2,486.10",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "HB 1193 8188",
+      "status": "confirmed",
+      "confidence": 0.98
+    }
+  ],
+  "identifiers": [
+    {
+      "label": "Policy number",
+      "value": "HB 1193 8188",
+      "status": "confirmed"
+    },
+    {
+      "label": "Customer number",
+      "value": "70 976 319",
+      "status": "confirmed"
+    },
+    {
+      "label": "Ref",
+      "value": "0915 60028807 26",
+      "status": "confirmed"
+    }
+  ],
+  "open_payload": {
+    "notice_date": "9 October 2026",
+    "policyholders": "M A Wilson",
+    "policy_type": "Home Building and Contents",
+    "insured_address": "14 Bracken Rise, CALDERFIELD VIC 3999",
+    "current_cover_expiry": "20 November 2026 at 4:00pm",
+    "renewal_period": "20 November 2026 at 4:00pm to 20 November 2027 at 4:00pm",
+    "automatic_renewal": true,
+    "home_building_sum_insured": "$585,000.00",
+    "home_contents_sum_insured": "$92,000.00",
+    "excess_each_claim": "$750.00",
+    "last_period_premium": "$2,171.35",
+    "this_period_premium": "$2,486.10",
+    "premium_increase": "14.5%",
+    "payment_methods": [
+      "BPAY",
+      "phone or online",
+      "Kelsworth Post outlet"
+    ]
+  }
+}
