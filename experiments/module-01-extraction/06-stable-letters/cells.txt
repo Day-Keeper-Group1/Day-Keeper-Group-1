@@ -1,0 +1,10 @@
+# Which model at which reasoning effort. One "model effort" pair per line,
+# with an optional third number giving that cell its own repeat count.
+#
+# luna medium reads each letter fifty times so that its reads can be taken
+# in fixed pairs (1 and 2, 3 and 4, ...) as twenty five trials of the vote
+# scheme; terra low reads each letter twenty five times, one read per trial,
+# used only when the pair disagrees. See vote.ts in shared/.
+
+gpt-5.6-luna   medium  50
+gpt-5.6-terra  low

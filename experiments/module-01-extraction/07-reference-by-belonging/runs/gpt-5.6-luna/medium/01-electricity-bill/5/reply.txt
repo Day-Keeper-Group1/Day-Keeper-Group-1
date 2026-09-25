@@ -1,0 +1,72 @@
+{
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "electricity bill",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Example Energy",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Pay Example Energy",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "due_date",
+      "value": "2026-08-24",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "amount",
+      "value": "$82.42",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "7960 963 636",
+      "status": "confirmed",
+      "confidence": 0.99
+    }
+  ],
+  "identifiers": [
+    {
+      "label": "Account number",
+      "value": "7960 963 636",
+      "status": "confirmed"
+    },
+    {
+      "label": "NMI",
+      "value": "60371335118",
+      "status": "confirmed"
+    },
+    {
+      "label": "Ref",
+      "value": "3676 4187 1668",
+      "status": "confirmed"
+    }
+  ],
+  "open_payload": {
+    "account_holder": "Mrs M A Wilson",
+    "supply_address": "14 Bracken Rise, Calderfield VIC 3999",
+    "billing_period": "1 Jul 2026 – 31 Jul 2026",
+    "bill_issue_date": "05/08/2026",
+    "electricity_usage": "190 kWh",
+    "total_current_charges": "$78.12",
+    "payment_options": [
+      "Direct debit",
+      "Phone and internet banking",
+      "By phone or online",
+      "Kelsworth Post",
+      "paystay"
+    ]
+  }
+}

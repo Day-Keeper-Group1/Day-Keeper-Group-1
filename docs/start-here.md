@@ -9,8 +9,7 @@ it and where everything is.
 Three things, and deliberately only three:
 
 1. **A database and a bucket** everyone can run in one command: a schema that is
-   already settled, seed data covering every state the interface has to draw,
-   and somewhere for the photographs themselves to live that behaves like the
+   already settled, a seed for showing the product, and somewhere for the photographs themselves to live that behaves like the
    real thing because it speaks the same protocol.
 2. **The contract**: the six fields, in TypeScript, with a validator. This is the
    agreement between whoever reads a document and whoever turns it into a task,
@@ -20,8 +19,9 @@ Three things, and deliberately only three:
    built and demonstrated before anyone has model access.
 
 **The API and the pages follow `docs/api.md`.** Sign in, the letters
-(upload, list, open, page images, home) and the tasks endpoints exist and the
-screens read them; confirming a letter is the next piece. When you add an
+(upload, list, open, confirm, page images, home) and the tasks endpoints exist
+and the screens read them: a photographed letter is read, checked, saved and
+lands on the calendar. Sending the reminders is the next piece. When you add an
 endpoint, add it to that file first: it is the specification, with the
 reasoning for the parts that look arbitrary.
 
@@ -32,7 +32,7 @@ You need Node 20.17 or newer, npm 11 or newer, and Docker Desktop.
 ```bash
 npm ci                    # exactly what package-lock.json says
 cp .env.example .env.local
-docker compose up -d      # Postgres on 55432, MinIO on 59020, viewers on 8080 and 59021
+docker compose up -d      # Postgres on 15432, MinIO on 19020, viewers on 8080 and 19021
 docker compose ps         # wait until db says "healthy", usually a few seconds
 npm run db:reset          # build the schema, make the bucket, seed both
 npm test                  # the contract tests
@@ -45,7 +45,7 @@ The database viewer is at http://localhost:8080. Server `db`, user, password and
 database are all `daykeeper`. That is the quickest way to see what the seed put
 in the tables.
 
-The storage viewer is at http://localhost:59021, user and password `daykeeper`
+The storage viewer is at http://localhost:19021, user and password `daykeeper`
 and `daykeeper_local_dev`. Photographs land in the `daykeeper` bucket, the
 seeded ones included, and this is where to look when you want to know whether
 an upload really stored anything.
@@ -63,8 +63,10 @@ passes. Wait for `docker compose ps` to show `healthy` and run it again.
 **Port 8080 is already in use.** Something else on your machine has it; it is a
 popular port. Change the left-hand number under `adminer` in
 `docker-compose.yml` to something free, for example `8081:8080`. Postgres is on
-55432 rather than 5432 for the same reason, and storage on 59020 and 59021
+15432 rather than 5432 for the same reason, and storage on 19020 and 19021
 rather than 9000 and 9001, so those rarely collide.
+
+**On Windows, a container will not start and says "access forbidden", or the app says `ECONNREFUSED` though Docker is running.** Windows reserves blocks of ports from 49152 to 65535 each time it starts, and nothing can bind a reserved port. Every port this project publishes is below 49152 for that reason. If you changed a port yourself, keep it below 49152; `netsh interface ipv4 show excludedportrange protocol=tcp` lists what Windows has reserved today. If you pulled a version with the old ports (55432, 59020, 59021) in your `.env.local`, change them to 15432, 19020 and 19021 and run `docker compose up -d` again.
 
 **`npm run db:reset` says it cannot reach storage.** The MinIO container is not
 running. `docker compose up -d` starts it along with everything else; it is the
@@ -72,38 +74,33 @@ service called `storage`.
 
 ### What the seed gives you
 
-Margaret's world at the moment she opens the app, with every settled state the
-interface has to draw already present, so you never have to manufacture one.
-The only state not seeded is a letter still being read: a seeded row would never
-finish, and photographing any letter shows the real thing for ten seconds.
+The seed exists for showing the product, and it holds only what cannot be made
+on the spot. Photographing a letter in front of someone shows it being read,
+checked and put on the calendar, so none of that is seeded. A reminder that is
+already due cannot be made that way: a letter photographed today has no seven
+day reminder until a week before its due date.
 
-- a letter **waiting to be checked**, where the reader was unsure of the due
-  date and could not read the reference at all
-- letters **confirmed**: one overdue, one upcoming, one **appointment with a
-  time of day** (and therefore a shorter reminder ladder, see
-  `src/lib/contract/reminders.ts`), and one already done, ticked off before its
-  last reminder's morning, so that reminder rang, found it done, and was
-  recorded `skipped`
+So Margaret has three letters whose reminders all fall on today, one on each
+rung of the seven, three and one day ladder, and two tasks she ticked off
+yesterday, which are there only to show the account has been used. Nothing is
+waiting to be checked. `db/seed.ts` is the inventory: what it prints when it
+runs is the list.
 
-`db/seed.ts` is the inventory: what it prints when it runs is the list.
+The letters are real fixtures. Their photographs are the pages under
+`data/synthetic-letters`, and their fields come from that folder's
+`ground-truth.json`, so the screen and the photograph describe the same letter.
+The one exception is the due date of the three reminder letters, which is
+counted from today so the seed never goes stale.
 
-Two accounts: **margaret@example.com** and **operator@example.com**, both with
-the password `daykeeper`, already hashed in the database. They will work as soon
-as somebody builds sign-in.
+The photographs are stored with Git LFS. If the seed says a page is not a PNG,
+your clone has the small pointer files instead: install git-lfs, run
+`git lfs pull`, and seed again.
 
-You do not have to wait for sign-in to call authenticated endpoints: the seed
-also plants a **development session** for Margaret and prints its cookie
-(`dk_session=...`) when it runs. Set that cookie in curl, Postman or your
-browser and `requireUser()` knows who you are. It only ever exists in a local
-database; the seed refuses to run anywhere else.
+Accounts, all already hashed in the database:
 
-Every seeded page has a real photograph behind it. The seed uploads them as it
-writes the rows, borrowing the synthetic letters in `data/synthetic-letters`
-(Git LFS, so run `git lfs pull` if yours are small text files) and picking for
-each letter the fixture closest to what its fields say it is. So the letters
-render on a machine that has never uploaded anything, which is what showing the
-product needs, and every `document_pages.storage_path` names an object that is
-really there.
+- **margaret@example.com** and **operator@example.com**, password `daykeeper`
+- one empty account per teammate, `<name>@example.com`, password `<Name>123`
+  (the seed prints them)
 
 ## Commands
 
@@ -135,7 +132,10 @@ negotiable.
 `npm ci` installs them; there is nothing to set up. On commit, the staged files
 are formatted (Prettier, default style, config in `.prettierrc`) and linted,
 and the commit message is checked against the no-AI-attribution convention. On
-push, the whole project is type-checked. So the things CI would bounce a pull
+push, the files kept in Git LFS are uploaded and the whole project is
+type-checked. The LFS upload is there because husky moves git's hook directory,
+so the hook Git LFS installs for itself never runs; until 24 September 2026 every
+push sent the letter images as pointers only. So the things CI would bounce a pull
 request for are caught in seconds, locally, before they cost a round trip.
 
 `--no-verify` skips a hook in an emergency; CI still runs the same checks, so
@@ -161,7 +161,7 @@ One rule, so you never have to open a file to find out where it may be used:
 
 ```
 db/schema.sql             the database, and the only definition of it
-db/seed.ts                Margaret's world
+db/seed.ts                Margaret's world, for showing the product
 
 src/lib/contract/         the agreement. Import from here, do not restate it.
   fields.ts                 the six fields (and the optional due_time), labels, meanings
@@ -260,5 +260,8 @@ It behaves that way on purpose. A reader that always succeeded instantly would
 produce an interface with no waiting state and nothing ever missing from a
 card, and both of those are states the product has to draw.
 
-Real providers are not implemented. `src/server/extraction/provider.ts` is the
-interface each one implements, and says why the seam is there.
+`AI_EXTRACTION_PROVIDER=azure` reads letters for real, through the school's Azure AI
+Foundry deployment, with the endpoint and key in `.env.local` (see
+`.env.example`). It reads with the scheme and the prompt [`extraction.md`](extraction.md)
+names. `src/server/extraction/provider.ts` is the interface each reader
+implements, and says why the seam is there.

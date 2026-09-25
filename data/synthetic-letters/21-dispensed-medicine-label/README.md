@@ -42,3 +42,9 @@ Made up, not taken from any source: the pharmacy Ledworth Central Pharmacy, its 
 ### reference
 
 **6429746 DFD.** Page 1, the right column of the white label, third line, "Ref #6429746 DFD". The words printed beside the value are "Ref #", and the value itself is seven digits, a space, then three letters. A bar code is printed at the bottom right of the label, with no digits under it. The value is printed only once, in the right column. The contract asks for the reference, account or customer number the person must quote, and the prescription reference is the number this supply is recorded under at the pharmacy.
+
+### identifiers
+
+Every number the letter prints that identifies her, something she holds, or this matter, each under the label printed beside it, written as printed. The first list is the numbers a reading must find; the reference is one of them, and a reading that gives any of them as the reference is right. The experiments score whether every number in the first list is found.
+
+- **Ref # 6429746 DFD.** page 1, white label, right column, third line.

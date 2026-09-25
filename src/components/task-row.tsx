@@ -31,13 +31,17 @@ export function taskHeadline(task: TaskSummary): string {
   return task.title;
 }
 
-/** The second line of a row: who asked, then when. */
+/**
+ * The second line of a row: who asked, then when.
+ *
+ * KAN-59: always both, whenever the letter named who sent it. "Pay Yarra
+ * Valley Water" over "Yarra Valley Water · Sat 26 Sep" says the name twice, and
+ * that is accepted: every row then has the same two lines in the same places,
+ * and the eye finds a date where it found the last one.
+ */
 export function taskByline(task: TaskSummary): string {
   const when = taskWhen(task);
-  const headline = taskHeadline(task);
-  return task.issuer && headline !== task.title
-    ? `${task.issuer} · ${when}`
-    : when;
+  return task.issuer ? `${task.issuer} · ${when}` : when;
 }
 
 /**

@@ -18,11 +18,16 @@ Errors use the existing envelope: 401 without sign-in, 403 for a foreign Origin,
 409 when reconnection is needed, and 500 for configuration/provider failures.
 Messages use the `EmailMessage` schema in `src/lib/contract/email.ts`.
 
-**None of this is built yet. This is the shape to build.**
+**Every endpoint here is built.** This document was written before any of them,
+because the interface, the reader and the database were going to be built by
+different people, and the only way that ends in something that fits together is
+to settle the seams before the parts. It stays the specification: a change to an
+endpoint changes this file first.
 
-It is written down first because the interface, the reader and the database are
-going to be built by different people, and the only way that ends in something
-that fits together is to settle the seams before the parts.
+To call the endpoints from a browser, run `npm run dev` and open `/api-docs`.
+Sign in there with `POST /api/auth/login` and every other call carries the
+session. That page is described in `src/server/api/openapi.ts`, and
+`tests/openapi.test.ts` fails when a route handler is missing from it.
 
 The surface below is the one in [`scope.md`](scope.md). That file says what this
 release builds; this one says what each request and each response looks like. If
@@ -74,9 +79,8 @@ automatically by the browser. Everything except the auth endpoints answers
 
 Inside a handler, who is asking is answered by exactly one function:
 `requireUser()` from `src/server/auth/session.ts`. Nothing else reads the cookie
-or the sessions table. The seed plants a development session so protected
-endpoints can be called before sign-in exists; `npm run db:seed` prints the
-cookie to use.
+or the sessions table. To call a protected endpoint from curl or Postman, sign
+in through `POST /api/auth/login` and send the `dk_session` cookie it sets.
 
 **Wire formats.** A date is `'YYYY-MM-DD'`, a time of day is `'HH:mm'` in 24
 hours, an instant is ISO 8601 with a zone. `src/lib/contract/dates.ts` has the
@@ -129,8 +133,9 @@ confirm that a letter with that id exists.
 
 There is no calendar endpoint, on purpose. See "The calendar".
 
-A person can now create their own account. The seed still plants two, so a
-checkout has somebody to sign in as before anyone has registered.
+A person can now create their own account. The seed still plants Margaret, an
+operator account and one empty account per teammate, so a checkout has somebody
+to sign in as before anyone has registered.
 
 ---
 
@@ -442,7 +447,7 @@ file that is not an image. The upload is all-or-nothing.
 
 **The response carries no reading, because at the moment the files are stored
 nothing has looked at them.** The handler answers as soon as the photographs are
-in the bucket and the rows are written; the one model call happens after, and
+in the bucket and the rows are written; the reading happens after, and
 the letter sits at `processing` until it comes back.
 
 Validate on the server, not only in the file input: the `accept` attribute is a
@@ -452,11 +457,31 @@ hint to the person choosing a file, not a constraint on what arrives.
 the interface polls `GET /api/home` every five seconds and stops when
 `counts.processing` reaches zero. The count and the row come out of the same
 payload, so one poll refreshes both, and neither can show a different answer
-from the other.
+from the other. It is one poll for the whole app, not one per screen
+(`src/components/layout/activity.tsx`): Home, the camera screen, the number on
+the Home tab and the message that says a letter is ready all read it.
 
-If the reading fails, the letter's status becomes `failed`, and nothing takes it
-further. Repair is out of scope, so there is no retry endpoint and no retake
-endpoint.
+**How a letter is read.** The scheme is the newest entry in [`docs/extraction.md`](extraction.md): `gpt-5.6-luna` at `medium` reads the letter twice; if the two readings differ on a field, `gpt-5.6-terra` at `low` reads it once and the reading it matches is taken; if it matches neither, the letter is read again from the start, up to five rounds. Each round is a row in `extraction_runs`, and every model call under it, every attempt included, is a row in `model_calls`, so the tables say how many calls a letter took, with which model, and what each one said.
+
+**Everything that can happen while a letter is read.** None of these is an HTTP error. The upload has already answered `201`, and the screen learns the outcome from the letter's `status` the next time it polls `GET /api/home`, which answers `200` whatever the outcome. The reason a reading failed is written to `failure_detail` on its run and never leaves the server.
+
+| What happens | What the server does | Letter's status | What the screen shows |
+|---|---|---|---|
+| A model call fails: timeout, rate limit, network, an Azure error | That call is made again, up to three attempts in all, two seconds apart | `processing` | the row says "reading…" |
+| A model call answers with something that is not JSON | That call is made again, as above | `processing` | "reading…" |
+| A model call answers JSON outside the contract, such as a missing field | That call is made again, as above | `processing` | "reading…" |
+| A model call still fails on its third attempt | The whole letter fails at once; it does not go round the scheme again | `failed` | the red row with the failure sentence |
+| The reader is not configured, or a page reached it without its bytes | Not tried again; the letter fails at once | `failed` | the red row with the failure sentence |
+| The two luna readings agree on every field | That is the reading | `needs-review` | "ready to check" |
+| They differ, and the terra reading matches one of them | The matched reading is taken | `needs-review` | "ready to check" |
+| They differ, and the terra reading matches neither | The letter is read again from the start, up to five rounds | `processing` | "reading…" |
+| The fifth round still matches neither | The letter fails | `failed` | the red row with the failure sentence |
+| The decided reading's due date or amount is not `confirmed` | The letter fails; a date or amount left empty would read as "no date" or "nothing to pay" (`src/lib/contract/extraction.ts`) | `failed` | the red row with the failure sentence |
+| The decided reading has another field not `confirmed` | That field is stored and not shown; the rest of the reading stands | `needs-review` | "ready to check", without that row |
+| The reading is decided but the database will not store it | Not tried again; the letter fails | `failed` | the red row with the failure sentence |
+| The reading could not even be started in the database | Nothing is read; the letter fails | `failed` | the red row with the failure sentence |
+
+The failure sentence is `FAILURE_MESSAGE` in `src/lib/contract/api.ts`, the same for every row: the person is not told which of these happened, because none of them is something she can do anything about. A failed letter stays failed. Repair is out of scope, so there is no retry endpoint and no retake endpoint. `readDocument()` in `src/server/uploads.ts` has the rules.
 
 ## List letters
 
@@ -508,7 +533,9 @@ model was confident of.
 
 **This list is the door.** Every letter is here, including ones that never
 became a task because the reading found nothing to do, and opening one shows the
-photographs that came with it.
+photographs that came with it. The Your letters screen draws the saved ones
+(`confirmed` and `archived`): a letter still being read, waiting to be checked,
+or failed is on Home under To check, where something can be done about it.
 
 ## One letter, in full
 
@@ -693,14 +720,37 @@ the 10th, so the earliest rung of the ladder would have landed in the past, and
 a reminder in the past is never created. `planReminders()` in
 `src/lib/contract/reminders.ts` is what drops it.
 
+**A letter that asks for nothing** (`action_required` is `No action`) is saved
+and makes no task, so `task` is null:
+
+```json
+{
+  "documentId": "b71c0d54-8e33-4a77-8c19-90ab4e6f2213",
+  "task": null
+}
+```
+
 ### Error Responses
 
-**Condition** : The letter has already been confirmed.
+**Condition** : The letter is not waiting to be checked: it has already been
+confirmed, it is still being read, or its reading failed.
 **Code** : `409 CONFLICT`
 
-It renders as a line above the button, since the confirm button navigates
-unconditionally and has nowhere else to put one. The `message` is written to be
-shown as-is.
+**Content example**
+
+```json
+{
+  "error": {
+    "code": "conflict",
+    "message": "This letter is already saved."
+  }
+}
+```
+
+The other two say "This letter is still being read." and "This letter could not
+be read, so there is nothing to save." It renders as a line above the button,
+which stays where it is so she can see what happened. The `message` is written
+to be shown as-is.
 
 **Condition** : No such letter, or it belongs to somebody else.
 **Code** : `404 NOT FOUND`
@@ -710,8 +760,20 @@ shown as-is.
 The returned task includes its reminders, so the calendar the person lands on
 can draw itself without a second request.
 
+**After a save, the screen moves on by itself** (`src/lib/confirm-flow.ts`). A
+note says what was kept and where, and goes after three seconds; she is taken
+straight to the next letter waiting, first photographed first; and after the
+last one she lands on the calendar at the month of the last task she saved, or
+on Your letters if none of the letters she saved made a task. Which letter is
+next is asked of `GET /api/home` after the save, so a reading that landed while
+she was checking joins the end of the queue. "Not now" goes Home and ends the
+run.
+
 Confirming is the moment a letter becomes a task with reminders, all in one
-transaction. The schedule comes from `planReminders()` and nowhere else. **The
+transaction (`confirmDocument()` in `src/server/confirm.ts`), with a
+`document.confirm` row in `audit_logs` carrying the task's id and how many
+reminders were planned, never anything the letter said. The letter is locked
+while it is read, so two taps on the button cannot make two tasks. The schedule comes from `planReminders()` and nowhere else. **The
 review screen and this handler must pass it the same `today`**, or the card
 promises a reminder the handler never creates; that file says why passing the
 day is what makes the two answers identical, rather than sharing the function.
@@ -1006,7 +1068,7 @@ is still being read, and both sit in `inbox`.
   still reading" would say "Nothing to check" while a letter is visibly being
   read in the card below it. The nav badge shows `needsReview` alone.
 - `inbox`: every letter not yet dealt with, status `processing`, `needs-review`
-  or `failed`, one merged list, newest upload first, not capped. The card is
+  or `failed`, one merged list, first photographed first, not capped. The card is
   shown when `inbox` is non-empty, which is not the same test as the counts: a
   queue holding only failures still shows the card.
 - `tasks`: **every open task, whatever its date, plus anything completed in the
@@ -1082,6 +1144,6 @@ would mean building the wrong thing twice.
 
 ## Development only: try the reader
 
-Two URLs exist while `NODE_ENV` is not `production`, and answer `404` when it is. Neither is part of the product API above; they let the reading step be tried from a browser before it is wired into `POST /api/documents`.
+Three URLs exist while `NODE_ENV` is not `production`, and answer `404` when it is. None is part of the product API above.
 
-`GET /api-docs` is a Swagger page. `POST /api/dev/extract` takes one or more photographed pages of one letter as the multipart field `pages`, calls whichever reader `AI_EXTRACTION_PROVIDER` names, validates the answer against the extraction contract, and returns `{ call, result }`: `result` is the contract shape with `provider` and `model` stamped by the code rather than taken from the model, and `call` is the call's own record, which reader, which model, at which effort, how many seconds, and the tokens it consumed as the provider reported them. Nothing is stored and no sign-in is asked for. Its OpenAPI description is `GET /api/openapi.json`. Sample letters are in `data/synthetic-letters/`.
+`GET /api-docs` is a Swagger page for every endpoint in this document, and for this one, from the description at `GET /api/openapi.json`. `POST /api/dev/extract` takes one or more photographed pages of one letter as the multipart field `pages`, calls whichever reader `AI_EXTRACTION_PROVIDER` names, validates the answer against the extraction contract, and returns `{ call, result }`: `result` is the contract shape with `provider` and `model` stamped by the code rather than taken from the model, and `call` is the call's own record, which reader, which model, at which effort, how many seconds, and the tokens it consumed as the provider reported them. Nothing is stored and no sign-in is asked for. It is a way to look at one reading on its own; the product reads a letter through `POST /api/documents`. Sample letters are in `data/synthetic-letters/`.

@@ -1,23 +1,17 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Camera, CircleAlert, X } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { InboxRow } from "@/components/inbox-row";
+import { useActivity } from "@/components/layout/activity";
 import { Panel, ScreenHeader } from "@/components/screen";
 import {
   MAX_PAGES,
   type ApiError,
   type DocumentSummary,
-  type HomePayload,
 } from "@/lib/contract/api";
-
-/**
- * How often to ask again while a letter sent from here is still being read.
- * The same five seconds as Home, for the same reason (home-screen.tsx).
- */
-const QUEUE_POLL_MS = 5000;
 
 type Photo = {
   id: string;
@@ -51,55 +45,53 @@ export default function UploadDocumentPage() {
   const [error, setError] = useState<UploadError | null>(null);
   /**
    * Sent to be read: every letter of hers not yet dealt with, the same rows
-   * Home shows under To check. Null until the first answer arrives, so the
+   * Home shows under To check, first photographed first. The app asks for them
+   * on arrival and every few seconds while any is being read
+   * (src/components/layout/activity.tsx), so the row changes under her eyes
+   * from "reading…" to a name. Null until the first answer arrives, so the
    * card is not drawn empty and then filled.
    */
-  const [queue, setQueue] = useState<DocumentSummary[] | null>(null);
-
-  const reading = (queue ?? []).some((doc) => doc.status === "processing");
-
-  // The queue is asked for once on arrival, so a letter sent a minute ago is
-  // still here, and then every few seconds while any of it is being read,
-  // so the row changes under her eyes from "reading…" to a name.
-  useEffect(() => {
-    let live = true;
-
-    async function refresh() {
-      try {
-        const response = await fetch("/api/home", { cache: "no-store" });
-        if (!response.ok) return;
-        const payload = (await response.json()) as HomePayload;
-        if (live) setQueue(payload.inbox);
-      } catch {
-        // A dropped poll is not worth a message; the next is seconds away.
-      }
-    }
-
-    void refresh();
-    const timer = reading
-      ? window.setInterval(() => void refresh(), QUEUE_POLL_MS)
+  const { home, refresh } = useActivity();
+  /** Letters sent from here that the last answer did not include yet. */
+  const [sent, setSent] = useState<DocumentSummary[]>([]);
+  const queue = home
+    ? [
+        ...home.inbox,
+        ...sent.filter((doc) => !home.inbox.some((row) => row.id === doc.id)),
+      ]
+    : sent.length > 0
+      ? sent
       : null;
-
-    return () => {
-      live = false;
-      if (timer !== null) window.clearInterval(timer);
-    };
-  }, [reading]);
 
   const atLimit = photos.length >= MAX_PAGES;
 
-  function addFile(selected: File | null) {
-    if (!selected || atLimit) return;
-    setPhotos((prev) => [
-      ...prev,
-      {
-        id: `${Date.now()}-${prev.length}`,
-        file: selected,
-        previewUrl: selected.type.startsWith("image/")
-          ? URL.createObjectURL(selected)
-          : null,
-      },
-    ]);
+  /**
+   * Add what she picked, however many that was. A phone's camera gives one
+   * photograph at a time; its photo library and a computer's file window give
+   * several at once. They are put in file name order, because a file window
+   * returns them in the order of its own choosing (on Windows the file clicked
+   * last comes first), while names from a camera or a scanner sort the way the
+   * pages were made. Anything past the tenth page is left out.
+   */
+  function addFiles(selected: FileList | null) {
+    if (!selected || selected.length === 0) return;
+    const picked = Array.from(selected).sort((a, b) =>
+      a.name.localeCompare(b.name, undefined, { numeric: true }),
+    );
+    setPhotos((prev) => {
+      const room = Math.max(0, MAX_PAGES - prev.length);
+      const stamp = Date.now();
+      return [
+        ...prev,
+        ...picked.slice(0, room).map((file, index) => ({
+          id: `${stamp}-${prev.length + index}`,
+          file,
+          previewUrl: file.type.startsWith("image/")
+            ? URL.createObjectURL(file)
+            : null,
+        })),
+      ];
+    });
   }
 
   function removePhoto(id: string) {
@@ -146,14 +138,17 @@ export default function UploadDocumentPage() {
       // runs. She stays here, as in the prototype: the camera clears for the
       // next letter and the one just sent appears below, first as "reading…"
       // and then, when the reading lands, under its own name with a way in.
-      const sent = (await response.json()) as DocumentSummary;
+      const letter = (await response.json()) as DocumentSummary;
       setPhotos((prev) => {
         for (const photo of prev) {
           if (photo.previewUrl) URL.revokeObjectURL(photo.previewUrl);
         }
         return [];
       });
-      setQueue((prev) => [sent, ...(prev ?? [])]);
+      // At the end of the queue, because it was photographed last, and asked
+      // for again at once so the app starts watching it being read.
+      setSent((prev) => [...prev, letter]);
+      void refresh();
     } catch {
       setError({
         message: "We could not reach the server. Please check your connection.",
@@ -187,10 +182,13 @@ export default function UploadDocumentPage() {
         ref={inputRef}
         type="file"
         accept="image/*"
-        capture="environment"
+        // No `capture`: with it a phone opens the camera and nothing else.
+        // Without it she is offered the camera, her photo library and her
+        // files, and `multiple` lets the last two hand over several pages.
+        multiple
         className="sr-only"
         onChange={(event) => {
-          addFile(event.target.files?.[0] ?? null);
+          addFiles(event.target.files);
           if (inputRef.current) inputRef.current.value = "";
         }}
       />

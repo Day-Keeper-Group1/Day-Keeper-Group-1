@@ -1,0 +1,65 @@
+{
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "government letter",
+      "status": "confirmed",
+      "confidence": 0.98
+    },
+    {
+      "key": "issuer",
+      "value": "Public Payments Office",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Return form to Public Payments Office",
+      "status": "confirmed",
+      "confidence": 0.98
+    },
+    {
+      "key": "due_date",
+      "value": "2026-08-04",
+      "status": "confirmed",
+      "confidence": 0.97
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "PPO-5002-9891",
+      "status": "confirmed",
+      "confidence": 0.99
+    }
+  ],
+  "identifiers": [
+    {
+      "label": "Customer Reference Number",
+      "value": "PPO-5002-9891",
+      "status": "confirmed"
+    },
+    {
+      "label": "Provider reference",
+      "value": "PPO-7143-4935",
+      "status": "confirmed"
+    },
+    {
+      "label": "One-time access code",
+      "value": "VRJF86",
+      "status": "confirmed"
+    }
+  ],
+  "open_payload": {
+    "income_stream_under_review": {
+      "product_provider": "Wattlebank Super",
+      "product_name": "Account-Based Pension",
+      "commenced": "1 September 2019",
+      "period_we_are_reviewing": "1 July 2025 to 30 June 2026"
+    }
+  }
+}

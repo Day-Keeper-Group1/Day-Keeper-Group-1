@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { FactRow } from "@/components/fact-row";
+import { LetterPages } from "@/components/letter-pages";
 import { Panel, ScreenHeader } from "@/components/screen";
 import { Button } from "@/components/ui/button";
 import type { DocumentDetail, DocumentStatus } from "@/lib/contract/api";
@@ -23,7 +24,7 @@ function statusSentence(document: DocumentDetail): string {
     processing:
       "Still being read. You can close the app; we'll tell you when it's ready.",
     "needs-review": "Read, and waiting for your OK.",
-    confirmed: "Saved. Its task is on your list.",
+    confirmed: "Saved, and kept in your letters.",
     // The one sentence src/lib/contract/api.ts words for every surface. It
     // leads by saying the fault was ours, because it was.
     failed: document.failure?.message ?? "Something went wrong on our side.",
@@ -108,24 +109,15 @@ export default async function DocumentDetailPage({
               The photographs of this letter are not available.
             </p>
           ) : (
-            <ol className="space-y-3">
-              {photos.map((page) => (
-                <li key={page.id}>
-                  {/* A letter may run to ten pages, of which she sees the first
-                      before scrolling, so the rest are fetched when they are
-                      wanted. That also means storage signs each link at the
-                      moment the image is asked for, rather than signing ten at
-                      once and racing her scroll. */}
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={page.url}
-                    alt={`Page ${page.pageNumber}`}
-                    loading="lazy"
-                    className="w-full max-w-full rounded-lg border border-line"
-                  />
-                </li>
-              ))}
-            </ol>
+            <LetterPages
+              documentId={document.id}
+              count={document.pages.length}
+              pages={photos.map((page) => ({
+                id: page.id,
+                pageNumber: page.pageNumber,
+                url: page.url as string,
+              }))}
+            />
           )}
         </Panel>
       </div>

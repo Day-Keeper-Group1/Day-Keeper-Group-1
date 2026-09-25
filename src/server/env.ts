@@ -46,13 +46,25 @@ const envSchema = z.object({
    * be the host we signed. On a laptop both are localhost and this can be left
    * alone. They part company the moment the app itself runs in a container,
    * where the server says `http://storage:9000` and the browser must still say
-   * `http://localhost:59020`; a signed URL made with the wrong one comes back
+   * `http://localhost:19020`; a signed URL made with the wrong one comes back
    * as an access error that looks like a permissions bug and is not.
    */
   STORAGE_PUBLIC_ENDPOINT: z.string().optional(),
 
   /** The bucket. One bucket holds everything; the key prefix separates people. */
   STORAGE_BUCKET: z.string().min(1).default("daykeeper"),
+
+  /**
+   * The region the S3 protocol insists on.
+   *
+   * MinIO ignores it, which is why it sat hardcoded as 'us-east-1' for as long
+   * as storage was the container in docker-compose.yml. A real bucket does not
+   * ignore it: a signature computed for the wrong region is rejected, and the
+   * error says the signature does not match rather than naming the region, so
+   * it reads as a wrong-password bug and is not. The default keeps local MinIO
+   * working with nothing in .env.local; a hosted bucket sets it.
+   */
+  STORAGE_REGION: z.string().min(1).default("us-east-1"),
 
   STORAGE_ACCESS_KEY: z
     .string()
@@ -112,11 +124,6 @@ export function env(): Env {
 
   cached = parsed.data;
   return cached;
-}
-
-/** True when running against the local Docker database rather than anything shared. */
-export function isLocalDatabase(): boolean {
-  return /localhost|127\.0\.0\.1/.test(env().DATABASE_URL);
 }
 
 /** The endpoint to sign browser-facing URLs with. See STORAGE_PUBLIC_ENDPOINT. */

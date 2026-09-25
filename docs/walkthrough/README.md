@@ -36,7 +36,8 @@ taken with the prototype driven into the state the caption describes. The
 prototype exposes its own step functions on `window` (`signIn`, `addPhoto`,
 `uploadLetter`, `openReview`, `confirmItem`, `toggleDone`, `openLetter`,
 `openDay`, `go`, `reset`), so a capture script drives it by calling those rather
-than by clicking. Capture the `.phone` element. Hide `#toast` first unless the
+than by clicking. The prototype's dates follow the day it is opened, so open it
+with `?today=YYYY-MM-DD` to get the same shot twice. Capture the `.phone` element. Hide `#toast` first unless the
 notification is the point of the shot, and set the phone's height to `auto` for
 a screen taller than the frame.
 

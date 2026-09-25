@@ -1,0 +1,11 @@
+{
+  "model": "gpt-5.6-luna",
+  "effort": "medium",
+  "letter": "09-specialist-account-statement",
+  "repeat": 5,
+  "pages": ["page-01.png"],
+  "image_detail": "auto",
+  "started_at": "2026-09-15T00:25:01.930Z",
+  "seconds": 5.853,
+  "ok": true
+}

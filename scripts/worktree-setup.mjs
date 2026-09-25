@@ -176,8 +176,11 @@ function main() {
   };
   setField(
     "DATABASE_URL",
-    `postgres://daykeeper:daykeeper_local_dev@localhost:55432/${names.dbName}`,
+    `postgres://daykeeper:daykeeper_local_dev@localhost:15432/${names.dbName}`,
   );
+  // KAN-66: the storage port is written too, so rerunning setup in a worktree
+  // made before the ports moved below 49152 brings its .env.local up to date.
+  setField("STORAGE_ENDPOINT", "http://localhost:19020");
   setField("PORT", String(port));
   // Its own bucket as well as its own database: `db:reset` empties storage, and
   // a shared bucket would make one worktree's reset delete another's uploads.

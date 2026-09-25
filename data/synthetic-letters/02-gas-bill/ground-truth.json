@@ -3,7 +3,34 @@
   "document_type": "gas_bill",
   "issuer": "Example Energy Pty Ltd",
   "action_required": "Pay Example Energy",
-  "due_date": "2026-07-28",
+  "due_date": "2026-11-06",
   "amount": 257.36,
-  "reference": "5832 875 169"
+  "reference": "5832 875 169",
+  "identifiers": [
+    {
+      "label": "Account number",
+      "value": "5832 875 169",
+      "required": true
+    },
+    {
+      "label": "MIRN",
+      "value": "59122670931",
+      "required": false
+    },
+    {
+      "label": "Ref",
+      "value": "6950 0977 7723",
+      "required": false
+    },
+    {
+      "label": "Ref",
+      "value": "8580 8754 1787",
+      "required": false
+    },
+    {
+      "label": "Example Energy Pty Ltd reference",
+      "value": "PPO-4357-4028",
+      "required": false
+    }
+  ]
 }

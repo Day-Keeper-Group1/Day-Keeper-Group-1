@@ -1,0 +1,51 @@
+{
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "insurance key facts sheet",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Quillhaven Insurance",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "No action",
+      "status": "confirmed",
+      "confidence": 0.96
+    },
+    {
+      "key": "due_date",
+      "value": "Not applicable",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "Not applicable",
+      "status": "confirmed",
+      "confidence": 0.96
+    }
+  ],
+  "identifiers": [],
+  "open_payload": {
+    "policy": "Quillhaven Home Advantage - Home Building",
+    "prepared_on": "24 October 2026",
+    "cooling_off_period": "21 days from being issued, if no claim has been made",
+    "standard_excess": "$750.00",
+    "contact_phone": "(03) 7010 8804",
+    "website": "www.quillhaven-insurance.example",
+    "policy_distributed_by": "Quillhaven Insurance",
+    "policy_underwritten_by": "Quillhaven Insurance"
+  }
+}

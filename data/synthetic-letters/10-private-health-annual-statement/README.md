@@ -43,3 +43,14 @@ Made up, not taken from any source: the fund name Tarnwell Health Fund, the poli
 ### reference
 
 **65921613.** Page 1, top right table, first row, "Membership number". It is printed only once in the letter. The contract asks for the reference, account or customer number the person must quote. The number this letter identifies her membership by is the membership number.
+
+### identifiers
+
+Every number the letter prints that identifies her, something she holds, or this matter, each under the label printed beside it, written as printed. The first list is the numbers a reading must find; the reference is one of them, and a reading that gives any of them as the reference is right. The experiments score whether every number in the first list is found.
+
+- **Membership number 65921613.** Page 1, top right identity table, first row, value right aligned in bold.
+
+Also printed, and identifying something narrower: a payment method's own reference, a meter, an invoice or statement, a provider, or a one-time code. A reading may list these or leave them out.
+
+- **Statement identifier QFYCGT5.** Page 3, bottom left footer block above the thin rule, second line, under "Date statement updated: 01/July/2026".
+- **Reference 1683 3227 13.** Page 1, HOW YOU PAY box, BPAY block under the dashed rule, printed after "Biller code: 9200058 ·".

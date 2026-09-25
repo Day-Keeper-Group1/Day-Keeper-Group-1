@@ -1,0 +1,40 @@
+[other] How to pay
+[other] Example Energy Pty LtdABN 87483733155
+[dd] DD
+[bank] BANK
+[card] CARD
+[post] POST
+[pay] PAY
+[dd] Directdebit
+[bank] Phoneandinternet
+[card] Byphoneoronline
+[post] Kelsworth Post
+[pay] paystead
+[bank] banking
+[dd] Set up direct debit fromyour
+[card] Pay by credit or debit card at
+[post] Payment code:9200104
+[pay] Makeregulardeductionsfrom
+[dd] bank account or card at
+[bank] Biller code:9200072
+[card] www.example-
+[post] Ref:3676 4187 1668
+[post] your Public Payments Office
+[dd] www.example-
+[bank] Ref:496932796092
+[card] energy.example,or call(03)
+[post] Pay in person at anyKelsworth
+[pay] payments.
+[dd] energy.example,or call(03)
+[bank] Useyour ownbank'sphone or
+[card] 7010 0522 (24 hours).
+[post] Post outlet,orbyphone on(03)
+[pay] Call(03)7010 0522 to set this
+[dd] 70100522.
+[bank] internet banking service.
+[post] 5550 3142.
+[pay] up.
+[pay] Example Energy Pty Ltd
+[pay] reference:PP0-4357-4028
+[pay] Your account number:7960
+[pay] 963636

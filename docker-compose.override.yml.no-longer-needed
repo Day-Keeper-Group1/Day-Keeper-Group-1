@@ -1,0 +1,29 @@
+# Local port overrides for this machine only. Not committed.
+#
+# Windows hands blocks of ports to Hyper-V and WinNAT, and refuses a bind
+# inside one with "an attempt was made to access a socket in a way forbidden
+# by its access permissions". Which blocks it takes changes after a reboot or
+# a network change, which is why a port that worked last week stops working
+# today.
+#
+# The committed compose file uses 55432 and 59020/59021, all above 49152 where
+# Windows' dynamic range begins, so all three are permanently at risk. The
+# ports below sit under it and are never handed out.
+#
+# `!override` is not decoration. Compose *concatenates* the ports list from an
+# override file by default, so without it the container asks for the old port
+# and the new one, the old one fails exactly as before, and the file looks like
+# it did nothing. The tag says replace rather than append.
+#
+# Compose merges this file automatically. Nobody else's setup changes, and
+# docker-compose.yml stays the shared truth.
+
+services:
+  db:
+    ports: !override
+      - "15432:5432"
+
+  storage:
+    ports: !override
+      - "19000:9000"
+      - "19001:9001"

@@ -1,0 +1,11 @@
+{
+  "model": "gpt-5.6-luna",
+  "effort": "medium",
+  "letter": "21-dispensed-medicine-label",
+  "repeat": 7,
+  "pages": ["page-01.png"],
+  "image_detail": "auto",
+  "started_at": "2026-09-15T00:28:40.348Z",
+  "seconds": 12.058,
+  "ok": true
+}

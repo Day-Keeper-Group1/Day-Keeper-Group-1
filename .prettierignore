@@ -22,3 +22,7 @@ package-lock.json
 .next/
 node_modules/
 next-env.d.ts
+
+# Presentations are slides as they were shown, fonts and data included. A
+# reflow would change a record, not fix code.
+docs/presentations/

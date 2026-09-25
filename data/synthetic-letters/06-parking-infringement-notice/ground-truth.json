@@ -5,5 +5,27 @@
   "action_required": "Pay Calderfield City Council",
   "due_date": "2026-07-21",
   "amount": 41.0,
-  "reference": "7717145263"
+  "reference": "7717145263",
+  "identifiers": [
+    {
+      "label": "Infringement no.",
+      "value": "7717145263",
+      "required": true
+    },
+    {
+      "label": "Registration no.",
+      "value": "9XK·7QJ",
+      "required": true
+    },
+    {
+      "label": "Issuing officer no.",
+      "value": "8160",
+      "required": false
+    },
+    {
+      "label": "Ref",
+      "value": "4797 2573 7796",
+      "required": false
+    }
+  ]
 }

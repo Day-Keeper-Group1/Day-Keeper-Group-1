@@ -40,3 +40,9 @@ Made up, not taken from any source: every printed word on the card, the size of 
 ### reference
 
 **RS431545614AU.** Page 1, lower left, the heading "ARTICLE NUMBER" sits over a barcode, and the number is printed in monospace type directly under the barcode as one unbroken block of letters and digits. It is the only number the card prints for the item. The contract asks for the reference, account or customer number the person must quote, and this is the number the card identifies the item by. Page 2 says "Track this item at www.kelsworth-post.example/track", and this is the number the item is tracked under there.
+
+### identifiers
+
+Every number the letter prints that identifies her, something she holds, or this matter, each under the label printed beside it, written as printed. The first list is the numbers a reading must find; the reference is one of them, and a reading that gives any of them as the reference is right. The experiments score whether every number in the first list is found.
+
+- **ARTICLE NUMBER RS431545614AU.** page 1, lower left, the monospace line immediately under the barcode, beneath the heading ARTICLE NUMBER.

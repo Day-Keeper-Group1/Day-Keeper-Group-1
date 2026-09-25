@@ -26,14 +26,25 @@ Break one of these and choosing this theme was pointless.
 **1. Body text clears 7:1, not 4.5:1.** Contrast sensitivity falls by as much
 as 83% by age 80. WCAG AA is a floor written for the general population; this
 product holds itself to AAA for body text and 3:1 for anything non-text that
-carries meaning.
+carries meaning. The standard says as much itself: 4.5:1 was set against
+vision loss equivalent to about 20/40, which it calls the typical acuity of
+an eighty year old, and 7:1 against 20/80. AA is drawn at the typical eighty
+year old, and the people this is built for are the ones it stops at.
 
-**2. Nothing is blue.** An ageing eye needs roughly 2400ms longer to tell blue
-from yellow, so blue cannot carry anything that has to be caught quickly, and
-it is not the primary colour. The lens yellows with age; blues drift and flatten.
+**2. Nothing is blue.** Blue costs an ageing eye measurable time. In a visual
+search task, moving the colour cue from red-green to blue-yellow cost younger
+observers about 170ms; the same move cost younger observers wearing lenses
+that simulate an aged eye about 1000ms, and older observers about 2400ms. So
+blue cannot carry anything that has to be caught quickly, and it is not the
+primary colour. The lens yellows with age and lets less short-wavelength light
+through; blues drift and flatten, and what colour vision loss there is in this
+age group is mostly of the blue-yellow kind.
 
 **3. No pure white and no pure black.** White grounds glare badly for cataracts
-and macular degeneration. The page and card tones are warm, aged-paper colours,
+and macular degeneration; the print-accessibility guidance is to reach for a
+very pale or pastel shade instead, and to settle the choice by light
+reflectance value rather than by eye, with at least 20 points between two
+colours and 30 preferred. The page and card tones are warm, aged-paper colours,
 and the darkest ink still carries a trace of warmth.
 
 **4. Gold is never text.** Saturated yellow on a light ground reaches about
@@ -138,6 +149,101 @@ Lowest text pair 7.23:1, lowest non-text pair 3.37:1.
 | reminder dot on card | 3.5:1 | 3 |
 | focus lining on ring | 12.1:1 | 3 |
 | focus ring on page | 15.4:1 | 3 |
+
+## Where these numbers come from
+
+The five rules were adopted on 10 August 2026 out of a study of ageing vision
+and of how other products in this space handle it. The reasoning came across
+into this file; the sources stayed behind in the study. This section brings
+them across, added 18 September 2026, when the rules were about to be put in
+front of an audience and every claim had to survive being looked up.
+
+**Rule 1, the 83% and the 7:1 floor.** The 83% is from the W3C's own
+literature review on older users, which states that "from the age of 40,
+contrast sensitivity at higher spatial frequencies starts to decline until at
+the age of 80 it has been reduced by up to 83%". Follow that citation and it
+runs three deep: the review reads the figure off its own Figure 2, that
+figure is reproduced from EveryEye (2004), and EveryEye drew it from Owsley,
+Sekuler and Siemsen (1983). **So 83% is a value read off a derived chart, not
+a percentage printed in the Owsley paper.** Anyone who chases it to the
+primary source will find the curve and not the number, and that is the honest
+answer to give them. Quote the W3C review, which is the document the figure
+actually appears in.
+
+Separately, WCAG's Understanding document explains why the threshold here is
+7:1 and not 4.5:1: AA's 4.5:1 "compensated for the loss in contrast
+sensitivity usually experienced by users with vision loss equivalent to
+approximately 20/40 vision", and "20/40 is commonly reported as typical
+visual acuity of elders at roughly age 80", while AAA's 7:1 answers to 20/80.
+The two sources do different jobs. The 83% says how much is lost; the
+Understanding document says which ratio that loss obliges. The argument wants
+both.
+
+**Rule 2, the 2400ms and nothing blue.** The figure is from Tamura and Sato
+(2020), who ran a visual search task and reported that "among younger
+observers, RTs in the CS task with distractors differed between the RG and YB
+conditions by approximately 170 ms; this difference increased to 1000 and
+2400 ms among younger observers with glasses and older observers,
+respectively". Two things to keep straight when quoting it. It is the cost of
+moving the colour cue from red-green to blue-yellow in a search task with
+distractors, not a general claim that older people see blue 2400ms slower.
+And the middle figure is the one that carries the argument: the same young
+observers, merely wearing lenses that simulate an aged eye, went from 170ms
+to 1000ms, which ties the cost to the optics rather than to age as such.
+
+Prevalence sits beside the timing. Schneck and colleagues tested 865 people
+aged 58 to 102 and found colour vision loss in this group to be predominantly
+blue-yellow, attributed largely to lens yellowing. Tamura and Sato say what
+it costs the people affected; Schneck says how many of them there are.
+
+**Rule 3, no pure white.** RNIB's guidance for accessible print says to avoid
+white and reach for a very pale or pastel shade, and gives a check that does
+not depend on anyone's eye: at least 20 points of light reflectance value
+between two colours, 30 preferred. The NIA and NLM checklist for
+senior-friendly sites says the same from the other side, a light ground with
+dark text but not the pure-white-on-pure-black extreme. Increased sensitivity
+to bright light and glare is also a listed symptom of cataract.
+
+**Rule 4** is arithmetic on top of the WCAG contrast formula: saturated
+yellow on a light ground does not reach 3:1, so it cannot be text. **Rule 5**
+follows from the prevalence in Schneck and colleagues: a state carried only
+by hue is a state some of these readers cannot see.
+
+**One caveat carried over.** The August study flagged exactly one of its own
+figures as unverified: a 1.5 line height, where the note recorded that no
+value specific to older users had been found and that WCAG 2.2 SC 1.4.12 Text
+Spacing was standing in as a general substitute pending a second check. This
+file sets no line-height rule, so nothing here rests on it. If one is ever
+added, that figure needs a source of its own first.
+
+### References
+
+Macular Disease Foundation Australia. (n.d.). *Cataracts*.
+https://www.mdfoundation.com.au/about-macular-disease/other-conditions/cataracts/
+
+Owsley, C., Sekuler, R., & Siemsen, D. (1983). Contrast sensitivity
+throughout adulthood. *Vision Research, 23*(7), 689–699.
+
+Royal National Institute of Blind People. (n.d.). *How to choose colour and
+contrast for printed materials for people with sight problems*.
+https://media.rnib.org.uk/
+
+Schneck, M. E., Haegerstrom-Portnoy, G., Lott, L. A., & Brabyn, J. A. (2014).
+Comparison of panel D-15 tests in a large older population. *Optometry and
+Vision Science, 91*(3), 284–290. https://doi.org/10.1097/OPX.0000000000000152
+
+Tamura, S., & Sato, K. (2020). Age-related changes in visual search:
+manipulation of colour cues based on cone contrast and opponent modulation
+space. *Scientific Reports, 10*, 21328.
+https://doi.org/10.1038/s41598-020-78303-4
+
+World Wide Web Consortium. (2008). *Web accessibility for older users: A
+literature review* (W3C Working Draft, 14 May 2008).
+https://www.w3.org/TR/wai-age-literature/
+
+World Wide Web Consortium. (n.d.). *Understanding success criterion 1.4.3:
+Contrast (minimum)*. Web Content Accessibility Guidelines (WCAG) 2.2.
+https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html
 
 ## Using it
 

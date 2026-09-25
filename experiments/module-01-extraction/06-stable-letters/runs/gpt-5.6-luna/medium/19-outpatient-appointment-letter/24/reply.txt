@@ -1,0 +1,55 @@
+{
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "medical appointment letter",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Thornhurst Health Specialist Clinics",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Attend Orthopaedic Clinic",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "due_date",
+      "value": "2026-06-23",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "Not applicable",
+      "status": "confirmed",
+      "confidence": 0.9
+    }
+  ],
+  "identifiers": [
+    {
+      "label": "UR",
+      "value": "UR 6938509",
+      "status": "confirmed"
+    }
+  ],
+  "open_payload": {
+    "appointment": {
+      "clinic": "Orthopaedic Clinic",
+      "date": "Tuesday 23 Jun 2026",
+      "time": "10:45AM",
+      "location": "Bramworth Hospital Specialist Clinics, 120 Fernlea Street, Calderfield, 3999, Ground Floor, Building C"
+    }
+  }
+}

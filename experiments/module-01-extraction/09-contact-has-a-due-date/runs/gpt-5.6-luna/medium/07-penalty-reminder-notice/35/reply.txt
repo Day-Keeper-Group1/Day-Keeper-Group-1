@@ -1,0 +1,68 @@
+{
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "fine notice",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Calderfield City Council",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Pay Calderfield City Council",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "due_date",
+      "value": "2026-11-05",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "amount",
+      "value": "$72.00",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "7717145263",
+      "status": "confirmed",
+      "confidence": 0.99
+    }
+  ],
+  "identifiers": [
+    {
+      "label": "Infringement no.",
+      "value": "7717145263",
+      "status": "confirmed"
+    },
+    {
+      "label": "Registration no.",
+      "value": "9XK-7QJ",
+      "status": "confirmed"
+    },
+    {
+      "label": "Offence code",
+      "value": "701",
+      "status": "confirmed"
+    }
+  ],
+  "open_payload": {
+    "penalty_reminder_notice_date": "15 October 2026",
+    "original_due_date": "6 October 2026",
+    "date_of_offence": "08/09/2026",
+    "time_of_offence": "12:41 PM",
+    "location_of_offence": "Marlow Street, Calderfield",
+    "offence": "Parking for longer than indicated",
+    "vehicle": "TOYOTA SEDAN GREY",
+    "legislation": "Road Safety Road Rules 2017 r 205(1)",
+    "issuing_officer_no": "8160"
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "driver licence renewal notice",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Driver and Vehicle Registry",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Pay Driver and Vehicle Registry",
+      "status": "confirmed",
+      "confidence": 0.98
+    },
+    {
+      "key": "due_date",
+      "value": "2026-11-13",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "amount",
+      "value": "$96.50",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "05 502 615",
+      "status": "confirmed",
+      "confidence": 0.91
+    }
+  ],
+  "identifiers": [
+    {
+      "label": "Licence number",
+      "value": "05 502 615",
+      "status": "confirmed"
+    },
+    {
+      "label": "Customer number",
+      "value": "812 466 305",
+      "status": "confirmed"
+    }
+  ],
+  "open_payload": {
+    "licence_categories": "Car (C)",
+    "licence_expires": "13 November 2026",
+    "new_photograph_required": true,
+    "renewal_term": "3 years",
+    "renewal_fee": "$96.50",
+    "alternative_term": "10 years — $330.70; not available"
+  }
+}

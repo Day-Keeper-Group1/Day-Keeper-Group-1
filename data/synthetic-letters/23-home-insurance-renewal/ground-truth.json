@@ -3,9 +3,26 @@
   "document_type": "home_insurance_renewal",
   "issuer": "Quillhaven Insurance",
   "action_required": "Pay Quillhaven Insurance",
-  "due_date": "2026-09-04",
+  "due_date": "2026-11-20",
   "amount": 2486.1,
   "reference": "HB 1193 8188",
+  "identifiers": [
+    {
+      "label": "Policy number",
+      "value": "HB 1193 8188",
+      "required": true
+    },
+    {
+      "label": "Customer number",
+      "value": "70 976 319",
+      "required": true
+    },
+    {
+      "label": "Ref",
+      "value": "0915 60028807 26",
+      "required": false
+    }
+  ],
   "also_accepted": {
     "reference": ["70 976 319"]
   }

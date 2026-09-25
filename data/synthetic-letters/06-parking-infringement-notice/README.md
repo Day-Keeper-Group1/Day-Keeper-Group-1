@@ -47,3 +47,15 @@ Made up, not taken from any source: the names Calderfield City Council and State
 ### reference
 
 **7717145263.** Page 1, the block under the header, first line, "Infringement no. 7717145263". The same number is printed at the bottom of the page under the barcode, in small, widely spaced digits. The note under "HOW TO PAY" says "Quote the infringement number with every payment." The contract asks for the reference, account or customer number the person must quote, and this notice asks for the infringement number to be quoted.
+
+### identifiers
+
+Every number the letter prints that identifies her, something she holds, or this matter, each under the label printed beside it, written as printed. The first list is the numbers a reading must find; the reference is one of them, and a reading that gives any of them as the reference is right. The experiments score whether every number in the first list is found.
+
+- **Infringement no. 7717145263.** page 1, the block under the header, first line.
+- **Registration no. 9XK·7QJ.** page 1, "OFFENCE DETAILS", the line below "Location of offence"; the two groups are separated by a raised middle dot, not a hyphen, a space or a full stop.
+
+Also printed, and identifying something narrower: a payment method's own reference, a meter, an invoice or statement, a provider, or a one-time code. A reading may list these or leave them out.
+
+- **Issuing officer no. 8160.** page 1, "OFFENCE DETAILS", last line of the block, with the value printed on the line under the label.
+- **Ref 4797 2573 7796.** page 1, "HOW TO PAY", BPAY block, second line.

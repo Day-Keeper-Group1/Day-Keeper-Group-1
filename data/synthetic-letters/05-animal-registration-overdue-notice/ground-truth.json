@@ -5,5 +5,22 @@
   "action_required": "Pay Calderfield City Council",
   "due_date": "2026-05-28",
   "amount": 23.0,
-  "reference": "44637"
+  "reference": "44637",
+  "identifiers": [
+    {
+      "label": "Animal number",
+      "value": "44637",
+      "required": true
+    },
+    {
+      "label": "Microchip number",
+      "value": "999014100441675",
+      "required": false
+    },
+    {
+      "label": "Lifetime Tag Number",
+      "value": "96951",
+      "required": false
+    }
+  ]
 }

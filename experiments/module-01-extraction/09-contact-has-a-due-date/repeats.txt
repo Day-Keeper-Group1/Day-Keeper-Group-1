@@ -1,0 +1,5 @@
+# How many times each cell reads each letter, unless cells.txt says
+# otherwise for that cell. Twenty trials of the scheme per letter: with
+# ten calls in flight the run takes about twenty minutes.
+
+20

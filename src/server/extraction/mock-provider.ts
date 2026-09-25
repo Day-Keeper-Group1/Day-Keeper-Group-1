@@ -7,7 +7,7 @@
  * them is a misbehaviour on purpose:
  *
  *   - a reading takes two to seven seconds
- *   - it hedges on the due date about half the time
+ *   - it hedges on the reference about a quarter of the time
  *   - it cannot read the reference about one time in five
  *   - it fails outright about one document in eight
  *
@@ -25,7 +25,7 @@
 import "server-only";
 import { createHash } from "node:crypto";
 import { CONTRACT_VERSION } from "@/lib/contract/extraction";
-import { NO_PAYMENT_REQUIRED } from "@/lib/contract/fields";
+import { NOT_APPLICABLE, NO_PAYMENT_REQUIRED } from "@/lib/contract/fields";
 import {
   DocumentExtractionProvider,
   ExtractionFailure,
@@ -96,6 +96,19 @@ const SPECIMENS = [
     reference: "PT-40192",
     identifiers: [["Patient number", "PT-40192"]],
   },
+  {
+    // KAN-59: the letter that asks for nothing. A statement to keep, with no
+    // date and nothing to pay, so saving it makes no task and files it in
+    // Your letters (src/server/confirm.ts).
+    document_type: "Annual statement",
+    issuer: "Wattlebank Super",
+    action_required: "No action",
+    due_date: null,
+    due_time: null,
+    amount: null,
+    reference: "7710 3342",
+    identifiers: [["Member number", "7710 3342"]],
+  },
 ] as const;
 
 /** Stable pseudo-random number in [0,1) derived from a string. */
@@ -109,6 +122,8 @@ export class MockExtractionProvider implements DocumentExtractionProvider {
   readonly model = "mock-specimen-v1";
 
   async extract(input: ExtractionInput): Promise<ExtractionOutcome> {
+    // KAN-63: the mock has no models, so the cell a call asks for changes
+    // nothing; every call on one letter gives the same answer.
     const started = Date.now();
     const seed = input.documentId;
 
@@ -135,9 +150,10 @@ export class MockExtractionProvider implements DocumentExtractionProvider {
     // failed letter is a real state on the home screen with its own sentence to
     // write, so the mock has to produce one often enough to build against.
     //
-    // The same document fails every time. There is no retake and no second
-    // attempt in this release (docs/scope.md), so a mock that relented on a
-    // later try would be rehearsing a way out that the product does not have.
+    // The same document fails every time, so it fails every attempt the
+    // reading is given (src/server/uploads.ts) and then shows as failed, one
+    // run row per attempt. A mock that relented on a later try would never
+    // show the failed state at all.
     if (hashUnit(`${seed}:fails`) < 0.125) {
       throw new ExtractionFailure(
         "mock provider: simulated failed reading, one document in eight",
@@ -147,20 +163,22 @@ export class MockExtractionProvider implements DocumentExtractionProvider {
     const specimen =
       SPECIMENS[Math.floor(hashUnit(`${seed}:pick`) * SPECIMENS.length)];
 
-    // Two ways of being unsure.
+    // Two ways of being unsure, both on the reference, because it is a long
+    // string of digits that smudges with no surrounding sense to recover it
+    // from. About one time in five it cannot be read at all, and about one
+    // time in four more it is read and hedged.
     //
-    // The due date is hedged about half the time because 08/09/2026 is two
-    // different days depending on which country printed it, and the date is the
-    // field everything downstream hangs on. The reference cannot be read about
-    // one time in five because it is a long string of digits that smudges, with
-    // no surrounding sense to recover it from.
+    // KAN-63: the mock used to hedge on the due date about half the time. A
+    // date or amount the model is not sure of now fails the reading
+    // (src/lib/contract/extraction.ts), so a mock that kept doing it would
+    // fail half of every demonstration. The hedge moved to a field whose
+    // absence the screen can carry: the reference row is simply not drawn.
     //
-    // Both rates are high on purpose. A value the model was not sure of is
-    // shown as no value at all, so that sentence is the case a screen has to be
-    // designed around rather than a rarity somebody forgets. What the three
-    // statuses mean is in src/lib/contract/extraction.ts.
-    const dateUncertain = hashUnit(`${seed}:date`) < 0.45;
-    const referenceUnreadable = hashUnit(`${seed}:ref`) < 0.2;
+    // Both rates are high on purpose, so the missing row is a case the screen
+    // is built around rather than a rarity somebody forgets.
+    const referenceRoll = hashUnit(`${seed}:ref`);
+    const referenceUnreadable = referenceRoll < 0.2;
+    const referenceUncertain = !referenceUnreadable && referenceRoll < 0.45;
 
     const fields = [
       {
@@ -183,9 +201,10 @@ export class MockExtractionProvider implements DocumentExtractionProvider {
       },
       {
         key: "due_date",
-        value: specimen.due_date,
-        status: dateUncertain ? ("uncertain" as const) : ("confirmed" as const),
-        confidence: dateUncertain ? 0.61 : 0.94,
+        // A letter with no date still reports the field, and says so.
+        value: specimen.due_date ?? NOT_APPLICABLE,
+        status: "confirmed" as const,
+        confidence: 0.94,
       },
       // A document with nothing to pay still has to report the field. Omitting
       // it would be a contract violation; saying "nothing to pay" is an answer.
@@ -212,8 +231,10 @@ export class MockExtractionProvider implements DocumentExtractionProvider {
         : {
             key: "reference",
             value: specimen.reference,
-            status: "confirmed" as const,
-            confidence: 0.88,
+            status: referenceUncertain
+              ? ("uncertain" as const)
+              : ("confirmed" as const),
+            confidence: referenceUncertain ? 0.58 : 0.88,
           },
       // Optional field: present only when the page prints a time. The contract
       // knows due_time but never requires it; the floor stays at six.
@@ -255,6 +276,7 @@ export class MockExtractionProvider implements DocumentExtractionProvider {
           detected_language: "en-AU",
         },
       },
+      model: this.model,
       effort: null,
       usage: null,
       seconds: (Date.now() - started) / 1000,

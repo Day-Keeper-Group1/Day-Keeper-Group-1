@@ -51,15 +51,15 @@ import { env, publicStorageEndpoint } from "./env";
  * one address style everywhere, including hosts whose certificates would not
  * cover a bucket subdomain.
  *
- * The region is required by the protocol and ignored by MinIO. When this moves
- * to a real bucket the value comes from the environment with the rest.
+ * The region is required by the protocol and ignored by MinIO. A real bucket
+ * does not ignore it, so it comes from the environment with the rest; see
+ * STORAGE_REGION in env.ts.
  */
-const REGION = "us-east-1";
 
 function clientFor(endpoint: string): S3Client {
   return new S3Client({
     endpoint,
-    region: REGION,
+    region: env().STORAGE_REGION,
     forcePathStyle: true,
     credentials: {
       accessKeyId: env().STORAGE_ACCESS_KEY,
@@ -111,6 +111,17 @@ const EXTENSIONS: Record<string, string> = {
   "image/heic": "heic",
   "image/heif": "heif",
 };
+
+/**
+ * The same table, for the one test that has to compare it with something.
+ *
+ * src/server/image-type.ts reads bytes and answers with a type; this turns a
+ * type into a suffix. They describe the same set of formats from opposite
+ * ends, and a format one knows and the other does not is a photograph stored
+ * as .bin or a suffix nothing can produce. Exported so the test can say so,
+ * and named to make clear that nothing in the application should reach for it.
+ */
+export const EXTENSIONS_FOR_TEST: Readonly<Record<string, string>> = EXTENSIONS;
 
 /**
  * Where one photograph goes.
@@ -171,6 +182,100 @@ export function signedObjectUrl(
     new GetObjectCommand({ Bucket: env().STORAGE_BUCKET, Key: key }),
     { expiresIn: ttlSeconds },
   );
+}
+
+/**
+ * How long a permission to upload stays good.
+ *
+ * Much shorter than a link to read one. A read link is handed to someone
+ * looking at their own letter and may sit on screen while they think; an
+ * upload link is used within seconds of being asked for, by a page that
+ * already has the bytes in hand. Anything longer is a window for a link that
+ * leaked out of a log or a history to still be worth something.
+ */
+export const UPLOAD_URL_TTL_SECONDS = 5 * 60;
+
+/**
+ * A time-limited permission for the browser to write one object itself.
+ *
+ * The bytes go from the phone to the bucket without passing through the
+ * application, which is what makes a photograph bigger than a few megabytes
+ * possible at all: a host that runs this as functions caps the body of a
+ * request to it, and a camera photograph is regularly over that cap.
+ *
+ * The key is a parameter and every caller derives it with uploadObjectKey()
+ * from a user id the request was authenticated as. It must never be a value a
+ * caller read off the wire: a signature is permission to write exactly the key
+ * it was signed for, so a key chosen by the sender is permission to write over
+ * anybody's photograph.
+ *
+ * Signed with the public endpoint, like signedObjectUrl and for the same
+ * reason: this one is used by the browser, not by us.
+ *
+ * The content type is signed too, so the object lands labelled as what it was
+ * declared to be rather than as whatever the uploader felt like saying. That
+ * is a label, not a guarantee about the bytes; src/server/image-type.ts is
+ * what checks the bytes, afterwards.
+ */
+export function signedUploadUrl(
+  key: string,
+  contentType: string,
+  ttlSeconds: number = UPLOAD_URL_TTL_SECONDS,
+): Promise<string> {
+  return getSignedUrl(
+    signing(),
+    new PutObjectCommand({
+      Bucket: env().STORAGE_BUCKET,
+      Key: key,
+      ContentType: contentType,
+    }),
+    { expiresIn: ttlSeconds },
+  );
+}
+
+/**
+ * Read one stored photograph back.
+ *
+ * Needed because an object the browser wrote is the first thing in this system
+ * the server has never seen. Everything downstream — checking it is the kind
+ * of file it claims to be, and reading the letter — needs the bytes, and this
+ * is the one fetch they share.
+ *
+ * `length` fetches only the opening bytes, for a caller that needs to know
+ * what a file is and not what it says: a HTTP range, so the bucket sends
+ * twelve bytes rather than eight megabytes.
+ */
+export async function getObject(
+  key: string,
+  length?: number,
+): Promise<{ bytes: Buffer; contentType?: string; byteSize: number }> {
+  const response = await internal().send(
+    new GetObjectCommand({
+      Bucket: env().STORAGE_BUCKET,
+      Key: key,
+      ...(length === undefined ? {} : { Range: `bytes=0-${length - 1}` }),
+    }),
+  );
+
+  const body = response.Body;
+  if (!body) throw new Error(`storage returned no body for ${key}`);
+
+  return {
+    bytes: Buffer.from(await body.transformToByteArray()),
+    contentType: response.ContentType,
+    // What the bucket holds, which is the number worth having: ContentLength
+    // on a ranged response describes the range, so a partial read reports the
+    // whole object's size from the range header instead.
+    byteSize: rangeTotal(response.ContentRange) ?? response.ContentLength ?? 0,
+  };
+}
+
+/** The total after the slash in "bytes 0-11/8391218", or undefined. */
+function rangeTotal(contentRange: string | undefined): number | undefined {
+  const total = contentRange?.split("/")[1];
+  if (!total || total === "*") return undefined;
+  const parsed = Number(total);
+  return Number.isFinite(parsed) ? parsed : undefined;
 }
 
 /**

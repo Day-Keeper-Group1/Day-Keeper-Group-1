@@ -3,7 +3,34 @@
   "document_type": "water_bill",
   "issuer": "Calderfield Water",
   "action_required": "Pay Calderfield Water",
-  "due_date": "2026-07-29",
-  "amount": 227.7,
-  "reference": "40740 95528"
+  "due_date": "2026-11-11",
+  "amount": 234.56,
+  "reference": "40740 95528",
+  "identifiers": [
+    {
+      "label": "Account number",
+      "value": "40740 95528",
+      "required": true
+    },
+    {
+      "label": "Tax invoice",
+      "value": "754908949",
+      "required": false
+    },
+    {
+      "label": "Meter no.",
+      "value": "KRV389288",
+      "required": false
+    },
+    {
+      "label": "Ref",
+      "value": "7238 7344 7930",
+      "required": false
+    },
+    {
+      "label": "Ref",
+      "value": "6653 3336 4755",
+      "required": false
+    }
+  ]
 }

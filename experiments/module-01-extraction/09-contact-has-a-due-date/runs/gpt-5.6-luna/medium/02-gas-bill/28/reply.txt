@@ -1,0 +1,62 @@
+{
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "natural gas bill",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Example Energy",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Pay Example Energy",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "due_date",
+      "value": "2026-11-06",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "amount",
+      "value": "$257.36",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "5832 875 169",
+      "status": "confirmed",
+      "confidence": 0.99
+    }
+  ],
+  "identifiers": [
+    {
+      "label": "Account number",
+      "value": "5832 875 169",
+      "status": "confirmed"
+    },
+    {
+      "label": "MIRN",
+      "value": "59122670931",
+      "status": "confirmed"
+    }
+  ],
+  "open_payload": {
+    "customer": "Mrs M A Wilson",
+    "supply_address": "14 Bracken Rise, Calderfield VIC 3999",
+    "billing_period": "1 Aug 2026 – 30 Sep 2026",
+    "bill_issue_date": "19/10/2026",
+    "service": "Natural gas account",
+    "total_current_charges": "$257.36",
+    "gas_used_and_billed": "11,040 MJ",
+    "gas_distributor": "Silverbank Gas Networks"
+  }
+}

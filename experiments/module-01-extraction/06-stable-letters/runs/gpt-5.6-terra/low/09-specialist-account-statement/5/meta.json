@@ -1,0 +1,11 @@
+{
+  "model": "gpt-5.6-terra",
+  "effort": "low",
+  "letter": "09-specialist-account-statement",
+  "repeat": 5,
+  "pages": ["page-01.png"],
+  "image_detail": "auto",
+  "started_at": "2026-09-14T19:45:11.649Z",
+  "seconds": 3.999,
+  "ok": true
+}

@@ -1,0 +1,48 @@
+{
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "missed delivery card",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Kelsworth Post",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Collect item from Calderfield Post Office",
+      "status": "confirmed",
+      "confidence": 0.98
+    },
+    {
+      "key": "due_date",
+      "value": "25/8",
+      "status": "uncertain",
+      "confidence": 0.45
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.98
+    },
+    {
+      "key": "reference",
+      "value": "RS431545614AU",
+      "status": "confirmed",
+      "confidence": 0.99
+    }
+  ],
+  "identifiers": [
+    {
+      "label": "ARTICLE NUMBER",
+      "value": "RS431545614AU",
+      "status": "confirmed"
+    }
+  ],
+  "open_payload": {}
+}

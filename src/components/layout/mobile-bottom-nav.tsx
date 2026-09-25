@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Camera, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useActivity } from "./activity";
 import { isNavItemActive, PRIMARY_NAV } from "./nav-items";
 
 const HOME = PRIMARY_NAV[0];
@@ -25,11 +26,14 @@ function NavTab({
   label,
   icon: Icon,
   active,
+  badge = 0,
 }: {
   href: string;
   label: string;
   icon: LucideIcon;
   active: boolean;
+  /** KAN-59: how many letters are waiting to be checked; drawn when above zero. */
+  badge?: number;
 }) {
   return (
     <Link
@@ -39,12 +43,23 @@ function NavTab({
         // The prototype's `.nav button`: 76px wide, 12px label, 3px between
         // icon, label and bar. The cell is at least 48px tall, so the small
         // label does not make a small target.
-        "flex min-h-12 w-[76px] flex-col items-center justify-center gap-[3px] text-nav",
+        "relative flex min-h-12 w-[76px] flex-col items-center justify-center gap-[3px] text-nav",
         active ? "font-bold text-foreground" : "text-ink-dim",
       )}
     >
       <Icon className="size-[21px]" strokeWidth={active ? 2.25 : 1.75} />
       {label}
+      {badge > 0 ? (
+        // The prototype's `.badge`: 11px bold on primary green, tucked over
+        // the icon's top right. The number is also said in words, because a
+        // lone digit read aloud means nothing.
+        <span className="absolute -top-1 right-3.5 rounded-full bg-primary px-1.5 py-px text-dow font-bold text-primary-foreground">
+          {badge}
+          <span className="sr-only">
+            {badge === 1 ? " letter to check" : " letters to check"}
+          </span>
+        </span>
+      ) : null}
       <span
         aria-hidden="true"
         className={cn(
@@ -58,6 +73,7 @@ function NavTab({
 
 export function MobileBottomNav() {
   const pathname = usePathname();
+  const { home } = useActivity();
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t-2 border-line bg-card pb-[env(safe-area-inset-bottom)] md:hidden">
@@ -69,6 +85,7 @@ export function MobileBottomNav() {
             label={HOME.label}
             icon={HOME.icon}
             active={isNavItemActive(pathname, HOME.href)}
+            badge={home?.counts.needsReview ?? 0}
           />
         </li>
 

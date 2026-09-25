@@ -1,0 +1,68 @@
+{
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "driver licence renewal notice",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Driver and Vehicle Registry",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Pay Driver and Vehicle Registry and have photograph taken",
+      "status": "confirmed",
+      "confidence": 0.97
+    },
+    {
+      "key": "due_date",
+      "value": "2026-11-13",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "amount",
+      "value": "$96.50",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "812 466 305",
+      "status": "confirmed",
+      "confidence": 0.94
+    }
+  ],
+  "identifiers": [
+    {
+      "label": "Licence number",
+      "value": "05 502 615",
+      "status": "confirmed"
+    },
+    {
+      "label": "Customer number",
+      "value": "812 466 305",
+      "status": "confirmed"
+    }
+  ],
+  "open_payload": {
+    "date_of_notice": "9 October 2026",
+    "licence_categories": "Car (C)",
+    "photograph_last_taken": "12/05/2021",
+    "licence_expires": "13 November 2026",
+    "licence_term": "3 years",
+    "fee": "$96.50",
+    "unavailable_licence_term": "10 years — Not available; only the 3 year term can be issued to licence holders aged 75 and over.",
+    "photograph_requirement": "A new photograph is required.",
+    "photograph_instruction": "Visit any customer service centre or photo point within 3 months of paying to have your photograph taken. Bring this notice and your current licence.",
+    "renewal_methods": [
+      "Online",
+      "By phone",
+      "In person"
+    ]
+  }
+}

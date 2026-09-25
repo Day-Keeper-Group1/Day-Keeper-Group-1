@@ -1,0 +1,11 @@
+{
+  "model": "gpt-5.6-terra",
+  "effort": "low",
+  "letter": "16-driver-licence-renewal-notice",
+  "repeat": 16,
+  "pages": ["page-01.png"],
+  "image_detail": "auto",
+  "started_at": "2026-09-24T10:36:19.963Z",
+  "seconds": 4.641,
+  "ok": true
+}

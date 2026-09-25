@@ -5,5 +5,27 @@
   "action_required": "No action",
   "due_date": null,
   "amount": null,
-  "reference": "709480"
+  "reference": "709480",
+  "identifiers": [
+    {
+      "label": "Account no.",
+      "value": "709480",
+      "required": true
+    },
+    {
+      "label": "Patient Rebate Scheme no.",
+      "value": "4378 31830 2 / 9",
+      "required": true
+    },
+    {
+      "label": "Provider no.",
+      "value": "8484902F",
+      "required": false
+    },
+    {
+      "label": "Ref",
+      "value": "8484 9007 5000",
+      "required": false
+    }
+  ]
 }

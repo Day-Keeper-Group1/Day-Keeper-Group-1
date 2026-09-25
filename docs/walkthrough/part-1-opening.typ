@@ -22,11 +22,13 @@ photographs the letter, and the date it carries becomes a task, a place on a
 calendar, and three reminders. That is the whole of it.
 
 #why[
-  *One thing to know before the screens.* The prototype has a fixed fictional
-  today: *Monday 10 August 2026*. Every date in the screenshots is relative to
-  that. The water bill was due on the fifth, so it is late. The pension form is
-  due on the eleventh, so it is not. The prototype wears this date in its
-  toolbar so nobody has to guess.
+  *One thing to know before the screens.* The screenshots were taken from an
+  earlier version of the prototype, which kept a fixed fictional today:
+  *Monday 10 August 2026*. Every date in them is relative to that. The water
+  bill was due on the fifth, so it is late. The pension form is due on the
+  eleventh, so it is not. The prototype now works from the day it is opened,
+  and `?today=` in its address pins another. Its toolbar says which day it is
+  on, so nobody has to guess.
 ]
 
 #part("What she gets back")
@@ -73,7 +75,7 @@ engineering. That design is the one a funded team builds. This is the one five
 students finish in a semester, and the rest is written down and deferred rather
 than forgotten.
 
-What is left is one model call whose answer has a fixed shape, and after that a
+What is left is one reading step whose answer has a fixed shape, and after that a
 system made of tables, dates and a checkbox. The full list is
 #raw("docs/scope.md"), which every other document in this repository defers
 to.
@@ -120,9 +122,9 @@ doing its job.
   grid(
     rows: (auto, auto, auto),
     row-gutter: 4pt,
-    piece("PostgreSQL")[Ten tables. Everything except the photographs.],
+    piece("PostgreSQL")[Eleven tables. Everything except the photographs.],
     piece("An S3 bucket")[The photographs. MinIO on a laptop, a real bucket later. Same protocol either way.],
-    piece("One model call")[It looks at the pages and returns six fields. Nothing else in the product calls a model.],
+    piece("One reading step")[A model looks at the pages twice, and a third time when the two readings differ, and returns six fields. Nothing else in the product calls a model.],
   ),
 )
 

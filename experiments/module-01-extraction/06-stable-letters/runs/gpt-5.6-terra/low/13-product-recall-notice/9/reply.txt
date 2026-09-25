@@ -1,0 +1,68 @@
+{
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "product recall notice",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Kettleworth Appliances Pty Ltd",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "Stop using heater",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "due_date",
+      "value": "Not applicable",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "9512653343",
+      "status": "confirmed",
+      "confidence": 0.99
+    }
+  ],
+  "identifiers": [
+    {
+      "label": "Model number",
+      "value": "KCH-2400WH",
+      "status": "confirmed"
+    },
+    {
+      "label": "Model number",
+      "value": "KCH-2400GR",
+      "status": "confirmed"
+    },
+    {
+      "label": "Model number",
+      "value": "KCH-2000WH",
+      "status": "confirmed"
+    },
+    {
+      "label": "Model number",
+      "value": "KCH-2000GR",
+      "status": "confirmed"
+    },
+    {
+      "label": "product registration number",
+      "value": "9512653343",
+      "status": "confirmed"
+    }
+  ],
+  "open_payload": {}
+}

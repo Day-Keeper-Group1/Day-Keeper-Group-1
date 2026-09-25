@@ -1,0 +1,11 @@
+{
+  "model": "gpt-5.6-terra",
+  "effort": "low",
+  "letter": "03-water-bill",
+  "repeat": 15,
+  "pages": ["page-01.png", "page-02.png"],
+  "image_detail": "auto",
+  "started_at": "2026-09-15T22:53:34.632Z",
+  "seconds": 5.712,
+  "ok": true
+}

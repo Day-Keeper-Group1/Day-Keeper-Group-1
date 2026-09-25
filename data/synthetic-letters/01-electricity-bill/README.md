@@ -1,6 +1,6 @@
 # 01 · Electricity bill
 
-Sample `SYN-0001`, printed in small type at the bottom right of each page. Two pages. A monthly electricity bill from a fictional retailer, Example Energy, to Mrs M A Wilson, for July 2026. The answer key is [`ground-truth.json`](ground-truth.json).
+Sample `SYN-0001`, printed in small type at the bottom right of each page. Two pages. A monthly electricity bill from a fictional retailer, Example Energy, to Mrs M A Wilson, for September 2026. The answer key is [`ground-truth.json`](ground-truth.json).
 
 ## Where it comes from
 
@@ -8,7 +8,7 @@ This bill was not copied from a real bill, and no real retailer's bill was used 
 
 So the bill was built up from what Victorian regulation says an electricity bill must contain, and from the one official sample bill the regulator has published:
 
-- **Energy Retail Code of Practice, version 6, clause 63** (Essential Services Commission, Victoria). The list of everything a Victorian electricity bill must show: amount due, pay-by date, account details, the Victorian Default Offer sentence, the complaints service on page 1, the distributor's name and fault line, interpreter services, and payment methods. Every block on page 1 exists because a clause requires it. <https://www.esc.vic.gov.au/sites/default/files/documents/Energy%20Retail%20Code%20of%20Practice%20%28version%206%29_2.pdf>
+- **Energy Retail Code of Practice, version 7, clause 63** (Essential Services Commission, Victoria). The bill is issued on 14 October 2026, so it falls under version 7, which took effect on 1 October 2026. The list of everything a Victorian electricity bill must show: amount due, pay-by date, account details, the Victorian Default Offer sentence, the complaints service on page 1, the distributor's name and fault line, interpreter services, and payment methods. Every block on page 1 exists because a clause requires it. The clauses this bill relies on read the same as in version 6: clause 63, including the Victorian Default Offer sentence in clause 63(1)(bb), clause 65 on the pay-by date, and the wording of the "Could you save money" box in clause 111. Clause 109 did change: from 1 October 2026 the best offer threshold is \$50, up from \$22. The box prints a saving of \$147.00, which is over \$50, so the box still belongs on the bill. The link is the version 7 text with tracked changes, because the regulator has not yet posted a clean copy. <https://www.esc.vic.gov.au/sites/default/files/documents/Energy%20Retail%20Code%20of%20Practice%20%28version%207%29%20-%20TRACKED%20CHANGES%20%28final%20version%29.pdf>
 - **Guideline: Greenhouse Gas Disclosure on Electricity Customers' Bills** (ESC, 2022). Figure 1 is the regulator's own sample bill. It gave the order and labels of the Account summary lines, and the chart on page 2 that draws monthly usage and emissions together. It is the only official picture of a bill that was used. <https://www.esc.vic.gov.au/sites/default/files/documents/Guideline%20Greenhouse%20gas%20disclosure%20on%20customer%20bills%20-20211204%20-%20Final.pdf>
 - **Victorian Default Offer 2026 to 27, Final Decision** (ESC, May 2026). The daily supply charge (127.13c) and usage rate (27.47c per kWh) on page 2. <https://www.esc.vic.gov.au/sites/default/files/documents/Victorian%20Default%20Offer%202026%E2%80%9327%20Final%20Decision%20Paper.pdf>
 - **Greenhouse gas coefficient for electricity bills, 2026** (ESC). The 0.87 kg CO2-e per kWh used for the emissions figure on page 2. <https://www.esc.vic.gov.au/sites/default/files/documents/Greenhouse%20gas%20co-efficient%202026_2.pdf>
@@ -33,12 +33,25 @@ Made up, not taken from any source: the company names Example Energy Pty Ltd and
 
 ### due_date
 
-**2026-08-24.** Page 1, top left box, "Pay by 24/08/2026". The same date is repeated in the "Your account" table ("Pay by") and at the bottom right of the tear-off slip ("PAY BY"). The pay-by date is the date the payment is due. The page writes it day first, the Australian way; the answer key writes it as year, month, day.
+**2026-11-02.** Page 1, top left box, "Pay by 02/11/2026". The same date is repeated in the "Your account" table ("Pay by") and at the bottom right of the tear-off slip ("PAY BY"). The pay-by date is the date the payment is due. The page writes it day first, the Australian way; the answer key writes it as year, month, day.
 
 ### amount
 
-**\$82.42.** Page 1, top left box, "TOTAL AMOUNT DUE \$82.42". It is also the last line of "Account summary" on the right and "AMOUNT DUE" on the tear-off slip. It is the whole amount she has to pay: the \$78.12 of charges for July plus \$4.30 left over from her last bill, as the Account summary adds up.
+**\$81.29.** Page 1, top left box, "TOTAL AMOUNT DUE \$81.29". It is also the last line of "Account summary" on the right and "AMOUNT DUE" on the tear-off slip. It is the whole amount she has to pay: the \$76.99 of charges for September plus \$4.30 left over from her last bill, as the Account summary adds up.
 
 ### reference
 
 **7960 963 636.** Page 1, "Your account" table, first row, "Account number". The same number is printed in the top left box under the pay-by date ("Account 7960 963 636"), at the bottom left of the tear-off slip ("ACCOUNT NUMBER"), and in the last payment column ("Your account number"). The contract asks for the reference, account or customer number the person must quote, and the number this bill identifies her account by is the account number.
+
+### identifiers
+
+Every number the letter prints that identifies her, something she holds, or this matter, each under the label printed beside it, written as printed. The first list is the numbers a reading must find; the reference is one of them, and a reading that gives any of them as the reference is right. The experiments score whether every number in the first list is found.
+
+- **Account number 7960 963 636.** page 1, left column, "Your account" table, first row; also top left box as "Account 7960 963 636", tear-off slip bottom left under "ACCOUNT NUMBER", and "How to pay" paystead column as "Your account number".
+
+Also printed, and identifying something narrower: a payment method's own reference, a meter, an invoice or statement, a provider, or a one-time code. A reading may list these or leave them out.
+
+- **NMI 60371335118.** page 1, left column, "Your account" table, second row; also page 2, "Your meter" table, first column.
+- **Ref 4969 3279 6092.** page 1, "How to pay", second column "Phone and internet banking", under "Biller code: 9200072".
+- **Ref 3676 4187 1668.** page 1, "How to pay", fourth column "Kelsworth Post"; repeated on the tear-off slip as "REF 3676 4187 1668".
+- **Example Energy Pty Ltd reference PPO-4357-4028.** page 1, "How to pay", fifth column "paystead".

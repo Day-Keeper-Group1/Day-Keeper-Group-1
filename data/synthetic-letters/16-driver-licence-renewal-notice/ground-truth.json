@@ -3,9 +3,21 @@
   "document_type": "driver_licence_renewal_notice",
   "issuer": "Driver and Vehicle Registry",
   "action_required": "Pay Driver and Vehicle Registry",
-  "due_date": "2026-08-28",
+  "due_date": "2026-11-13",
   "amount": 96.5,
   "reference": "05 502 615",
+  "identifiers": [
+    {
+      "label": "Licence number",
+      "value": "05 502 615",
+      "required": true
+    },
+    {
+      "label": "Customer number",
+      "value": "812 466 305",
+      "required": true
+    }
+  ],
   "also_accepted": {
     "reference": ["812 466 305"]
   }

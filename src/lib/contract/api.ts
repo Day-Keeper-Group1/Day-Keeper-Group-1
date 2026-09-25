@@ -200,8 +200,8 @@ export type IdentifierView = {
  * `label` is presentation, resolved from the field key on the server so that
  * every surface spells "Reference" the same way. See ./fields.ts.
  *
- * The browser never sees `uncertain`. The server collapses it to `unreadable` on
- * the way out, and why storage keeps the two apart is in ./extraction.ts.
+ * The browser never sees `uncertain`. What happens to a field that is not
+ * confirmed is ruled in one place, ./extraction.ts, beside the statuses.
  *
  * `value` is null exactly when status is `unreadable`. An empty string would
  * mean "the model read an empty string", which is a different fact.
@@ -286,9 +286,9 @@ export const MAX_PAGE_BYTES = 10 * 1024 * 1024;
  *
  * So the screen shows and it never asks. Rows the model read confidently are
  * displayed, read-only. A row with no value is not drawn at all, because an
- * empty box invites an answer nobody is asking for; the card states the absence
- * in one sentence instead: "This letter doesn't give a clear date. It's saved;
- * nothing goes on your calendar."
+ * empty box invites an answer nobody is asking for. A date or an amount the
+ * model was not sure of never reaches this screen as an empty row: the reading
+ * fails instead (./extraction.ts).
  *
  * What this buys is one invariant, and it is worth more than the exam was: a
  * date reaches the calendar from exactly two places, a confident read that a
@@ -312,6 +312,21 @@ export const MAX_PAGE_BYTES = 10 * 1024 * 1024;
  * stays until it is ticked. The list itself is the reminder.
  */
 
+/**
+ * KAN-59: what POST /api/documents/:id/confirm answers.
+ *
+ * `task` is null when the letter asks for nothing (`action_required` is
+ * NO_ACTION in ./fields.ts): the letter is kept in Your letters and no task is
+ * made, because a task titled "No action" is noise on a list whose whole job is
+ * saying what to do. Otherwise it is the task the letter became, with every
+ * reminder planned for it, so the calendar the person lands on can draw it
+ * without asking again.
+ */
+export type ConfirmDocumentResponse = {
+  documentId: string;
+  task: TaskSummary | null;
+};
+
 /** What the home screen needs, in one request. */
 export type HomeCounts = {
   needsReview: number;
@@ -324,9 +339,14 @@ export type HomeCounts = {
  * cannot disagree with each other on screen.
  *
  * `inbox` is every document not yet dealt with: status 'processing',
- * 'needs-review' or 'failed', in one merged list, newest upload first. The
+ * 'needs-review' or 'failed', in one merged list, first photographed first. The
  * prototype renders these interleaved in a single card, so the server sends them
  * as the one list they are rather than as three the client has to weave.
+ *
+ * KAN-59: oldest on top because that is the order the pile was photographed
+ * in, and checking starts from the top: the letter she photographed first is
+ * the first she is asked to look at, and one photographed while she is
+ * checking joins the end of the queue rather than jumping ahead of it.
  */
 export type HomePayload = {
   counts: HomeCounts;

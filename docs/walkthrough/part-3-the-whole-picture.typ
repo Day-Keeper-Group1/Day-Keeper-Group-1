@@ -4,8 +4,9 @@
 
 #part("Where the model is called")
 
-One place in the whole product calls a model. Everything after it is ordinary
-code and ordinary SQL.
+One place in the whole product calls a model: the reading step, which reads
+the letter twice and a third time when the two readings differ. Everything
+after it is ordinary code and ordinary SQL.
 
 #block(breakable: false)[
   #v(6pt)
@@ -13,7 +14,7 @@ code and ordinary SQL.
   #v(3pt)
   #set text(font: sans, size: 8.5pt, fill: ink-dim)
   #set par(justify: false, leading: 0.5em)
-  The single call, and six things that look like judgement and are not.
+  The one reading step, and six things that look like judgement and are not.
 ]
 
 #why[
@@ -28,7 +29,7 @@ code and ordinary SQL.
 The bottom half of that diagram is the more useful one. Six questions that
 sound like they need judgement. Every one of them is a line of ordinary code.
 
-#part("The ten tables")#anchor(<tables>)
+#part("The eleven tables")#anchor(<tables>)
 
 The next page is the whole database at once, laid out along the same journey as
 the previous part. Two absences are worth knowing before you look, because an
@@ -57,7 +58,7 @@ the database: there are no migrations, so editing it and running
   #block[
     #set text(font: sans, size: 9pt, fill: ink-dim)
     #set par(justify: false, leading: 0.55em)
-    Ten tables, every column of each. The path a letter travels runs left to
+    Eleven tables, every column of each. The path a letter travels runs left to
     right along the top row, and the grey row underneath never touches a
     letter.
   ]

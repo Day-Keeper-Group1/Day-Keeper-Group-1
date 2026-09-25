@@ -1,0 +1,69 @@
+{
+  "fields": [
+    {
+      "key": "document_type",
+      "value": "private health insurance annual statement",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "issuer",
+      "value": "Tarnwell Health Fund",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "action_required",
+      "value": "No action",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "due_date",
+      "value": "Not applicable",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "amount",
+      "value": "No payment required",
+      "status": "confirmed",
+      "confidence": 0.99
+    },
+    {
+      "key": "reference",
+      "value": "65921613",
+      "status": "confirmed",
+      "confidence": 0.99
+    }
+  ],
+  "identifiers": [
+    {
+      "label": "Membership number",
+      "value": "65921613",
+      "status": "confirmed"
+    },
+    {
+      "label": "Reference",
+      "value": "1683 3227 13",
+      "status": "confirmed"
+    },
+    {
+      "label": "Statement identifier",
+      "value": "QFYCGT5",
+      "status": "confirmed"
+    }
+  ],
+  "open_payload": {
+    "member": "Mrs Margaret Anne Wilson",
+    "policy_name": "Tarnwell Everyday Hospital and Extras",
+    "cover": "Hospital and extras (combined)",
+    "payment_method": "Direct debit",
+    "next_deduction": "01/08/2026",
+    "monthly_premium": "$246.80",
+    "government_rebate": "-$79.37",
+    "monthly_amount_paid": "$167.43",
+    "cover_paid_to": "31 July 2026",
+    "policy_change": "The yearly limit for optical will move from $250 to $200 for each person on the policy from 1 September 2026."
+  }
+}

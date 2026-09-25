@@ -1,7 +1,7 @@
 /**
  * What never varies: where things live, and the one client that talks to Azure.
  *
- * The knobs of a single experiment are not here. They are four files in that
+ * The knobs of a single experiment are not here. They are the files in that
  * experiment's own folder; see ./experiment.ts. What this file holds is the
  * vocabulary those files are checked against, and the connection they all
  * share.

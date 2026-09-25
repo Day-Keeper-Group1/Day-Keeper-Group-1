@@ -6,7 +6,7 @@ DayKeeper (Group 1): an AI-powered life management system for people in vulnerab
 
 - [`docs/scope.md`](docs/scope.md): what this release builds, and what it deliberately does not. Where any other document describes behaviour that is not in it, that document is wrong.
 - [`docs/start-here.md`](docs/start-here.md): how to run the whole thing, what the seed contains, and where everything lives. Read this first.
-- [`docs/api.md`](docs/api.md): the API specification. **Not built yet**: this is the shape to build against, with the reasoning for the parts that look arbitrary.
+- [`docs/api.md`](docs/api.md): the API specification: every endpoint, what it takes and answers, and the reasoning for the parts that look arbitrary. Built; `/api-docs` in development is a Swagger page for trying each one, described in [`src/server/api/openapi.ts`](src/server/api/openapi.ts).
 - [`docs/theme.md`](docs/theme.md): the theme. The palette, the contrast measurements, and the rules that make this product readable by the people it is for. Read it before styling a screen.
 - [`docs/extraction.md`](docs/extraction.md): which model reads a letter, at which effort, with which prompt, and the experiment report each choice rests on. Newest decision on top. The code in `src/server/extraction/` changes only after this file does.
 - [`docs/project-description.md`](docs/project-description.md): the official project description, verbatim. Our requirements baseline; when wording conflicts, this file wins on what the product is for, and [`docs/scope.md`](docs/scope.md) says which part of it we are building now.
@@ -19,7 +19,7 @@ DayKeeper (Group 1): an AI-powered life management system for people in vulnerab
   sources beside it; [`docs/walkthrough/README.md`](docs/walkthrough/README.md) says how to rebuild it and how the diagrams are made.
 - [`experiments/`](experiments/): where a product decision was settled by measuring. One folder per question, with its raw results kept so the decision can be checked later. Each has its own `README.md` (the question) and `AGENTS.md` (how the code is arranged).
 - [`src/lib/contract/`](src/lib/contract/): the agreement, in TypeScript, with validators: the six fields, the shapes the browser receives, the date rules and the reminder ladder. Import these types; do not restate them.
-- [`src/server/`](src/server/): server-only code. [`db.ts`](src/server/db.ts) for queries, [`storage.ts`](src/server/storage.ts) for the photographs themselves (an S3 bucket, MinIO locally), [`extraction/`](src/server/extraction/) for the reader interface and its mock. `src/lib` is safe anywhere; `src/server` never reaches the browser.
+- [`src/server/`](src/server/): server-only code. [`db.ts`](src/server/db.ts) for queries, [`storage.ts`](src/server/storage.ts) for the photographs themselves (an S3 bucket, MinIO locally), [`extraction/`](src/server/extraction/) for the reader interface, the Azure reader that runs the voting scheme, and the mock. `src/lib` is safe anywhere; `src/server` never reaches the browser.
 - [`src/app/`](src/app/): the interface, one page tree for phone and desktop, laid out from the phone prototype and given more room on a wide screen. Pages read the endpoints in [`docs/api.md`](docs/api.md) or call `src/server/` directly from server components; nothing reads fixture data.
 
 ## Conventions
@@ -29,7 +29,7 @@ DayKeeper (Group 1): an AI-powered life management system for people in vulnerab
 - Commit messages in English, imperative mood. Do not add AI attribution or Co-Authored-By lines to commits.
 - Branch names start with the Jira ticket key when there is one (`kan-13-photo-upload`): Jira attaches branches and pull requests to the ticket automatically when the key appears in the name, so the board stays wired to the code with no manual linking.
 - Never commit secrets, API keys, or `.env` files. Personal API keys and personal paid cloud accounts are banned for this project.
-- Large binaries and generated output stay out of git (see `.gitignore`); small curated fixtures are fine.
+- Large binaries and generated output stay out of git (see `.gitignore`); small curated fixtures are fine. The letter images under `data/` and videos under `docs/presentations/` go through Git LFS (`.gitattributes`); run `git lfs install` once per machine.
 
 ## One application, one language
 
@@ -39,7 +39,7 @@ The gain is in [`src/lib/contract/`](src/lib/contract/). Those types are the agr
 
 One dependency set, one deployment, one test run, and one place to look when something is wrong. Four of the five of us have not shipped a web application before, and every one of those is worth more to a beginner than it is to an experienced team.
 
-Extraction runs in a route handler because a reading takes about ten seconds: the request answers immediately and the interface polls. If a reading ever takes minutes, that gets revisited and a queue appears.
+Extraction runs in a route handler because a reading takes about twenty seconds: the request answers immediately and the interface polls. If a reading ever takes minutes, that gets revisited and a queue appears.
 
 ## The look
 
@@ -59,7 +59,7 @@ The short version, so you know when to go and read it:
 ```bash
 npm ci                    # installs exactly what package-lock.json says; never rewrites it
 cp .env.example .env.local
-docker compose up -d      # Postgres on 55432, MinIO on 59020; viewers on 8080 and 59021
+docker compose up -d      # Postgres on 15432, MinIO on 19020; viewers on 8080 and 19021
 npm run db:reset          # rebuild the schema from db/schema.sql, empty the bucket, then seed both
 npm run dev               # http://localhost:3000
 npm test                  # the contract tests
@@ -70,13 +70,13 @@ npm run lint
 
 Use `npm install <pkg>` only to intentionally change dependencies, and commit the resulting `package-lock.json` diff together with that change. If `git diff` shows lockfile churn and you did not change dependencies, revert it (`git checkout -- package-lock.json`). Node >=20.17 and npm >=11 are enforced through `engines` plus `.npmrc` engine-strict.
 
-Git hooks install themselves through `npm ci` (husky): staged files are formatted and linted at commit, commit messages are rejected if they carry AI attribution, and `typecheck` runs before a push. Formatting is Prettier defaults (`.prettierrc`); prototypes and markdown are exempt (`.prettierignore`). Do not fight the hook output: if it reformatted a file, that is the file's correct shape.
+Git hooks install themselves through `npm ci` (husky): staged files are formatted and linted at commit, commit messages are rejected if they carry AI attribution, and before a push the Git LFS files are uploaded and `typecheck` runs. The LFS step lives in `.husky/pre-push` because husky moves the hook directory away from where Git LFS installs its own; without it, pushes carry pointers and no images. Formatting is Prettier defaults (`.prettierrc`); prototypes and markdown are exempt (`.prettierignore`). Do not fight the hook output: if it reformatted a file, that is the file's correct shape.
 
 Terminal output follows one rule: silence means success, anything printed is signal. When running scripts to read their output (as an AI agent does), prefer `npm run -s <script>`: it drops the three-line npm banner and nothing else. Do not set `loglevel=silent` anywhere permanent; it also swallows npm's own error reporting.
 
 Tests are Vitest, in `tests/`. [`tests/contract.test.ts`](tests/contract.test.ts) needs no database and no network: it checks that the agreement between the reader and everything else still holds.
 
-Sign in with a seeded account (`margaret@example.com` or `operator@example.com`, password `daykeeper`); `npm run dev` then shows the interface over the seed's letters and tasks. Uploading a letter runs the reader named by `AI_EXTRACTION_PROVIDER` (the mock by default).
+Sign in with a seeded account (`margaret@example.com` or `operator@example.com`, password `daykeeper`; each teammate also has an empty one, printed by the seed); `npm run dev` then shows the interface over the seed's letters and tasks. The seed is for showing the product: three reminders due today and two ticked tasks, see [`docs/start-here.md`](docs/start-here.md). Uploading a letter runs the reader named by `AI_EXTRACTION_PROVIDER`: the mock by default, `azure` for the real reading that [`docs/extraction.md`](docs/extraction.md) describes.
 
 Two rules that are easy to break by accident. Both are written where they are enforced, with the reasoning attached, so read them there rather than trusting a summary:
 

@@ -1,0 +1,11 @@
+{
+  "model": "gpt-5.6-terra",
+  "effort": "low",
+  "letter": "15-insurance-key-facts-sheet",
+  "repeat": 19,
+  "pages": ["page-01.png", "page-02.png"],
+  "image_detail": "auto",
+  "started_at": "2026-09-24T10:36:12.038Z",
+  "seconds": 3.51,
+  "ok": true
+}

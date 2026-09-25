@@ -1,0 +1,11 @@
+{
+  "model": "gpt-5.6-terra",
+  "effort": "low",
+  "letter": "21-dispensed-medicine-label",
+  "repeat": 17,
+  "pages": ["page-01.png"],
+  "image_detail": "auto",
+  "started_at": "2026-09-14T19:48:28.653Z",
+  "seconds": 4.065,
+  "ok": true
+}

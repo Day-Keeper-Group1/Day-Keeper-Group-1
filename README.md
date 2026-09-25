@@ -15,22 +15,24 @@ You need [Node](https://nodejs.org) 20.17 or newer and
 first if you have not; Docker needs to be running, not just installed.
 
 ```bash
-git clone git@github.com:ZhenyingCui-Saiii/Day-Keeper-Group-1.git
+git lfs install           # once per machine: the letter images are in Git LFS
+git clone git@github.com:Day-Keeper-Group1/Day-Keeper-Group-1.git
 cd Day-Keeper-Group-1
 
 npm ci                    # installs exactly what the lockfile says
 cp .env.example .env.local
-docker compose up -d      # Postgres on 55432, a database viewer on 8080
+docker compose up -d      # Postgres on 15432, a database viewer on 8080
 docker compose ps         # wait until db says "healthy", a few seconds
-npm run db:reset          # build the database and fill it with example data
+npm run db:reset          # build the database and plant the demonstration seed
 npm run dev
 ```
 
 Open <http://localhost:3000/dashboard>.
 
-**You should see** a warm cream dashboard with Margaret's letters on it: one
-waiting to be checked, one overdue, one upcoming. If you do, everything works
-and you are ready to pick up a ticket.
+Sign in as `margaret@example.com`, password `daykeeper`. **You should see** a warm
+cream dashboard that says there is nothing to check, three tasks due in the
+next seven days and two already ticked off. If you do, everything works and you
+are ready to pick up a ticket.
 
 If instead you see an error, it is almost always one of three things, and none
 of them is a bug in the code: Docker is not running, `npm ci` has not finished,

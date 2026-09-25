@@ -1,0 +1,11 @@
+{
+  "model": "gpt-5.6-luna",
+  "effort": "medium",
+  "letter": "23-home-insurance-renewal",
+  "repeat": 15,
+  "pages": ["page-01.png", "page-02.png"],
+  "image_detail": "auto",
+  "started_at": "2026-09-15T00:29:17.489Z",
+  "seconds": 7.576,
+  "ok": true
+}

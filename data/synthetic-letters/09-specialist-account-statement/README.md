@@ -45,3 +45,15 @@ Made up, not taken from any source: the surgeon Mr Andrew Reid and his rooms at 
 ### reference
 
 **709480.** Page 1, top right, the boxed table, first row, "Account no." with "709480" beside it. The same number is printed in the "HOW TO PAY" section, under "ELECTRONIC TRANSFER", as "Reference: 709480". The contract asks for the reference, account or customer number the person must quote. The account number is the number this statement is kept under, and the page itself asks for it as the reference on a bank transfer.
+
+### identifiers
+
+Every number the letter prints that identifies her, something she holds, or this matter, each under the label printed beside it, written as printed. The first list is the numbers a reading must find; the reference is one of them, and a reading that gives any of them as the reference is right. The experiments score whether every number in the first list is found.
+
+- **Account no. 709480.** page 1, top right boxed table, first row; the same value is printed again in the HOW TO PAY section, middle column, ELECTRONIC TRANSFER block, third line, as "Reference: 709480".
+- **Patient Rebate Scheme no. 4378 31830 2 / 9.** page 1, patient details block below the ACCOUNT TO address, third row.
+
+Also printed, and identifying something narrower: a payment method's own reference, a meter, an invoice or statement, a provider, or a one-time code. A reading may list these or leave them out.
+
+- **Provider no. 8484902F.** page 1, patient details block below the ACCOUNT TO address, last row.
+- **Ref 8484 9007 5000.** page 1, HOW TO PAY section, left column, BPAY block, second line.
