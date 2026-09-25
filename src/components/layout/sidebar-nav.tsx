@@ -1,9 +1,10 @@
 "use client";
 
-// KAN-57: the desktop sidebar, same three destinations as the phone bar.
+// The desktop sidebar includes Email below the phone bar's three destinations.
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Mail } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useActivity } from "./activity";
 import {
@@ -12,6 +13,11 @@ import {
   PRIMARY_NAV,
   type NavItem,
 } from "./nav-items";
+
+const SIDEBAR_NAV: NavItem[] = [
+  ...PRIMARY_NAV,
+  { label: "Email", href: "/email", icon: Mail },
+];
 
 /**
  * One sidebar row.
@@ -81,7 +87,7 @@ export function SidebarNav() {
       </Link>
 
       <ul className="flex flex-1 flex-col gap-1">
-        {PRIMARY_NAV.map((item) => (
+        {SIDEBAR_NAV.map((item) => (
           <li key={item.href}>
             <SidebarLink
               item={item}
