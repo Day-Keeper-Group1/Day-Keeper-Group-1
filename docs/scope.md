@@ -47,7 +47,13 @@ tick.
 Email integration development has started separately from the release above.
 The first slice is a server-only mailbox interface, validated plain-text email
 input, a deterministic mock mailbox and an extraction boundary reusing the six
-fields. It does not connect a mailbox, monitor mail or create tasks yet.
+fields. The authenticated `/email` prototype now adds Gmail OAuth and a manual
+read-only preview of up to 20 recent inbox messages. It does not monitor mail,
+run email AI extraction or create tasks yet. See [`gmail-setup.md`](gmail-setup.md).
+A public `/email-demo` page demonstrates this foundation with three synthetic
+emails and predefined extraction results. It needs no sign-in, exposes no user
+data, and does not save tasks or reminders. This demo is separate from the
+photo-upload release.
 [`email-integration.md`](email-integration.md) records the proposed delivery tickets.
 
 ## Why this shape

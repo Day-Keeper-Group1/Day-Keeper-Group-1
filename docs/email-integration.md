@@ -10,12 +10,24 @@ connection, validated email pages, and an email extraction interface.
 `read.ts` validates adapter output and extraction output. Actionable email uses
 the existing `ExtractionResult`; a separate `no-action` result represents mail
 without a task. `mock-provider.ts` provides repeatable pages supplied by tests.
-No credentials, network access, database changes or new dependencies are needed.
+The mock foundation needs no credentials, network access or database.
 Run `npm run -s test -- tests/email.test.ts`.
 
-This is an internal foundation, not a working mailbox integration. No endpoint,
-scheduled monitoring, real model adapter or user interface is wired to it yet.
-Provider choice is pending. Use university/team-approved infrastructure; personal
+The `/email-demo` page now uses the mock mailbox and validation boundary to show
+three fictional messages: a bill, an appointment and a newsletter. Open a message
+to see its sender, received time, body and predefined extraction result. The
+newsletter demonstrates `no-action`. The page is public so a demonstration needs
+no sign-in or database; only synthetic data is available there. Run `npm run dev`
+and open `http://localhost:3000/email-demo` (use the assigned port in a worktree).
+The banner explicitly labels sample data and predefined results. No tasks or
+reminders are created. `src/server/email/demo.ts` owns the fixtures, and runs them
+through `readEmailPage` and `readEmail` before rendering.
+
+The separate authenticated `/email` page now connects Gmail through OAuth and
+offers a manual read-only inbox preview. See [`gmail-setup.md`](gmail-setup.md)
+for credentials, database setup, token handling and current limits. It does not
+yet persist imported messages, monitor mail, run email AI extraction or create tasks.
+Use university/team-approved infrastructure; personal
 API keys and personal paid cloud accounts remain prohibited.
 
 ## Jira tickets

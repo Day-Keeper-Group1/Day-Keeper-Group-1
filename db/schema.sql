@@ -151,6 +151,25 @@ CREATE TABLE sessions (
 CREATE INDEX sessions_user_id_idx ON sessions (user_id);
 CREATE INDEX sessions_expires_at_idx ON sessions (expires_at);
 
+-- Module 2: one Gmail connection per DayKeeper user. No mail bodies are stored.
+CREATE TABLE gmail_connections (
+  user_id uuid PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  connection_id uuid NOT NULL DEFAULT gen_random_uuid(),
+  email text NOT NULL,
+  refresh_token_encrypted text NOT NULL,
+  connected_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- Browser nonce and state are hashed; PKCE verifier is encrypted. One pending
+-- attempt per user. DELETE ... RETURNING consumes an attempt exactly once.
+CREATE TABLE gmail_oauth_attempts (
+  user_id uuid PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  state_hash text NOT NULL,
+  browser_hash text NOT NULL,
+  verifier_encrypted text NOT NULL,
+  expires_at timestamptz NOT NULL
+);
+
 -- ---------------------------------------------------------------------------
 -- Letters
 --

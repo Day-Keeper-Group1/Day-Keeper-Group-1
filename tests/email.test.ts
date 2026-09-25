@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { MockEmailProvider } from "@/server/email/mock-provider";
 import { readEmail, readEmailPage } from "@/server/email/read";
+import { readDemoMailbox } from "@/server/email/demo";
 
 const message = {
   providerMessageId: "message-1",
@@ -11,6 +12,32 @@ const message = {
 };
 
 describe("email foundation", () => {
+  it("validates the demo bill and appointment while keeping the newsletter non-actionable", async () => {
+    const entries = await readDemoMailbox();
+    expect(
+      entries.map(({ message, reading }) => [
+        message.providerMessageId,
+        reading.kind,
+      ]),
+    ).toEqual([
+      ["bill", "action"],
+      ["appointment", "action"],
+      ["newsletter", "no-action"],
+    ]);
+    const appointment = entries[1].reading;
+    expect(appointment.kind).toBe("action");
+    if (appointment.kind === "action") {
+      expect(appointment.extraction.fields).toContainEqual({
+        key: "due_time",
+        value: "10:30",
+        status: "confirmed",
+      });
+    }
+    entries[0].message.subject = "Changed locally";
+    expect((await readDemoMailbox())[0].message.subject).toBe(
+      "Your Example Energy bill is ready",
+    );
+  });
   it("replays pages for retries and rejects an unknown cursor", async () => {
     const provider = new MockEmailProvider([
       { messages: [message], nextCursor: "page-2" },

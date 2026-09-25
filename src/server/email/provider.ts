@@ -1,18 +1,10 @@
 import "server-only";
 import { z } from "zod";
 import type { ExtractionResult } from "@/lib/contract/extraction";
+import { emailMessageSchema, type EmailMessage } from "@/lib/contract/email";
+export { emailMessageSchema, type EmailMessage } from "@/lib/contract/email";
 
 /** Server-side input, never a browser response. Bodies are untrusted content. */
-export const emailMessageSchema = z.object({
-  providerMessageId: z.string().min(1),
-  from: z.email(),
-  subject: z.string().max(2000),
-  receivedAt: z.iso.datetime({ offset: true }),
-  // Adapters decode MIME and convert HTML to text; remote images are never loaded.
-  textBody: z.string().min(1).max(100_000),
-});
-
-export type EmailMessage = z.infer<typeof emailMessageSchema>;
 
 export const emailPageSchema = z.object({
   messages: z.array(emailMessageSchema).max(100),

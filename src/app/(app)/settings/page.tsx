@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,6 +34,13 @@ export default function SettingsPage() {
         title="Settings"
         description="Manage your profile, notifications, and account."
       />
+
+      <Link
+        href="/email"
+        className="inline-flex min-h-12 items-center font-semibold text-primary underline underline-offset-4"
+      >
+        Connect or manage Gmail
+      </Link>
 
       <Card>
         <CardHeader>
