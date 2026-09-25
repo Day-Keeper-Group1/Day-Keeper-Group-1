@@ -43,3 +43,6 @@ output/
 
 # Local uploads and build output
 .storage/
+
+# Local Netlify folder
+.netlify
