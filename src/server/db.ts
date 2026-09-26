@@ -12,6 +12,7 @@
 
 import "server-only";
 import { Pool, types, type PoolClient, type QueryResultRow } from "pg";
+import { databaseSsl } from "@/lib/database-tls";
 import { hostIsLocal } from "@/lib/local-host";
 import { env } from "./env";
 
@@ -39,79 +40,6 @@ types.setTypeParser(1082, (value: string) => value);
  */
 const globalForDb = globalThis as unknown as { __daykeeperPool?: Pool };
 
-/**
- * How much to believe the certificate a hosted database presents.
- *
- * Encryption and identity are two things, and only the first comes free. A
- * managed Postgres is usually fronted by a connection pooler holding a
- * certificate signed by the provider's own authority, which is not in Node's
- * trust store, so verifying it fails with SELF_SIGNED_CERT_IN_CHAIN and the
- * app cannot reach its database at all.
- *
- * The usual answer found in forum threads is rejectUnauthorized: false. That
- * keeps the traffic encrypted and stops checking who is on the other end,
- * which is the half of TLS that makes encryption worth having: anything that
- * can sit between the app and the database may present its own certificate,
- * be believed, and read every password and row that goes past.
- *
- * So: hand the pool the provider's root certificate and verification works
- * properly. Supabase publishes it under Settings -> Database -> SSL
- * Configuration; paste its contents into DATABASE_CA_CERT, newlines and all.
- *
- * Without it the connection still refuses to pretend. It verifies against
- * Node's own trust store, and if that fails the error names the missing
- * variable rather than leaving someone to search the message. Turning
- * verification off is deliberate, one variable, and says so on every start.
- */
-function remoteTls(): { ca?: string; rejectUnauthorized: boolean } {
-  const ca = process.env.DATABASE_CA_CERT?.trim();
-  if (ca) {
-    // Say so here rather than letting TLS fail.
-    //
-    // A certificate arrives by being copied out of a dashboard and pasted into
-    // a file, and the ways that goes wrong all produce a string that is present
-    // but not a certificate: an editor that turns the quotes around it into
-    // typographic ones, so the value stops at the first line and the rest of
-    // the file is read as more of it; a path to the downloaded file instead of
-    // its contents; a copy that caught the surrounding page. Every one of them
-    // reaches TLS as a handshake failure, which surfaces as a 500 on sign-in
-    // with nothing pointing at this variable.
-    if (
-      !/^-----BEGIN CERTIFICATE-----[\s\S]*-----END CERTIFICATE-----$/.test(ca)
-    ) {
-      throw new Error(
-        "DATABASE_CA_CERT is set but is not a PEM certificate.\n\n" +
-          "It must hold the certificate itself, not a path to it, beginning\n" +
-          "-----BEGIN CERTIFICATE----- and ending -----END CERTIFICATE-----.\n" +
-          'In .env.local wrap it in straight double quotes (") and keep the\n' +
-          "line breaks. Typographic quotes (\u201c \u201d) are the usual cause: an\n" +
-          "editor or input method substitutes them silently and the value is\n" +
-          "then read as one line.",
-      );
-    }
-    if (process.env.DATABASE_SSL_NO_VERIFY === "yes") {
-      console.warn(
-        "[db] DATABASE_CA_CERT and DATABASE_SSL_NO_VERIFY are both set.\n" +
-          "     The certificate wins and verification stays on. Remove\n" +
-          "     DATABASE_SSL_NO_VERIFY so the file says what is happening.",
-      );
-    }
-    return { ca, rejectUnauthorized: true };
-  }
-
-  if (process.env.DATABASE_SSL_NO_VERIFY === "yes") {
-    console.warn(
-      "[db] DATABASE_SSL_NO_VERIFY=yes: the database connection is encrypted\n" +
-        "     but unauthenticated. Anything between this app and the database\n" +
-        "     can present its own certificate and read what goes past. Set\n" +
-        "     DATABASE_CA_CERT instead before this is deployed anywhere real.",
-    );
-    return { rejectUnauthorized: false };
-  }
-
-  return { rejectUnauthorized: true };
-}
-
 export function pool(): Pool {
   if (!globalForDb.__daykeeperPool) {
     /**
@@ -137,7 +65,9 @@ export function pool(): Pool {
       // concurrent requests. Raising this hides connection leaks rather than
       // fixing them.
       max: isLocal ? 10 : 1,
-      ssl: isLocal ? undefined : remoteTls(),
+      // Encrypted and verified for anything not local; see
+      // src/lib/database-tls.ts, which the scripts in db/ use too.
+      ssl: databaseSsl(url),
       idleTimeoutMillis: 30_000,
       connectionTimeoutMillis: 10_000,
     });
