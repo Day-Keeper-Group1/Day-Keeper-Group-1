@@ -260,6 +260,47 @@ export type DocumentPageView = {
 export const MAX_PAGES = 10;
 export const MAX_PAGE_BYTES = 10 * 1024 * 1024;
 
+/**
+ * KAN-75: a letter whose photographs go straight into the bucket.
+ *
+ * The capture screen does not send the photographs to the app. A host that
+ * runs the app as functions refuses a request much over four megabytes, and a
+ * letter of a few phone photographs is more than that, so the bytes go from
+ * the phone to storage and the app only ever sees a few lines of JSON. Three
+ * steps (docs/api.md, "Ask to upload a letter"):
+ *
+ *   1. POST /api/documents/uploads with an UploadRequest, answered with
+ *      UploadSlots: a letter id and one upload link per page;
+ *   2. PUT each photograph to its link, with the content type it declared;
+ *   3. POST /api/documents with a StoredUploadRequest, answered with the
+ *      DocumentSummary an ordinary upload gets.
+ *
+ * The same limits hold as for a photograph sent through the app: MAX_PAGES,
+ * MAX_PAGE_BYTES, images only.
+ */
+export type UploadRequest = {
+  /** One entry per photograph, in page order. */
+  pages: Array<{ contentType: string; byteSize: number }>;
+};
+
+export type UploadSlots = {
+  /** The letter these photographs will become. Send it back in step 3. */
+  documentId: string;
+  pages: Array<{
+    pageNumber: number;
+    /** Where to PUT this page. Good for a few minutes. */
+    uploadUrl: string;
+    /** The Content-Type header the PUT must carry; the link is signed for it. */
+    contentType: string;
+  }>;
+};
+
+export type StoredUploadRequest = {
+  documentId: string;
+  /** The same content types as step 1, in the same order. */
+  pages: Array<{ contentType: string }>;
+};
+
 /*
  * There is deliberately no ConfirmDocumentRequest, and deliberately no endpoint
  * anywhere that corrects a reading.

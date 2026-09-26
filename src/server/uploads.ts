@@ -31,6 +31,7 @@ import {
   MAX_PAGES,
   MAX_PAGE_BYTES,
   type DocumentSummary,
+  type UploadSlots,
 } from "@/lib/contract/api";
 import { isIsoDate } from "@/lib/contract/dates";
 import {
@@ -46,7 +47,14 @@ import {
   type Reading,
 } from "@/server/extraction";
 import { estimatedCostUsd } from "@/server/extraction/prices";
-import { deleteObjects, putObject, uploadObjectKey } from "@/server/storage";
+import { SNIFF_BYTES, sniffImageType } from "@/server/image-type";
+import {
+  deleteObjects,
+  getObject,
+  putObject,
+  signedUploadUrl,
+  uploadObjectKey,
+} from "@/server/storage";
 import {
   type Cell,
   JUDGE,
@@ -91,6 +99,61 @@ export class UploadRejected extends Error {
 /** How the size limit reads in a sentence: "10 MB". */
 const MAX_PAGE_MB = MAX_PAGE_BYTES / (1024 * 1024);
 
+/** How many pages, and whether each claims to be a photograph. */
+function judgeCountAndTypes(mimeTypes: readonly string[]): void {
+  if (mimeTypes.length === 0) {
+    throw new UploadRejected("Please attach at least one photo.");
+  }
+
+  if (mimeTypes.length > MAX_PAGES) {
+    throw new UploadRejected(
+      `Please send one letter at a time, up to ${MAX_PAGES} photos.`,
+      { pages: `There are ${mimeTypes.length} photos here.` },
+    );
+  }
+
+  for (const [index, mimeType] of mimeTypes.entries()) {
+    if (!mimeType.startsWith("image/")) {
+      throw new UploadRejected("Please attach photos only.", {
+        pages: `Page ${index + 1} is not a photo.`,
+      });
+    }
+  }
+}
+
+/** Whether one page's size is within the limits. */
+function judgeSize(pageNumber: number, byteSize: number): void {
+  // A file of no bytes passes every other check here and then breaks the
+  // byte_size constraint in db/schema.sql, which would reach the person as a
+  // server error instead of as a sentence she can act on.
+  if (byteSize === 0) {
+    throw new UploadRejected("One of those photos did not come through.", {
+      pages: `Page ${pageNumber} is empty.`,
+    });
+  }
+
+  if (byteSize > MAX_PAGE_BYTES) {
+    throw new UploadRejected("One of those photos is too large to send.", {
+      pages: `Page ${pageNumber} is larger than ${MAX_PAGE_MB} MB.`,
+    });
+  }
+}
+
+/**
+ * The rules every letter is held to, however its photographs travel: through
+ * the app (validateUpload) or straight into the bucket (planUpload, and
+ * checkStoredUpload once they have landed). One copy, so the two ways in
+ * cannot drift into accepting different letters.
+ */
+function judgePages(
+  pages: ReadonlyArray<{ mimeType: string; byteSize: number }>,
+): void {
+  judgeCountAndTypes(pages.map((page) => page.mimeType));
+  for (const [index, page] of pages.entries()) {
+    judgeSize(index + 1, page.byteSize);
+  }
+}
+
 /**
  * Hold an upload to the two limits the contract exports, and read it in.
  *
@@ -103,44 +166,12 @@ const MAX_PAGE_MB = MAX_PAGE_BYTES / (1024 * 1024);
  * release does not make; src/lib/contract/api.ts says why.
  */
 export async function validateUpload(files: File[]): Promise<UploadedPage[]> {
-  if (files.length === 0) {
-    throw new UploadRejected("Please attach at least one photo.");
-  }
-
-  if (files.length > MAX_PAGES) {
-    throw new UploadRejected(
-      `Please send one letter at a time, up to ${MAX_PAGES} photos.`,
-      { pages: `There are ${files.length} photos here.` },
-    );
-  }
-
   // Every page is judged before any page is read into memory. A letter whose
   // last photograph is too large is refused without the first nine having been
   // loaded, which is what makes "all or nothing" cheap as well as true.
-  for (const [index, file] of files.entries()) {
-    const pageNumber = index + 1;
-
-    if (!file.type.startsWith("image/")) {
-      throw new UploadRejected("Please attach photos only.", {
-        pages: `Page ${pageNumber} is not a photo.`,
-      });
-    }
-
-    // A file of no bytes passes every other check here and then breaks the
-    // byte_size constraint in db/schema.sql, which would reach the person as a
-    // server error instead of as a sentence she can act on.
-    if (file.size === 0) {
-      throw new UploadRejected("One of those photos did not come through.", {
-        pages: `Page ${pageNumber} is empty.`,
-      });
-    }
-
-    if (file.size > MAX_PAGE_BYTES) {
-      throw new UploadRejected("One of those photos is too large to send.", {
-        pages: `Page ${pageNumber} is larger than ${MAX_PAGE_MB} MB.`,
-      });
-    }
-  }
+  judgePages(
+    files.map((file) => ({ mimeType: file.type, byteSize: file.size })),
+  );
 
   return Promise.all(
     files.map(async (file, index) => {
@@ -176,10 +207,11 @@ export async function createDocument(
   // and is cleaned up below. src/server/storage.ts says why the key is derived
   // rather than random.
   const documentId = randomUUID();
-  const reader = extractionProvider();
 
   const stored = pages.map((page) => ({
-    page,
+    pageNumber: page.pageNumber,
+    mimeType: page.mimeType,
+    byteSize: page.byteSize,
     key: uploadObjectKey({
       userId,
       documentId,
@@ -190,70 +222,311 @@ export async function createDocument(
 
   try {
     await Promise.all(
-      stored.map(({ page, key }) => putObject(key, page.bytes, page.mimeType)),
+      pages.map((page, index) =>
+        putObject(stored[index].key, page.bytes, page.mimeType),
+      ),
     );
-
-    const row = await transaction(async (client) => {
-      const inserted = await client.query<{ uploaded_at: Date }>(
-        `INSERT INTO documents (id, user_id, status)
-              VALUES ($1, $2, 'processing')
-           RETURNING uploaded_at`,
-        [documentId, userId],
-      );
-
-      for (const { page, key } of stored) {
-        await client.query(
-          `INSERT INTO document_pages
-             (document_id, page_number, storage_path, mime_type, byte_size)
-           VALUES ($1, $2, $3, $4, $5)`,
-          [documentId, page.pageNumber, key, page.mimeType, page.byteSize],
-        );
-      }
-
-      // The run is written now, queued, rather than when the reading starts, so
-      // that a letter whose reader never woke up says so in the table instead
-      // of looking like a letter nobody ever tried to read. `contract_version`
-      // stays null until there is a payload whose shape it can describe.
-      await client.query(
-        `INSERT INTO extraction_runs (document_id, status, provider, model)
-              VALUES ($1, 'queued', $2, $3)`,
-        [documentId, reader.name, reader.model],
-      );
-
-      return inserted.rows[0];
-    });
-
-    const uploadedAt = row.uploaded_at.toISOString();
-
-    return {
-      id: documentId,
-      issuer: null,
-      documentType: null,
-      // Nothing has read the letter, so it is called by the only facts that
-      // exist about it: when it was photographed, and how many sheets it holds.
-      label: documentLabel({
-        issuer: null,
-        documentType: null,
-        uploadedAt,
-        pageCount: pages.length,
-        timeZone,
-      }),
-      status: "processing",
-      uploadedAt,
-      pageCount: pages.length,
-    };
+    return await recordDocument(userId, timeZone, documentId, stored);
   } catch (error) {
-    // Bytes that no row points at are unreachable by every other part of the
-    // system, so they go here rather than waiting for a sweep nobody has
-    // written. Failing to clean up must not replace the failure that caused it.
-    await deleteObjects(stored.map(({ key }) => key)).catch((cleanupError) => {
-      console.error(
-        `[uploads] could not remove the photographs of document ${documentId} after a failed upload`,
-        cleanupError,
-      );
-    });
+    await removeStranded(documentId, stored);
     throw error;
   }
+}
+
+/**
+ * Bytes that no row points at are unreachable by every other part of the
+ * system, so they go as soon as the upload that wrote them fails, rather than
+ * waiting for a sweep nobody has written. Failing to clean up must not replace
+ * the failure that caused it.
+ */
+async function removeStranded(
+  documentId: string,
+  stored: ReadonlyArray<{ key: string }>,
+): Promise<void> {
+  await deleteObjects(stored.map(({ key }) => key)).catch((cleanupError) => {
+    console.error(
+      `[uploads] could not remove the photographs of document ${documentId} after a failed upload`,
+      cleanupError,
+    );
+  });
+}
+
+/** One photograph that is already in the bucket, as the rows will describe it. */
+export type StoredPage = {
+  pageNumber: number;
+  mimeType: string;
+  byteSize: number;
+  key: string;
+};
+
+/**
+ * Write the rows for photographs that are already stored, and answer with the
+ * letter they became. Shared by both ways a letter arrives.
+ */
+async function recordDocument(
+  userId: string,
+  timeZone: string,
+  documentId: string,
+  stored: readonly StoredPage[],
+): Promise<DocumentSummary> {
+  const reader = extractionProvider();
+
+  const row = await transaction(async (client) => {
+    const inserted = await client.query<{ uploaded_at: Date }>(
+      `INSERT INTO documents (id, user_id, status)
+            VALUES ($1, $2, 'processing')
+         RETURNING uploaded_at`,
+      [documentId, userId],
+    );
+
+    for (const page of stored) {
+      await client.query(
+        `INSERT INTO document_pages
+           (document_id, page_number, storage_path, mime_type, byte_size)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [documentId, page.pageNumber, page.key, page.mimeType, page.byteSize],
+      );
+    }
+
+    // The run is written now, queued, rather than when the reading starts, so
+    // that a letter whose reader never woke up says so in the table instead
+    // of looking like a letter nobody ever tried to read. `contract_version`
+    // stays null until there is a payload whose shape it can describe.
+    await client.query(
+      `INSERT INTO extraction_runs (document_id, status, provider, model)
+            VALUES ($1, 'queued', $2, $3)`,
+      [documentId, reader.name, reader.model],
+    );
+
+    return inserted.rows[0];
+  });
+
+  const uploadedAt = row.uploaded_at.toISOString();
+
+  return {
+    id: documentId,
+    issuer: null,
+    documentType: null,
+    // Nothing has read the letter, so it is called by the only facts that
+    // exist about it: when it was photographed, and how many sheets it holds.
+    label: documentLabel({
+      issuer: null,
+      documentType: null,
+      uploadedAt,
+      pageCount: stored.length,
+      timeZone,
+    }),
+    status: "processing",
+    uploadedAt,
+    pageCount: stored.length,
+  };
+}
+
+/**
+ * KAN-75, step 1 of a letter whose photographs go straight into the bucket:
+ * hold what the capture screen says it is about to send to the usual rules,
+ * pick the letter's id, and sign one upload link per page.
+ *
+ * Nothing is written anywhere. The id is only a name for keys that do not
+ * exist yet; the letter becomes a row in step 3, once the photographs are
+ * there to be pointed at. A capture screen that asks and never sends leaves
+ * nothing behind.
+ *
+ * Each key comes from uploadObjectKey() with the signed-in person's id, never
+ * from the request, because a link is permission to write exactly the key it
+ * was signed for (src/server/storage.ts, signedUploadUrl).
+ */
+export async function planUpload(
+  userId: string,
+  pages: ReadonlyArray<{ contentType: string; byteSize: number }>,
+): Promise<UploadSlots> {
+  judgePages(
+    pages.map((page) => ({
+      mimeType: page.contentType,
+      byteSize: page.byteSize,
+    })),
+  );
+
+  const documentId = randomUUID();
+  return {
+    documentId,
+    pages: await Promise.all(
+      pages.map(async (page, index) => {
+        const pageNumber = index + 1;
+        const key = uploadObjectKey({
+          userId,
+          documentId,
+          pageNumber,
+          contentType: page.contentType,
+        });
+        return {
+          pageNumber,
+          uploadUrl: await signedUploadUrl(key, page.contentType),
+          contentType: page.contentType,
+        };
+      }),
+    ),
+  };
+}
+
+/** A letter id as randomUUID() writes it. */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** HEIC and HEIF are one family; image-type.ts calls both image/heic. */
+function sameImageType(declared: string, sniffed: string | null): boolean {
+  const family = (type: string) =>
+    type.toLowerCase() === "image/heif" ? "image/heic" : type.toLowerCase();
+  return sniffed !== null && family(declared) === family(sniffed);
+}
+
+/**
+ * KAN-75, step 3: the photographs are said to be in the bucket. Look.
+ *
+ * The keys are derived again from the signed-in person and the letter id, the
+ * way planUpload derived them, so the most a request can point at is its own
+ * sender's photographs. Each object is read only as far as its first bytes:
+ * enough to know it arrived, how big it is (the bucket says, in the range
+ * header), and that it is the kind of image it was declared as. The whole
+ * photograph is fetched later, for the reader, after the person has been
+ * answered.
+ *
+ * All or nothing, as for an upload through the app: one page missing, empty,
+ * too large or not what it claims refuses the letter, and every page of it
+ * is removed from the bucket, because no row will ever point at them.
+ */
+export async function checkStoredUpload(
+  userId: string,
+  documentId: string,
+  mimeTypes: readonly string[],
+): Promise<StoredPage[]> {
+  if (!UUID.test(documentId)) {
+    throw new UploadRejected(
+      "Those photos did not come through. Please send them again.",
+    );
+  }
+  judgeCountAndTypes(mimeTypes);
+
+  // A letter id that already has a row is a letter already sent, most likely
+  // the same one twice. Its photographs belong to that letter now, so they
+  // are left alone rather than cleaned up as strays.
+  const existing = await queryOne<{ id: string }>(
+    `SELECT id FROM documents WHERE id = $1`,
+    [documentId],
+  );
+  if (existing) {
+    throw new UploadRejected("These photos have already been sent.");
+  }
+
+  const pages = mimeTypes.map((mimeType, index) => ({
+    pageNumber: index + 1,
+    mimeType,
+    key: uploadObjectKey({
+      userId,
+      documentId,
+      pageNumber: index + 1,
+      contentType: mimeType,
+    }),
+  }));
+
+  try {
+    return await Promise.all(
+      pages.map(async (page) => {
+        const head = await getObject(page.key, SNIFF_BYTES).catch(
+          (error: unknown) => {
+            if (objectIsMissing(error)) return null;
+            throw error;
+          },
+        );
+        if (!head) {
+          throw new UploadRejected(
+            "One of those photos did not come through.",
+            { pages: `Page ${page.pageNumber} is missing.` },
+          );
+        }
+        judgeSize(page.pageNumber, head.byteSize);
+        if (!sameImageType(page.mimeType, sniffImageType(head.bytes))) {
+          throw new UploadRejected("Please attach photos only.", {
+            pages: `Page ${page.pageNumber} is not a photo.`,
+          });
+        }
+        return { ...page, byteSize: head.byteSize };
+      }),
+    );
+  } catch (error) {
+    await removeStranded(documentId, pages);
+    throw error;
+  }
+}
+
+/**
+ * Whether storage answered "no such object". An empty object answers a range
+ * request with 416 rather than with its first bytes, and is missing for every
+ * purpose here.
+ */
+function objectIsMissing(error: unknown): boolean {
+  const status = (error as { $metadata?: { httpStatusCode?: number } })
+    ?.$metadata?.httpStatusCode;
+  const name = (error as { name?: string })?.name;
+  return (
+    status === 404 ||
+    status === 416 ||
+    name === "NoSuchKey" ||
+    name === "NotFound"
+  );
+}
+
+/**
+ * KAN-75: write the rows for a letter whose photographs checkStoredUpload()
+ * has just looked at. If the rows cannot be written the photographs are
+ * removed, for the reason removeStranded() gives.
+ */
+export async function createStoredDocument(
+  userId: string,
+  timeZone: string,
+  documentId: string,
+  stored: readonly StoredPage[],
+): Promise<DocumentSummary> {
+  try {
+    return await recordDocument(userId, timeZone, documentId, stored);
+  } catch (error) {
+    await removeStranded(documentId, stored);
+    throw error;
+  }
+}
+
+/**
+ * KAN-75: fetch the photographs a letter's pages point at, then read it as
+ * readDocument() does. Runs after the response, so like readDocument it never
+ * throws: photographs that cannot be fetched fail the letter, with its run
+ * left 'queued', because the reading never started.
+ */
+export async function readStoredDocument(
+  documentId: string,
+  userId: string,
+  stored: readonly StoredPage[],
+): Promise<void> {
+  let pages: UploadedPage[];
+  try {
+    pages = await Promise.all(
+      stored.map(async (page) => {
+        const object = await getObject(page.key);
+        return {
+          pageNumber: page.pageNumber,
+          bytes: object.bytes,
+          mimeType: page.mimeType,
+          byteSize: object.byteSize,
+        };
+      }),
+    );
+  } catch (error) {
+    console.error(
+      `[uploads] could not fetch the photographs of document ${documentId} to read them`,
+      error,
+    );
+    await markDocumentFailed(documentId, userId);
+    return;
+  }
+  await readDocument(documentId, userId, pages);
 }
 
 /**

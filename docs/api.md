@@ -356,6 +356,78 @@ that has not happened.
 
 # Letters
 
+## Ask to upload a letter
+
+Names a letter and hands out one upload link per page, so the photographs can
+go from the phone straight into storage. (KAN-75)
+
+**URL** : `/api/documents/uploads`
+
+**Method** : `POST`
+
+**Auth required** : YES
+
+**Why it exists.** A host that runs this app as functions refuses a request
+much over 4 MB (Netlify, where the trial deployment runs, and Vercel alike), and
+a letter of a few phone photographs is more than that. So the capture screen
+does not send the photographs to the app. It sends them to the bucket, which
+has no such limit, and tells the app afterwards. Three requests:
+
+1. `POST /api/documents/uploads` with what is about to be sent;
+2. `PUT` each photograph to its link, with the `Content-Type` the link was
+   signed for;
+3. [`POST /api/documents`](#upload-a-letter) with the letter's id, as JSON.
+
+**Data constraints**
+
+```json
+{ "pages": [{ "contentType": "image/jpeg", "byteSize": 842251 }] }
+```
+
+One entry per photograph, in page order. The same rules as an upload through the
+app: at least one, at most `MAX_PAGES`, images only, each within
+`MAX_PAGE_BYTES`. The sizes are checked again in step 3 against what actually
+landed, because what a browser says it will send is not a promise.
+
+### Success Response
+
+**Code** : `200 OK`
+
+```json
+{
+  "documentId": "3a9f1e77-4c02-4f1a-9b3e-5d2c8a11f004",
+  "pages": [
+    {
+      "pageNumber": 1,
+      "uploadUrl": "https://…/daykeeper/uploads/…/1.jpg?X-Amz-Signature=…",
+      "contentType": "image/jpeg"
+    }
+  ]
+}
+```
+
+Each link is good for five minutes (`UPLOAD_URL_TTL_SECONDS` in
+`src/server/storage.ts`) and lets its holder write exactly one object: the key
+is derived from the signed-in person, the letter id and the page number, never
+taken from the request.
+
+### Error Responses
+
+The same `400` bodies as [Upload a letter](#upload-a-letter) for a letter that
+breaks a rule, and `401` when nobody is signed in.
+
+### Notes
+
+**Nothing is written here.** The id names objects that do not exist yet. The
+letter becomes a row in step 3. A capture screen that asks and never finishes
+leaves nothing, or leaves photographs no row points at; nothing sweeps those
+yet, the same as a failed clean-up after an ordinary upload.
+
+**The bucket has to accept a PUT from the page's origin.** Supabase Storage
+allows any origin, and so does the MinIO in `docker-compose.yml` out of the
+box; both were checked with a real signed PUT on 26 September 2026. A bucket
+set up elsewhere needs a CORS rule allowing `PUT` with a `Content-Type` header.
+
 ## Upload a letter
 
 Stores the photographs and answers immediately with the letter they became.
@@ -424,6 +496,28 @@ file that is not an image. The upload is all-or-nothing.
   }
 }
 ```
+
+**The other body: photographs already in the bucket.** With
+`Content-Type: application/json` the body names photographs that the capture
+screen has already put in storage, through the links from
+[Ask to upload a letter](#ask-to-upload-a-letter):
+
+```json
+{
+  "documentId": "3a9f1e77-4c02-4f1a-9b3e-5d2c8a11f004",
+  "pages": [{ "contentType": "image/jpeg" }, { "contentType": "image/jpeg" }]
+}
+```
+
+The server derives each key again from the signed-in person and the id, so a
+request can only ever point at its own sender's photographs. It reads the first
+twelve bytes of each object, and refuses the letter with `400` if a page is
+missing (`"Page 2 is missing."`), empty, over `MAX_PAGE_BYTES`, or not the kind
+of image it was declared as, or if the id already has a letter (`"These photos
+have already been sent."`). A refused letter's photographs are removed from the
+bucket, except in that last case, where they belong to the letter already sent.
+The answer on success is the same `201` as above; the whole photographs are
+fetched for the reader after it has gone.
 
 ### Notes
 

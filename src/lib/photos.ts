@@ -1,11 +1,13 @@
 /**
  * Making a phone photograph small enough to send, and no smaller.
  *
- * A current phone camera writes three to six megabytes per frame, and the host
- * this app runs on refuses a request of more than about four and a half. A
- * letter of two pages photographed on a phone was refused at the door and the
- * page sat on "Sending..." (KAN-75). So a photograph over the line is redrawn
- * smaller in the browser before it is sent.
+ * A current phone camera writes three to six megabytes per frame. That is
+ * more picture than the reader needs, and every byte of it crosses the network
+ * twice: into the bucket, and out again to be read. It is also how this began
+ * (KAN-75): a letter of two pages photographed on a phone was more than the
+ * host would take in one request, and the page sat on "Sending...". The
+ * photographs now go straight to the bucket, which has no such limit, and
+ * they are still redrawn smaller in the browser before they go.
  *
  * The line is a file size, not a ratio. A photograph at or under it goes as
  * it is, whatever camera took it, because a small file from a poor camera is
