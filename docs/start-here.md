@@ -27,7 +27,7 @@ reasoning for the parts that look arbitrary.
 
 ## Running it
 
-You need Node 20.17 or newer, npm 11 or newer, and Docker Desktop.
+You need Node 22.13 or newer, npm 11 or newer, and Docker Desktop.
 
 ```bash
 npm ci                    # exactly what package-lock.json says

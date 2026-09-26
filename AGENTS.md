@@ -68,7 +68,7 @@ npm run build
 npm run lint
 ```
 
-Use `npm install <pkg>` only to intentionally change dependencies, and commit the resulting `package-lock.json` diff together with that change. If `git diff` shows lockfile churn and you did not change dependencies, revert it (`git checkout -- package-lock.json`). Node >=20.17 and npm >=11 are enforced through `engines` plus `.npmrc` engine-strict.
+Use `npm install <pkg>` only to intentionally change dependencies, and commit the resulting `package-lock.json` diff together with that change. If `git diff` shows lockfile churn and you did not change dependencies, revert it (`git checkout -- package-lock.json`). Node >=22.13 and npm >=11 are enforced through `engines` plus `.npmrc` engine-strict.
 
 Git hooks install themselves through `npm ci` (husky): staged files are formatted and linted at commit, commit messages are rejected if they carry AI attribution, and before a push the Git LFS files are uploaded and `typecheck` runs. The LFS step lives in `.husky/pre-push` because husky moves the hook directory away from where Git LFS installs its own; without it, pushes carry pointers and no images. Formatting is Prettier defaults (`.prettierrc`); prototypes and markdown are exempt (`.prettierignore`). Do not fight the hook output: if it reformatted a file, that is the file's correct shape.
 
