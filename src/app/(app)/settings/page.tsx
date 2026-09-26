@@ -21,8 +21,6 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";
 import { PageHeader } from "@/components/layout/page-header";
 
 export default function SettingsPage() {
@@ -30,7 +28,7 @@ export default function SettingsPage() {
     <div className="max-w-2xl space-y-6">
       <PageHeader
         title="Settings"
-        description="Manage your profile, notifications, and account."
+        description="Manage your profile and account."
       />
 
       <Card>
@@ -52,38 +50,6 @@ export default function SettingsPage() {
             />
           </div>
           <Button size="sm">Save changes</Button>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Notifications</CardTitle>
-          <CardDescription>Choose when DayKeeper emails you.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <p className="text-sm font-medium text-foreground">
-                Documents needing review
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Email me when a document needs my attention.
-              </p>
-            </div>
-            <Switch defaultChecked />
-          </div>
-          <Separator />
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <p className="text-sm font-medium text-foreground">
-                Upcoming tasks
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Email me a reminder before a task is due.
-              </p>
-            </div>
-            <Switch defaultChecked />
-          </div>
         </CardContent>
       </Card>
 

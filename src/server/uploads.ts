@@ -841,7 +841,7 @@ export function columnsFromReading(result: ExtractionResult): {
   const dueTimeValue = confidentValue(result, "due_time");
   const dueDate = dueDateValue && isIsoDate(dueDateValue) ? dueDateValue : null;
   // A time of day without a date has no place to go: the calendar cannot show
-  // it and a reminder cannot fire on it. So the time column is filled only
+  // it and no reminder can count back from it. So the time column is filled only
   // when the date column is.
   const dueTime =
     dueDate && dueTimeValue && HH_MM.test(dueTimeValue) ? dueTimeValue : null;

@@ -100,13 +100,13 @@ describe("confirming a letter", () => {
     ]);
 
     // Due the 21st, confirmed the 15th: 7 days before is already gone, so
-    // the 18th and the 20th are planned, at 9 am Melbourne.
+    // the 18th and the 20th are planned, as days.
     const reminders = calls.filter(([sql]) =>
       sql.includes("INSERT INTO reminders"),
     );
     expect(reminders.map(([, params]) => params)).toEqual([
-      ["task-new", "2026-09-17T23:00:00.000Z"],
-      ["task-new", "2026-09-19T23:00:00.000Z"],
+      ["task-new", "2026-09-18"],
+      ["task-new", "2026-09-20"],
     ]);
 
     const letter = calls.find(([sql]) => sql.includes("UPDATE documents"));

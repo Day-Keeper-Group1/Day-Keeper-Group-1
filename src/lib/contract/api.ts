@@ -111,34 +111,16 @@ export type DocumentSummary = {
 };
 
 /**
- * One reminder, readable at last.
+ * One reminder: a day on which Home marks the task's row (./reminders.ts).
  *
- * `localDate` is the calendar day the server bucketed the reminder into, in the
- * person's zone. The calendar draws its dots from this string so the client
- * never has to turn an instant back into a day, and get it wrong by one.
+ * `localDate` is the day in the person's zone, written by the server, so the
+ * client compares it with today as a string and never turns an instant back
+ * into a day.
  */
 export type ReminderView = {
   id: string;
-  /** The instant it is scheduled for, ISO 8601 with zone. */
-  scheduledFor: string;
-  /** The day it lands on for calendar purposes, 'YYYY-MM-DD'. */
+  /** The day Home marks the task, 'YYYY-MM-DD'. */
   localDate: string;
-  /**
-   * The wall clock it lands at in the person's zone, 'HH:mm'. Computed beside
-   * `localDate` for the same reason: the day sheet says "a reminder goes out
-   * this morning, 9 am", and the only other way to that string is turning
-   * `scheduledFor` back into a local time in the browser, which is the
-   * conversion `localDate` exists to keep out of the client. It is always 09:00
-   * today; it is data rather than copy so that the day the hour becomes a
-   * setting, the sentence does not quietly start lying.
-   */
-  localTime: string;
-  channel: "in_app" | "email";
-  /**
-   * 'skipped' is what the dispatcher writes when the clock rang and the task was
-   * already ticked. Ticking changes no reminder row; see ./reminders.ts.
-   */
-  status: "scheduled" | "sent" | "skipped" | "failed";
 };
 
 export type TaskSummary = {
@@ -152,10 +134,9 @@ export type TaskSummary = {
   dueTime?: string;
   status: TaskStatus;
   /**
-   * Every reminder for this task, whatever its status: still scheduled, sent,
-   * skipped because the task was already done when the clock rang, or failed.
-   * The calendar draws its dots from these rows' `localDate`s, and the day sheet
-   * words each one from its status.
+   * Every day planned for this task as a reminder, past ones included. Home
+   * marks the row when one of them is today and the task is still open; see
+   * reminderToday() in src/lib/home.ts. The calendar does not draw them.
    */
   reminders: ReminderView[];
 };
@@ -319,8 +300,8 @@ export const MAX_PAGE_BYTES = 10 * 1024 * 1024;
  * NO_ACTION in ./fields.ts): the letter is kept in Your letters and no task is
  * made, because a task titled "No action" is noise on a list whose whole job is
  * saying what to do. Otherwise it is the task the letter became, with every
- * reminder planned for it, so the calendar the person lands on can draw it
- * without asking again.
+ * reminder planned for it, so the screens she lands on can draw it without
+ * asking again.
  */
 export type ConfirmDocumentResponse = {
   documentId: string;
@@ -387,7 +368,7 @@ export type SessionUser = {
   email: string;
   displayName: string;
   role: "user" | "platform_operator" | "org_admin" | "org_worker";
-  /** IANA zone name, defaulted server-side. "9 am" means 9 am here. */
+  /** IANA zone name, defaulted server-side. Her "today" is today here. */
   timeZone: string;
 };
 

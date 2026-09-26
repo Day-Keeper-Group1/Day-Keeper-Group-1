@@ -3,7 +3,7 @@
 // KAN-57: one task, drawn the way the prototype's .row draws it.
 
 import Link from "next/link";
-import { Check } from "lucide-react";
+import { Bell, Check } from "lucide-react";
 
 import type { TaskSummary } from "@/lib/contract/api";
 import { formatDueDate, formatDueTime } from "@/lib/contract/dates";
@@ -78,6 +78,7 @@ export function TaskRow({
   onToggle,
   onOpen,
   href,
+  reminder,
   className,
 }: {
   task: TaskSummary;
@@ -91,6 +92,12 @@ export function TaskRow({
    */
   onOpen?: () => void;
   href?: string;
+  /**
+   * KAN-62: the reminder line, when today is one of this task's reminder days
+   * (reminderToday in src/lib/home.ts). Only Home passes it: a reminder is a
+   * mark on Home and nowhere else.
+   */
+  reminder?: string | null;
   className?: string;
 }) {
   const done = task.status === "completed";
@@ -121,6 +128,12 @@ export function TaskRow({
       >
         {taskByline(task)}
       </span>
+      {reminder ? (
+        <span className="mt-1 flex items-center gap-[5px] text-caption font-bold text-warn">
+          <Bell className="size-[15px] shrink-0" aria-hidden="true" />
+          {reminder}
+        </span>
+      ) : null}
     </span>
   );
 
@@ -141,11 +154,15 @@ export function TaskRow({
   );
 
   // The prototype's `.row`: 12px above and below, 12px between the tick and
-  // the words, a line between rows.
+  // the words, a line between rows. A reminding row is `.row.remind`: the
+  // reminder's pale gold, pushed 8px out each side so the words stay where
+  // they were, and no line above or below it, since the tint is the edge.
   return (
     <div
       className={cn(
         "flex min-h-12 items-center gap-3 border-t border-line px-0.5 py-3 first:border-t-0",
+        reminder &&
+          "-mx-2 my-0.5 rounded-[var(--radius-card)] border-t-transparent bg-warn-bg px-2 [&+*]:border-t-transparent",
         className,
       )}
     >

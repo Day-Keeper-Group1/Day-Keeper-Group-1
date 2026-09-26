@@ -6,7 +6,7 @@
  * checked and put on the calendar in front of whoever is watching, so none of
  * that belongs here. What cannot be made on the spot is a reminder that is
  * already due: a letter photographed today cannot have a seven day reminder
- * that fires today. So Margaret's world is three letters whose reminders all
+ * that falls on today. So Margaret's world is three letters whose reminders all
  * fall on today, and two tasks she has already ticked off, which are there
  * only to show the account has been used. Nothing is waiting to be checked.
  *
@@ -179,8 +179,8 @@ async function main() {
     }
 
     // ---- Three reminders due today ------------------------------------------
-    // Reminders go out seven, three and one day before a due date
-    // (src/lib/contract/reminders.ts). A letter due in seven days has its
+    // Reminder days fall seven, three and one day before a due date
+    // (src/lib/contract/reminders.ts), and on one Home marks the task's row. A letter due in seven days has its
     // seven day reminder today, one due in three has its three day reminder
     // today, and one due tomorrow has its last one today. Three letters, and
     // all three rungs of the ladder are on today at once.
@@ -470,22 +470,12 @@ async function confirmedLetter(
   // The one scheduling rule, imported rather than restated. The confirm handler
   // must call the same function: two copies of this rule is how the review
   // screen ends up promising a reminder that never arrives.
-  for (const planned of planReminders(spec.dueDate, {
-    timeZone: APP_TIME_ZONE,
-  })) {
-    // A reminder whose time has passed is one that was sent, and the schema
-    // will not accept 'sent' without the timestamp that says when. Both go in
-    // together rather than one being patched on afterwards.
-    const alreadySent = planned.scheduledFor.getTime() < Date.now();
+  // No `today` here: the seed builds a world that already happened, so the
+  // days before today are kept as the confirm handler would have kept them.
+  for (const planned of planReminders(spec.dueDate)) {
     await db.query(
-      `INSERT INTO reminders (task_id, scheduled_for, channel, status, sent_at)
-       VALUES ($1, $2, 'in_app', $3, $4)`,
-      [
-        taskId,
-        planned.scheduledFor,
-        alreadySent ? "sent" : "scheduled",
-        alreadySent ? planned.scheduledFor : null,
-      ],
+      `INSERT INTO reminders (task_id, remind_on) VALUES ($1, $2)`,
+      [taskId, planned.localDate],
     );
   }
 

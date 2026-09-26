@@ -79,11 +79,7 @@ const HOME: HomePayload = {
       reminders: [
         {
           id: "reminder-one",
-          scheduledFor: "2026-08-08T23:00:00.000Z",
           localDate: "2026-08-09",
-          localTime: "09:00",
-          channel: "in_app",
-          status: "scheduled",
         },
       ],
     },
