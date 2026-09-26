@@ -449,6 +449,10 @@ constants are in `src/lib/contract/api.ts`; import them, so the capture screen
 can stop the person at the last page rather than rejecting a deliberate
 photograph at the end.
 
+A PDF never reaches this endpoint. The capture screen draws each of its pages
+as a PNG at 300 dpi in the browser, the way the letters in the experiments were
+made, and sends those ([`src/lib/pdf-pages.ts`](../src/lib/pdf-pages.ts)).
+
 Those two checks, the file type and the size, are the only checks made on an
 upload. Nothing here judges whether the photograph is a letter or whether it can
 be read; see [`scope.md`](scope.md).

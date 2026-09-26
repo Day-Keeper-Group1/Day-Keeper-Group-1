@@ -9,12 +9,14 @@ import { useActivity } from "@/components/layout/activity";
 import { Panel, ScreenHeader } from "@/components/screen";
 import {
   MAX_PAGES,
+  TOO_MANY_PAGES_MESSAGE,
   type ApiError,
   type DocumentSummary,
   type StoredUploadRequest,
   type UploadRequest,
   type UploadSlots,
 } from "@/lib/contract/api";
+import { isPdf, pdfToPages, PdfTooLong } from "@/lib/pdf-pages";
 import { shrinkPhoto } from "@/lib/photos";
 
 /**
@@ -56,6 +58,8 @@ export default function UploadDocumentPage() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  /** A PDF she picked is being turned into pages. (KAN-85) */
+  const [preparing, setPreparing] = useState(false);
   const [error, setError] = useState<UploadError | null>(null);
   /**
    * Sent to be read: every letter of hers not yet dealt with, the same rows
@@ -86,18 +90,54 @@ export default function UploadDocumentPage() {
    * returns them in the order of its own choosing (on Windows the file clicked
    * last comes first), while names from a camera or a scanner sort the way the
    * pages were made. Anything past the tenth page is left out.
+   *
+   * A PDF becomes its pages first, in its place in that order (KAN-85,
+   * src/lib/pdf-pages.ts). A PDF that does not fit in the room left is refused
+   * whole rather than cut short, with the sentence the server uses for too
+   * many photographs.
    */
-  function addFiles(selected: FileList | null) {
-    if (!selected || selected.length === 0) return;
-    const picked = Array.from(selected).sort((a, b) =>
+  async function addFiles(selected: File[]) {
+    if (selected.length === 0) return;
+    const picked = [...selected].sort((a, b) =>
       a.name.localeCompare(b.name, undefined, { numeric: true }),
     );
+
+    const files: File[] = [];
+    if (picked.some(isPdf)) {
+      setError(null);
+      setPreparing(true);
+      try {
+        for (const file of picked) {
+          if (isPdf(file)) {
+            const room = MAX_PAGES - photos.length - files.length;
+            files.push(...(await pdfToPages(file, room)));
+          } else {
+            files.push(file);
+          }
+        }
+      } catch (problem) {
+        setError(
+          problem instanceof PdfTooLong
+            ? { message: TOO_MANY_PAGES_MESSAGE, pages: problem.message }
+            : {
+                message:
+                  "This PDF could not be opened. Please photograph the letter instead.",
+              },
+        );
+        return;
+      } finally {
+        setPreparing(false);
+      }
+    } else {
+      files.push(...picked);
+    }
+
     setPhotos((prev) => {
       const room = Math.max(0, MAX_PAGES - prev.length);
       const stamp = Date.now();
       return [
         ...prev,
-        ...picked.slice(0, room).map((file, index) => ({
+        ...files.slice(0, room).map((file, index) => ({
           id: `${stamp}-${prev.length + index}`,
           file,
           previewUrl: file.type.startsWith("image/")
@@ -240,22 +280,28 @@ export default function UploadDocumentPage() {
       <input
         ref={inputRef}
         type="file"
-        accept="image/*"
+        accept="image/*,application/pdf"
         // No `capture`: with it a phone opens the camera and nothing else.
         // Without it she is offered the camera, her photo library and her
         // files, and `multiple` lets the last two hand over several pages.
+        // A PDF among her files can be picked too, and becomes its pages.
         multiple
         className="sr-only"
         onChange={(event) => {
-          addFiles(event.target.files);
+          // Copied before the input is cleared: the list is live, and emptying
+          // the input empties it under a PDF still being drawn.
+          const selected = event.target.files
+            ? Array.from(event.target.files)
+            : [];
           if (inputRef.current) inputRef.current.value = "";
+          void addFiles(selected);
         }}
       />
 
       {/* The prototype's `.cam`: a pale green, dashed area, green words. */}
       <button
         type="button"
-        disabled={atLimit}
+        disabled={atLimit || preparing}
         onClick={() => inputRef.current?.click()}
         className="mb-3.5 flex w-full flex-col items-center rounded-[10px] border-2 border-dashed border-line bg-primary-soft px-4 py-[34px] text-center text-primary disabled:cursor-not-allowed disabled:opacity-45"
       >
@@ -324,10 +370,17 @@ export default function UploadDocumentPage() {
         type="button"
         size="block"
         className="mt-1"
-        disabled={photos.length === 0 || submitting}
+        disabled={photos.length === 0 || submitting || preparing}
         onClick={() => void handleSubmit()}
       >
-        {submitting ? "Sending..." : "Read it"}
+        {/* Not in the prototype, which has no PDFs: drawing a long one at
+            300 dpi takes a few seconds on a phone, and a button that does
+            nothing for that long looks broken. (KAN-85) */}
+        {preparing
+          ? "Opening the PDF..."
+          : submitting
+            ? "Sending..."
+            : "Read it"}
       </Button>
       <p className="mt-2.5 text-key leading-[1.45] text-ink-dim">
         Every photo you take here belongs to this one letter. They go together,

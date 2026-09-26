@@ -30,6 +30,7 @@ import { randomUUID } from "node:crypto";
 import {
   MAX_PAGES,
   MAX_PAGE_BYTES,
+  TOO_MANY_PAGES_MESSAGE,
   type DocumentSummary,
   type UploadSlots,
 } from "@/lib/contract/api";
@@ -106,10 +107,9 @@ function judgeCountAndTypes(mimeTypes: readonly string[]): void {
   }
 
   if (mimeTypes.length > MAX_PAGES) {
-    throw new UploadRejected(
-      `Please send one letter at a time, up to ${MAX_PAGES} photos.`,
-      { pages: `There are ${mimeTypes.length} photos here.` },
-    );
+    throw new UploadRejected(TOO_MANY_PAGES_MESSAGE, {
+      pages: `There are ${mimeTypes.length} photos here.`,
+    });
   }
 
   for (const [index, mimeType] of mimeTypes.entries()) {
