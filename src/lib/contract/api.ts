@@ -241,6 +241,13 @@ export type DocumentPageView = {
 export const MAX_PAGES = 10;
 export const MAX_PAGE_BYTES = 10 * 1024 * 1024;
 
+/**
+ * What she is told when a letter has more pages than MAX_PAGES. The server
+ * says it of photographs and the capture screen says it of a PDF too long to
+ * add, and it is one sentence so the two cannot drift apart. (KAN-85)
+ */
+export const TOO_MANY_PAGES_MESSAGE = `Please send one letter at a time, up to ${MAX_PAGES} photos.`;
+
 /*
  * There is deliberately no ConfirmDocumentRequest, and deliberately no endpoint
  * anywhere that corrects a reading.

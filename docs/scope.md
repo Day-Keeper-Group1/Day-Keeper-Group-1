@@ -9,7 +9,9 @@ the list below, this document wins and that document is wrong.
 
 1. A person signs in. Correct credentials, and they arrive.
 2. They photograph one letter and upload it. A letter may run to several pages, and
-   every photograph in an upload belongs to that one letter.
+   every photograph in an upload belongs to that one letter. A letter that arrived as a PDF
+   can be picked instead; the browser turns each of its pages into an image first, so
+   everything after this sees photographs.
 3. The upload is checked for the two things code can check: the file is an image we can
    read, and it is not larger than the limit.
 4. One reading step. A vision model looks at the photographs twice, and a third time when the two readings differ, and returns the six fields. How the readings are put together is [`extraction.md`](extraction.md).

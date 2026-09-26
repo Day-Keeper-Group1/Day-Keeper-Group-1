@@ -30,6 +30,7 @@ import { randomUUID } from "node:crypto";
 import {
   MAX_PAGES,
   MAX_PAGE_BYTES,
+  TOO_MANY_PAGES_MESSAGE,
   type DocumentSummary,
 } from "@/lib/contract/api";
 import { isIsoDate } from "@/lib/contract/dates";
@@ -108,10 +109,9 @@ export async function validateUpload(files: File[]): Promise<UploadedPage[]> {
   }
 
   if (files.length > MAX_PAGES) {
-    throw new UploadRejected(
-      `Please send one letter at a time, up to ${MAX_PAGES} photos.`,
-      { pages: `There are ${files.length} photos here.` },
-    );
+    throw new UploadRejected(TOO_MANY_PAGES_MESSAGE, {
+      pages: `There are ${files.length} photos here.`,
+    });
   }
 
   // Every page is judged before any page is read into memory. A letter whose
