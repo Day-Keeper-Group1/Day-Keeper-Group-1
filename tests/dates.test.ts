@@ -12,12 +12,12 @@ import { describe, expect, it } from "vitest";
 import {
   APP_TIME_ZONE,
   addDays,
+  daysBetween,
   formatDueDate,
   formatDueTime,
   isIsoDate,
   parseHumanDate,
   todayInZone,
-  zonedTimeToInstant,
 } from "@/lib/contract/dates";
 
 describe("todayInZone", () => {
@@ -31,6 +31,25 @@ describe("todayInZone", () => {
   it("is still today in Melbourne through the UTC morning", () => {
     const now = new Date("2026-08-15T10:00:00Z"); // 20:00 in Melbourne
     expect(todayInZone(APP_TIME_ZONE, now)).toBe("2026-08-15");
+  });
+
+  it("follows daylight saving: in November midnight comes an hour earlier in UTC", () => {
+    // 13:30 UTC is 00:30 the next day in AEDT (+11), but only 23:30 in AEST.
+    const now = new Date("2026-11-20T13:30:00Z");
+    expect(todayInZone(APP_TIME_ZONE, now)).toBe("2026-11-21");
+  });
+});
+
+describe("daysBetween", () => {
+  it("counts whole days forward and back", () => {
+    expect(daysBetween("2026-09-26", "2026-09-27")).toBe(1);
+    expect(daysBetween("2026-09-26", "2026-10-03")).toBe(7);
+    expect(daysBetween("2026-09-26", "2026-09-19")).toBe(-7);
+    expect(daysBetween("2026-09-26", "2026-09-26")).toBe(0);
+  });
+
+  it("is not thrown by the change to daylight saving on 4 October", () => {
+    expect(daysBetween("2026-10-01", "2026-10-08")).toBe(7);
   });
 });
 
@@ -103,22 +122,5 @@ describe("parseHumanDate", () => {
     expect(parseHumanDate("Aug 15 2026")).toBeNull(); // month-first is not accepted
     expect(parseHumanDate("sometime soon")).toBeNull();
     expect(parseHumanDate("")).toBeNull();
-  });
-});
-
-describe("zonedTimeToInstant", () => {
-  it("knows 9 am Melbourne is 23:00 UTC the night before, in winter", () => {
-    const instant = zonedTimeToInstant("2026-08-08", 9, 0, APP_TIME_ZONE);
-    expect(instant.toISOString()).toBe("2026-08-07T23:00:00.000Z");
-  });
-
-  it("follows daylight saving: in November the same wall clock is an hour earlier in UTC", () => {
-    const instant = zonedTimeToInstant("2026-11-20", 9, 0, APP_TIME_ZONE);
-    expect(instant.toISOString()).toBe("2026-11-19T22:00:00.000Z");
-  });
-
-  it("treats UTC as the identity", () => {
-    const instant = zonedTimeToInstant("2026-08-08", 9, 0, "UTC");
-    expect(instant.toISOString()).toBe("2026-08-08T09:00:00.000Z");
   });
 });

@@ -722,14 +722,7 @@ const schemas: Record<string, Schema> = {
     type: "object",
     properties: {
       id: { type: "string", format: "uuid" },
-      scheduledFor: { type: "string", format: "date-time" },
       localDate: DATE,
-      localTime: TIME,
-      channel: { type: "string", enum: ["in_app", "email"] },
-      status: {
-        type: "string",
-        enum: ["scheduled", "sent", "skipped", "failed"],
-      },
     },
   },
   TaskSummary: {
