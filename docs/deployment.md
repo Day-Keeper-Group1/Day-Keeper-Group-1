@@ -2,7 +2,21 @@
 
 Status (2026-09-26): runs end to end, phone included. It is a practice run on branch `kan-75-vercel-trial`, for Sai to review and the team to decide whether to adopt. The trial went in five stages, named below: 1 choose the platforms, 2 register the accounts, 3 the laptop against the hosted database and storage, 4 the app on Netlify, 5 a phone.
 
-This file holds no passwords, keys or connection strings with a password in them. Those live in the team's Teams channel, under internal documents, which only the group can open.
+This file holds no passwords, keys or connection strings with a password in them. Those are in Teams; see the next section.
+
+## Where the keys are
+
+In Microsoft Teams: the team **P000473SE-G1-DayKeeper**, its private channel **Internal Documents** (only Group 1 can open it), the post **"Deployment accounts and keys (KAN-75)"** by Junchun Zhang on 26 September 2026. It carries one attachment, `DayKeeper-deployment-keys-2026-09-26.zip`, which is also in the channel's Shared tab. Inside:
+
+| File | What it holds |
+|---|---|
+| `DayKeeper-deployment-keys.md` | The project mailbox and its password (Supabase and Netlify use the same one); the Supabase project ref, database password and full `DATABASE_URL`; the storage values `STORAGE_ENDPOINT`, `STORAGE_REGION`, `STORAGE_BUCKET`, `STORAGE_ACCESS_KEY`, `STORAGE_SECRET_KEY`; the Netlify team, project id and URLs; which deploy contexts hold `AZURE_OPENAI_API_KEY` |
+| `proton-recovery-phrase.pdf` | Recovers the project mailbox if its password is lost |
+| `supabase-prod-ca-2021.crt` | Supabase's root certificate for `DATABASE_CA_CERT`. Public, not a secret |
+
+Not in it: `AZURE_OPENAI_API_KEY`. That is the school's key, issued to the team by RACE and handed round separately; ask Jason for it.
+
+**For agents.** You cannot open Teams. When a task needs one of the values above, name the variable and ask the person to copy it from that file into their own `.env.local` (or into the Netlify dashboard) themselves. Never write a value into the repository, a commit message, a pull request, a Jira ticket, a group chat or a log; the repository is public. If the zip and this file disagree, the platforms are the truth, then the zip, then this file, and the person should be told so this file gets fixed.
 
 ## For agents: this file is a snapshot, the platforms are the truth
 
@@ -14,7 +28,7 @@ How to read the live state without opening a browser:
 - **Supabase: the Management API**, for places where a browser sign in is impossible. It takes a personal access token, which carries the full rights of the account, so it is a key and lives with the others in Teams. Docs: https://supabase.com/docs/reference/api/introduction
 - **Netlify: the CLI.** `netlify env:list --context <context>` lists the environment variables one deploy context has (secret values stay hidden); `netlify logs --deploy-id <id> --json` gives a deploy's function log, where each invocation ends with a `Duration: … ms` line; `netlify api listSiteDeploys --data '{"site_id":"c8f99029-c5b1-448a-861c-4d1621e4b2cf","per_page":1}'` gives the newest deploy's id. Signing in (`netlify login`) uses the project mailbox. Docs: https://cli.netlify.com/
 
-Every one of these needs a sign in or a token. The agent gets it from the person, and the person gets it from the keys document in Teams.
+Every one of these needs a sign in or a token. The agent gets it from the person, and the person gets it from the keys in Teams ("Where the keys are", above).
 
 The Supabase MCP server above was added to Jason's Claude Code on 2026-09-25 as `supabase-daykeeper` (user scope) and authorised with the project mailbox. The authorisation screen grants read access to database, secrets, edge functions, environment, organizations, projects, analytics and storage in `DayKeeper Group 1`.
 
@@ -301,7 +315,7 @@ Checked on the providers' own pages on 2026-09-24.
 - **A script that refreshes Margaret only. Deferred on 2026-09-26, and must be written before the first demonstration after any teammate keeps their own data on the deployed database.** Until then `npm run db:reset` with `DK_ALLOW_REMOTE_RESET=yes` does the job, because the hosted database holds nothing but the seed. The seed is for weekly demonstrations and changes with them, and Margaret's three reminders are dated from the day the seed runs, so a deployed copy goes stale within days even when the seed does not change. Both existing scripts wipe everything (`db:reset` truncates tables and empties the bucket; `db:seed` truncates every table but leaves old photographs behind), which is wrong on a hosted database where teammates may have their own test data. The new script deletes Margaret's letters, tasks and reminders and her photographs under `uploads/<her id>/`, then writes her five letters again from the current seed with dates counted from that day. Other accounts are not touched. Same two guards and TLS as the other scripts. Run it against the deployed database before each demonstration.
 - **`touch_updated_at` search_path** (advisor WARN): a small hardening change to `db/schema.sql`, not yet decided.
 - ~~Encrypt the setup scripts~~: done 2026-09-26, commit `78116a25`. The rule moved from `src/server/db.ts` to `src/lib/database-tls.ts`, and the app's pool and all three scripts use it. Checked: the scripts reach Supabase over TLS 1.3 and local Docker without TLS. The schema build and seed of 2026-09-25 had travelled unencrypted; the reset of 2026-09-26 was encrypted. Next step to consider: Supabase's "Enforce SSL", so an unencrypted connection is refused outright.
-- **Keep the project Private between demonstrations.** The seeded passwords are in this public repository, so while the project is public anyone who finds the URL can sign in as Margaret and spend Azure credit on readings. Private, it opens only in a browser signed in to Netlify with the project account (the keys are in Teams). Make it public for a demonstration from a phone, a few minutes ahead, and private again afterwards.
+- **The project is public, on purpose.** Decided 2026-09-26 (Jason): the team tests it from their own phones, which are not signed in to Netlify. The cost is that the seeded passwords are in this public repository, so anyone who finds the URL can sign in and spend Azure credit on readings, and can see whatever has been uploaded to the seeded accounts. So upload nothing there that the whole internet may not read. To close it: Project configuration, General, Visitor access, Edit visibility, Private; it then opens only in a browser signed in to Netlify with the project account. A change takes a few minutes to apply.
 - **A letter whose reader closes the app mid-reading waits** until they open it again, because the next round is read by their own screen's poll. Nothing reads a letter nobody is watching; that needs a real queue or a scheduled function, not decided.
 - **Photographs of a screen read less reliably** than the clean pages the scheme was measured on (Tarnwell read as Tamwell, above). For KAN-76.
 - ~~Phone photographs will not fit through Netlify~~ (found 2026-09-25): fixed on 2026-09-26 by commits 2 and 3 above.
