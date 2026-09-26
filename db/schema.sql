@@ -95,11 +95,6 @@ CREATE TYPE run_status AS ENUM ('queued', 'processing', 'succeeded', 'failed');
 -- that completes a task.
 CREATE TYPE task_state AS ENUM ('open', 'completed', 'dismissed');
 
--- What a reminder goes out over, and what became of it. There is deliberately
--- no 'cancelled'; the reminders table below says why.
-CREATE TYPE reminder_channel AS ENUM ('in_app', 'email');
-CREATE TYPE reminder_status AS ENUM ('scheduled', 'sent', 'skipped', 'failed');
-
 -- ---------------------------------------------------------------------------
 -- People
 -- ---------------------------------------------------------------------------
@@ -115,9 +110,9 @@ CREATE TABLE users (
   -- src/server/auth/.
   password_hash   text NOT NULL,
   role            user_role NOT NULL DEFAULT 'user',
-  -- IANA zone name. The product promises "a reminder at 9 am", and 9 am is
-  -- meaningless without knowing whose morning. Defaulted rather than asked for
-  -- at registration; a settings screen can expose it later.
+  -- IANA zone name. "Today", "overdue" and "a reminder today" are all days,
+  -- and a day is meaningless without knowing whose. Defaulted rather than asked
+  -- for at registration; a settings screen can expose it later.
   timezone        text NOT NULL DEFAULT 'Australia/Melbourne',
   -- Deactivating a person stops them signing in and leaves their letters
   -- intact. A timestamp rather than a boolean, because when it happened is
@@ -482,42 +477,27 @@ CREATE TABLE tasks (
 CREATE INDEX tasks_user_state_due_idx ON tasks (user_id, state, due_date);
 CREATE INDEX tasks_document_idx ON tasks (document_id) WHERE document_id IS NOT NULL;
 
--- A reminder is a clock, and the clock checks the tick when it rings.
+-- A reminder is a day, not a message. KAN-62: on each of the days seven, three
+-- and one before a task is due, Home marks that task's row as a reminder, and
+-- that is all a reminder does. Nothing is sent: there is no notification, no
+-- email, and nothing running in the background, so there is nothing to record
+-- about a reminder beyond the day it falls on.
 --
--- Ticking a task writes nothing here, and unticking writes nothing here. When a
--- row's moment arrives, the dispatcher reads the task at that moment: still
--- open means send and write 'sent', already done means send nothing and write
--- 'skipped'. That is the product's only judgement about whether to nag, it is
--- made at the only moment that matters, and it is made in the one place that
--- sends.
---
--- The design this replaced flipped the waiting rows to 'cancelled' when a task
--- was ticked and revived them when it was unticked, except the ones whose time
--- had already passed. None of it was wrong. All of it was a second copy of "the
--- task is done", and a copy needs a transaction to keep it honest and an undo
--- rule to unwind it; that undo rule had grown its exception within a week of
--- being written. Storing the fact once and reading it at the moment of use
--- needs no undo rule, because there is nothing to undo. A person can tick at
--- breakfast, untick at lunch and tick again at dinner, and none of her wavering
--- is written down anywhere.
---
--- Rows rather than a rule evaluated at read time, because each one has its own
--- fate to record, and a rule cannot remember what it did. When they are planned
--- and how far ahead: src/lib/contract/reminders.ts.
+-- Rows rather than a rule worked out at read time, because the days are
+-- planned once, on the day the letter is confirmed, and one that would fall on
+-- that day or before it is never planned: she has just looked at the letter.
+-- Only the confirm day knows that, so it is written down then. Ticking a task
+-- writes nothing here; Home simply does not mark a ticked task. When they are
+-- planned: src/lib/contract/reminders.ts.
 CREATE TABLE reminders (
-  id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  task_id      uuid NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
-  scheduled_for timestamptz NOT NULL,
-  channel      reminder_channel NOT NULL DEFAULT 'in_app',
-  status       reminder_status NOT NULL DEFAULT 'scheduled',
-  sent_at      timestamptz,
-  created_at   timestamptz NOT NULL DEFAULT now(),
-  CONSTRAINT reminders_sent_has_timestamp
-    CHECK ((status = 'sent') = (sent_at IS NOT NULL))
+  id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  task_id    uuid NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+  -- A day on her calendar, in her zone, not an instant.
+  remind_on  date NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (task_id, remind_on)
 );
 
-CREATE INDEX reminders_due_idx ON reminders (scheduled_for) WHERE status = 'scheduled';
-CREATE INDEX reminders_task_idx ON reminders (task_id);
 
 -- ---------------------------------------------------------------------------
 -- Audit

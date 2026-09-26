@@ -147,13 +147,12 @@ export async function confirmDocument(
       // and a task with no date sits on the list saying so instead.
       if (row.due_date) {
         const planned = planReminders(row.due_date, {
-          timeZone,
           today: todayInZone(timeZone, now),
         });
         for (const reminder of planned) {
           await client.query(
-            `INSERT INTO reminders (task_id, scheduled_for) VALUES ($1, $2)`,
-            [taskId, reminder.scheduledFor.toISOString()],
+            `INSERT INTO reminders (task_id, remind_on) VALUES ($1, $2)`,
+            [taskId, reminder.localDate],
           );
         }
         reminderCount = planned.length;

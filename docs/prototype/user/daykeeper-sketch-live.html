@@ -67,7 +67,7 @@
   .toolbar .name { font-weight: 700; color: var(--ink); }
   .toolbar button { border: 1px solid var(--line); background: var(--bg-card); padding: 6px 14px; border-radius: 999px; font-size: 13px; cursor: pointer; color: var(--ink); }
   /* The sketch's clock, worn on the outside. Overdue, "was due", reminder
-     tenses, everything date-shaped in here is computed against this day, and
+     days, everything date-shaped in here is computed against this day, and
      anyone reading the sketch needs to know it without opening the source.
      KAN-59: it is the real date unless ?today= pins another, and the picker
      beside it sets that pin. Filled from TODAY by script. */
@@ -211,7 +211,6 @@
   .cal .d .dots { display: flex; gap: 3px; justify-content: center; align-items: center; height: 6px; margin-top: 2px; }
   .cdot { width: 5px; height: 5px; border-radius: 50%; }
   .cdot.due { background: var(--dot-due); }
-  .cdot.rem { background: var(--dot-rem); }
   .cal .d.has { cursor: pointer; }
   .cal .d.sel { background: var(--primary); color: var(--primary-ink); font-weight: 700; }
   .cal .d.sel .cdot { background: var(--primary-ink); }
@@ -224,13 +223,14 @@
   .dd-day { font-size: 13px; color: var(--ink-dim); font-weight: 600; margin-bottom: 8px; }
   .sheet .ent + .ent { border-top: 1px solid var(--line); padding-top: 12px; margin-top: 12px; }
   .sheet .t { font-size: 16.5px; font-weight: 700; }
-  /* KAN-59: a reminder's day opens the whole task, like its due day does, so
-     the box on top is what says this day is the reminder and not the day it
-     is due: the bell and the morning it goes out, then, in words, how far off
-     the due date is and which day it is. Words, not the gold dot, carry it. */
-  .remind-box { background: var(--warn-bg); border-radius: var(--radius-card); padding: 11px 12px; margin-bottom: 12px; }
-  .remind-box .remind { display: flex; align-items: center; gap: 6px; font-size: 13.5px; font-weight: 600; color: var(--warn-ink); margin-bottom: 4px; }
-  .remind-box .until { font-size: 16.5px; font-weight: 700; color: var(--ink); line-height: 1.35; }
+  /* KAN-62: a reminder is a mark on the task's own row on Home, on the
+     mornings seven, three and one day before it is due. The row stays where
+     the list already puts it, so a task is still drawn once; nothing is drawn
+     on the calendar, which only marks the day a thing happens, the way Google
+     Calendar does. The tint says "today", the words say how far off. */
+  .row.remind { background: var(--warn-bg); border-radius: var(--radius-card); border-top-color: transparent; margin: 2px -8px; padding: 12px 8px; }
+  .row.remind + .row { border-top-color: transparent; }
+  .row .rem { display: flex; align-items: center; gap: 5px; margin-top: 4px; font-size: 13.5px; font-weight: 700; color: var(--warn-ink); }
   .strip { margin-top: 12px; }
   .cap2 { font-size: 12.5px; color: var(--ink-dim); margin-bottom: 7px; }
 
@@ -353,7 +353,7 @@
 
         <div class="review-cta dim" id="home-cta" onclick="ctaTap()">
           <div class="big" id="cta-big">Nothing to check right now</div>
-          <div class="small" id="cta-small">We'll tell you when something's ready.</div>
+          <div class="small" id="cta-small">Photograph a letter and it will show up here.</div>
         </div>
 
         <div class="card" id="check-card" style="display:none">
@@ -551,13 +551,16 @@
   const TODAY = PINNED ? isoOf(dateOf(PIN)) : isoOf(new Date());
 
   /* ---------- reminders ----------
-     The ladder in src/lib/contract/reminders.ts: 9 am, seven, three and one
-     days before the due date. They are planned on the day a letter is saved,
-     and one that would land before that day is never planned, so a bill
-     checked five days before it is due gets two reminders, not three. */
+     The ladder in src/lib/contract/reminders.ts: seven, three and one days
+     before the due date. They are planned on the day a letter is saved, and
+     one that would land on that day or before it is never planned: a bill
+     checked five days before it is due gets two reminders, not three, and a
+     bill checked three days before gets only the one-day reminder, because
+     she has just looked at it. KAN-62: a reminder is a mark for the whole
+     day, not a moment at 9 am, so there is no hour to compare. */
   const REMINDER_DAYS = [7, 3, 1];
   function planReminders(due, savedOn) {
-    return REMINDER_DAYS.map(n => addDays(due, -n)).filter(day => day >= savedOn);
+    return REMINDER_DAYS.map(n => addDays(due, -n)).filter(day => day > savedOn);
   }
 
   /* ---------- the letters ----------
@@ -576,13 +579,13 @@
   /* Margaret's letters from the weeks before today, already checked. Between
      them they put a task under every heading Home has, and a dot on the
      calendar most days of the month, so all of it can be seen on first open:
-     overdue, a reminder going out this morning, the next seven days, an
+     overdue, a reminder today, the next seven days, an
      appointment with a time, one done already, one with no date, one that
      prints three numbers, and a statement that asked for nothing. */
   const SAVED = [
     { who: 'Services Australia', what: 'Pension review form', action: 'Return form to Services Australia', due: -3, pages: 2,
       numbers: [['Customer reference number', 'CRN 2201 8845'], ['Letter reference', 'PRV 5520 1178']] },
-    /* Due in three days, so its three-day reminder goes out this morning. */
+    /* Due in three days, so today is its three-day reminder. */
     { who: 'Yarra Valley Water', what: 'Water bill', action: 'Pay Yarra Valley Water', due: 3, amount: '$89.20', pages: 1,
       numbers: [['Account number', '5501 2280']] },
     /* KAN-58: a letter that prints three numbers, so the way several numbers
@@ -655,7 +658,7 @@
   function planOf(L) {
     if (asksForNothing(L)) return [{ ico: 'file-text', t: "Nothing to do. It's kept in your letters." }];
     if (!L.due) return [{ ico: 'file-text', t: "No date on this letter. It's saved; nothing goes on your calendar." }];
-    return planReminders(L.due, TODAY).map(day => ({ ico: 'bell', t: 'Remind you: ' + shortDay(day) + ', 9 am' }))
+    return planReminders(L.due, TODAY).map(day => ({ ico: 'bell', t: 'Remind you: ' + shortDay(day) }))
       .concat([{ ico: 'calendar-days', t: L.time ? 'On your calendar: ' + shortDay(L.due) + ', ' + L.time : 'On your calendar: due ' + shortDay(L.due) }]);
   }
 
@@ -920,8 +923,18 @@
     return t.due ? shortDay(t.due) + (t.time ? ', ' + t.time : '') : 'No date';
   }
 
-  function taskRow(t, inSheet) {
+  /* KAN-62: the words under a task on one of its reminder mornings. */
+  function remindLine(t) {
+    const n = daysBetween(TODAY, t.due);
+    const what = t.time ? 'appointment' : 'due';
+    return icon('bell', 15) + 'Reminder: ' + what + (n === 1 ? ' tomorrow' : ' in ' + n + ' days');
+  }
+
+  function taskRow(t, inSheet, onHome) {
     const late = isLate(t);
+    /* A reminder shows only on Home, only on its own day, and only while the
+       task is open: a ticked task has nothing left to remind her of. */
+    const reminding = onHome && !t.done && t.reminders.includes(TODAY);
     const stay = inSheet ? 'true' : 'false';
     /* Overdue is told in words ("was due"), not in colour: src/lib/contract/api.ts. */
     /* A dateless task never had reminders, so its done face does not claim
@@ -931,9 +944,10 @@
        the letter's own words, as the finished row draws it
        (src/components/task-row.tsx). */
     const who = factOf(t, 'From');
-    return '<div class="row' + (t.done ? ' done' : late ? ' late' : '') + '"><span class="dot" onclick="toggleDone(\'' + t.id + '\', ' + stay + ')">' + icon('check', 15, 3) + '</span>' +
+    return '<div class="row' + (t.done ? ' done' : late ? ' late' : reminding ? ' remind' : '') + '"><span class="dot" onclick="toggleDone(\'' + t.id + '\', ' + stay + ')">' + icon('check', 15, 3) + '</span>' +
       '<span class="txt" onclick="openTask(\'' + t.id + '\')"><span class="doing">' + t.action + '</span>' +
-      '<span class="when">' + (who ? who + ' · ' : '') + when + '</span></span></div>';
+      '<span class="when">' + (who ? who + ' · ' : '') + when + '</span>' +
+      (reminding ? '<span class="rem">' + remindLine(t) + '</span>' : '') + '</span></div>';
   }
 
   /* One heading and its rows. An empty group is not drawn, unless it is told
@@ -944,7 +958,7 @@
     if (!list.length && !o.empty) return '';
     let h = '<div class="group"><h3 class="group-h">' + heading + '</h3>';
     h += list.length
-      ? list.map(t => taskRow(t)).join('')
+      ? list.map(t => taskRow(t, false, o.home)).join('')
       : '<div class="row"><span class="txt" style="color:var(--ink-dim)">' + o.empty + '</span></div>';
     if (o.more) h += '<button class="more" onclick="go(\'calendar\')">' + o.more + ' more in your calendar →</button>';
     return h + '</div>';
@@ -963,9 +977,9 @@
       else if (t.due && t.due > TODAY && t.due <= weekEnd) week.push(t);
       else later.push(t);
     });
-    return taskGroup(today.some(isLate) ? 'Needs doing' : 'Today', today) +
-      taskGroup('Next seven days', week) +
-      taskGroup('Later', later.slice(0, LATER_SHOWN), { more: Math.max(0, later.length - LATER_SHOWN) });
+    return taskGroup(today.some(isLate) ? 'Needs doing' : 'Today', today, { home: true }) +
+      taskGroup('Next seven days', week, { home: true }) +
+      taskGroup('Later', later.slice(0, LATER_SHOWN), { home: true, more: Math.max(0, later.length - LATER_SHOWN) });
   }
 
   /* The calendar's card says what the grid says: the month on screen, with
@@ -1045,7 +1059,7 @@
       cta.className = 'review-cta dim';
       const busy = reading ? 'Reading ' + (reading === 1 ? 'your letter…' : reading + ' letters…') : null;
       document.getElementById('cta-big').textContent = busy || 'Nothing to check right now';
-      document.getElementById('cta-small').textContent = busy ? 'You can close the app. We\'ll tell you when it\'s ready.' : 'We\'ll tell you when something\'s ready.';
+      document.getElementById('cta-small').textContent = busy ? 'You can close the app. It will be here when you come back.' : 'Photograph a letter and it will show up here.';
     }
     const b = document.getElementById('nav-badge');
     b.style.display = ready ? 'inline-block' : 'none';
@@ -1118,14 +1132,13 @@
 
   function renderCalendar() {
     const shown = monthOf(calYr, calMo);
-    /* Every task marks the day it is due, and each day one of its reminders
-       goes out. The day of the month is the last two characters of a day. */
+    /* Every task marks the day it is due, and nothing else. KAN-62: the gold
+       reminder dots are gone; the client asked what they meant, and a calendar
+       that marks only the day a thing happens needs no legend. The day of the
+       month is the last two characters of a day. */
     const tags = {};
     const mark = (day, kind) => { if (day.slice(0, 7) === shown) (tags[Number(day.slice(8))] = tags[Number(day.slice(8))] || []).push(kind); };
-    tasks.forEach(t => {
-      t.reminders.forEach(day => mark(day, 'rem'));
-      if (t.due) mark(t.due, 'due');
-    });
+    tasks.forEach(t => { if (t.due) mark(t.due, 'due'); });
     if (selDay && !tags[selDay]) selDay = null;
     document.getElementById('cal-title').textContent = MONTHS[calMo - 1] + ' ' + calYr;
     document.getElementById('today-btn').classList.toggle('home', shown === todaysMonth());
@@ -1158,24 +1171,18 @@
   }
 
   /* ---------- day sheet ----------
-     Every task on the day tapped, whole: the tick, what its letter said, and
-     the photographs, whether the day is the one it is due or one of its
-     reminders. KAN-59: a reminder's day used to show only a line and a title,
-     and she had to find the due day to read the rest. */
+     Every task due on the day tapped, whole: the tick, what its letter said,
+     and the photographs. */
   function openDay(d) {
     selDay = d;
     renderCalendar();
     const day = monthOf(calYr, calMo) + '-' + pad(d);
     const entries = [];
-    tasks.forEach(t => {
-      if (t.reminders.includes(day)) entries.push({ t: t, reminder: true });
-      if (t.due === day) entries.push({ t: t, reminder: false });
-    });
+    tasks.forEach(t => { if (t.due === day) entries.push({ t: t }); });
     if (!entries.length) return;
     let h = '<div class="dd-day">' + longDay(day) + '</div>';
     entries.forEach(e => {
       h += '<div class="ent">';
-      if (e.reminder) h += reminderBox(e.t, day);
       /* The same tick as the home list, in the same place she found the task.
          Operations follow visibility: wherever the row is drawn, the tick
          works, however long ago the day was. */
@@ -1188,23 +1195,6 @@
     document.getElementById('sheet').innerHTML = h;
     document.getElementById('sheet-mask').classList.add('show');
     document.getElementById('sheet').classList.add('show');
-  }
-
-  /* KAN-59: what makes a reminder's day read as a reminder and not as the day
-     the task is due. The first line is the reminder itself, in the tense the
-     clock gives it (sheetLine in src/lib/calendar.ts): a reminder for a
-     ticked-off task has nothing to say, and one whose morning has passed is
-     history, not a plan. The second line is what the reminder is about, said
-     from that morning: how far off the due day is, and which day that is. */
-  function reminderBox(t, day) {
-    const line = t.done ? icon('bell-off', 16) + 'No reminder, this is already done'
-               : day < TODAY ? icon('bell', 16) + 'A reminder went out this morning, 9 am'
-               :               icon('bell', 16) + 'A reminder goes out this morning, 9 am';
-    const n = daysBetween(day, t.due);
-    const until = t.time
-      ? (n === 1 ? 'Appointment tomorrow, ' : 'Appointment in ' + n + ' days, on ') + shortDay(t.due) + ' at ' + t.time
-      : (n === 1 ? 'Due tomorrow, ' : 'Due in ' + n + ' days, on ') + shortDay(t.due);
-    return '<div class="remind-box"><div class="remind">' + line + '</div><div class="until">' + until + '</div></div>';
   }
 
   function closeDay() {

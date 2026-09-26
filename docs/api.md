@@ -30,7 +30,7 @@ reasoning attached. This document names them and does not repeat them:
 | what a field's status means, and `open_payload` | `src/lib/contract/extraction.ts` |
 | showing rather than asking, the upload limits, overdue in words | `src/lib/contract/api.ts` |
 | dates, times, and whose day it is | `src/lib/contract/dates.ts` |
-| the reminder ladder, and the clock check at fire time | `src/lib/contract/reminders.ts` |
+| the reminder ladder, and what a reminder is | `src/lib/contract/reminders.ts` |
 | sessions, passwords, and who is asking | `src/server/auth/` |
 | the tables, and why each column exists | `db/schema.sql` |
 
@@ -682,19 +682,11 @@ message. There is no fields array and no acknowledged array; see
     "reminders": [
       {
         "id": "4e7a2b90-1c55-4f08-8d21-7b3f9a0c6e42",
-        "scheduledFor": "2026-08-12T09:00:00+10:00",
-        "localDate": "2026-08-12",
-        "localTime": "09:00",
-        "channel": "in_app",
-        "status": "scheduled"
+        "localDate": "2026-08-12"
       },
       {
         "id": "9d1f4c02-3b6e-4a18-8f70-2c5d9e3a7b11",
-        "scheduledFor": "2026-08-14T09:00:00+10:00",
-        "localDate": "2026-08-14",
-        "localTime": "09:00",
-        "channel": "in_app",
-        "status": "scheduled"
+        "localDate": "2026-08-14"
       }
     ]
   }
@@ -702,9 +694,10 @@ message. There is no fields array and no acknowledged array; see
 ```
 
 Two reminders here, not three: the bill is due on the 15th and was confirmed on
-the 10th, so the earliest rung of the ladder would have landed in the past, and
-a reminder in the past is never created. `planReminders()` in
-`src/lib/contract/reminders.ts` is what drops it.
+the 10th, so the seven day rung of the ladder would have fallen on the 8th,
+already gone. `planReminders()` in `src/lib/contract/reminders.ts` keeps only
+the days that fall strictly after the day it is confirmed, so a rung landing
+on the confirm day itself is dropped as well, not only the ones already past.
 
 **A letter that asks for nothing** (`action_required` is `No action`) is saved
 and makes no task, so `task` is null:
@@ -743,8 +736,9 @@ to be shown as-is.
 
 ### Notes
 
-The returned task includes its reminders, so the calendar the person lands on
-can draw itself without a second request.
+The returned task includes its `dueDate` and its reminders, so the calendar
+the person lands on, and Home after it, can draw themselves without a second
+request.
 
 **After a save, the screen moves on by itself** (`src/lib/confirm-flow.ts`). A
 note says what was kept and where, and goes after three seconds; she is taken
@@ -854,19 +848,11 @@ from.
     "reminders": [
       {
         "id": "4e7a2b90-1c55-4f08-8d21-7b3f9a0c6e42",
-        "scheduledFor": "2026-08-12T09:00:00+10:00",
-        "localDate": "2026-08-12",
-        "localTime": "09:00",
-        "channel": "in_app",
-        "status": "scheduled"
+        "localDate": "2026-08-12"
       },
       {
         "id": "9d1f4c02-3b6e-4a18-8f70-2c5d9e3a7b11",
-        "scheduledFor": "2026-08-14T09:00:00+10:00",
-        "localDate": "2026-08-14",
-        "localTime": "09:00",
-        "channel": "in_app",
-        "status": "scheduled"
+        "localDate": "2026-08-14"
       }
     ]
   }
@@ -897,9 +883,12 @@ A task with no `dueDate` draws no calendar mark and has no reminders.
 Dismissed tasks are excluded. Nothing writes that state this semester; the
 filter is here so that adding the action later is a one-line change.
 
-Every summary carries its `reminders`, whatever their status: `scheduled`,
-`sent`, `skipped` or `failed`. This is what the calendar draws, and the day
-sheet words each one from its status.
+Every summary carries its `reminders`: the days planned for it, past ones
+included, each one just an id and a `localDate`. Nothing is ever sent, so
+there is nothing else to say about a reminder. The calendar does not draw from
+these; it draws only due dates. What a reminder day does is mark the task's
+own row on Home while the task is still open, on that day (`reminderToday()`
+in `src/lib/home.ts`).
 
 ## One task, in full
 
@@ -946,7 +935,8 @@ Marks it done. That is the entire write.
 **Code** : `200 OK`
 
 **Content** : `TaskSummary`, with `status: "completed"`. Its reminders come back
-untouched, still saying `scheduled`: they will simply not fire.
+untouched, the same days as before: a completed task simply stops being
+marked on them.
 
 ### Error Responses
 
@@ -955,11 +945,11 @@ untouched, still saying `scheduled`: they will simply not fire.
 
 ### Notes
 
-**No reminder row is written.** The dispatcher reads the task at the moment a
-reminder's time arrives and decides then whether to send;
-`src/lib/contract/reminders.ts` has that rule and the reason it lives at fire
-time rather than here. So "reminders off" on screen is derived truth, not a
-stored flag, and there is no bookkeeping for an untick to undo.
+**No reminder row is written.** `reminderToday()` in `src/lib/home.ts` checks
+whether a task is still open before it marks that task's row on a reminder
+day, and a completed task fails that check from the moment it is ticked. So
+"no more marks" on screen is derived truth, not a stored flag, and there is no
+bookkeeping for an untick to undo.
 
 ## Undo that
 
@@ -988,10 +978,10 @@ comes back `overdue`, because that is what the arithmetic now says.
 Ticking something off by accident should not need an apology, however long ago
 the accident was: this works on any completed task, forever.
 
-Nothing happens to reminders, in either direction. One whose time is still ahead
-will find the task open when its moment comes, and fire. One whose time has
-passed is history and stays what it became. The clock only rings forward, so
-unticking an old task cannot set off a late nag.
+Nothing happens to reminders, in either direction. A reminder day still ahead
+will find the task open again and mark its row when that day comes. A
+reminder day already behind is simply a day that has passed, and reopening an
+old task cannot make Home mark a day that is already gone.
 
 ---
 
@@ -1077,35 +1067,36 @@ is still being read, and both sit in `inbox`.
 **There is no calendar endpoint, on purpose.**
 
 The calendar is drawn from `GET /api/tasks`: one mark on each task's `dueDate`,
-another on each reminder's `localDate`. What those marks look like is in
-[`theme.md`](theme.md).
+filed by `tasksByDueDay()` in `src/lib/calendar.ts`. A dot means one thing, a
+task is due that day, and nothing else puts a dot on the grid. What that mark
+looks like is in [`theme.md`](theme.md).
 
-`ReminderView.localDate` is the server-computed calendar day in the user's zone,
-and `localTime` is computed beside it, so the client never turns an instant back
-into a day and gets it wrong by one, and the day sheet's "a reminder goes out
-this morning, 9 am" is data rather than copy.
+**Reminder days do not appear on the calendar.** KAN-62 made a reminder a mark
+on the task's own row on Home, not a second colour of dot: two kinds of dot on
+the same grid read as clutter, and the yardstick here is Google Calendar,
+which marks the day a thing happens and nothing else. `reminderToday()` in
+`src/lib/home.ts` is where a reminder day turns into a tint, a bell and a line
+("Reminder: due in 3 days", "Reminder: due tomorrow", or "Reminder:
+appointment tomorrow" when the letter named a time of day), and only while the
+task is still open. A ticked task is never marked, on a reminder day or
+otherwise.
 
-**Every reminder that exists gets a mark, whatever its status**, including ones
-already sent and ones skipped because the task was already done when the clock
-rang. A mark is a record of what this day held, not a forecast. The day sheet
-words each entry from the task and the day: a still-scheduled reminder for an
-open task gets the present tense, a day already behind today gets the past
-tense, and a ticked-off task gets "No reminder, this is already done", so the
-sheet never announces a nag that will never be sent.
+A reminder that would fall on or before the day the letter is confirmed is
+never planned in the first place (`planReminders()` in
+`src/lib/contract/reminders.ts`), so it never turns into a mark on Home
+either. That is why the plan card and what Home later shows always agree: she
+is shown the days that will be marked, agrees to those, and nothing marks a
+day she was not told about. Seeded data is the one exception, and
+deliberately so: it is building a world that already happened, so it plants
+reminder days that fall before today as well as ahead of it.
 
-A reminder whose day has already gone by is never planned and never created, so
-it has no mark. That is why the plan card and the calendar always agree: the
-person is shown the reminders that will happen, agrees to those, and sees marks
-for exactly those. Seeded data is the one exception, and deliberately so: it is
-building a world that already happened, so it plants past reminders already
-marked `sent`, and those do get marks.
-
-**The invariant that makes the calendar trustworthy: only a confirmed letter
-contributes.** A letter in `processing`, `needs-review` or `failed` produces no
-task, no reminder and no mark. Nothing reaches the calendar without a person
-having seen it. This is the product's central safety promise, not an
-implementation detail, and `src/lib/contract/api.ts` is where the shape that
-guarantees it is written down.
+**The invariant that makes both the calendar and Home trustworthy: only a
+confirmed letter contributes.** A letter in `processing`, `needs-review` or
+`failed` produces no task, no reminder and no mark anywhere. Nothing reaches
+the calendar or Home without a person having seen it. This is the product's
+central safety promise, not an implementation detail, and
+`src/lib/contract/api.ts` is where the shape that guarantees it is written
+down.
 
 ---
 
@@ -1118,9 +1109,6 @@ would mean building the wrong thing twice.
   *something* has to perform it: in-process after responding, a sweep over the
   waiting extraction runs, or a real queue. The schema supports all three;
   nobody has chosen
-- **sending reminders, the transport half.** What the dispatcher decides is
-  settled, in `src/lib/contract/reminders.ts`. What is still open is what wakes
-  it up: a cron job, a platform scheduler, or in-app only
 - **what the capture screen does at the limits.** A current phone camera clears
   `MAX_PAGE_BYTES` per frame routinely. Whether the client downscales to fit or
   refuses the photograph, and what the screen says at the last page, is
