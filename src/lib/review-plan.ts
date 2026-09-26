@@ -11,8 +11,9 @@
  *
  * `today` is passed in rather than read, for the reason that module gives at
  * length: a bill photographed three days before it is due has already missed
- * its seven day reminder, and the screen must show the same list the confirm
- * handler will write. Both callers pass the same day, so both get the same
+ * its seven day reminder, and its three day one falls on the day she is
+ * looking at it, so only the one day reminder is planned. The screen must show
+ * the same list the confirm handler will write. Both callers pass the same day, so both get the same
  * answer instead of the same function.
  *
  * An icon name rather than an icon, because this file is pure and lucide is a
@@ -53,7 +54,6 @@ export const NO_ACTION_PLAN_LINE = "Nothing to do. It's kept in your letters.";
 export function planLinesFor(
   letter: { dueDate?: string; dueTime?: string; action?: string | null },
   today: string,
-  timeZone: string,
 ): PlanLine[] {
   if (letter.action && actionWordOf(letter.action) === NO_ACTION) {
     return [{ icon: "page", text: NO_ACTION_PLAN_LINE }];
@@ -64,13 +64,12 @@ export function planLinesFor(
   }
 
   const due = formatDueDate(letter.dueDate, "short");
-  const lines: PlanLine[] = planReminders(letter.dueDate, {
-    timeZone,
-    today,
-  }).map((reminder) => ({
-    icon: "bell",
-    text: PLAN_LINES.reminder(formatDueDate(reminder.localDate, "short")),
-  }));
+  const lines: PlanLine[] = planReminders(letter.dueDate, { today }).map(
+    (reminder) => ({
+      icon: "bell",
+      text: PLAN_LINES.reminder(formatDueDate(reminder.localDate, "short")),
+    }),
+  );
 
   // Exactly one line closes the card, chosen by whether the letter printed a
   // time of day. An appointment happens AT a time; a deadline happens BY a

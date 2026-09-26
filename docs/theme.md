@@ -48,8 +48,8 @@ colours and 30 preferred. The page and card tones are warm, aged-paper colours,
 and the darkest ink still carries a trace of warmth.
 
 **4. Gold is never text.** Saturated yellow on a light ground reaches about
-2:1, which is a trap rather than a colour. Gold appears in exactly two places:
-the lining of the focus ring, and the reminder dot on the calendar.
+2:1, which is a trap rather than a colour. Gold appears in exactly one place:
+the lining of the focus ring.
 
 **5. Colour is never the only signal.** Every state carries a word as well as a
 colour, and the selected tab is marked by weight and a bar rather than by hue.
@@ -79,7 +79,7 @@ colour is a state some readers cannot see.
 | `--warn-ink` | `#4a3b20` | bark brown: "we are not sure, please look" |
 | `--warn-bg` | `#f0e6cd` | sandy yellow behind it |
 | `--dot-due` | `#8c0d07` | the calendar's due marks |
-| `--dot-rem` | `#b87500` | the calendar's reminder marks |
+| `--dot-rem` | `#b87500` | no longer drawn on the calendar (KAN-62); kept as `--chart-4` and a landing-page swatch |
 
 Sizes travel with the palette: `--btn-h` 56px, `--radius-card` 10px,
 `--radius-btn` 8px, `--border-w` 2px. A primary button is at least 48px tall;
@@ -146,7 +146,6 @@ Lowest text pair 7.23:1, lowest non-text pair 3.37:1.
 | borders on card | 3.6:1 | 3 |
 | borders on page | 3.4:1 | 3 |
 | due dot on card | 9.1:1 | 3 |
-| reminder dot on card | 3.5:1 | 3 |
 | focus lining on ring | 12.1:1 | 3 |
 | focus ring on page | 15.4:1 | 3 |
 
@@ -255,7 +254,8 @@ an ordinary `<Button>` comes out eucalypt green with no work.
 For the states shadcn has no name for, use the DayKeeper classes:
 `text-warn` on `bg-warn-bg`, `text-danger` on `bg-danger-bg`, `text-success` on
 `bg-success-bg`, plus `text-ink-dim`, `border-line`, `bg-primary-soft`,
-`bg-dot-due`, `bg-dot-rem`.
+`bg-dot-due`. A reminder marks the task's own row with `text-warn` on
+`bg-warn-bg`, the same pair the missing-value note uses, not a dot.
 
 **Never type a hex value into a component.** If a colour you need is not in the
 palette, that is a design question, not a styling one: bring it to the team

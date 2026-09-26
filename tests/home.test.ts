@@ -4,7 +4,14 @@ import { describe, expect, it } from "vitest";
 
 import { taskByline, taskHeadline, taskWhen } from "@/components/task-row";
 import type { HomeCounts, TaskSummary } from "@/lib/contract/api";
-import { ctaFor, foldLater, greeting, groupTasks, moreLabel } from "@/lib/home";
+import {
+  ctaFor,
+  foldLater,
+  greeting,
+  groupTasks,
+  moreLabel,
+  reminderToday,
+} from "@/lib/home";
 
 /** The sketch's fictional day, so "the eighth day" is a date and not a mood. */
 const TODAY = "2026-08-10";
@@ -46,7 +53,7 @@ describe("ctaFor", () => {
   it("says it is still reading, and that she may leave", () => {
     expect(ctaFor(counts({ processing: 1 }))).toEqual({
       big: "Reading your letter…",
-      small: "You can close the app. We'll tell you when it's ready.",
+      small: "You can close the app. It will be here when you come back.",
       inert: false,
     });
     expect(ctaFor(counts({ processing: 2 })).big).toBe("Reading 2 letters…");
@@ -57,9 +64,60 @@ describe("ctaFor", () => {
     // the panel alone and stays in the To check list.
     expect(ctaFor(counts({ failed: 2 }))).toEqual({
       big: "Nothing to check right now",
-      small: "We'll tell you when something's ready.",
+      small: "Photograph a letter and it will show up here.",
       inert: true,
     });
+  });
+});
+
+// KAN-62: a reminder is a mark on the task's own row, on its day, while open.
+describe("reminderToday", () => {
+  const reminding = (dueDate: string, extra: Partial<TaskSummary> = {}) =>
+    task({
+      id: "t",
+      dueDate,
+      reminders: [{ id: "r", localDate: TODAY }],
+      ...extra,
+    });
+
+  it("counts the days to the due date on a reminder day", () => {
+    expect(reminderToday(reminding("2026-08-17"), TODAY)).toBe(
+      "Reminder: due in 7 days",
+    );
+    expect(reminderToday(reminding("2026-08-13"), TODAY)).toBe(
+      "Reminder: due in 3 days",
+    );
+  });
+
+  it("says tomorrow rather than in 1 days", () => {
+    expect(reminderToday(reminding("2026-08-11"), TODAY)).toBe(
+      "Reminder: due tomorrow",
+    );
+  });
+
+  it("calls a letter with a time of day an appointment", () => {
+    expect(
+      reminderToday(reminding("2026-08-11", { dueTime: "10:30" }), TODAY),
+    ).toBe("Reminder: appointment tomorrow");
+  });
+
+  it("says nothing on a day that is not one of the task's reminder days", () => {
+    expect(
+      reminderToday(
+        task({
+          id: "t",
+          dueDate: "2026-08-13",
+          reminders: [{ id: "r", localDate: "2026-08-12" }],
+        }),
+        TODAY,
+      ),
+    ).toBeNull();
+  });
+
+  it("says nothing once the task is ticked", () => {
+    expect(
+      reminderToday(reminding("2026-08-13", { status: "completed" }), TODAY),
+    ).toBeNull();
   });
 });
 

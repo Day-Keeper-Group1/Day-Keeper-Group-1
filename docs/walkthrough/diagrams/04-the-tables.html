@@ -102,8 +102,8 @@
       </div>
       <div class="step">
         <div class="n">STEP 5</div>
-        <div class="t">A reminder rings</div>
-        <div class="e">the clock, at nine</div>
+        <div class="t">A reminder day arrives</div>
+        <div class="e">read fresh, whenever Home draws</div>
       </div>
       <div class="step">
         <div class="n">STEP 6</div>
@@ -266,16 +266,14 @@
       <ul>
         <li class="key">id</li>
         <li>task_id</li>
-        <li class="star">scheduled_for</li>
-        <li>channel</li>
-        <li class="star">status</li>
-        <li>sent_at</li>
+        <li class="star">remind_on</li>
         <li>created_at</li>
       </ul>
     </div>
-    <div class="note" style="left:1856px; top:428px">
-      Rows, not a rule. When a row's moment arrives, the clock reads the task:
-      still open means send, done means <i>skipped</i>.
+    <div class="note" style="left:1856px; top:344px">
+      Rows, not a rule, and nothing more: a day, not a message. Whether one
+      of them puts a mark on Home is read fresh each time, from this table
+      and the tick together, never written back.
     </div>
 
     <!-- ---------- off the path ---------- -->
@@ -296,8 +294,9 @@
       </ul>
     </div>
     <div class="note" style="left:262px; top:800px; width:240px">
-      The timezone is why &ldquo;9 am&rdquo; means anything. Every date in
-      the product is a calendar day in somebody's zone.
+      The timezone is why &ldquo;today&rdquo; means anything. Every date in
+      the product, reminder days included, is a calendar day in somebody's
+      zone, never an instant.
     </div>
 
     <div class="tbl aside" style="left:546px; top:800px">

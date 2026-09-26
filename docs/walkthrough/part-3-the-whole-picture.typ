@@ -44,7 +44,7 @@ none.
 flag, and no count of anything. Each would be a second copy of a truth that
 already exists, and a second copy can disagree with the first. Overdue is a
 comparison made when somebody asks. Reminders off is the tick, read at the
-moment an alarm rings.
+moment Home draws the row.
 
 The definition of every column, and the reason it exists, is in
 #raw("db/schema.sql"). That file is not a description of the database. It is
@@ -73,13 +73,9 @@ that are known rather than the ones that are hidden.
   columns: (44mm, 1fr),
   [*Open question*], [*What is known about it*],
 
-  [Who runs the clock], [The reminder rows and the rule for reading the tick are
-  settled. What actually wakes up at nine in the morning, and where it runs, is
-  not.],
-
-  [How a reminder reaches her], [The row carries a channel. In app is drawn on
-  the screens. Email needs a sender the project does not have yet, and so does
-  password reset.],
+  [Sending any email at all], [Nothing in the product sends one today, and a
+  reminder never will (KAN-62): it is a mark on Home, not a message. Password
+  reset still needs a sender, and one is not chosen yet.],
 
   [The upload at its limits], [A page count and a size are checked. What the
   screen does when a photograph is enormous, or when the connection drops
@@ -109,7 +105,7 @@ That is why the reasoning was put in the code.
   [the six fields, and why six is a floor], [`src/lib/contract/fields.ts`],
   [what a field status means, and `open_payload`], [`src/lib/contract/extraction.ts`],
   [why the review screen has no inputs], [`src/lib/contract/api.ts`],
-  [the 7/3/1 reminder rule, and the clock check], [`src/lib/contract/reminders.ts`],
+  [the 7/3/1 reminder rule, and what a reminder actually is], [`src/lib/contract/reminders.ts`],
   [why every date is Melbourne and date only], [`src/lib/contract/dates.ts`],
   [every table and every column, with reasons], [`db/schema.sql`],
   [what a reader has to promise], [`src/server/extraction/provider.ts`],

@@ -25,7 +25,7 @@ describe("task list", () => {
     expect(sql).toContain("t.state <> 'dismissed'");
     expect(sql).toContain("t.due_date ASC NULLS LAST");
     expect(sql).not.toMatch(/\bLIMIT\b/);
-    expect(params).toEqual([USER_ID, "Australia/Melbourne"]);
+    expect(params).toEqual([USER_ID]);
   });
 
   it("returns ordered task summaries with all reminder states", async () => {
@@ -39,11 +39,7 @@ describe("task list", () => {
         due_time: null,
         state: "open",
         reminder_id: "reminder-sent",
-        scheduled_for: new Date("2026-08-07T23:00:00.000Z"),
         reminder_local_date: "2026-08-08",
-        reminder_local_time: "09:00",
-        reminder_channel: "in_app",
-        reminder_status: "sent",
       },
       {
         id: "task-overdue",
@@ -54,11 +50,7 @@ describe("task list", () => {
         due_time: null,
         state: "open",
         reminder_id: "reminder-skipped",
-        scheduled_for: new Date("2026-08-13T23:00:00.000Z"),
         reminder_local_date: "2026-08-14",
-        reminder_local_time: "09:00",
-        reminder_channel: "email",
-        reminder_status: "skipped",
       },
       {
         id: "task-appointment",
@@ -69,11 +61,7 @@ describe("task list", () => {
         due_time: "10:30",
         state: "completed",
         reminder_id: "reminder-failed",
-        scheduled_for: new Date("2026-08-19T23:00:00.000Z"),
         reminder_local_date: "2026-08-20",
-        reminder_local_time: "09:00",
-        reminder_channel: "in_app",
-        reminder_status: "failed",
       },
       {
         id: "task-no-date",
@@ -84,11 +72,7 @@ describe("task list", () => {
         due_time: null,
         state: "open",
         reminder_id: null,
-        scheduled_for: null,
         reminder_local_date: null,
-        reminder_local_time: null,
-        reminder_channel: null,
-        reminder_status: null,
       },
     ]);
 
@@ -105,19 +89,11 @@ describe("task list", () => {
         reminders: [
           {
             id: "reminder-sent",
-            scheduledFor: "2026-08-07T23:00:00.000Z",
             localDate: "2026-08-08",
-            localTime: "09:00",
-            channel: "in_app",
-            status: "sent",
           },
           {
             id: "reminder-skipped",
-            scheduledFor: "2026-08-13T23:00:00.000Z",
             localDate: "2026-08-14",
-            localTime: "09:00",
-            channel: "email",
-            status: "skipped",
           },
         ],
       },
@@ -132,11 +108,7 @@ describe("task list", () => {
         reminders: [
           {
             id: "reminder-failed",
-            scheduledFor: "2026-08-19T23:00:00.000Z",
             localDate: "2026-08-20",
-            localTime: "09:00",
-            channel: "in_app",
-            status: "failed",
           },
         ],
       },
@@ -162,11 +134,7 @@ describe("task list", () => {
         due_time: null,
         state: "open",
         reminder_id: null,
-        scheduled_for: null,
         reminder_local_date: null,
-        reminder_local_time: null,
-        reminder_channel: null,
-        reminder_status: null,
       },
     ]);
 
@@ -202,11 +170,7 @@ describe("complete task", () => {
         due_time: null,
         state: "completed",
         reminder_id: "reminder-one",
-        scheduled_for: new Date("2026-08-19T23:00:00.000Z"),
         reminder_local_date: "2026-08-20",
-        reminder_local_time: "09:00",
-        reminder_channel: "in_app",
-        reminder_status: "scheduled",
       },
     ]);
 
@@ -225,7 +189,7 @@ describe("complete task", () => {
     expect(sql).toContain("AND user_id = $2");
     expect(sql).toContain("AND state <> 'dismissed'");
     expect(sql).not.toMatch(/UPDATE reminders/);
-    expect(params).toEqual(["task-one", USER_ID, "Australia/Melbourne"]);
+    expect(params).toEqual(["task-one", USER_ID]);
     expect(result).toEqual({
       id: "task-one",
       title: "Pay bill",
@@ -236,11 +200,7 @@ describe("complete task", () => {
       reminders: [
         {
           id: "reminder-one",
-          scheduledFor: "2026-08-19T23:00:00.000Z",
           localDate: "2026-08-20",
-          localTime: "09:00",
-          channel: "in_app",
-          status: "scheduled",
         },
       ],
     });
@@ -273,11 +233,7 @@ describe("one task", () => {
           due_time: null,
           state: "open",
           reminder_id: null,
-          scheduled_for: null,
           reminder_local_date: null,
-          reminder_local_time: null,
-          reminder_channel: null,
-          reminder_status: null,
         },
       ])
       .mockResolvedValueOnce([
@@ -310,11 +266,7 @@ describe("one task", () => {
       NOW,
     );
 
-    expect(queryMock.mock.calls[0][1]).toEqual([
-      "task-one",
-      USER_ID,
-      "Australia/Melbourne",
-    ]);
+    expect(queryMock.mock.calls[0][1]).toEqual(["task-one", USER_ID]);
     expect(queryMock.mock.calls[0][0]).toContain("AND t.user_id = $2");
     expect(queryMock.mock.calls[0][0]).toContain(
       "AND t.document_id IS NOT NULL",
@@ -385,11 +337,7 @@ describe("reopen task", () => {
         due_time: null,
         state: "open",
         reminder_id: "reminder-one",
-        scheduled_for: new Date("2026-08-13T23:00:00.000Z"),
         reminder_local_date: "2026-08-14",
-        reminder_local_time: "09:00",
-        reminder_channel: "in_app",
-        reminder_status: "skipped",
       },
     ]);
 
@@ -407,9 +355,10 @@ describe("reopen task", () => {
     expect(sql).toContain("WHERE id = $1");
     expect(sql).toContain("AND user_id = $2");
     expect(sql).not.toMatch(/UPDATE reminders/);
-    expect(params).toEqual(["task-one", USER_ID, "Australia/Melbourne"]);
+    expect(params).toEqual(["task-one", USER_ID]);
     expect(result?.status).toBe("overdue");
-    expect(result?.reminders[0].status).toBe("skipped");
+    // Unticking takes nothing back: the reminder days were never removed.
+    expect(result?.reminders[0].localDate).toBe("2026-08-14");
   });
 
   it("returns null when the task is unavailable", async () => {

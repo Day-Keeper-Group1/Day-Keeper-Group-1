@@ -3,14 +3,14 @@
  *
  * Every date in this system travels as a calendar day, 'YYYY-MM-DD'. Every time
  * of day travels as a wall clock, 'HH:mm'. Instants (timestamptz columns, Date
- * objects) appear only at the one edge where a reminder becomes a scheduled
- * send.
+ * objects) are only ever records of when something happened, never dates a
+ * person reads.
  *
  * Dates are date-only because that is what they are. A due date is printed on a
  * piece of paper: the 15th of August, no hour, no zone. Turning it into an
  * instant invents both, and the invention surfaces as a day off by one, which
- * for this product is the worst available bug. A reminder that goes out a day
- * late is worse than no reminder, because she stopped watching for the letter.
+ * for this product is the worst available bug. A reminder marked a day late is
+ * worse than no reminder, because she stopped watching for the letter.
  *
  * There are two directions the invention can creep in, and they are guarded in
  * two places:
@@ -30,9 +30,10 @@
 /**
  * The application's timezone: Melbourne.
  *
- * The product promises "a reminder at 9 am", and 9 am is meaningless without a
- * zone. So is "overdue", which is decided by comparing calendar days in the
- * person's zone rather than instants (see deriveTaskStatus in ./api.ts).
+ * "Today" is meaningless without a zone, and so is everything decided from it:
+ * "overdue", which compares calendar days in the person's zone rather than
+ * instants (see deriveTaskStatus in ./api.ts), and whether today is one of a
+ * task's reminder days.
  *
  * Users carry a `timezone` column defaulted to this value, so the server should
  * prefer the person's own zone whenever it has a session; this constant is the
@@ -42,7 +43,8 @@
  * rather than a change of design.
  *
  * Melbourne is UTC+10 in winter and UTC+11 in summer, and its winter is the
- * northern summer, which is why the tests in tests/dates.test.ts assert on both.
+ * northern summer, so a test of "today" that passes in one season proves
+ * nothing about the other.
  */
 export const APP_TIME_ZONE = "Australia/Melbourne";
 
@@ -137,6 +139,17 @@ export function addDays(isoDate: string, days: number): string {
   return `${shifted.getUTCFullYear()}-${pad2(shifted.getUTCMonth() + 1)}-${pad2(shifted.getUTCDate())}`;
 }
 
+/** Whole days from one 'YYYY-MM-DD' to another: 1 from today to tomorrow. */
+export function daysBetween(from: string, to: string): number {
+  assertIsoDate(from, "daysBetween");
+  assertIsoDate(to, "daysBetween");
+  const utc = (iso: string) => {
+    const [y, mo, d] = iso.split("-").map(Number);
+    return Date.UTC(y, mo - 1, d);
+  };
+  return Math.round((utc(to) - utc(from)) / 86_400_000);
+}
+
 /**
  * The three ways the interface writes a date, taken from the prototype:
  *
@@ -224,48 +237,4 @@ export function parseHumanDate(input: string): string | null {
   }
 
   return null;
-}
-
-/**
- * The instant at which a local wall-clock time occurs in a timezone.
- *
- * 'What UTC moment is 2026-08-08 09:00 in Melbourne?' This is the one place a
- * calendar day becomes a timestamptz, used when reminders are scheduled.
- *
- * Implementation note: guess the instant as if the zone were UTC, ask Intl what
- * wall clock that instant shows in the target zone, and correct by the
- * difference. A single correction is exact except within a DST transition
- * window; Melbourne's transitions happen at 2-3 am and reminders go out at 9,
- * so the approximation never bites here.
- */
-export function zonedTimeToInstant(
-  isoDate: string,
-  hour: number,
-  minute: number,
-  timeZone: string = APP_TIME_ZONE,
-): Date {
-  assertIsoDate(isoDate, "zonedTimeToInstant");
-  const [y, mo, d] = isoDate.split("-").map(Number);
-  const guess = Date.UTC(y, mo - 1, d, hour, minute);
-
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23",
-  }).formatToParts(new Date(guess));
-  const get = (type: string) =>
-    Number(parts.find((p) => p.type === type)?.value ?? 0);
-
-  const shownAsUtc = Date.UTC(
-    get("year"),
-    get("month") - 1,
-    get("day"),
-    get("hour"),
-    get("minute"),
-  );
-  return new Date(guess - (shownAsUtc - guess));
 }

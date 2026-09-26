@@ -390,11 +390,7 @@ describe("the home screen", () => {
       due_time: null,
       state,
       reminder_id: null,
-      scheduled_for: null,
       reminder_local_date: null,
-      reminder_local_time: null,
-      reminder_channel: null,
-      reminder_status: null,
     };
   }
 

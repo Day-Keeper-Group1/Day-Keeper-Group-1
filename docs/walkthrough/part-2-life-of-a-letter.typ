@@ -100,12 +100,12 @@ keeps only the key for finding it.
   And this step writes nothing to the database. The screen shows, it never
   asks, so there is no answer to record.
 
-  The reminder mornings follow one rule: nine in the morning, seven days
-  before the due date, three days before, and one day before. Seven days
-  before this bill's due date was 8 August. That morning is already gone, so
-  the card offers two mornings instead of three. The card and the later rows
-  are planned by the same function, so the screen can never promise a morning
-  that never comes.
+  The reminder days follow one rule: seven days before the due date, three
+  days before, and one day before, whichever of those are still ahead of
+  today. Seven days before this bill's due date was 8 August. That day has
+  already gone by, so the card offers two days instead of three. The card and
+  the later rows are planned by the same function, so the screen can never
+  promise a day that never comes.
 
   The sentence under the plan is the product's one promise. The next two
   steps are how it is kept.
@@ -117,23 +117,24 @@ keeps only the key for finding it.
 #screens(
   "figures/09-home-task.png",
   "figures/08-calendar.png",
-  [The same bill, now the third task on the list and three marks on the
-   calendar: the two reminder mornings in gold, the due date in red.],
+  [The same bill, now on the list, and its due date in red on the calendar.
+   The gold on Pay Yarra Valley Water belongs to a different task: today
+   happens to be three days before that one is due.],
 )
 
 She taps *Looks right, save it*. Three writes happen together. One row in
 #t("tasks"): pay AGL electricity bill, due 15 August. Two rows in
-#t("reminders"): Wednesday at nine and Friday at nine, exactly the mornings
-the card named. And the letter's row in #t("documents") is marked confirmed.
-A short note says where the task went, and the screen moves on by itself: to
-the next letter waiting, or, after the last one, to the calendar at the month
-of the task she just saved. A letter that asks for nothing makes no task at
-all and is simply kept in her letters.
+#t("reminders"): the 12th and the 14th, exactly the days the card named. And
+the letter's row in #t("documents") is marked confirmed. A short note says
+where the task went, and the screen moves on by itself: to the next letter
+waiting, or, after the last one, to the calendar at the month of the task she
+just saved. A letter that asks for nothing makes no task at all and is simply
+kept in her letters.
 
 This tap is the only thing in the product that turns a reading into something
 that will act later. Before it, the bill was rows the model wrote and a screen
-she could look at. After it, there is a task on her list and two alarm clocks
-set.
+she could look at. After it, there is a task on her list, and two rows in
+#t("reminders") waiting for their day to come.
 
 #why[
   *Everything on the calendar got there the same way: a sure reading that a
@@ -142,26 +143,28 @@ set.
   but because no other path exists.
 ]
 
-#step(5, "A reminder rings")
-#writes(`reminders`)
+#step(5, "A reminder day arrives")
+#writes()
 
-#spread("figures/10-daysheet.png",
-  [Wednesday 12 August, opened from the calendar. Any day can be opened to
-   see what it holds.],
+#spread("figures/10-home-remind.png",
+  [Wednesday 12 August, Home open for some other reason. The AGL row is the
+   one she already knows, one line taller.],
   w: 50mm,
 )[
-  Wednesday, nine in the morning. Her phone says: _Pay AGL electricity bill,
-  due Sat 15 Aug._
+  She opens the app on Wednesday, and the AGL row looks different: a pale
+  gold tint, a bell, and _Reminder: due in 3 days_. Nothing buzzed and
+  nothing arrived. The mark is there because today is one of the three days
+  #t("reminders") named for this task, and for no other reason.
 
-  What sent it is the clock, the one part of the product that acts with
-  nobody in the room. At nine it finds every reminder row whose morning has
-  come. Then, for each one, it does one thing before speaking: it reads the
-  task.
+  Drawing it costs one read, not a write: is today among this task's
+  reminder days, and is the task still open. Both answers already exist in
+  rows written at confirm, so the step that puts the mark on screen writes
+  nothing at all, the same as checking a letter does.
 
-  This task is still open, so the reminder goes out and the row is marked
-  #raw("sent"). Had she already ticked the bill off, the clock would send
-  nothing and mark the row #raw("skipped"). Every row ends up marked one of
-  three ways: sent, skipped, or failed.
+  Had she not opened the app that day, nothing would have happened, and
+  nothing tries again later. There is no push, no email, and nothing running
+  while the phone is asleep. Opening Home is the only way she ever sees a
+  reminder, on the day it falls.
 ]
 
 #block(breakable: false)[
@@ -169,21 +172,22 @@ set.
   #v(3pt)
   #set text(font: sans, size: 8.5pt, fill: ink-dim)
   #set par(justify: false, leading: 0.5em)
-  A different bill through a fickle week: ticked, unticked, ticked again.
-  Each alarm reads the tick at its own moment.
+  A different bill through a fickle week: ticked, unticked, and read fresh
+  each time Home happens to be opened on one of its three reminder days.
 ]
 
 #why[
-  *Why the clock reads the tick, instead of the tick cancelling reminders.*
+  *Why marking is read fresh, instead of the tick cancelling reminders.*
   She ticks the bill at breakfast, unticks it at lunch, ticks it again at
-  dinner. What must the system do to Friday's reminder each time? Nothing.
-  Friday's alarm will read the tick on Friday.
+  dinner. What must the system do to Friday's mark each time? Nothing.
+  Whichever way the tick sits on Friday is what Friday's draw will show.
 
-  The design this replaced did the opposite: ticking cancelled the waiting
-  reminders, and unticking revived them, except the ones whose morning had
-  passed. The same fact kept in two places, and rules to keep the copies
-  agreeing. Reading the tick at the moment it matters keeps it in one place,
-  and lets her change her mind for free.
+  The design this replaced did the opposite: a reminder was a message queued
+  to go out, so ticking had to cancel the ones still waiting, and unticking
+  had to revive them, except the ones whose moment had already passed. The
+  same fact kept in two places, and rules to keep the copies agreeing.
+  Reading the tick at the moment it is drawn keeps it in one place, and lets
+  her change her mind for free.
 ]
 
 #step(6, "She ticks it")
@@ -196,20 +200,21 @@ set.
   She pays the bill on Wednesday and ticks it off. One column of one row
   changes: the tick on the task.
 
-  On Friday at nine the second alarm rings, reads the task, finds the tick,
-  and stays silent. That is all "reminders off" is. It is not a switch stored
-  anywhere. It is true because the tick is set, and it stops being true the
-  moment she unticks.
+  On Friday, its last reminder day, Home reads the task, finds the tick, and
+  draws the row plainly, the same as any other done task. Had she left it
+  unticked, Friday would have looked exactly like Wednesday did. That is all
+  "reminders off" is. It is not a switch stored anywhere. It is true because
+  the tick is set, and it stops being true the moment she unticks.
 
   The ticked task stays on the list for a week, struck through, because a
   task that vanishes looks exactly like a task that was lost. Its calendar
   entry stays forever, so "did I pay that" still has an answer in December.
 
-  Overdue works like reminders off: worked out, never stored. The water bill
-  at the top of her list says _was due Wed 5 Aug_ because today is the 10th
-  and nobody has ticked it. Every screen makes that comparison in Melbourne
-  time at the moment it draws, so nothing goes overdue at eleven at night
-  because a server sits in another country.
+  Overdue works like reminders off: worked out, never stored. The pension
+  review form at the top of her list says _was due Fri 7 Aug_ because today
+  is the 10th and nobody has returned it. Every screen makes that comparison
+  in Melbourne time at the moment it draws, so nothing goes overdue at
+  eleven at night because a server sits in another country.
 ]
 
 #part("The letters she has kept")

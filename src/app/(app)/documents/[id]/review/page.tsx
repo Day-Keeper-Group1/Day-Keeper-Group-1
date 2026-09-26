@@ -56,7 +56,6 @@ export default async function DocumentReviewPage({
   const plan = planLinesFor(
     { dueDate: document.dueDate, dueTime: document.dueTime, action },
     todayInZone(user.timeZone),
-    user.timeZone,
   );
 
   return (

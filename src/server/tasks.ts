@@ -11,7 +11,6 @@ import "server-only";
 
 import {
   deriveTaskStatus,
-  type ReminderView,
   type TaskDetail,
   type TaskSummary,
 } from "@/lib/contract/api";
@@ -36,11 +35,7 @@ type TaskListRow = {
   due_time: string | null;
   state: "open" | "completed" | "dismissed";
   reminder_id: string | null;
-  scheduled_for: Date | null;
   reminder_local_date: string | null;
-  reminder_local_time: string | null;
-  reminder_channel: ReminderView["channel"] | null;
-  reminder_status: ReminderView["status"] | null;
 };
 
 function mapTaskRows(
@@ -67,23 +62,12 @@ function mapTaskRows(
     }
 
     if (row.reminder_id) {
-      if (
-        !row.scheduled_for ||
-        !row.reminder_local_date ||
-        !row.reminder_local_time ||
-        !row.reminder_channel ||
-        !row.reminder_status
-      ) {
-        throw new Error(`Reminder ${row.reminder_id} is incomplete.`);
+      if (!row.reminder_local_date) {
+        throw new Error(`Reminder ${row.reminder_id} has no day.`);
       }
-
       task.reminders.push({
         id: row.reminder_id,
-        scheduledFor: row.scheduled_for.toISOString(),
         localDate: row.reminder_local_date,
-        localTime: row.reminder_local_time,
-        channel: row.reminder_channel,
-        status: row.reminder_status,
       });
     }
   }
@@ -109,13 +93,7 @@ export async function listTasks(
             END AS due_time,
             t.state,
             r.id AS reminder_id,
-            r.scheduled_for,
-            to_char(r.scheduled_for AT TIME ZONE $2, 'YYYY-MM-DD')
-              AS reminder_local_date,
-            to_char(r.scheduled_for AT TIME ZONE $2, 'HH24:MI')
-              AS reminder_local_time,
-            r.channel AS reminder_channel,
-            r.status AS reminder_status
+            to_char(r.remind_on, 'YYYY-MM-DD') AS reminder_local_date
        FROM tasks t
        LEFT JOIN reminders r ON r.task_id = t.id
       WHERE t.user_id = $1
@@ -123,9 +101,9 @@ export async function listTasks(
       ORDER BY t.due_date ASC NULLS LAST,
                t.created_at ASC,
                t.id ASC,
-               r.scheduled_for ASC,
+               r.remind_on ASC,
                r.id ASC`,
-    [userId, timeZone],
+    [userId],
   );
 
   return mapTaskRows(rows, timeZone, now);
@@ -134,7 +112,7 @@ export async function listTasks(
 /**
  * Return one owned task as a list row needs it, with every reminder.
  *
- * KAN-59: what confirming a letter answers with, so the calendar the person
+ * KAN-59: what confirming a letter answers with, so the screens the person
  * lands on can draw the new task without asking again.
  */
 export async function getTaskSummary(
@@ -155,21 +133,15 @@ export async function getTaskSummary(
             END AS due_time,
             t.state,
             r.id AS reminder_id,
-            r.scheduled_for,
-            to_char(r.scheduled_for AT TIME ZONE $3, 'YYYY-MM-DD')
-              AS reminder_local_date,
-            to_char(r.scheduled_for AT TIME ZONE $3, 'HH24:MI')
-              AS reminder_local_time,
-            r.channel AS reminder_channel,
-            r.status AS reminder_status
+            to_char(r.remind_on, 'YYYY-MM-DD') AS reminder_local_date
        FROM tasks t
        LEFT JOIN reminders r ON r.task_id = t.id
       WHERE t.id = $1
         AND t.user_id = $2
         AND t.document_id IS NOT NULL
         AND t.state <> 'dismissed'
-      ORDER BY r.scheduled_for ASC, r.id ASC`,
-    [taskId, userId, timeZone],
+      ORDER BY r.remind_on ASC, r.id ASC`,
+    [taskId, userId],
   );
 
   return mapTaskRows(rows, timeZone, now)[0] ?? null;
@@ -271,17 +243,11 @@ export async function completeTask(
             END AS due_time,
             t.state,
             r.id AS reminder_id,
-            r.scheduled_for,
-            to_char(r.scheduled_for AT TIME ZONE $3, 'YYYY-MM-DD')
-              AS reminder_local_date,
-            to_char(r.scheduled_for AT TIME ZONE $3, 'HH24:MI')
-              AS reminder_local_time,
-            r.channel AS reminder_channel,
-            r.status AS reminder_status
+            to_char(r.remind_on, 'YYYY-MM-DD') AS reminder_local_date
        FROM completed_task t
        LEFT JOIN reminders r ON r.task_id = t.id
-      ORDER BY r.scheduled_for ASC, r.id ASC`,
-    [taskId, userId, timeZone],
+      ORDER BY r.remind_on ASC, r.id ASC`,
+    [taskId, userId],
   );
 
   return mapTaskRows(rows, timeZone, now)[0] ?? null;
@@ -316,17 +282,11 @@ export async function reopenTask(
             END AS due_time,
             t.state,
             r.id AS reminder_id,
-            r.scheduled_for,
-            to_char(r.scheduled_for AT TIME ZONE $3, 'YYYY-MM-DD')
-              AS reminder_local_date,
-            to_char(r.scheduled_for AT TIME ZONE $3, 'HH24:MI')
-              AS reminder_local_time,
-            r.channel AS reminder_channel,
-            r.status AS reminder_status
+            to_char(r.remind_on, 'YYYY-MM-DD') AS reminder_local_date
        FROM reopened_task t
        LEFT JOIN reminders r ON r.task_id = t.id
-      ORDER BY r.scheduled_for ASC, r.id ASC`,
-    [taskId, userId, timeZone],
+      ORDER BY r.remind_on ASC, r.id ASC`,
+    [taskId, userId],
   );
 
   return mapTaskRows(rows, timeZone, now)[0] ?? null;
