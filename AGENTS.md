@@ -114,6 +114,7 @@ The main checkout keeps the shared defaults (database `daykeeper`, port 3000); `
 | `ECONNREFUSED` / timeout at the database or at storage | docker is down, or `.env.local` was never written | `docker compose up -d`, then `npm run worktree:setup` |
 | `EADDRINUSE` | a stale process on this worktree's own port | `npm run dev` clears its own port first; just rerun it |
 | `Cannot find module ...` | dependencies not installed here | `npm ci` |
+| `column ... does not exist` or `relation ... does not exist` | this database was built from an older `db/schema.sql`: you pulled a schema change, and there are no migrations to bring it along | `npm run db:reset` |
 
 **Never edit application source or configuration to dodge an environment problem** — changing a port in code, pointing at a different database, weakening a check. If the environment blocks you, the fix is one of the commands above; if none of them fixes it, say so plainly instead of working around it.
 
