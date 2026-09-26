@@ -550,7 +550,8 @@ the Home tab and the message that says a letter is ready all read it.
 | The reader is not configured, or a page reached it without its bytes | Not tried again; the letter fails at once | `failed` | the red row with the failure sentence |
 | The two luna readings agree on every field | That is the reading | `needs-review` | "ready to check" |
 | They differ, and the terra reading matches one of them | The matched reading is taken | `needs-review` | "ready to check" |
-| They differ, and the terra reading matches neither | The letter is read again from the start, up to five rounds | `processing` | "reading…" |
+| They differ, and the terra reading matches neither | The next round is queued, and the next `GET /api/home` poll reads it: the letter is read again from the start, up to five rounds | `processing` | "reading…" |
+| The host stops the request reading a round (KAN-75: Netlify stops a request at 30 seconds, background work included) | Two minutes after the round started, the next poll closes it as a round that decided nothing (`RoundTimedOut`) and queues the next one, or fails the letter if it was the fifth | `processing` | "reading…" |
 | The fifth round still matches neither | The letter fails | `failed` | the red row with the failure sentence |
 | The decided reading's due date or amount is not `confirmed` | The letter fails; a date or amount left empty would read as "no date" or "nothing to pay" (`src/lib/contract/extraction.ts`) | `failed` | the red row with the failure sentence |
 | The decided reading has another field not `confirmed` | That field is stored and not shown; the rest of the reading stands | `needs-review` | "ready to check", without that row |
@@ -1204,10 +1205,15 @@ guarantees it is written down.
 Not oversights. Each needs a decision nobody has made yet, and guessing now
 would mean building the wrong thing twice.
 
-- **the extraction runner.** Upload answers before the reading happens, and
-  *something* has to perform it: in-process after responding, a sweep over the
-  waiting extraction runs, or a real queue. The schema supports all three;
-  nobody has chosen
+- **a real queue for readings.** The runner is decided for now (KAN-75): a
+  reading runs one round per request. The upload reads the first round after
+  it has answered; a round that decides nothing queues the next, and
+  `GET /api/home`, which the screen polls every five seconds while anything is
+  being read, reads it after answering (`continueReadings` in
+  `src/server/uploads.ts`). The reason is the host: Netlify stops a request at
+  30 seconds, background work included, and a round takes 10 to 25. Still
+  open is anything that reads a letter nobody is watching: a letter whose
+  person closes the app mid-reading waits, queued, until they open it again
 - **sending reminders, the transport half.** What the dispatcher decides is
   settled, in `src/lib/contract/reminders.ts`. What is still open is what wakes
   it up: a cron job, a platform scheduler, or in-app only

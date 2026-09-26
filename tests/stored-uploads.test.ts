@@ -34,8 +34,10 @@ vi.mock("@/server/extraction", () => ({
 import { queryOne } from "@/server/db";
 import { deleteObjects, getObject, signedUploadUrl } from "@/server/storage";
 import {
+  ROUND_DEADLINE_SECONDS,
   UploadRejected,
   checkStoredUpload,
+  continueReadings,
   planUpload,
   readStoredDocument,
 } from "@/server/uploads";
@@ -212,6 +214,88 @@ describe("looking at what landed", () => {
     await expect(
       checkStoredUpload(USER, LETTER, ["image/jpeg"]),
     ).rejects.toThrow("connect ETIMEDOUT");
+  });
+});
+
+describe("carrying readings on from the poll", () => {
+  it("closes a round the host stopped and queues the next one", async () => {
+    const { query, transaction } = await import("@/server/db");
+    const client = {
+      query: vi.fn().mockResolvedValue({ rows: [{ id: "run-stopped" }] }),
+    };
+    vi.mocked(transaction).mockImplementation((run) => run(client as never));
+    vi.mocked(query)
+      .mockResolvedValueOnce([
+        { id: "run-stopped", document_id: LETTER, round: 1 },
+      ])
+      .mockResolvedValueOnce([]);
+
+    await continueReadings(USER);
+
+    const [stoppedSql, stoppedParams] = vi.mocked(query).mock.calls[0];
+    expect(stoppedSql).toContain("e.status = 'processing'");
+    expect(stoppedSql).toContain("d.status = 'processing'");
+    expect(stoppedParams).toEqual([USER, ROUND_DEADLINE_SECONDS]);
+    const calls = client.query.mock.calls as [string, unknown[]][];
+    expect(calls[0][0]).toContain("AND status = 'processing'");
+    expect(calls[0][1][1]).toContain("RoundTimedOut: round 1 of");
+    expect(calls[1][0]).toContain("'queued'");
+  });
+
+  it("fails the letter when the round the host stopped was the last", async () => {
+    const { MAX_ROUNDS } = await import("@/server/extraction/scheme");
+    const { query, transaction } = await import("@/server/db");
+    const client = {
+      query: vi.fn().mockResolvedValue({ rows: [{ id: "run-stopped" }] }),
+    };
+    vi.mocked(transaction).mockImplementation((run) => run(client as never));
+    vi.mocked(query)
+      .mockResolvedValueOnce([
+        { id: "run-stopped", document_id: LETTER, round: MAX_ROUNDS },
+      ])
+      .mockResolvedValueOnce([]);
+
+    await continueReadings(USER);
+
+    const calls = client.query.mock.calls as [string, unknown[]][];
+    expect(
+      calls.some(([sql]) => sql.includes("INSERT INTO extraction_runs")),
+    ).toBe(false);
+    expect(calls.at(-1)?.[0]).toContain("UPDATE documents");
+  });
+
+  it("reads a queued round from the photographs in the bucket", async () => {
+    const { query, queryOne } = await import("@/server/db");
+    vi.mocked(query)
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([{ document_id: LETTER }])
+      .mockResolvedValueOnce([
+        {
+          page_number: 1,
+          mime_type: "image/jpeg",
+          byte_size: 3,
+          storage_path: "uploads/k/1.jpg",
+        },
+      ]);
+    getObjectMock.mockResolvedValue(landed(JPEG_HEAD, 12));
+    // Somebody else claimed the round first, so nothing is read twice.
+    vi.mocked(queryOne).mockResolvedValue(null);
+    vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await continueReadings(USER);
+
+    expect(getObjectMock).toHaveBeenCalledWith("uploads/k/1.jpg");
+    const [claimSql, claimParams] = vi.mocked(queryOne).mock.calls[0];
+    expect(claimSql).toContain("e.status = 'queued'");
+    expect(claimParams).toEqual([LETTER, USER]);
+  });
+
+  it("never throws", async () => {
+    const { query } = await import("@/server/db");
+    vi.mocked(query).mockRejectedValue(new Error("connection terminated"));
+    vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await expect(continueReadings(USER)).resolves.toBeUndefined();
   });
 });
 

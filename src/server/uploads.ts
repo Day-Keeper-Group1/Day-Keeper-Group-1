@@ -569,6 +569,14 @@ type CallOutcome =
  *   - a decided reading whose due date or amount is not confirmed fails the
  *     letter (src/lib/contract/extraction.ts says why);
  *   - anything else decided is written, and the letter is ready to check.
+ *
+ * KAN-75: one call of this reads ONE round, never more. A round takes ten to
+ * twenty-five seconds, and the host the app is deployed on stops a request at
+ * thirty, background work included; two rounds in one request were stopped
+ * half way on the first letter that needed them, and the letter said
+ * "reading…" for ever. So a round that ends undecided leaves the next one
+ * queued and returns, and the next GET /api/home that this person's screen
+ * polls picks it up (continueReadings below).
  */
 export async function readDocument(
   documentId: string,
@@ -582,8 +590,11 @@ export async function readDocument(
   // to a queued run means a second call for the same letter finds nothing to do
   // rather than reading it twice and writing two answers to one question.
   let runId: string;
+  let round: number;
   try {
-    const started = await queryOne<{ id: string }>(
+    // Which round this is, counted from the letter's runs, because the round
+    // before it was read by another request. A round the host stopped counts.
+    const started = await queryOne<{ id: string; round: number }>(
       `UPDATE extraction_runs e
           SET status = 'processing',
               started_at = now()
@@ -592,7 +603,9 @@ export async function readDocument(
           AND e.document_id = $1
           AND d.user_id = $2
           AND e.status = 'queued'
-      RETURNING e.id`,
+      RETURNING e.id,
+                (SELECT count(*)::int FROM extraction_runs r
+                  WHERE r.document_id = e.document_id) AS round`,
       [documentId, userId],
     );
 
@@ -603,6 +616,7 @@ export async function readDocument(
       return;
     }
     runId = started.id;
+    round = started.round ?? 1;
   } catch (error) {
     console.error(
       `[uploads] could not start the reading of document ${documentId}`,
@@ -636,92 +650,189 @@ export async function readDocument(
     })),
   };
 
-  for (let round = 1; ; round++) {
-    const currentRun = runId;
-    const call = (role: "reader" | "judge", slot: number, cell: Cell) =>
-      callWithAttempts(
-        currentRun,
-        documentId,
-        input,
-        role,
-        slot,
-        cell,
-        pauseMs,
-      );
+  const call = (role: "reader" | "judge", slot: number, cell: Cell) =>
+    callWithAttempts(runId, documentId, input, role, slot, cell, pauseMs);
 
-    // The two reader calls are independent, so they are made at the same time.
-    const [first, second] = await Promise.all([
-      call("reader", 1, READER),
-      call("reader", 2, READER),
-    ]);
-    if (!first.ok || !second.ok) {
-      const broken = !first.ok ? first : (second as { detail: string });
-      await recordFailedReading(runId, documentId, userId, broken.detail);
-      return;
-    }
-
-    let decision = decide(first.reading.result, second.reading.result);
-    let judge: CallOutcome | null = null;
-    if (decision.outcome === "needs-judge") {
-      judge = await call("judge", 1, JUDGE);
-      if (!judge.ok) {
-        await recordFailedReading(runId, documentId, userId, judge.detail);
-        return;
-      }
-      decision = decide(
-        first.reading.result,
-        second.reading.result,
-        judge.reading.result,
-      );
-    }
-
-    if (decision.outcome !== "decided") {
-      const detail = `SchemeUndecided: round ${round} of ${MAX_ROUNDS}, the readings differ on ${decision.parts.join(", ")}`;
-      if (round >= MAX_ROUNDS) {
-        await recordFailedReading(runId, documentId, userId, detail);
-        return;
-      }
-      const next = await startNextAttempt(runId, documentId, detail);
-      if (!next) {
-        // The round that failed could not be closed and the next one could
-        // not be opened, so there will be no next one: say so on the letter
-        // rather than leave it 'processing' for ever.
-        await recordFailedReading(runId, documentId, userId, detail);
-        return;
-      }
-      runId = next;
-      continue;
-    }
-
-    const unsure = unsureOfWhatMatters(decision.result);
-    if (unsure.length > 0) {
-      await recordFailedReading(
-        runId,
-        documentId,
-        userId,
-        `UnsureOfWhatMatters: the decided reading's ${unsure.join(" and ")} is not confirmed`,
-      );
-      return;
-    }
-
-    try {
-      await writeReading(runId, documentId, userId, decision.result);
-    } catch (error) {
-      // The readings came back and the database would not take the decision.
-      // Reading the letter again would buy the same answer and the same
-      // refusal.
-      console.error(
-        `[uploads] could not write the reading of document ${documentId}`,
-        error,
-      );
-      await recordFailedReading(
-        runId,
-        documentId,
-        userId,
-        failureDetail(error),
-      );
-    }
+  // The two reader calls are independent, so they are made at the same time.
+  const [first, second] = await Promise.all([
+    call("reader", 1, READER),
+    call("reader", 2, READER),
+  ]);
+  if (!first.ok || !second.ok) {
+    const broken = !first.ok ? first : (second as { detail: string });
+    await recordFailedReading(runId, documentId, userId, broken.detail);
     return;
+  }
+
+  let decision = decide(first.reading.result, second.reading.result);
+  let judge: CallOutcome | null = null;
+  if (decision.outcome === "needs-judge") {
+    judge = await call("judge", 1, JUDGE);
+    if (!judge.ok) {
+      await recordFailedReading(runId, documentId, userId, judge.detail);
+      return;
+    }
+    decision = decide(
+      first.reading.result,
+      second.reading.result,
+      judge.reading.result,
+    );
+  }
+
+  if (decision.outcome !== "decided") {
+    await endRoundUndecided(
+      runId,
+      documentId,
+      userId,
+      round,
+      `SchemeUndecided: round ${round} of ${MAX_ROUNDS}, the readings differ on ${decision.parts.join(", ")}`,
+    );
+    return;
+  }
+
+  const unsure = unsureOfWhatMatters(decision.result);
+  if (unsure.length > 0) {
+    await recordFailedReading(
+      runId,
+      documentId,
+      userId,
+      `UnsureOfWhatMatters: the decided reading's ${unsure.join(" and ")} is not confirmed`,
+    );
+    return;
+  }
+
+  try {
+    await writeReading(runId, documentId, userId, decision.result);
+  } catch (error) {
+    // The readings came back and the database would not take the decision.
+    // Reading the letter again would buy the same answer and the same
+    // refusal.
+    console.error(
+      `[uploads] could not write the reading of document ${documentId}`,
+      error,
+    );
+    await recordFailedReading(runId, documentId, userId, failureDetail(error));
+  }
+}
+
+/**
+ * A round is over and decided nothing: its readings disagreed, or the host
+ * stopped it before it finished. Read the letter again from the start in the
+ * next request, or, if that was the last round, fail it.
+ */
+async function endRoundUndecided(
+  runId: string,
+  documentId: string,
+  userId: string,
+  round: number,
+  detail: string,
+): Promise<void> {
+  if (round >= MAX_ROUNDS) {
+    await recordFailedReading(runId, documentId, userId, detail);
+    return;
+  }
+  const next = await queueNextRound(runId, documentId, detail);
+  if (next === "error") {
+    // The round that failed could not be closed and the next one could not
+    // be queued, so there will be no next one: say so on the letter rather
+    // than leave it 'processing' for ever.
+    await recordFailedReading(runId, documentId, userId, detail);
+  }
+}
+
+/**
+ * KAN-75: how long a round may say 'processing' before it is taken to have
+ * been stopped. The host stops a request at thirty seconds, so on it a round
+ * this old is certainly dead. Locally nothing stops a request, and a round
+ * whose calls are slow and retried can run longer than thirty seconds, so the
+ * line is well past both: a round is only ever declared dead when no host
+ * could still be running it. The price is that a stopped round is noticed
+ * two minutes late.
+ */
+export const ROUND_DEADLINE_SECONDS = 120;
+
+/**
+ * KAN-75: carry on reading this person's letters, one round each. Called from
+ * GET /api/home, which the screen polls every five seconds while anything is
+ * being read, so a round queued by one request is read by the next poll.
+ *
+ * Two things, in order. A round still 'processing' long after it could still
+ * be running was stopped by the host: it is closed as a round that decided
+ * nothing, and the letter is queued again or failed, as for a round whose
+ * readings disagreed. Then every queued round of this person's is read, each
+ * from its photographs in the bucket; readDocument() claims before reading,
+ * so two polls arriving together read a round once.
+ *
+ * Never throws, for the same reason readDocument() does not.
+ */
+export async function continueReadings(userId: string): Promise<void> {
+  try {
+    const stopped = await query<{
+      id: string;
+      document_id: string;
+      round: number;
+    }>(
+      `SELECT e.id, e.document_id,
+              (SELECT count(*)::int FROM extraction_runs r
+                WHERE r.document_id = e.document_id) AS round
+         FROM extraction_runs e
+         JOIN documents d ON d.id = e.document_id
+        WHERE d.user_id = $1
+          AND d.status = 'processing'
+          AND e.status = 'processing'
+          AND e.started_at < now() - make_interval(secs => $2)`,
+      [userId, ROUND_DEADLINE_SECONDS],
+    );
+    for (const run of stopped) {
+      await endRoundUndecided(
+        run.id,
+        run.document_id,
+        userId,
+        run.round,
+        `RoundTimedOut: round ${run.round} of ${MAX_ROUNDS} was still processing after ${ROUND_DEADLINE_SECONDS} seconds; the request reading it was stopped`,
+      );
+    }
+
+    const queued = await query<{ document_id: string }>(
+      `SELECT DISTINCT e.document_id
+         FROM extraction_runs e
+         JOIN documents d ON d.id = e.document_id
+        WHERE d.user_id = $1
+          AND d.status = 'processing'
+          AND e.status = 'queued'`,
+      [userId],
+    );
+    await Promise.all(
+      queued.map(async ({ document_id: documentId }) => {
+        const stored = await query<{
+          page_number: number;
+          mime_type: string;
+          byte_size: number;
+          storage_path: string;
+        }>(
+          `SELECT page_number, mime_type, byte_size, storage_path
+             FROM document_pages
+            WHERE document_id = $1
+            ORDER BY page_number`,
+          [documentId],
+        );
+        await readStoredDocument(
+          documentId,
+          userId,
+          stored.map((page) => ({
+            pageNumber: page.page_number,
+            mimeType: page.mime_type,
+            byteSize: page.byte_size,
+            key: page.storage_path,
+          })),
+        );
+      }),
+    );
+  } catch (error) {
+    console.error(
+      `[uploads] could not carry on the readings of user ${userId}`,
+      error,
+    );
   }
 }
 
@@ -874,47 +985,54 @@ export const ROUND_TOTALS = `
   duration_ms = (extract(epoch FROM now() - started_at) * 1000)::integer`;
 
 /**
- * Close a round that failed and open the next, as one unit, and return the
- * new run's id. The new run is written straight to 'processing', because the
- * call is about to be made by the code that wrote it: there is no moment at
- * which it is queued and waiting for somebody.
+ * Close a round that decided nothing and queue the next, as one unit.
  *
- * Null when the database would not take it, which the caller treats as the end
- * of the reading.
+ * KAN-75: the next round is queued rather than read here, because it is read
+ * by the next request (see readDocument). Closing only a round that is still
+ * 'processing' is what keeps this safe when two requests reach the same round
+ * at once, say two polls that both find it stopped: the first closes it and
+ * queues one successor, the second finds nothing left to close and queues
+ * none.
+ *
+ * "not-mine" when the round had already been closed by someone else, "error"
+ * when the database would not take it, which the caller treats as the end of
+ * the reading.
  */
-async function startNextAttempt(
+async function queueNextRound(
   runId: string,
   documentId: string,
   detail: string,
-): Promise<string | null> {
+): Promise<"queued" | "not-mine" | "error"> {
   try {
     return await transaction(async (client) => {
-      await client.query(
+      const closed = await client.query<{ id: string }>(
         `UPDATE extraction_runs
             SET status = 'failed',
                 failure_detail = $2,${ROUND_TOTALS}
-          WHERE id = $1`,
+          WHERE id = $1
+            AND status = 'processing'
+         RETURNING id`,
         [runId, detail],
       );
+      if (closed.rows.length === 0) return "not-mine";
 
       // KAN-63: the next round of the scheme, on the same letter. Its calls
       // are written under it as model_calls rows.
-      const next = await client.query<{ id: string }>(
+      await client.query(
         `INSERT INTO extraction_runs (document_id, status, provider, model)
-         SELECT document_id, 'processing', provider, model
+         SELECT document_id, 'queued', provider, model
            FROM extraction_runs
-          WHERE id = $1
-         RETURNING id`,
+          WHERE id = $1`,
         [runId],
       );
-      return next.rows[0]?.id ?? null;
+      return "queued";
     });
   } catch (error) {
     console.error(
-      `[uploads] could not start another reading of document ${documentId}`,
+      `[uploads] could not queue another reading of document ${documentId}`,
       error,
     );
-    return null;
+    return "error";
   }
 }
 
@@ -934,6 +1052,24 @@ async function writeReading(
   const columns = columnsFromReading(result);
 
   await transaction(async (client) => {
+    // failure_detail is set back to null in so many words: db/schema.sql
+    // refuses a succeeded run that carries one, and saying it here means the
+    // constraint and the statement agree in writing. KAN-75: and only a round
+    // still 'processing' is this reading's to finish; see recordFailedReading.
+    const finished = await client.query<{ id: string }>(
+      `UPDATE extraction_runs
+          SET status = 'succeeded',
+              model = $2,
+              contract_version = $3,
+              raw_response = $4,
+              failure_detail = NULL,${ROUND_TOTALS}
+        WHERE id = $1
+          AND status = 'processing'
+       RETURNING id`,
+      [runId, result.model, result.contract_version, JSON.stringify(result)],
+    );
+    if (finished.rows.length === 0) return;
+
     for (const field of result.fields) {
       await client.query(
         `INSERT INTO extracted_fields
@@ -958,20 +1094,6 @@ async function writeReading(
         ],
       );
     }
-
-    // failure_detail is set back to null in so many words: db/schema.sql
-    // refuses a succeeded run that carries one, and saying it here means the
-    // constraint and the statement agree in writing.
-    await client.query(
-      `UPDATE extraction_runs
-          SET status = 'succeeded',
-              model = $2,
-              contract_version = $3,
-              raw_response = $4,
-              failure_detail = NULL,${ROUND_TOTALS}
-        WHERE id = $1`,
-      [runId, result.model, result.contract_version, JSON.stringify(result)],
-    );
 
     await client.query(
       `UPDATE documents
@@ -1013,13 +1135,19 @@ async function recordFailedReading(
 ): Promise<void> {
   try {
     await transaction(async (client) => {
-      await client.query(
+      // KAN-75: only a round still 'processing' is this reading's to close.
+      // One that is already closed was declared stopped by a later request,
+      // which has already decided what becomes of the letter.
+      const closed = await client.query<{ id: string }>(
         `UPDATE extraction_runs
             SET status = 'failed',
                 failure_detail = $2,${ROUND_TOTALS}
-          WHERE id = $1`,
+          WHERE id = $1
+            AND status = 'processing'
+         RETURNING id`,
         [runId, detail],
       );
+      if (closed.rows.length === 0) return;
 
       await client.query(
         `UPDATE documents
