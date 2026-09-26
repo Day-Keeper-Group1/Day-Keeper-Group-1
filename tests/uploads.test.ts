@@ -331,7 +331,14 @@ async function refusalOf(files: File[]): Promise<UploadRejected> {
  * The rows it answers with are the rows the first statement wants, which is the
  * only query in this module that reads anything back.
  */
-function transactionClient(rows: Record<string, unknown>[] = []) {
+/**
+ * A transaction whose every statement answers with `rows`. KAN-75: by default
+ * one row, because a round is closed or finished only while it is still
+ * 'processing', and the RETURNING row is how the code knows it was.
+ */
+function transactionClient(
+  rows: Record<string, unknown>[] = [{ id: "a-round" }],
+) {
   const client = { query: vi.fn().mockResolvedValue({ rows }) };
   transactionMock.mockImplementation((run) =>
     run(client as unknown as PoolClient),
@@ -844,11 +851,9 @@ describe("reading a stored letter", () => {
     expect(document?.[0]).toContain("'needs-review'");
   });
 
-  it("reads the letter again from the start when the judge matches neither, up to the last round", async () => {
-    const { MAX_ROUNDS } = await import("@/server/extraction/scheme");
-    queryOneMock.mockResolvedValue({ id: RUN_ID });
+  /** Every call gives a reference no other call gave, so no round decides. */
+  function neverAgreeing() {
     let n = 0;
-    // Every call gives a reference no other call gave.
     readLetterMock.mockImplementation(async () =>
       read(
         reading([
@@ -856,25 +861,73 @@ describe("reading a stored letter", () => {
         ]),
       ),
     );
-    const client = transactionClient([{ id: "run-next" }]);
+  }
+
+  // KAN-75: one round per request. The host stops a request at thirty
+  // seconds, and a round takes up to twenty-five.
+  it("reads one round, and queues the next for another request when the judge matches neither", async () => {
+    queryOneMock.mockResolvedValue({ id: RUN_ID, round: 1 });
+    neverAgreeing();
+    const client = transactionClient();
 
     await readDocument(DOCUMENT_ID, USER_ID, PAGES, { pauseMs: 0 });
 
-    expect(readLetterMock).toHaveBeenCalledTimes(3 * MAX_ROUNDS);
+    expect(readLetterMock).toHaveBeenCalledTimes(3);
     const calls = client.query.mock.calls as [string, unknown[]][];
-    const opened = calls.filter(([sql]) =>
-      sql.includes("INSERT INTO extraction_runs"),
-    );
-    expect(opened).toHaveLength(MAX_ROUNDS - 1);
-    const closed = calls.filter(
-      ([sql]) =>
-        sql.includes("UPDATE extraction_runs") && sql.includes("'failed'"),
-    );
-    expect(closed).toHaveLength(MAX_ROUNDS);
-    expect(closed.at(-1)?.[1][1]).toContain("SchemeUndecided");
-    expect(closed.at(-1)?.[1][1]).toContain("reference");
+    const [closeSql, closeParams] = calls[0];
+    expect(closeSql).toContain("'failed'");
+    expect(closeSql).toContain("AND status = 'processing'");
+    expect(closeParams[1]).toContain("SchemeUndecided: round 1 of");
+    expect(closeParams[1]).toContain("reference");
+    const [openSql] = calls[1];
+    expect(openSql).toContain("INSERT INTO extraction_runs");
+    expect(openSql).toContain("'queued'");
+    // The letter is not touched: it is still being read.
+    expect(calls.some(([sql]) => sql.includes("UPDATE documents"))).toBe(false);
+  });
+
+  it("fails the letter when the last round decides nothing", async () => {
+    const { MAX_ROUNDS } = await import("@/server/extraction/scheme");
+    queryOneMock.mockResolvedValue({ id: RUN_ID, round: MAX_ROUNDS });
+    neverAgreeing();
+    const client = transactionClient();
+
+    await readDocument(DOCUMENT_ID, USER_ID, PAGES, { pauseMs: 0 });
+
+    const calls = client.query.mock.calls as [string, unknown[]][];
+    expect(
+      calls.some(([sql]) => sql.includes("INSERT INTO extraction_runs")),
+    ).toBe(false);
+    expect(calls[0][1][1]).toContain(`round ${MAX_ROUNDS} of ${MAX_ROUNDS}`);
     expect(calls.at(-1)?.[0]).toContain("UPDATE documents");
     expect(calls.at(-1)?.[0]).toContain("'failed'");
+  });
+
+  it("queues nothing when another request has already closed the round", async () => {
+    queryOneMock.mockResolvedValue({ id: RUN_ID, round: 1 });
+    neverAgreeing();
+    const client = transactionClient([]);
+
+    await readDocument(DOCUMENT_ID, USER_ID, PAGES, { pauseMs: 0 });
+
+    const calls = client.query.mock.calls as [string, unknown[]][];
+    expect(calls).toHaveLength(1);
+    expect(
+      calls.some(([sql]) => sql.includes("INSERT INTO extraction_runs")),
+    ).toBe(false);
+  });
+
+  it("writes nothing of a reading whose round was already closed by another request", async () => {
+    queryOneMock.mockResolvedValue({ id: RUN_ID, round: 1 });
+    readLetterMock.mockResolvedValue(read(reading()));
+    const client = transactionClient([]);
+
+    await readDocument(DOCUMENT_ID, USER_ID, PAGES);
+
+    const calls = client.query.mock.calls as [string, unknown[]][];
+    expect(calls).toHaveLength(1);
+    expect(calls[0][0]).toContain("'succeeded'");
+    expect(calls[0][0]).toContain("AND status = 'processing'");
   });
 
   it("fails the letter when the decided due date is not confirmed", async () => {

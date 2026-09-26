@@ -35,6 +35,7 @@ import { resolve } from "node:path";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { Client } from "pg";
 import { config } from "dotenv";
+import { databaseSsl } from "../src/lib/database-tls";
 import { hostIsLocal } from "../src/lib/local-host";
 import { refuseIfRealAccounts } from "./real-accounts";
 import {
@@ -126,7 +127,10 @@ async function main() {
   // alone skips the script that makes it.
   await ensureBucket(storage);
 
-  const db = new Client({ connectionString: DATABASE_URL });
+  const db = new Client({
+    connectionString: DATABASE_URL,
+    ssl: databaseSsl(DATABASE_URL!),
+  });
   await db.connect();
 
   try {

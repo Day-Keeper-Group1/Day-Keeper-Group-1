@@ -7,9 +7,13 @@ import { requireUser } from "@/server/auth/session";
 import { listDocuments } from "@/server/documents";
 import {
   UploadRejected,
+  type StoredPage,
   type UploadedPage,
+  checkStoredUpload,
   createDocument,
+  createStoredDocument,
   readDocument,
+  readStoredDocument,
   validateUpload,
 } from "@/server/uploads";
 
@@ -28,6 +32,14 @@ import {
  */
 export const POST = route(async (request: Request) => {
   const user = await requireUser();
+
+  // KAN-75: the capture screen puts the photographs in the bucket itself and
+  // sends only this JSON (docs/api.md, "Ask to upload a letter"). A multipart
+  // body carrying the photographs, as below, is still how curl, Swagger and a
+  // test send a letter.
+  if (request.headers.get("content-type")?.startsWith("application/json")) {
+    return photographsAlreadyStored(request, user);
+  }
 
   // A body that is not a form at all makes formData() throw, and an exception
   // route() has never heard of becomes a 500 with an "[api] unhandled error"
@@ -65,6 +77,48 @@ export const POST = route(async (request: Request) => {
 
   return json(summary, 201);
 });
+
+/**
+ * The second half of POST /api/documents: the photographs are already in the
+ * bucket, under the letter id POST /api/documents/uploads gave out. Look at
+ * them, write the rows, answer, and read them after the answer has gone, the
+ * same order as above.
+ */
+async function photographsAlreadyStored(
+  request: Request,
+  user: { id: string; timeZone: string },
+): Promise<Response> {
+  const body = (await request.json().catch(() => null)) as {
+    documentId?: unknown;
+    pages?: unknown;
+  } | null;
+  const documentId =
+    typeof body?.documentId === "string" ? body.documentId : "";
+  const mimeTypes = Array.isArray(body?.pages)
+    ? body.pages.map((page: { contentType?: unknown }) =>
+        typeof page?.contentType === "string" ? page.contentType : "",
+      )
+    : [];
+
+  let stored: StoredPage[];
+  try {
+    stored = await checkStoredUpload(user.id, documentId, mimeTypes);
+  } catch (error) {
+    if (error instanceof UploadRejected) {
+      return fail("invalid_request", error.message, error.fields);
+    }
+    throw error;
+  }
+
+  const summary = await createStoredDocument(
+    user.id,
+    user.timeZone,
+    documentId,
+    stored,
+  );
+  after(() => readStoredDocument(summary.id, user.id, stored));
+  return json(summary, 201);
+}
 
 /**
  * GET /api/documents. Every letter this person has, newest upload first.

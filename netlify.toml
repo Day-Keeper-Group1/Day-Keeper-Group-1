@@ -1,0 +1,14 @@
+# Netlify build settings for the trial deployment (KAN-75).
+#
+# Built with webpack rather than Turbopack, the Next.js 16 default. A
+# Turbopack production build refers to server packages such as `pg` through
+# hashed aliases in .next/node_modules (for example pg-587764f78a6c7a9c). When
+# the build runs on Windows, those aliases are directory junctions, and the
+# Netlify plugin does not carry them into the function bundle, so the deployed
+# function fails at load with ERR_MODULE_NOT_FOUND and every request that
+# touches the database answers 500. Webpack imports `pg` by its real name and
+# the bundle includes it. Local development is unaffected and still uses
+# Turbopack.
+[build]
+  command = "next build --webpack"
+  publish = ".next"

@@ -10,6 +10,9 @@ const createDocumentMock = vi.hoisted(() => vi.fn());
 const readDocumentMock = vi.hoisted(() => vi.fn());
 const listDocumentsMock = vi.hoisted(() => vi.fn());
 const afterMock = vi.hoisted(() => vi.fn());
+const checkStoredUploadMock = vi.hoisted(() => vi.fn());
+const createStoredDocumentMock = vi.hoisted(() => vi.fn());
+const readStoredDocumentMock = vi.hoisted(() => vi.fn());
 
 vi.mock("@/server/auth/session", () => {
   class UnauthenticatedError extends Error {
@@ -43,6 +46,9 @@ vi.mock("@/server/uploads", () => {
     validateUpload: validateUploadMock,
     createDocument: createDocumentMock,
     readDocument: readDocumentMock,
+    checkStoredUpload: checkStoredUploadMock,
+    createStoredDocument: createStoredDocumentMock,
+    readStoredDocument: readStoredDocumentMock,
   };
 });
 
@@ -174,11 +180,12 @@ describe("POST /api/documents", () => {
       new UploadRejected("Please attach at least one photo."),
     );
 
+    // Not JSON either: a JSON body is the other way in, tested below.
     const response = await POST(
       new Request("http://localhost/api/documents", {
         method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ pages: [] }),
+        headers: { "content-type": "text/plain" },
+        body: "pages",
       }),
     );
 
@@ -231,6 +238,117 @@ describe("POST /api/documents", () => {
       "user-one",
       PAGES,
     );
+  });
+});
+
+describe("POST /api/documents, photographs already in the bucket (KAN-75)", () => {
+  let scheduled: Array<() => unknown> = [];
+
+  const LETTER_ID = "3a9f1e77-4c02-4f1a-9b3e-5d2c8a11f004";
+  const STORED = [
+    {
+      pageNumber: 1,
+      mimeType: "image/jpeg",
+      byteSize: 842251,
+      key: `uploads/user-one/${LETTER_ID}/1.jpg`,
+    },
+  ];
+
+  function storedRequest(body: unknown): Request {
+    return new Request("http://localhost/api/documents", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  }
+
+  beforeEach(() => {
+    requireUserMock.mockReset();
+    validateUploadMock.mockReset();
+    checkStoredUploadMock.mockReset();
+    createStoredDocumentMock.mockReset();
+    readStoredDocumentMock.mockReset();
+    afterMock.mockReset();
+    scheduled = [];
+    afterMock.mockImplementation((callback: () => unknown) => {
+      scheduled.push(callback);
+    });
+  });
+
+  it("checks what landed, writes the letter, answers 201, and reads it afterwards", async () => {
+    requireUserMock.mockResolvedValue(USER);
+    checkStoredUploadMock.mockResolvedValue(STORED);
+    createStoredDocumentMock.mockResolvedValue(SUMMARY);
+
+    const response = await POST(
+      storedRequest({
+        documentId: LETTER_ID,
+        pages: [{ contentType: "image/jpeg" }],
+      }),
+    );
+
+    expect(response.status).toBe(201);
+    expect(await response.json()).toEqual(SUMMARY);
+    expect(checkStoredUploadMock).toHaveBeenCalledWith("user-one", LETTER_ID, [
+      "image/jpeg",
+    ]);
+    expect(createStoredDocumentMock).toHaveBeenCalledWith(
+      "user-one",
+      "Australia/Melbourne",
+      LETTER_ID,
+      STORED,
+    );
+    expect(validateUploadMock).not.toHaveBeenCalled();
+
+    // Nothing is read until the answer has gone.
+    expect(readStoredDocumentMock).not.toHaveBeenCalled();
+    await scheduled[0]();
+    expect(readStoredDocumentMock).toHaveBeenCalledWith(
+      SUMMARY.id,
+      "user-one",
+      STORED,
+    );
+  });
+
+  it("passes a refusal on in the sentences it was written in", async () => {
+    const { UploadRejected } = await import("@/server/uploads");
+    requireUserMock.mockResolvedValue(USER);
+    checkStoredUploadMock.mockRejectedValue(
+      new UploadRejected("One of those photos did not come through.", {
+        pages: "Page 1 is missing.",
+      }),
+    );
+
+    const response = await POST(
+      storedRequest({
+        documentId: LETTER_ID,
+        pages: [{ contentType: "image/jpeg" }],
+      }),
+    );
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({
+      error: {
+        code: "invalid_request",
+        message: "One of those photos did not come through.",
+        fields: { pages: "Page 1 is missing." },
+      },
+    });
+    expect(createStoredDocumentMock).not.toHaveBeenCalled();
+    expect(afterMock).not.toHaveBeenCalled();
+  });
+
+  it("hands a body of the wrong shape to the rules as nothing at all", async () => {
+    const { UploadRejected } = await import("@/server/uploads");
+    requireUserMock.mockResolvedValue(USER);
+    checkStoredUploadMock.mockRejectedValue(
+      new UploadRejected("Please attach at least one photo."),
+    );
+
+    const response = await POST(storedRequest({ documentId: 7, pages: "no" }));
+
+    expect(response.status).toBe(400);
+    expect(checkStoredUploadMock).toHaveBeenCalledWith("user-one", "", []);
   });
 });
 

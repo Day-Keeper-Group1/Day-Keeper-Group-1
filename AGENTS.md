@@ -13,6 +13,9 @@ DayKeeper (Group 1): an AI-powered life management system for people in vulnerab
 - [`docs/prototype/user/daykeeper-sketch-live.html`](docs/prototype/user/daykeeper-sketch-live.html): clickable prototype of the user flow (phone). The live one; user-flow design work happens here, and its `:root` block is where the theme's palette lives. See "The look" below.
 - [`.agents/skills/daykeeper-jira/`](.agents/skills/daykeeper-jira/): how this team's Jira board actually works, as a skill. Codex loads it when a ticket, the board or a sprint comes up; it needs the Atlassian MCP server, which [`.codex/config.toml`](.codex/config.toml) already defines and the README explains how to authenticate. Optional: nothing in the build depends on it.
 - [`db/schema.sql`](db/schema.sql): the database, and its only definition. No migrations: edit it and run `npm run db:reset`.
+- [`docs/deployment.md`](docs/deployment.md): the trial deployment (KAN-75), Netlify for the app and Supabase for the database and photographs, all under one project mailbox. How to deploy, every setting and why, what the free plans limit, and how to read the live state as an agent. The passwords and keys are not in it: they are in Teams, in the private channel Internal Documents of the team P000473SE-G1-DayKeeper, and "Where the keys are" in that file says exactly where, what is in them, and that an agent asks the person for a value rather than ever writing one down.
+
+**Supabase will report "RLS disabled" on every table as critical. It does not apply here, and agents must not enable RLS or run the advisor's fix without asking.** The browser never talks to the database: the Data API is off, Supabase's API roles have no grants, and our own server enforces who sees what. [`docs/deployment.md`](docs/deployment.md), "Advisor warnings you will see", has the reasoning and the query that checks it.
 - [`docs/walkthrough/`](docs/walkthrough/): **the way in**. A walk through the product one action at a time, and under each
   screen what the system does, which tables it writes, and why. Start here if you are new, or if you are
   about to change something and want to know what it is connected to. The PDF is built from the typst
@@ -39,7 +42,7 @@ The gain is in [`src/lib/contract/`](src/lib/contract/). Those types are the agr
 
 One dependency set, one deployment, one test run, and one place to look when something is wrong. Four of the five of us have not shipped a web application before, and every one of those is worth more to a beginner than it is to an experienced team.
 
-Extraction runs in a route handler because a reading takes about twenty seconds: the request answers immediately and the interface polls. If a reading ever takes minutes, that gets revisited and a queue appears.
+Extraction runs in route handlers, one round of the scheme per request: the upload answers immediately and reads the first round afterwards, and a round that decides nothing queues the next, which the next `GET /api/home` poll reads. One round per request because a round takes 10 to 25 seconds and Netlify, where the trial deployment runs, stops a request at 30, background work included (KAN-75). If a reading ever has to happen with nobody's screen open, that gets revisited and a real queue appears.
 
 ## The look
 

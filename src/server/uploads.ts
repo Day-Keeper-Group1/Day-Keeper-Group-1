@@ -32,6 +32,7 @@ import {
   MAX_PAGE_BYTES,
   TOO_MANY_PAGES_MESSAGE,
   type DocumentSummary,
+  type UploadSlots,
 } from "@/lib/contract/api";
 import { isIsoDate } from "@/lib/contract/dates";
 import {
@@ -47,7 +48,14 @@ import {
   type Reading,
 } from "@/server/extraction";
 import { estimatedCostUsd } from "@/server/extraction/prices";
-import { deleteObjects, putObject, uploadObjectKey } from "@/server/storage";
+import { SNIFF_BYTES, sniffImageType } from "@/server/image-type";
+import {
+  deleteObjects,
+  getObject,
+  putObject,
+  signedUploadUrl,
+  uploadObjectKey,
+} from "@/server/storage";
 import {
   type Cell,
   JUDGE,
@@ -92,6 +100,60 @@ export class UploadRejected extends Error {
 /** How the size limit reads in a sentence: "10 MB". */
 const MAX_PAGE_MB = MAX_PAGE_BYTES / (1024 * 1024);
 
+/** How many pages, and whether each claims to be a photograph. */
+function judgeCountAndTypes(mimeTypes: readonly string[]): void {
+  if (mimeTypes.length === 0) {
+    throw new UploadRejected("Please attach at least one photo.");
+  }
+
+  if (mimeTypes.length > MAX_PAGES) {
+    throw new UploadRejected(TOO_MANY_PAGES_MESSAGE, {
+      pages: `There are ${mimeTypes.length} photos here.`,
+    });
+  }
+
+  for (const [index, mimeType] of mimeTypes.entries()) {
+    if (!mimeType.startsWith("image/")) {
+      throw new UploadRejected("Please attach photos only.", {
+        pages: `Page ${index + 1} is not a photo.`,
+      });
+    }
+  }
+}
+
+/** Whether one page's size is within the limits. */
+function judgeSize(pageNumber: number, byteSize: number): void {
+  // A file of no bytes passes every other check here and then breaks the
+  // byte_size constraint in db/schema.sql, which would reach the person as a
+  // server error instead of as a sentence she can act on.
+  if (byteSize === 0) {
+    throw new UploadRejected("One of those photos did not come through.", {
+      pages: `Page ${pageNumber} is empty.`,
+    });
+  }
+
+  if (byteSize > MAX_PAGE_BYTES) {
+    throw new UploadRejected("One of those photos is too large to send.", {
+      pages: `Page ${pageNumber} is larger than ${MAX_PAGE_MB} MB.`,
+    });
+  }
+}
+
+/**
+ * The rules every letter is held to, however its photographs travel: through
+ * the app (validateUpload) or straight into the bucket (planUpload, and
+ * checkStoredUpload once they have landed). One copy, so the two ways in
+ * cannot drift into accepting different letters.
+ */
+function judgePages(
+  pages: ReadonlyArray<{ mimeType: string; byteSize: number }>,
+): void {
+  judgeCountAndTypes(pages.map((page) => page.mimeType));
+  for (const [index, page] of pages.entries()) {
+    judgeSize(index + 1, page.byteSize);
+  }
+}
+
 /**
  * Hold an upload to the two limits the contract exports, and read it in.
  *
@@ -104,43 +166,12 @@ const MAX_PAGE_MB = MAX_PAGE_BYTES / (1024 * 1024);
  * release does not make; src/lib/contract/api.ts says why.
  */
 export async function validateUpload(files: File[]): Promise<UploadedPage[]> {
-  if (files.length === 0) {
-    throw new UploadRejected("Please attach at least one photo.");
-  }
-
-  if (files.length > MAX_PAGES) {
-    throw new UploadRejected(TOO_MANY_PAGES_MESSAGE, {
-      pages: `There are ${files.length} photos here.`,
-    });
-  }
-
   // Every page is judged before any page is read into memory. A letter whose
   // last photograph is too large is refused without the first nine having been
   // loaded, which is what makes "all or nothing" cheap as well as true.
-  for (const [index, file] of files.entries()) {
-    const pageNumber = index + 1;
-
-    if (!file.type.startsWith("image/")) {
-      throw new UploadRejected("Please attach photos only.", {
-        pages: `Page ${pageNumber} is not a photo.`,
-      });
-    }
-
-    // A file of no bytes passes every other check here and then breaks the
-    // byte_size constraint in db/schema.sql, which would reach the person as a
-    // server error instead of as a sentence she can act on.
-    if (file.size === 0) {
-      throw new UploadRejected("One of those photos did not come through.", {
-        pages: `Page ${pageNumber} is empty.`,
-      });
-    }
-
-    if (file.size > MAX_PAGE_BYTES) {
-      throw new UploadRejected("One of those photos is too large to send.", {
-        pages: `Page ${pageNumber} is larger than ${MAX_PAGE_MB} MB.`,
-      });
-    }
-  }
+  judgePages(
+    files.map((file) => ({ mimeType: file.type, byteSize: file.size })),
+  );
 
   return Promise.all(
     files.map(async (file, index) => {
@@ -176,10 +207,11 @@ export async function createDocument(
   // and is cleaned up below. src/server/storage.ts says why the key is derived
   // rather than random.
   const documentId = randomUUID();
-  const reader = extractionProvider();
 
   const stored = pages.map((page) => ({
-    page,
+    pageNumber: page.pageNumber,
+    mimeType: page.mimeType,
+    byteSize: page.byteSize,
     key: uploadObjectKey({
       userId,
       documentId,
@@ -190,70 +222,311 @@ export async function createDocument(
 
   try {
     await Promise.all(
-      stored.map(({ page, key }) => putObject(key, page.bytes, page.mimeType)),
+      pages.map((page, index) =>
+        putObject(stored[index].key, page.bytes, page.mimeType),
+      ),
     );
-
-    const row = await transaction(async (client) => {
-      const inserted = await client.query<{ uploaded_at: Date }>(
-        `INSERT INTO documents (id, user_id, status)
-              VALUES ($1, $2, 'processing')
-           RETURNING uploaded_at`,
-        [documentId, userId],
-      );
-
-      for (const { page, key } of stored) {
-        await client.query(
-          `INSERT INTO document_pages
-             (document_id, page_number, storage_path, mime_type, byte_size)
-           VALUES ($1, $2, $3, $4, $5)`,
-          [documentId, page.pageNumber, key, page.mimeType, page.byteSize],
-        );
-      }
-
-      // The run is written now, queued, rather than when the reading starts, so
-      // that a letter whose reader never woke up says so in the table instead
-      // of looking like a letter nobody ever tried to read. `contract_version`
-      // stays null until there is a payload whose shape it can describe.
-      await client.query(
-        `INSERT INTO extraction_runs (document_id, status, provider, model)
-              VALUES ($1, 'queued', $2, $3)`,
-        [documentId, reader.name, reader.model],
-      );
-
-      return inserted.rows[0];
-    });
-
-    const uploadedAt = row.uploaded_at.toISOString();
-
-    return {
-      id: documentId,
-      issuer: null,
-      documentType: null,
-      // Nothing has read the letter, so it is called by the only facts that
-      // exist about it: when it was photographed, and how many sheets it holds.
-      label: documentLabel({
-        issuer: null,
-        documentType: null,
-        uploadedAt,
-        pageCount: pages.length,
-        timeZone,
-      }),
-      status: "processing",
-      uploadedAt,
-      pageCount: pages.length,
-    };
+    return await recordDocument(userId, timeZone, documentId, stored);
   } catch (error) {
-    // Bytes that no row points at are unreachable by every other part of the
-    // system, so they go here rather than waiting for a sweep nobody has
-    // written. Failing to clean up must not replace the failure that caused it.
-    await deleteObjects(stored.map(({ key }) => key)).catch((cleanupError) => {
-      console.error(
-        `[uploads] could not remove the photographs of document ${documentId} after a failed upload`,
-        cleanupError,
-      );
-    });
+    await removeStranded(documentId, stored);
     throw error;
   }
+}
+
+/**
+ * Bytes that no row points at are unreachable by every other part of the
+ * system, so they go as soon as the upload that wrote them fails, rather than
+ * waiting for a sweep nobody has written. Failing to clean up must not replace
+ * the failure that caused it.
+ */
+async function removeStranded(
+  documentId: string,
+  stored: ReadonlyArray<{ key: string }>,
+): Promise<void> {
+  await deleteObjects(stored.map(({ key }) => key)).catch((cleanupError) => {
+    console.error(
+      `[uploads] could not remove the photographs of document ${documentId} after a failed upload`,
+      cleanupError,
+    );
+  });
+}
+
+/** One photograph that is already in the bucket, as the rows will describe it. */
+export type StoredPage = {
+  pageNumber: number;
+  mimeType: string;
+  byteSize: number;
+  key: string;
+};
+
+/**
+ * Write the rows for photographs that are already stored, and answer with the
+ * letter they became. Shared by both ways a letter arrives.
+ */
+async function recordDocument(
+  userId: string,
+  timeZone: string,
+  documentId: string,
+  stored: readonly StoredPage[],
+): Promise<DocumentSummary> {
+  const reader = extractionProvider();
+
+  const row = await transaction(async (client) => {
+    const inserted = await client.query<{ uploaded_at: Date }>(
+      `INSERT INTO documents (id, user_id, status)
+            VALUES ($1, $2, 'processing')
+         RETURNING uploaded_at`,
+      [documentId, userId],
+    );
+
+    for (const page of stored) {
+      await client.query(
+        `INSERT INTO document_pages
+           (document_id, page_number, storage_path, mime_type, byte_size)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [documentId, page.pageNumber, page.key, page.mimeType, page.byteSize],
+      );
+    }
+
+    // The run is written now, queued, rather than when the reading starts, so
+    // that a letter whose reader never woke up says so in the table instead
+    // of looking like a letter nobody ever tried to read. `contract_version`
+    // stays null until there is a payload whose shape it can describe.
+    await client.query(
+      `INSERT INTO extraction_runs (document_id, status, provider, model)
+            VALUES ($1, 'queued', $2, $3)`,
+      [documentId, reader.name, reader.model],
+    );
+
+    return inserted.rows[0];
+  });
+
+  const uploadedAt = row.uploaded_at.toISOString();
+
+  return {
+    id: documentId,
+    issuer: null,
+    documentType: null,
+    // Nothing has read the letter, so it is called by the only facts that
+    // exist about it: when it was photographed, and how many sheets it holds.
+    label: documentLabel({
+      issuer: null,
+      documentType: null,
+      uploadedAt,
+      pageCount: stored.length,
+      timeZone,
+    }),
+    status: "processing",
+    uploadedAt,
+    pageCount: stored.length,
+  };
+}
+
+/**
+ * KAN-75, step 1 of a letter whose photographs go straight into the bucket:
+ * hold what the capture screen says it is about to send to the usual rules,
+ * pick the letter's id, and sign one upload link per page.
+ *
+ * Nothing is written anywhere. The id is only a name for keys that do not
+ * exist yet; the letter becomes a row in step 3, once the photographs are
+ * there to be pointed at. A capture screen that asks and never sends leaves
+ * nothing behind.
+ *
+ * Each key comes from uploadObjectKey() with the signed-in person's id, never
+ * from the request, because a link is permission to write exactly the key it
+ * was signed for (src/server/storage.ts, signedUploadUrl).
+ */
+export async function planUpload(
+  userId: string,
+  pages: ReadonlyArray<{ contentType: string; byteSize: number }>,
+): Promise<UploadSlots> {
+  judgePages(
+    pages.map((page) => ({
+      mimeType: page.contentType,
+      byteSize: page.byteSize,
+    })),
+  );
+
+  const documentId = randomUUID();
+  return {
+    documentId,
+    pages: await Promise.all(
+      pages.map(async (page, index) => {
+        const pageNumber = index + 1;
+        const key = uploadObjectKey({
+          userId,
+          documentId,
+          pageNumber,
+          contentType: page.contentType,
+        });
+        return {
+          pageNumber,
+          uploadUrl: await signedUploadUrl(key, page.contentType),
+          contentType: page.contentType,
+        };
+      }),
+    ),
+  };
+}
+
+/** A letter id as randomUUID() writes it. */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** HEIC and HEIF are one family; image-type.ts calls both image/heic. */
+function sameImageType(declared: string, sniffed: string | null): boolean {
+  const family = (type: string) =>
+    type.toLowerCase() === "image/heif" ? "image/heic" : type.toLowerCase();
+  return sniffed !== null && family(declared) === family(sniffed);
+}
+
+/**
+ * KAN-75, step 3: the photographs are said to be in the bucket. Look.
+ *
+ * The keys are derived again from the signed-in person and the letter id, the
+ * way planUpload derived them, so the most a request can point at is its own
+ * sender's photographs. Each object is read only as far as its first bytes:
+ * enough to know it arrived, how big it is (the bucket says, in the range
+ * header), and that it is the kind of image it was declared as. The whole
+ * photograph is fetched later, for the reader, after the person has been
+ * answered.
+ *
+ * All or nothing, as for an upload through the app: one page missing, empty,
+ * too large or not what it claims refuses the letter, and every page of it
+ * is removed from the bucket, because no row will ever point at them.
+ */
+export async function checkStoredUpload(
+  userId: string,
+  documentId: string,
+  mimeTypes: readonly string[],
+): Promise<StoredPage[]> {
+  if (!UUID.test(documentId)) {
+    throw new UploadRejected(
+      "Those photos did not come through. Please send them again.",
+    );
+  }
+  judgeCountAndTypes(mimeTypes);
+
+  // A letter id that already has a row is a letter already sent, most likely
+  // the same one twice. Its photographs belong to that letter now, so they
+  // are left alone rather than cleaned up as strays.
+  const existing = await queryOne<{ id: string }>(
+    `SELECT id FROM documents WHERE id = $1`,
+    [documentId],
+  );
+  if (existing) {
+    throw new UploadRejected("These photos have already been sent.");
+  }
+
+  const pages = mimeTypes.map((mimeType, index) => ({
+    pageNumber: index + 1,
+    mimeType,
+    key: uploadObjectKey({
+      userId,
+      documentId,
+      pageNumber: index + 1,
+      contentType: mimeType,
+    }),
+  }));
+
+  try {
+    return await Promise.all(
+      pages.map(async (page) => {
+        const head = await getObject(page.key, SNIFF_BYTES).catch(
+          (error: unknown) => {
+            if (objectIsMissing(error)) return null;
+            throw error;
+          },
+        );
+        if (!head) {
+          throw new UploadRejected(
+            "One of those photos did not come through.",
+            { pages: `Page ${page.pageNumber} is missing.` },
+          );
+        }
+        judgeSize(page.pageNumber, head.byteSize);
+        if (!sameImageType(page.mimeType, sniffImageType(head.bytes))) {
+          throw new UploadRejected("Please attach photos only.", {
+            pages: `Page ${page.pageNumber} is not a photo.`,
+          });
+        }
+        return { ...page, byteSize: head.byteSize };
+      }),
+    );
+  } catch (error) {
+    await removeStranded(documentId, pages);
+    throw error;
+  }
+}
+
+/**
+ * Whether storage answered "no such object". An empty object answers a range
+ * request with 416 rather than with its first bytes, and is missing for every
+ * purpose here.
+ */
+function objectIsMissing(error: unknown): boolean {
+  const status = (error as { $metadata?: { httpStatusCode?: number } })
+    ?.$metadata?.httpStatusCode;
+  const name = (error as { name?: string })?.name;
+  return (
+    status === 404 ||
+    status === 416 ||
+    name === "NoSuchKey" ||
+    name === "NotFound"
+  );
+}
+
+/**
+ * KAN-75: write the rows for a letter whose photographs checkStoredUpload()
+ * has just looked at. If the rows cannot be written the photographs are
+ * removed, for the reason removeStranded() gives.
+ */
+export async function createStoredDocument(
+  userId: string,
+  timeZone: string,
+  documentId: string,
+  stored: readonly StoredPage[],
+): Promise<DocumentSummary> {
+  try {
+    return await recordDocument(userId, timeZone, documentId, stored);
+  } catch (error) {
+    await removeStranded(documentId, stored);
+    throw error;
+  }
+}
+
+/**
+ * KAN-75: fetch the photographs a letter's pages point at, then read it as
+ * readDocument() does. Runs after the response, so like readDocument it never
+ * throws: photographs that cannot be fetched fail the letter, with its run
+ * left 'queued', because the reading never started.
+ */
+export async function readStoredDocument(
+  documentId: string,
+  userId: string,
+  stored: readonly StoredPage[],
+): Promise<void> {
+  let pages: UploadedPage[];
+  try {
+    pages = await Promise.all(
+      stored.map(async (page) => {
+        const object = await getObject(page.key);
+        return {
+          pageNumber: page.pageNumber,
+          bytes: object.bytes,
+          mimeType: page.mimeType,
+          byteSize: object.byteSize,
+        };
+      }),
+    );
+  } catch (error) {
+    console.error(
+      `[uploads] could not fetch the photographs of document ${documentId} to read them`,
+      error,
+    );
+    await markDocumentFailed(documentId, userId);
+    return;
+  }
+  await readDocument(documentId, userId, pages);
 }
 
 /**
@@ -296,6 +569,14 @@ type CallOutcome =
  *   - a decided reading whose due date or amount is not confirmed fails the
  *     letter (src/lib/contract/extraction.ts says why);
  *   - anything else decided is written, and the letter is ready to check.
+ *
+ * KAN-75: one call of this reads ONE round, never more. A round takes ten to
+ * twenty-five seconds, and the host the app is deployed on stops a request at
+ * thirty, background work included; two rounds in one request were stopped
+ * half way on the first letter that needed them, and the letter said
+ * "reading…" for ever. So a round that ends undecided leaves the next one
+ * queued and returns, and the next GET /api/home that this person's screen
+ * polls picks it up (continueReadings below).
  */
 export async function readDocument(
   documentId: string,
@@ -309,8 +590,11 @@ export async function readDocument(
   // to a queued run means a second call for the same letter finds nothing to do
   // rather than reading it twice and writing two answers to one question.
   let runId: string;
+  let round: number;
   try {
-    const started = await queryOne<{ id: string }>(
+    // Which round this is, counted from the letter's runs, because the round
+    // before it was read by another request. A round the host stopped counts.
+    const started = await queryOne<{ id: string; round: number }>(
       `UPDATE extraction_runs e
           SET status = 'processing',
               started_at = now()
@@ -319,7 +603,9 @@ export async function readDocument(
           AND e.document_id = $1
           AND d.user_id = $2
           AND e.status = 'queued'
-      RETURNING e.id`,
+      RETURNING e.id,
+                (SELECT count(*)::int FROM extraction_runs r
+                  WHERE r.document_id = e.document_id) AS round`,
       [documentId, userId],
     );
 
@@ -330,6 +616,7 @@ export async function readDocument(
       return;
     }
     runId = started.id;
+    round = started.round ?? 1;
   } catch (error) {
     console.error(
       `[uploads] could not start the reading of document ${documentId}`,
@@ -363,92 +650,189 @@ export async function readDocument(
     })),
   };
 
-  for (let round = 1; ; round++) {
-    const currentRun = runId;
-    const call = (role: "reader" | "judge", slot: number, cell: Cell) =>
-      callWithAttempts(
-        currentRun,
-        documentId,
-        input,
-        role,
-        slot,
-        cell,
-        pauseMs,
-      );
+  const call = (role: "reader" | "judge", slot: number, cell: Cell) =>
+    callWithAttempts(runId, documentId, input, role, slot, cell, pauseMs);
 
-    // The two reader calls are independent, so they are made at the same time.
-    const [first, second] = await Promise.all([
-      call("reader", 1, READER),
-      call("reader", 2, READER),
-    ]);
-    if (!first.ok || !second.ok) {
-      const broken = !first.ok ? first : (second as { detail: string });
-      await recordFailedReading(runId, documentId, userId, broken.detail);
-      return;
-    }
-
-    let decision = decide(first.reading.result, second.reading.result);
-    let judge: CallOutcome | null = null;
-    if (decision.outcome === "needs-judge") {
-      judge = await call("judge", 1, JUDGE);
-      if (!judge.ok) {
-        await recordFailedReading(runId, documentId, userId, judge.detail);
-        return;
-      }
-      decision = decide(
-        first.reading.result,
-        second.reading.result,
-        judge.reading.result,
-      );
-    }
-
-    if (decision.outcome !== "decided") {
-      const detail = `SchemeUndecided: round ${round} of ${MAX_ROUNDS}, the readings differ on ${decision.parts.join(", ")}`;
-      if (round >= MAX_ROUNDS) {
-        await recordFailedReading(runId, documentId, userId, detail);
-        return;
-      }
-      const next = await startNextAttempt(runId, documentId, detail);
-      if (!next) {
-        // The round that failed could not be closed and the next one could
-        // not be opened, so there will be no next one: say so on the letter
-        // rather than leave it 'processing' for ever.
-        await recordFailedReading(runId, documentId, userId, detail);
-        return;
-      }
-      runId = next;
-      continue;
-    }
-
-    const unsure = unsureOfWhatMatters(decision.result);
-    if (unsure.length > 0) {
-      await recordFailedReading(
-        runId,
-        documentId,
-        userId,
-        `UnsureOfWhatMatters: the decided reading's ${unsure.join(" and ")} is not confirmed`,
-      );
-      return;
-    }
-
-    try {
-      await writeReading(runId, documentId, userId, decision.result);
-    } catch (error) {
-      // The readings came back and the database would not take the decision.
-      // Reading the letter again would buy the same answer and the same
-      // refusal.
-      console.error(
-        `[uploads] could not write the reading of document ${documentId}`,
-        error,
-      );
-      await recordFailedReading(
-        runId,
-        documentId,
-        userId,
-        failureDetail(error),
-      );
-    }
+  // The two reader calls are independent, so they are made at the same time.
+  const [first, second] = await Promise.all([
+    call("reader", 1, READER),
+    call("reader", 2, READER),
+  ]);
+  if (!first.ok || !second.ok) {
+    const broken = !first.ok ? first : (second as { detail: string });
+    await recordFailedReading(runId, documentId, userId, broken.detail);
     return;
+  }
+
+  let decision = decide(first.reading.result, second.reading.result);
+  let judge: CallOutcome | null = null;
+  if (decision.outcome === "needs-judge") {
+    judge = await call("judge", 1, JUDGE);
+    if (!judge.ok) {
+      await recordFailedReading(runId, documentId, userId, judge.detail);
+      return;
+    }
+    decision = decide(
+      first.reading.result,
+      second.reading.result,
+      judge.reading.result,
+    );
+  }
+
+  if (decision.outcome !== "decided") {
+    await endRoundUndecided(
+      runId,
+      documentId,
+      userId,
+      round,
+      `SchemeUndecided: round ${round} of ${MAX_ROUNDS}, the readings differ on ${decision.parts.join(", ")}`,
+    );
+    return;
+  }
+
+  const unsure = unsureOfWhatMatters(decision.result);
+  if (unsure.length > 0) {
+    await recordFailedReading(
+      runId,
+      documentId,
+      userId,
+      `UnsureOfWhatMatters: the decided reading's ${unsure.join(" and ")} is not confirmed`,
+    );
+    return;
+  }
+
+  try {
+    await writeReading(runId, documentId, userId, decision.result);
+  } catch (error) {
+    // The readings came back and the database would not take the decision.
+    // Reading the letter again would buy the same answer and the same
+    // refusal.
+    console.error(
+      `[uploads] could not write the reading of document ${documentId}`,
+      error,
+    );
+    await recordFailedReading(runId, documentId, userId, failureDetail(error));
+  }
+}
+
+/**
+ * A round is over and decided nothing: its readings disagreed, or the host
+ * stopped it before it finished. Read the letter again from the start in the
+ * next request, or, if that was the last round, fail it.
+ */
+async function endRoundUndecided(
+  runId: string,
+  documentId: string,
+  userId: string,
+  round: number,
+  detail: string,
+): Promise<void> {
+  if (round >= MAX_ROUNDS) {
+    await recordFailedReading(runId, documentId, userId, detail);
+    return;
+  }
+  const next = await queueNextRound(runId, documentId, detail);
+  if (next === "error") {
+    // The round that failed could not be closed and the next one could not
+    // be queued, so there will be no next one: say so on the letter rather
+    // than leave it 'processing' for ever.
+    await recordFailedReading(runId, documentId, userId, detail);
+  }
+}
+
+/**
+ * KAN-75: how long a round may say 'processing' before it is taken to have
+ * been stopped. The host stops a request at thirty seconds, so on it a round
+ * this old is certainly dead. Locally nothing stops a request, and a round
+ * whose calls are slow and retried can run longer than thirty seconds, so the
+ * line is well past both: a round is only ever declared dead when no host
+ * could still be running it. The price is that a stopped round is noticed
+ * two minutes late.
+ */
+export const ROUND_DEADLINE_SECONDS = 120;
+
+/**
+ * KAN-75: carry on reading this person's letters, one round each. Called from
+ * GET /api/home, which the screen polls every five seconds while anything is
+ * being read, so a round queued by one request is read by the next poll.
+ *
+ * Two things, in order. A round still 'processing' long after it could still
+ * be running was stopped by the host: it is closed as a round that decided
+ * nothing, and the letter is queued again or failed, as for a round whose
+ * readings disagreed. Then every queued round of this person's is read, each
+ * from its photographs in the bucket; readDocument() claims before reading,
+ * so two polls arriving together read a round once.
+ *
+ * Never throws, for the same reason readDocument() does not.
+ */
+export async function continueReadings(userId: string): Promise<void> {
+  try {
+    const stopped = await query<{
+      id: string;
+      document_id: string;
+      round: number;
+    }>(
+      `SELECT e.id, e.document_id,
+              (SELECT count(*)::int FROM extraction_runs r
+                WHERE r.document_id = e.document_id) AS round
+         FROM extraction_runs e
+         JOIN documents d ON d.id = e.document_id
+        WHERE d.user_id = $1
+          AND d.status = 'processing'
+          AND e.status = 'processing'
+          AND e.started_at < now() - make_interval(secs => $2)`,
+      [userId, ROUND_DEADLINE_SECONDS],
+    );
+    for (const run of stopped) {
+      await endRoundUndecided(
+        run.id,
+        run.document_id,
+        userId,
+        run.round,
+        `RoundTimedOut: round ${run.round} of ${MAX_ROUNDS} was still processing after ${ROUND_DEADLINE_SECONDS} seconds; the request reading it was stopped`,
+      );
+    }
+
+    const queued = await query<{ document_id: string }>(
+      `SELECT DISTINCT e.document_id
+         FROM extraction_runs e
+         JOIN documents d ON d.id = e.document_id
+        WHERE d.user_id = $1
+          AND d.status = 'processing'
+          AND e.status = 'queued'`,
+      [userId],
+    );
+    await Promise.all(
+      queued.map(async ({ document_id: documentId }) => {
+        const stored = await query<{
+          page_number: number;
+          mime_type: string;
+          byte_size: number;
+          storage_path: string;
+        }>(
+          `SELECT page_number, mime_type, byte_size, storage_path
+             FROM document_pages
+            WHERE document_id = $1
+            ORDER BY page_number`,
+          [documentId],
+        );
+        await readStoredDocument(
+          documentId,
+          userId,
+          stored.map((page) => ({
+            pageNumber: page.page_number,
+            mimeType: page.mime_type,
+            byteSize: page.byte_size,
+            key: page.storage_path,
+          })),
+        );
+      }),
+    );
+  } catch (error) {
+    console.error(
+      `[uploads] could not carry on the readings of user ${userId}`,
+      error,
+    );
   }
 }
 
@@ -601,47 +985,54 @@ export const ROUND_TOTALS = `
   duration_ms = (extract(epoch FROM now() - started_at) * 1000)::integer`;
 
 /**
- * Close a round that failed and open the next, as one unit, and return the
- * new run's id. The new run is written straight to 'processing', because the
- * call is about to be made by the code that wrote it: there is no moment at
- * which it is queued and waiting for somebody.
+ * Close a round that decided nothing and queue the next, as one unit.
  *
- * Null when the database would not take it, which the caller treats as the end
- * of the reading.
+ * KAN-75: the next round is queued rather than read here, because it is read
+ * by the next request (see readDocument). Closing only a round that is still
+ * 'processing' is what keeps this safe when two requests reach the same round
+ * at once, say two polls that both find it stopped: the first closes it and
+ * queues one successor, the second finds nothing left to close and queues
+ * none.
+ *
+ * "not-mine" when the round had already been closed by someone else, "error"
+ * when the database would not take it, which the caller treats as the end of
+ * the reading.
  */
-async function startNextAttempt(
+async function queueNextRound(
   runId: string,
   documentId: string,
   detail: string,
-): Promise<string | null> {
+): Promise<"queued" | "not-mine" | "error"> {
   try {
     return await transaction(async (client) => {
-      await client.query(
+      const closed = await client.query<{ id: string }>(
         `UPDATE extraction_runs
             SET status = 'failed',
                 failure_detail = $2,${ROUND_TOTALS}
-          WHERE id = $1`,
+          WHERE id = $1
+            AND status = 'processing'
+         RETURNING id`,
         [runId, detail],
       );
+      if (closed.rows.length === 0) return "not-mine";
 
       // KAN-63: the next round of the scheme, on the same letter. Its calls
       // are written under it as model_calls rows.
-      const next = await client.query<{ id: string }>(
+      await client.query(
         `INSERT INTO extraction_runs (document_id, status, provider, model)
-         SELECT document_id, 'processing', provider, model
+         SELECT document_id, 'queued', provider, model
            FROM extraction_runs
-          WHERE id = $1
-         RETURNING id`,
+          WHERE id = $1`,
         [runId],
       );
-      return next.rows[0]?.id ?? null;
+      return "queued";
     });
   } catch (error) {
     console.error(
-      `[uploads] could not start another reading of document ${documentId}`,
+      `[uploads] could not queue another reading of document ${documentId}`,
       error,
     );
-    return null;
+    return "error";
   }
 }
 
@@ -661,6 +1052,24 @@ async function writeReading(
   const columns = columnsFromReading(result);
 
   await transaction(async (client) => {
+    // failure_detail is set back to null in so many words: db/schema.sql
+    // refuses a succeeded run that carries one, and saying it here means the
+    // constraint and the statement agree in writing. KAN-75: and only a round
+    // still 'processing' is this reading's to finish; see recordFailedReading.
+    const finished = await client.query<{ id: string }>(
+      `UPDATE extraction_runs
+          SET status = 'succeeded',
+              model = $2,
+              contract_version = $3,
+              raw_response = $4,
+              failure_detail = NULL,${ROUND_TOTALS}
+        WHERE id = $1
+          AND status = 'processing'
+       RETURNING id`,
+      [runId, result.model, result.contract_version, JSON.stringify(result)],
+    );
+    if (finished.rows.length === 0) return;
+
     for (const field of result.fields) {
       await client.query(
         `INSERT INTO extracted_fields
@@ -685,20 +1094,6 @@ async function writeReading(
         ],
       );
     }
-
-    // failure_detail is set back to null in so many words: db/schema.sql
-    // refuses a succeeded run that carries one, and saying it here means the
-    // constraint and the statement agree in writing.
-    await client.query(
-      `UPDATE extraction_runs
-          SET status = 'succeeded',
-              model = $2,
-              contract_version = $3,
-              raw_response = $4,
-              failure_detail = NULL,${ROUND_TOTALS}
-        WHERE id = $1`,
-      [runId, result.model, result.contract_version, JSON.stringify(result)],
-    );
 
     await client.query(
       `UPDATE documents
@@ -740,13 +1135,19 @@ async function recordFailedReading(
 ): Promise<void> {
   try {
     await transaction(async (client) => {
-      await client.query(
+      // KAN-75: only a round still 'processing' is this reading's to close.
+      // One that is already closed was declared stopped by a later request,
+      // which has already decided what becomes of the letter.
+      const closed = await client.query<{ id: string }>(
         `UPDATE extraction_runs
             SET status = 'failed',
                 failure_detail = $2,${ROUND_TOTALS}
-          WHERE id = $1`,
+          WHERE id = $1
+            AND status = 'processing'
+         RETURNING id`,
         [runId, detail],
       );
+      if (closed.rows.length === 0) return;
 
       await client.query(
         `UPDATE documents

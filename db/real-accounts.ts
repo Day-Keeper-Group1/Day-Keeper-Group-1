@@ -30,6 +30,8 @@
 
 import { Client } from "pg";
 
+import { databaseSsl } from "../src/lib/database-tls";
+
 /** Every account the seed creates lives here. See db/seed.ts. */
 const SEED_DOMAIN = "@example.com";
 
@@ -51,7 +53,12 @@ export const OVERRIDE = "DK_DESTROY_REAL_ACCOUNTS";
 export async function realAccounts(
   connectionString: string,
 ): Promise<string[]> {
-  const db = new Client({ connectionString });
+  // Encrypted like every other connection to a database that is not local:
+  // this query reads back every account's email address.
+  const db = new Client({
+    connectionString,
+    ssl: databaseSsl(connectionString),
+  });
   await db.connect();
   try {
     const table = await db.query<{ present: boolean }>(
