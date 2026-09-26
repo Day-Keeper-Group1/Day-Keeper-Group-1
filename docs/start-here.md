@@ -27,7 +27,7 @@ reasoning for the parts that look arbitrary.
 
 ## Running it
 
-You need Node 22.13 or newer, npm 11 or newer, and Docker Desktop.
+You need Node 24 or newer, npm 11 or newer, and Docker Desktop.
 
 ```bash
 npm ci                    # exactly what package-lock.json says
@@ -55,6 +55,8 @@ an upload really stored anything.
 **`npm ci` complains about your npm version.** That is the guard working: run
 `npm i -g npm@11`. Different npm versions write `package-lock.json` differently,
 and the resulting churn wastes everyone's time.
+
+**`npm ci` says the engine is unsupported, naming Node.** Your Node is older than 24. Install the current LTS from https://nodejs.org and run it again. The floor is 24 because Node 20 reached end of life in April 2026, CI runs 24, and `pdfjs-dist` (the PDF upload) needs 22.13 or newer in any case; `.npmrc` makes any dependency's floor the whole install's floor.
 
 **`npm run db:reset` cannot connect.** The container is up but Postgres inside
 it is still starting. `docker compose up -d` returns before the health check

@@ -10,7 +10,7 @@ no API key and no permission from anybody.
 
 ## Getting it running
 
-You need [Node](https://nodejs.org) 22.13 or newer and
+You need [Node](https://nodejs.org) 24 or newer and
 [Docker Desktop](https://www.docker.com/products/docker-desktop/). Install them
 first if you have not; Docker needs to be running, not just installed.
 
