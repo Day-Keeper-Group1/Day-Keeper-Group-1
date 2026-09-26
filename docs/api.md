@@ -1117,11 +1117,12 @@ would mean building the wrong thing twice.
 - **sending reminders, the transport half.** What the dispatcher decides is
   settled, in `src/lib/contract/reminders.ts`. What is still open is what wakes
   it up: a cron job, a platform scheduler, or in-app only
-- **what the capture screen does at the limits.** A current phone camera clears
-  `MAX_PAGE_BYTES` per frame routinely. Whether the client downscales to fit or
-  refuses the photograph, and what the screen says at the last page, is
-  undecided. Refusing silently loses a photograph the person deliberately took,
-  which is the failure the limits are exported to prevent
+- **what the capture screen says at the last page.** The size half is
+  decided (KAN-75): the capture screen redraws any photograph over 1 MB so its
+  long side is 3508 pixels, the size of the pages the reader was measured on,
+  and sends one at or under 1 MB untouched. `src/lib/photos.ts` has the rule
+  and the reasons. A host that runs this app as functions refuses a request
+  much over 4 MB, which is why the line sits well under `MAX_PAGE_BYTES`
 - **rate limiting on sign-in**, before anything is public
 
 ## Development only: try the reader

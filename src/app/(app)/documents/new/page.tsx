@@ -12,6 +12,14 @@ import {
   type ApiError,
   type DocumentSummary,
 } from "@/lib/contract/api";
+import { shrinkPhoto } from "@/lib/photos";
+
+/**
+ * How long a letter may take to send before she is told it did not go. Two
+ * minutes, because a slow mobile connection with several pages is slow but
+ * not broken, and anything still going after that is not coming back.
+ */
+const SEND_TIMEOUT_MS = 2 * 60 * 1000;
 
 type Photo = {
   id: string;
@@ -107,18 +115,28 @@ export default function UploadDocumentPage() {
     setSubmitting(true);
     setError(null);
 
-    // Every photograph goes under the same field name, in the order it was
-    // taken, because one upload is one letter and the order they arrive is the
-    // page order (docs/api.md). The Content-Type header is left alone on
-    // purpose: the browser has to write it itself so that it carries the
-    // multipart boundary.
-    const form = new FormData();
-    for (const photo of photos) form.append("pages", photo.file);
-
     try {
+      // A photograph over the line is redrawn smaller first, because the host
+      // refuses a request much over four megabytes; src/lib/photos.ts says
+      // where the line is and why. One at a time, so a phone holds one decoded
+      // page in memory rather than all of them.
+      const files: File[] = [];
+      for (const photo of photos) files.push(await shrinkPhoto(photo.file));
+
+      // Every photograph goes under the same field name, in the order it was
+      // taken, because one upload is one letter and the order they arrive is
+      // the page order (docs/api.md). The Content-Type header is left alone on
+      // purpose: the browser has to write it itself so that it carries the
+      // multipart boundary.
+      const form = new FormData();
+      for (const file of files) form.append("pages", file);
+
+      // A request the host drops without answering would otherwise leave the
+      // button on "Sending..." for as long as she is willing to watch it.
       const response = await fetch("/api/documents", {
         method: "POST",
         body: form,
+        signal: AbortSignal.timeout(SEND_TIMEOUT_MS),
       });
 
       if (!response.ok) {
@@ -149,9 +167,12 @@ export default function UploadDocumentPage() {
       // for again at once so the app starts watching it being read.
       setSent((prev) => [...prev, letter]);
       void refresh();
-    } catch {
+    } catch (caught) {
       setError({
-        message: "We could not reach the server. Please check your connection.",
+        message:
+          caught instanceof DOMException && caught.name === "TimeoutError"
+            ? "Sending took too long. Please check your connection and try again."
+            : "We could not reach the server. Please check your connection.",
       });
     } finally {
       setSubmitting(false);
