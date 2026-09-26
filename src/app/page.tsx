@@ -160,7 +160,7 @@ export default function PublicEntryPage() {
             <div className="w-[54%] overflow-hidden rounded-2xl border border-border shadow-lg">
               <Image
                 src="/screens/home.png"
-                alt="DayKeeper's home screen: a short list of tasks, one overdue, one upcoming."
+                alt="DayKeeper's home screen: the week's tasks, three of them marked with a reminder."
                 width={400}
                 height={800}
                 className="h-auto w-full"
@@ -170,7 +170,7 @@ export default function PublicEntryPage() {
             <div className="mt-10 w-[54%] overflow-hidden rounded-2xl border border-border shadow-lg">
               <Image
                 src="/screens/calendar.png"
-                alt="DayKeeper's calendar: due dates in red, reminder mornings in gold."
+                alt="DayKeeper's calendar: a red dot on each day something is due."
                 width={400}
                 height={800}
                 className="h-auto w-full"

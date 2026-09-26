@@ -19,14 +19,14 @@ the list below, this document wins and that document is wrong.
 7. Confirming writes the tables. The letter is stored with its photographs, and the
    action it carries becomes a task with a due date.
 8. The task appears on the home list and on the calendar.
-9. Reminders fire seven days, three days and one day before the due date.
+9. Seven days, three days and one day before the due date, Home marks the task's own row as a reminder.
 10. Ticking the task is the only thing that completes it, and an overdue task that has
     not been ticked sits at the top of the home list.
 11. A letters area holds what has been read, and opening a letter shows the photographs
     that came with it.
 
-A person can go from a piece of paper on the kitchen table to a reminder that arrives in
-time, and the shortest description of the product is still two verbs: photograph, and
+A person can go from a piece of paper on the kitchen table to a task on Home that
+reminds her in time, and the shortest description of the product is still two verbs: photograph, and
 tick.
 
 ## Not in this release
@@ -56,5 +56,5 @@ six fields and may return more, with the extra kept in `open_payload`. A value t
 was not sure of never reaches a screen, and nobody is offered an empty box to fill in;
 [`src/lib/contract/extraction.ts`](../src/lib/contract/extraction.ts) says what happens
 to it instead. A task's tick is its only state, and whether a task is
-overdue is worked out from the clock when a reminder fires rather than stored. The theme
+overdue is worked out from the clock rather than stored. The theme
 is Eucalypt and Wattle, and every rule in [`theme.md`](theme.md) still holds.

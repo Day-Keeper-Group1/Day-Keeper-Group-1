@@ -21,7 +21,7 @@ Three things, and deliberately only three:
 **The API and the pages follow `docs/api.md`.** Sign in, the letters
 (upload, list, open, confirm, page images, home) and the tasks endpoints exist
 and the screens read them: a photographed letter is read, checked, saved and
-lands on the calendar. Sending the reminders is the next piece. When you add an
+lands on the calendar with its reminders marked. When you add an
 endpoint, add it to that file first: it is the specification, with the
 reasoning for the parts that look arbitrary.
 
@@ -232,8 +232,8 @@ formatting is `formatDueDate()`.
 
 **The reminder schedule has exactly one home, `planReminders()`.** The confirm
 handler creates rows from it and the review screen previews the plan with it.
-If you find yourself typing an offset in days, or the hour they go out, you are
-creating the second copy that lets the promise and the behaviour disagree.
+If you find yourself typing an offset in days, you are creating the second
+copy that lets the promise and the behaviour disagree.
 
 Two things about the document flow that are design decisions rather than
 implementation details:
