@@ -1,0 +1,26 @@
+{
+  "version": "1.0",
+  "utterances": [
+    {
+      "index": 0,
+      "speaker": "Speaker 1",
+      "text": "I will collect your prescription tomorrow, 3 October 2026.",
+      "startMs": 0,
+      "endMs": 3900
+    },
+    {
+      "index": 1,
+      "speaker": "Speaker 2",
+      "text": "Thanks. I will call the clinic on Monday, 5 October 2026.",
+      "startMs": 4300,
+      "endMs": 8200
+    },
+    {
+      "index": 2,
+      "speaker": "Speaker 1",
+      "text": "I will also bring the groceries when I visit tomorrow.",
+      "startMs": 8600,
+      "endMs": 12100
+    }
+  ]
+}
