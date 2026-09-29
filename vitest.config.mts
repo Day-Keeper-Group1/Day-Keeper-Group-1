@@ -20,6 +20,9 @@ export default defineConfig({
       // assertions. Without this the suite spends ~25 of its ~27 seconds
       // sleeping. See src/server/extraction/mock-provider.ts.
       MOCK_EXTRACTION_DELAY_MS: "0",
+      // The voice mock also has a short delay so KAN-89 can build a real
+      // waiting state without making the contract suite wait for it.
+      MOCK_VOICE_EXTRACTION_DELAY_MS: "0",
     },
   },
   resolve: {

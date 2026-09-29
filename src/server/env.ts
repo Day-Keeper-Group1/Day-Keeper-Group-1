@@ -85,6 +85,13 @@ const envSchema = z.object({
     .default("mock"),
 
   /**
+   * Which provider extracts commitments from prepared conversation transcripts.
+   * This is separate from document extraction because the two modules can be
+   * developed and demonstrated independently.
+   */
+  AI_VOICE_EXTRACTION_PROVIDER: z.enum(["mock", "azure"]).default("mock"),
+
+  /**
    * The vision model, on RACE's Azure AI Foundry. Only read when
    * AI_EXTRACTION_PROVIDER is `azure`; the reader itself says which is missing
    * if either is, so a wrong value fails as a sentence and not a stack trace.
