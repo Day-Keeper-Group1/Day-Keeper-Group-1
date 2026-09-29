@@ -170,7 +170,7 @@ appearance.
 Each scenario also keeps a human-readable script as its source material:
 
 ```text
-fixtures/voice/clear-commitment/
+data/synthetic-conversations/clear-commitment/
   script.md
   transcript.json
   expected-commitments.json

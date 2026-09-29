@@ -1,0 +1,13 @@
+{
+  "version": "1.0",
+  "commitments": [
+    {
+      "id": "clear-1",
+      "title": "Book the doctor appointment",
+      "dueDate": "2026-10-02",
+      "dueTime": "10:30",
+      "status": "confirmed",
+      "evidence": [0, 1]
+    }
+  ]
+}

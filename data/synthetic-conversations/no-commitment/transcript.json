@@ -1,0 +1,26 @@
+{
+  "version": "1.0",
+  "utterances": [
+    {
+      "index": 0,
+      "speaker": "Speaker 1",
+      "text": "The community garden looked beautiful yesterday.",
+      "startMs": 0,
+      "endMs": 3100
+    },
+    {
+      "index": 1,
+      "speaker": "Speaker 2",
+      "text": "Yes, the flowers were colourful.",
+      "startMs": 3500,
+      "endMs": 5700
+    },
+    {
+      "index": 2,
+      "speaker": "Speaker 1",
+      "text": "It was nice to sit there for a while.",
+      "startMs": 6100,
+      "endMs": 8500
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "version": "1.0",
+  "utterances": [
+    {
+      "index": 0,
+      "speaker": "Speaker 1",
+      "text": "The garden is getting overgrown.",
+      "startMs": 0,
+      "endMs": 2500
+    },
+    {
+      "index": 1,
+      "speaker": "Speaker 2",
+      "text": "I will mow the lawn for you.",
+      "startMs": 2900,
+      "endMs": 5000
+    },
+    {
+      "index": 2,
+      "speaker": "Speaker 1",
+      "text": "That would help, thank you.",
+      "startMs": 5400,
+      "endMs": 7300
+    }
+  ]
+}
