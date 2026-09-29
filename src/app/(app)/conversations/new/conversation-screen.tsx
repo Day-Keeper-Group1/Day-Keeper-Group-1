@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { MessageSquareText, Quote } from "lucide-react";
+import { FileAudio, MessageSquareText, Quote } from "lucide-react";
 import { Panel, ScreenHeader } from "@/components/screen";
 import { Button } from "@/components/ui/button";
 import type {
@@ -55,6 +55,26 @@ export function ConversationScreen({ scenarios }: { scenarios: Scenario[] }) {
           results. Nothing is recorded, uploaded or saved.
         </p>
       </div>
+      <Panel title="Audio recording" className="mb-5">
+        <div className="flex flex-col items-center rounded-lg border-2 border-dashed border-line bg-background px-4 py-6 text-center">
+          <FileAudio className="mb-3 size-8 text-primary" aria-hidden="true" />
+          <p className="text-row font-bold">Add a conversation recording</p>
+          <p className="mt-1 text-caption text-ink-dim">
+            Planned formats: MP3, M4A, WAV or WebM. Up to 50 MiB and 30 minutes.
+          </p>
+          <Button
+            disabled
+            className="mt-4"
+            aria-describedby="audio-placeholder-note"
+          >
+            Choose audio file
+          </Button>
+          <p id="audio-placeholder-note" className="mt-3 text-sub text-ink-dim">
+            Audio upload is not available yet. Use an example conversation below
+            to try the demo.
+          </p>
+        </div>
+      </Panel>
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div>
           <label
