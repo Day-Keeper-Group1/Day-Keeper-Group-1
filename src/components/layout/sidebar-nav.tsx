@@ -10,6 +10,7 @@ import {
   DESKTOP_ONLY_NAV,
   isNavItemActive,
   PRIMARY_NAV,
+  VOICE_NAV,
   type NavItem,
 } from "./nav-items";
 
@@ -81,7 +82,7 @@ export function SidebarNav() {
       </Link>
 
       <ul className="flex flex-1 flex-col gap-1">
-        {PRIMARY_NAV.map((item) => (
+        {[...PRIMARY_NAV, VOICE_NAV].map((item) => (
           <li key={item.href}>
             <SidebarLink
               item={item}
