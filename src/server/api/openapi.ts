@@ -224,6 +224,29 @@ const paths = {
               },
             },
           },
+          "application/json": {
+            schema: {
+              type: "object",
+              description:
+                "The photographs are already in the bucket, put there through the links POST /api/documents/uploads gave out. This is what the capture screen sends.",
+              required: ["documentId", "pages"],
+              properties: {
+                documentId: { type: "string", format: "uuid" },
+                pages: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    required: ["contentType"],
+                    properties: { contentType: { type: "string" } },
+                  },
+                },
+              },
+            },
+            example: {
+              documentId: "3a9f1e77-4c02-4f1a-9b3e-5d2c8a11f004",
+              pages: [{ contentType: "image/jpeg" }],
+            },
+          },
         },
       },
       responses: {
@@ -233,7 +256,7 @@ const paths = {
           examples.uploaded,
         ),
         "400": refusal(
-          "No photographs, too many, one too large, or one that is not an image. The whole upload is refused.",
+          "No photographs, too many, one too large, one that is not an image, or (JSON) one that never reached the bucket. The whole upload is refused.",
           examples.uploadInvalid,
         ),
         "401": NOT_SIGNED_IN,
@@ -252,6 +275,82 @@ const paths = {
           "The letters.",
           { type: "array", items: ref("DocumentSummary") },
           examples.documents,
+        ),
+        "401": NOT_SIGNED_IN,
+      },
+    },
+  },
+  "/api/documents/uploads": {
+    post: {
+      tags: ["Letters"],
+      summary: "Ask to upload a letter",
+      description: specified(
+        "Say what is about to be sent, one entry per photograph in page order, and get the letter's id and one upload link per page. PUT each photograph to its link with the Content-Type it was signed for, then POST /api/documents with the id. The photographs never pass through the app. Nothing is written until that last step.",
+        "ask-to-upload-a-letter",
+      ),
+      security: [{ session: [] }],
+      requestBody: {
+        required: true,
+        content: {
+          "application/json": {
+            schema: {
+              type: "object",
+              required: ["pages"],
+              properties: {
+                pages: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    required: ["contentType", "byteSize"],
+                    properties: {
+                      contentType: { type: "string" },
+                      byteSize: { type: "integer" },
+                    },
+                  },
+                },
+              },
+            },
+            example: {
+              pages: [{ contentType: "image/jpeg", byteSize: 842251 }],
+            },
+          },
+        },
+      },
+      responses: {
+        "200": answer(
+          "One link per page, good for five minutes.",
+          {
+            type: "object",
+            properties: {
+              documentId: { type: "string", format: "uuid" },
+              pages: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    pageNumber: { type: "integer" },
+                    uploadUrl: { type: "string", format: "uri" },
+                    contentType: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          {
+            documentId: "3a9f1e77-4c02-4f1a-9b3e-5d2c8a11f004",
+            pages: [
+              {
+                pageNumber: 1,
+                uploadUrl:
+                  "https://example.storage.supabase.co/storage/v1/s3/daykeeper/uploads/.../1.jpg?X-Amz-Signature=...",
+                contentType: "image/jpeg",
+              },
+            ],
+          },
+        ),
+        "400": refusal(
+          "No photographs, too many, one too large, or one that is not an image.",
+          examples.uploadInvalid,
         ),
         "401": NOT_SIGNED_IN,
       },

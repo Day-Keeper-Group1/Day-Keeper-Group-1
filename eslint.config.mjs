@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // What `netlify deploy` builds locally before uploading it. Generated.
+    ".netlify/**",
   ]),
 ]);
 

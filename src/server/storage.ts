@@ -61,6 +61,12 @@ function clientFor(endpoint: string): S3Client {
     endpoint,
     region: env().STORAGE_REGION,
     forcePathStyle: true,
+    // Left to itself the SDK signs a checksum of the body into every upload
+    // link, and at signing time the body is empty, so the link carries the
+    // checksum of nothing. Supabase and MinIO both ignore it; a bucket that
+    // checked it would refuse every photograph. Checksums are still sent where the
+    // protocol requires one, such as deleting several objects at once.
+    requestChecksumCalculation: "WHEN_REQUIRED",
     credentials: {
       accessKeyId: env().STORAGE_ACCESS_KEY,
       secretAccessKey: env().STORAGE_SECRET_KEY,

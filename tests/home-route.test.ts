@@ -21,6 +21,13 @@ vi.mock("@/server/auth/session", () => {
 
 vi.mock("@/server/documents", () => ({ getHome: getHomeMock }));
 
+const continueReadingsMock = vi.hoisted(() => vi.fn());
+const afterMock = vi.hoisted(() => vi.fn());
+vi.mock("@/server/uploads", () => ({ continueReadings: continueReadingsMock }));
+// Replaced outright, as in documents-route.test.ts: the real module brings
+// Next's whole server runtime into a suite that needs none of it.
+vi.mock("next/server", () => ({ after: afterMock }));
+
 import { GET } from "@/app/api/home/route";
 
 const USER = {
@@ -90,6 +97,34 @@ describe("GET /api/home", () => {
   beforeEach(() => {
     requireUserMock.mockReset();
     getHomeMock.mockReset();
+    continueReadingsMock.mockReset();
+    afterMock.mockReset();
+  });
+
+  // KAN-75: the poll carries a letter's reading on, one round a request.
+  it("carries on this person's readings after answering, while one is being read", async () => {
+    requireUserMock.mockResolvedValue(USER);
+    getHomeMock.mockResolvedValue(HOME);
+
+    const response = await GET(new Request("http://localhost/api/home"));
+
+    expect(response.status).toBe(200);
+    expect(continueReadingsMock).not.toHaveBeenCalled();
+    expect(afterMock).toHaveBeenCalledOnce();
+    await afterMock.mock.calls[0][0]();
+    expect(continueReadingsMock).toHaveBeenCalledWith("user-one");
+  });
+
+  it("does nothing more when nothing is being read", async () => {
+    requireUserMock.mockResolvedValue(USER);
+    getHomeMock.mockResolvedValue({
+      ...HOME,
+      counts: { ...HOME.counts, processing: 0 },
+    });
+
+    await GET(new Request("http://localhost/api/home"));
+
+    expect(afterMock).not.toHaveBeenCalled();
   });
 
   it("returns 401 without a signed-in person", async () => {

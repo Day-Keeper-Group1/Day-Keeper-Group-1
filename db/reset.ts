@@ -22,6 +22,7 @@ import { resolve } from "node:path";
 import { Client } from "pg";
 import { config } from "dotenv";
 
+import { databaseSsl } from "../src/lib/database-tls";
 import { hostIsLocal } from "../src/lib/local-host";
 
 import { refuseIfRealAccounts } from "./real-accounts";
@@ -62,7 +63,10 @@ async function main() {
   );
 
   const sql = readFileSync(resolve(process.cwd(), "db/schema.sql"), "utf8");
-  const db = new Client({ connectionString: DATABASE_URL });
+  const db = new Client({
+    connectionString: DATABASE_URL,
+    ssl: databaseSsl(DATABASE_URL!),
+  });
   await db.connect();
   try {
     await db.query(sql);
