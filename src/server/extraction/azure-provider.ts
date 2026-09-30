@@ -18,8 +18,12 @@
 import "server-only";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import OpenAI from "openai";
-import { env } from "@/server/env";
+import {
+  SchoolKeyExhausted,
+  SchoolKeyMissing,
+  schoolKeyClient,
+  spendSchoolKey,
+} from "@/server/ai/school-key";
 import {
   type DocumentExtractionProvider,
   ExtractionFailure,
@@ -59,12 +63,16 @@ export class AzureExtractionProvider implements DocumentExtractionProvider {
     input: ExtractionInput,
     cell: { model: string; effort: string } = READER,
   ): Promise<ExtractionOutcome> {
-    const { AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_API_KEY } = env();
-    if (!AZURE_OPENAI_ENDPOINT || !AZURE_OPENAI_API_KEY) {
-      throw new ExtractionFailure(
-        "AZURE_OPENAI_ENDPOINT and AZURE_OPENAI_API_KEY must both be set in .env.local to use the azure reader. See .env.example.",
-        { retryable: false },
-      );
+    // KAN-91: the school's key is taken from the one place that hands it out,
+    // and a missing key fails the same way however many times it is asked.
+    let client;
+    try {
+      client = schoolKeyClient();
+    } catch (error) {
+      if (error instanceof SchoolKeyMissing) {
+        throw new ExtractionFailure(error.message, { retryable: false });
+      }
+      throw error;
     }
 
     const pages = [...input.pages].sort((a, b) => a.pageNumber - b.pageNumber);
@@ -76,15 +84,23 @@ export class AzureExtractionProvider implements DocumentExtractionProvider {
       );
     }
 
-    // KAN-63: the SDK retries a failed request twice on its own by default.
-    // src/server/uploads.ts already makes a failed call again, and writes
-    // down each attempt; two layers of retrying would make up to nine
-    // requests out of what the table records as three.
-    const client = new OpenAI({
-      baseURL: AZURE_OPENAI_ENDPOINT,
-      apiKey: AZURE_OPENAI_API_KEY,
-      maxRetries: 0,
-    });
+    // KAN-91: one call from today's budget, or none. Not retryable: the day's
+    // reading is used up, and asking again a moment later costs a query and
+    // answers the same. (The SDK's own retries are off in schoolKeyClient():
+    // src/server/uploads.ts already makes a failed call again and writes down
+    // each attempt, and two layers of retrying would make up to nine requests
+    // out of what the table records as three.)
+    try {
+      await spendSchoolKey("letters", {
+        type: "document",
+        id: input.documentId,
+      });
+    } catch (error) {
+      if (error instanceof SchoolKeyExhausted) {
+        throw new ExtractionFailure(error.message, { retryable: false });
+      }
+      throw error;
+    }
 
     const started = Date.now();
     let text: string;

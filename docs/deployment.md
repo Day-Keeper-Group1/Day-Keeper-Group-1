@@ -300,6 +300,11 @@ Filled in as each stage gets there.
 | `STORAGE_ENDPOINT`, `STORAGE_BUCKET`, `STORAGE_REGION`, `STORAGE_ACCESS_KEY`, `STORAGE_SECRET_KEY` | Supabase Storage, see "Photograph storage on Supabase" | Known |
 | Azure reader settings (`AI_EXTRACTION_PROVIDER`, `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`) | The school's Azure key, entered by Jason as a secret for Production, Deploy Previews and Branch deploys | Set |
 | `SESSION_TTL_DAYS` | Same as local | Set |
+| `AI_DAILY_CALL_LIMIT` | KAN-91. How many times the school's key may be used per day across the whole site; `200` (about A$1 at half a cent a letter). Set with `netlify env:set AI_DAILY_CALL_LIMIT 200`. Once reached, uploading answers 429 and reading resumes at midnight in Melbourne. Not set on a laptop. | To set |
+
+## Who can use the site, and what stops them burning the key (KAN-91, 2026-10-01)
+
+The site is public and anyone can register: there is no invite list, and the seeded passwords are in this repository. That is deliberate for now. The supervisor has the address and may register to try it, a small project is unlikely to be found, and every measure that would close those doors (an allowlist, separate deployed passwords, hiding the address) creates a chore that one person has to keep doing. The one thing that cannot be undone by deleting a row is RACE suspending the key over unusual usage, so that is the one thing guarded: `AI_DAILY_CALL_LIMIT` above, enforced in `src/server/ai/school-key.ts`, which every module that uses the key goes through. If someone does abuse the site, close the next door then.
 
 ## Free plan limits
 
