@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [main]
 
+# Read the code, nothing more. The deploy job reaches Netlify with its own
+# token, not with GitHub's.
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -21,3 +26,29 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+
+  # CD (KAN-86): once build has passed on main, publish main to the shared
+  # preview alias on Netlify (docs/deployment.md). Pull requests stop at build.
+  # A preview deploy costs no Netlify credits; --prod would cost 15 of 300.
+  deploy:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    # Two merges close together deploy one after the other, never at once.
+    concurrency:
+      group: deploy-preview
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # --build runs netlify.toml's build command on this Linux machine. The
+      # app's own settings (database, storage, the school's key) stay on
+      # Netlify; GitHub holds only the token and which site to deploy to.
+      - run: npx --yes netlify-cli@27.9.0 deploy --build --alias preview --message "main ${{ github.sha }}"
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ vars.NETLIFY_SITE_ID }}
