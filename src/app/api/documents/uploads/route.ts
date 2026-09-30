@@ -1,5 +1,9 @@
 // KAN-75: upload links for a letter whose photographs go straight into the bucket.
 
+import {
+  READING_PAUSED_MESSAGE,
+  schoolKeyBudget,
+} from "@/server/ai/school-key";
 import { fail, json, route } from "@/server/api/respond";
 import { requireUser } from "@/server/auth/session";
 import { UploadRejected, planUpload } from "@/server/uploads";
@@ -18,6 +22,14 @@ import { UploadRejected, planUpload } from "@/server/uploads";
  */
 export const POST = route(async (request: Request) => {
   const user = await requireUser();
+
+  // KAN-91: when the day's reading is used up, say so before a single
+  // photograph is sent. The reader would refuse anyway (the door is
+  // src/server/ai/school-key.ts), but a letter that reaches it would sit as
+  // 'failed' with the generic sentence, and this one is the truth.
+  if ((await schoolKeyBudget()).exhausted) {
+    return fail("too_many_requests", READING_PAUSED_MESSAGE);
+  }
 
   // A body that is not JSON, or JSON of the wrong shape, describes no
   // photographs, so it is answered the way an empty upload is: by the rule in

@@ -2,6 +2,10 @@
 
 import { after } from "next/server";
 
+import {
+  READING_PAUSED_MESSAGE,
+  schoolKeyBudget,
+} from "@/server/ai/school-key";
 import { fail, json, route } from "@/server/api/respond";
 import { requireUser } from "@/server/auth/session";
 import { listDocuments } from "@/server/documents";
@@ -32,6 +36,12 @@ import {
  */
 export const POST = route(async (request: Request) => {
   const user = await requireUser();
+
+  // KAN-91: the same early refusal as POST /api/documents/uploads, for the
+  // multipart path that curl, Swagger and a test still take.
+  if ((await schoolKeyBudget()).exhausted) {
+    return fail("too_many_requests", READING_PAUSED_MESSAGE);
+  }
 
   // KAN-75: the capture screen puts the photographs in the bucket itself and
   // sends only this JSON (docs/api.md, "Ask to upload a letter"). A multipart

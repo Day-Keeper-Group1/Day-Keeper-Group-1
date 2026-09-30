@@ -718,6 +718,7 @@ const schemas: Record<string, Schema> = {
               "not_found",
               "invalid_request",
               "conflict",
+              "too_many_requests",
               "server_error",
             ],
           },

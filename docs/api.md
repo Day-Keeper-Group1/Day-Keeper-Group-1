@@ -89,6 +89,7 @@ person as-is:
 | `not_found` | 404 | no such thing, **or it belongs to someone else** |
 | `invalid_request` | 400 | the request was malformed; `fields` says where |
 | `conflict` | 409 | the thing is not in a state where this makes sense |
+| `too_many_requests` | 429 | the day's reading is used up; tomorrow it works again (KAN-91) |
 | `server_error` | 500 | our fault |
 
 A letter belonging to another person answers `404`, never `403`. A `403` would
@@ -415,6 +416,23 @@ taken from the request.
 
 The same `400` bodies as [Upload a letter](#upload-a-letter) for a letter that
 breaks a rule, and `401` when nobody is signed in.
+
+**Condition** : The day's reading is used up (KAN-91). The site as a whole may
+use the school's key `AI_DAILY_CALL_LIMIT` times a day, counted from midnight in
+Melbourne; once it has, no letter is read until tomorrow. Nothing is sent and
+nothing is written. [Upload a letter](#upload-a-letter) answers the same way.
+**Code** : `429 TOO MANY REQUESTS`
+
+**Content example**
+
+```json
+{
+  "error": {
+    "code": "too_many_requests",
+    "message": "Reading letters is paused for today and starts again tomorrow. Your letters are safe; please come back then."
+  }
+}
+```
 
 ### Notes
 

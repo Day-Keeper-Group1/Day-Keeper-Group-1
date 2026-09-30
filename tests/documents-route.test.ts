@@ -60,6 +60,13 @@ vi.mock("@/server/documents", () => ({ listDocuments: listDocumentsMock }));
 // needs no database, no network and no framework.
 vi.mock("next/server", () => ({ after: afterMock }));
 
+// KAN-91: the door in front of the school's key is open in this suite; what it
+// does when closed is tests/school-key-door.test.ts.
+vi.mock("@/server/ai/school-key", () => ({
+  READING_PAUSED_MESSAGE: "paused",
+  schoolKeyBudget: async () => ({ limit: null, used: 0, exhausted: false }),
+}));
+
 import { GET, POST } from "@/app/api/documents/route";
 
 const USER = {

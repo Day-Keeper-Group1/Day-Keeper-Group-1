@@ -102,6 +102,14 @@ const envSchema = z.object({
   AZURE_OPENAI_API_KEY: z.string().optional(),
 
   /**
+   * KAN-91: how many times the school's key may be used per day, across every
+   * account and every module, counted from midnight in Melbourne. The deployed
+   * site sets it; a laptop leaves it unset and has no ceiling. The door it
+   * closes is src/server/ai/school-key.ts.
+   */
+  AI_DAILY_CALL_LIMIT: z.coerce.number().int().positive().optional(),
+
+  /**
    * How long a signed-in session lasts. Long, because asking someone with a
    * failing memory to sign in repeatedly is a way of losing them.
    */

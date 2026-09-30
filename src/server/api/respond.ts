@@ -19,6 +19,7 @@ const STATUS: Record<ErrorCode, number> = {
   forbidden: 403,
   not_found: 404,
   conflict: 409,
+  too_many_requests: 429,
   server_error: 500,
 };
 

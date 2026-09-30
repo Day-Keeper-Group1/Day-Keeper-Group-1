@@ -397,6 +397,7 @@ export type ApiError = {
       | "not_found"
       | "invalid_request"
       | "conflict"
+      | "too_many_requests"
       | "server_error";
     message: string;
     /** Field-level problems, keyed by field name, for form errors. */
