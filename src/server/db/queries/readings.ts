@@ -137,3 +137,36 @@ export async function listOwnedIdentifierRows(
     )
     .orderBy(asc(extractedIdentifiers.position));
 }
+
+/**
+ * What the reading of one letter says to do, and only when the reader was sure
+ * of it: the value of `action_required` under the one round that succeeded.
+ * Null when no round succeeded, when the reading has no such field, and when
+ * the reader hedged it.
+ *
+ * Unscoped on purpose: its one caller is confirmDocument() in
+ * src/server/confirm.ts, which has just read and locked this letter under its
+ * owner (lockOwnedDocument in ./documents.ts) in the same transaction. Call it
+ * anywhere else and the owner has to be checked first.
+ */
+export async function findConfirmedAction(
+  db: Db,
+  documentId: string,
+): Promise<string | null> {
+  const rows = await db
+    .select({ extractedValue: extractedFields.extractedValue })
+    .from(extractionRuns)
+    .innerJoin(
+      extractedFields,
+      eq(extractedFields.extractionRunId, extractionRuns.id),
+    )
+    .where(
+      and(
+        eq(extractionRuns.documentId, documentId),
+        eq(extractionRuns.status, "succeeded"),
+        eq(extractedFields.fieldKey, "action_required"),
+        eq(extractedFields.status, "confirmed"),
+      ),
+    );
+  return rows[0]?.extractedValue ?? null;
+}

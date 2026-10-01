@@ -19,7 +19,15 @@ import { taskTitle, type ConfirmDocumentResponse } from "@/lib/contract/api";
 import { todayInZone } from "@/lib/contract/dates";
 import { NO_ACTION, actionWordOf } from "@/lib/contract/fields";
 import { planReminders } from "@/lib/contract/reminders";
-import { transaction } from "@/server/db";
+import { isUuid } from "@/lib/uuid";
+import { db } from "@/server/db";
+import { insertAuditLog } from "@/server/db/queries/audit";
+import {
+  lockOwnedDocument,
+  markOwnedDocumentConfirmed,
+} from "@/server/db/queries/documents";
+import { findConfirmedAction } from "@/server/db/queries/readings";
+import { insertReminders, insertTask } from "@/server/db/queries/tasks";
 import { getTaskSummary } from "@/server/tasks";
 
 /**
@@ -35,23 +43,12 @@ export class ConfirmRefused extends Error {
   }
 }
 
-/** The same shape check as src/server/documents.ts, for the same reason. */
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 /** Why each status other than 'needs-review' cannot be confirmed, in her words. */
 const REFUSALS: Record<string, string> = {
   confirmed: "This letter is already saved.",
   archived: "This letter is already saved.",
   processing: "This letter is still being read.",
   failed: "This letter could not be read, so there is nothing to save.",
-};
-
-type LetterRow = {
-  status: string;
-  issuer: string | null;
-  document_type: string | null;
-  due_date: string | null;
-  due_time: string | null;
 };
 
 /**
@@ -71,50 +68,28 @@ export async function confirmDocument(
   timeZone: string,
   now: Date = new Date(),
 ): Promise<ConfirmDocumentResponse | null> {
-  if (!UUID.test(documentId)) return null;
+  if (!isUuid(documentId)) return null;
 
-  const outcome = await transaction(async (client) => {
+  // Every statement in here is sent on `tx`. One sent on db() would run outside
+  // the transaction, and where the pool holds a single connection it would
+  // wait for the very connection this transaction is holding.
+  const outcome = await db().transaction(async (tx) => {
     // Locked, so two taps on the button (or two tabs) cannot both find the
     // letter waiting and make two tasks out of it. The second one waits here,
     // then finds it confirmed and is refused.
-    const letter = await client.query<LetterRow>(
-      `SELECT d.status,
-              d.issuer,
-              d.document_type,
-              d.due_date,
-              CASE WHEN d.due_time IS NULL
-                   THEN NULL
-                   ELSE to_char(d.due_time, 'HH24:MI')
-              END AS due_time
-         FROM documents d
-        WHERE d.id = $1
-          AND d.user_id = $2
-          FOR UPDATE`,
-      [documentId, userId],
-    );
-    const row = letter.rows[0];
-    if (!row) return null;
+    const letter = await lockOwnedDocument(tx, userId, documentId);
+    if (!letter) return null;
 
-    if (row.status !== "needs-review") {
+    if (letter.status !== "needs-review") {
       throw new ConfirmRefused(
-        REFUSALS[row.status] ?? "This letter cannot be saved right now.",
+        REFUSALS[letter.status] ?? "This letter cannot be saved right now.",
       );
     }
 
     // The action the person saw on the card: confident values only, from the
     // one reading that succeeded (db/schema.sql). A hedged action was never
     // shown, so it is not used to name anything either.
-    const action = await client.query<{ extracted_value: string | null }>(
-      `SELECT f.extracted_value
-         FROM extraction_runs e
-         JOIN extracted_fields f ON f.extraction_run_id = e.id
-        WHERE e.document_id = $1
-          AND e.status = 'succeeded'
-          AND f.field_key = 'action_required'
-          AND f.status = 'confirmed'`,
-      [documentId],
-    );
-    const actionText = action.rows[0]?.extracted_value ?? null;
+    const actionText = await findConfirmedAction(tx, documentId);
 
     // A letter that asks for nothing is kept, and makes no task.
     const asksForNothing =
@@ -124,62 +99,45 @@ export async function confirmDocument(
     let reminderCount = 0;
 
     if (!asksForNothing) {
-      const task = await client.query<{ id: string }>(
-        `INSERT INTO tasks (user_id, document_id, title, issuer, due_date, due_time)
-         VALUES ($1, $2, $3, $4, $5, $6)
-         RETURNING id`,
-        [
-          userId,
-          documentId,
-          taskTitle({
-            action: actionText,
-            issuer: row.issuer,
-            documentType: row.document_type,
-          }),
-          row.issuer,
-          row.due_date,
-          row.due_time,
-        ],
-      );
-      taskId = task.rows[0].id;
+      taskId = await insertTask(tx, {
+        userId,
+        documentId,
+        title: taskTitle({
+          action: actionText,
+          issuer: letter.issuer,
+          documentType: letter.documentType,
+        }),
+        issuer: letter.issuer,
+        dueDate: letter.dueDate,
+        dueTime: letter.dueTime,
+      });
 
       // No date, no reminders: planReminders() needs a day to count back from,
       // and a task with no date sits on the list saying so instead.
-      if (row.due_date) {
-        const planned = planReminders(row.due_date, {
+      if (letter.dueDate) {
+        const planned = planReminders(letter.dueDate, {
           today: todayInZone(timeZone, now),
         });
-        for (const reminder of planned) {
-          await client.query(
-            `INSERT INTO reminders (task_id, remind_on) VALUES ($1, $2)`,
-            [taskId, reminder.localDate],
-          );
-        }
+        await insertReminders(
+          tx,
+          taskId,
+          planned.map((reminder) => reminder.localDate),
+        );
         reminderCount = planned.length;
       }
     }
 
-    await client.query(
-      `UPDATE documents
-          SET status = 'confirmed',
-              confirmed_at = now(),
-              updated_at = now()
-        WHERE id = $1
-          AND user_id = $2`,
-      [documentId, userId],
-    );
+    await markOwnedDocumentConfirmed(tx, userId, documentId);
 
     // Metadata only: which letter, which task, how many reminders. Never a
     // value from the letter (db/schema.sql, "Audit").
-    await client.query(
-      `INSERT INTO audit_logs (actor_id, action, target_type, target_id, detail)
-       VALUES ($1, 'document.confirm', 'document', $2, $3)`,
-      [
-        userId,
-        documentId,
-        JSON.stringify({ taskId, reminders: reminderCount }),
-      ],
-    );
+    await insertAuditLog(tx, {
+      actorId: userId,
+      action: "document.confirm",
+      targetType: "document",
+      targetId: documentId,
+      detail: { taskId, reminders: reminderCount },
+    });
 
     return { taskId };
   });

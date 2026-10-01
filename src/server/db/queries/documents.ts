@@ -6,8 +6,9 @@
  * The tables are declared in ../schema/documents.ts, and this file, named like
  * it, holds every statement the app runs against them. The rules stay with the
  * callers: src/server/documents.ts decides what a letter is called and which
- * of its fields a screen may show, and src/server/tasks.ts shows a task beside
- * the letter it came from.
+ * of its fields a screen may show, src/server/tasks.ts shows a task beside
+ * the letter it came from, and src/server/confirm.ts decides whether a letter
+ * may be saved.
  *
  * Every function takes the handle first: `db()` from a service, or the `tx` of
  * a transaction the service opened. Nothing here opens a transaction, and
@@ -23,6 +24,7 @@ import "server-only";
 import { and, asc, count, desc, eq, inArray } from "drizzle-orm";
 import type { Db } from "../client";
 import { documentPages, documents } from "../schema";
+import { dbNow } from "../sql";
 
 /**
  * The owner filter: this letter is this person's. Every owner-scoped statement
@@ -175,4 +177,53 @@ export async function findOwnedPageCount(
     .where(and(eq(documents.id, documentId), ownedDocument(userId)))
     .groupBy(documents.id);
   return rows[0]?.pageCount ?? null;
+}
+
+/**
+ * One letter of a person's, read and locked: SELECT ... FOR UPDATE. Null when
+ * there is none, or when it is somebody else's.
+ *
+ * The lock is on the letter's row and lasts until the transaction this runs in
+ * ends, so it means something only on a `tx`. Anybody else who asks for the
+ * same letter this way waits here, and is then answered with the row as the
+ * first transaction left it.
+ *
+ * What comes back is what confirming needs: the status to decide by, and the
+ * four columns a task is made from.
+ */
+export async function lockOwnedDocument(
+  db: Db,
+  userId: string,
+  documentId: string,
+) {
+  const rows = await db
+    .select({
+      status: documents.status,
+      issuer: documents.issuer,
+      documentType: documents.documentType,
+      dueDate: documents.dueDate,
+      dueTime: documents.dueTime,
+    })
+    .from(documents)
+    .where(and(eq(documents.id, documentId), ownedDocument(userId)))
+    .for("update");
+  return rows[0] ?? null;
+}
+
+/**
+ * Mark one letter of a person's confirmed, at the database's now. Nothing
+ * changes when there is no such letter, or when it is somebody else's.
+ *
+ * updated_at is not named here and is still written: the column sets itself
+ * on every UPDATE made through the builder (updatedAt in ../schema/columns.ts).
+ */
+export async function markOwnedDocumentConfirmed(
+  db: Db,
+  userId: string,
+  documentId: string,
+): Promise<void> {
+  await db
+    .update(documents)
+    .set({ status: "confirmed", confirmedAt: dbNow })
+    .where(and(eq(documents.id, documentId), ownedDocument(userId)));
 }

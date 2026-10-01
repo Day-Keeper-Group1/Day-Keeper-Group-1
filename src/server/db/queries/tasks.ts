@@ -6,8 +6,9 @@
  * The tables are declared in ../schema/tasks.ts, and this file, named like it,
  * holds every statement the app runs against them. The rules stay with the
  * callers: src/server/tasks.ts decides whether an open task is upcoming or
- * overdue, and src/server/documents.ts decides which ticks the home screen
- * still shows.
+ * overdue, src/server/documents.ts decides which ticks the home screen still
+ * shows, and src/server/confirm.ts decides what the task a letter becomes is
+ * called and which days it is marked on.
  *
  * Every function takes the handle first: `db()` from a service, or the `tx` of
  * a transaction the service opened. Nothing here opens a transaction, and
@@ -205,4 +206,57 @@ export async function listOwnedRecentlyCompletedTaskIds(
       ),
     );
   return rows.map((row) => row.id);
+}
+
+/**
+ * A new task for a person, from one of their letters. Open, as every new task
+ * is. Answers its id.
+ *
+ * `dueDate` is 'YYYY-MM-DD' and `dueTime` is 'HH:MM', the way the letter's own
+ * row carries them, and either may be null.
+ */
+export async function insertTask(
+  db: Db,
+  task: {
+    userId: string;
+    documentId: string;
+    title: string;
+    issuer: string | null;
+    dueDate: string | null;
+    dueTime: string | null;
+  },
+): Promise<string> {
+  const [row] = await db
+    .insert(tasks)
+    .values({
+      userId: task.userId,
+      documentId: task.documentId,
+      title: task.title,
+      issuer: task.issuer,
+      dueDate: task.dueDate,
+      dueTime: task.dueTime,
+    })
+    .returning({ id: tasks.id });
+  return row.id;
+}
+
+/**
+ * The days a task is marked as a reminder, each 'YYYY-MM-DD', as one
+ * statement. No days, no statement: a task due tomorrow has no reminder still
+ * ahead of it, and an insert of no rows is something the builder refuses to
+ * write.
+ *
+ * Unscoped on purpose: a reminder row does not say whose it is, its task does,
+ * and the task was written under its owner by insertTask() in the same
+ * transaction.
+ */
+export async function insertReminders(
+  db: Db,
+  taskId: string,
+  days: readonly string[],
+): Promise<void> {
+  if (days.length === 0) return;
+  await db
+    .insert(reminders)
+    .values(days.map((remindOn) => ({ taskId, remindOn })));
 }
