@@ -14,6 +14,22 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # KAN-92: the database tests run against a real PostgreSQL, the version
+    # the app is deployed on. They never skip: without this the run fails.
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: daykeeper
+          POSTGRES_PASSWORD: daykeeper_local_dev
+          POSTGRES_DB: daykeeper
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U daykeeper -d daykeeper"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -25,6 +41,8 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
+        env:
+          DATABASE_URL: postgres://daykeeper:daykeeper_local_dev@localhost:5432/daykeeper
       - run: npm run build
 
   # CD (KAN-86): once build has passed on main, publish main to the shared

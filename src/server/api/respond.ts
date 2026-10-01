@@ -1,5 +1,6 @@
 import type { ApiError } from "@/lib/contract/api";
 import { UnauthenticatedError } from "@/server/auth/session";
+import { dbCause } from "@/server/db/errors";
 
 /**
  * The one place an HTTP response is built.
@@ -66,7 +67,13 @@ export function route<A extends unknown[]>(handler: Handler<A>): Handler<A> {
       if (error instanceof UnauthenticatedError) {
         return fail("unauthenticated", error.message);
       }
-      console.error("[api] unhandled error", error);
+      // KAN-92: a statement that failed through Drizzle arrives wrapped, and the
+      // wrapper's message quotes every value bound to the statement: a
+      // password hash, the contents of a letter. dbCause() leaves the wrapper
+      // out, so what is logged is the driver's own error, as it was before
+      // Drizzle. For a constraint violation that one can still quote the
+      // failing row in its `detail`, exactly as it could before this change.
+      console.error("[api] unhandled error", dbCause(error));
       return fail(
         "server_error",
         "Something went wrong at our end. Please try again in a moment.",

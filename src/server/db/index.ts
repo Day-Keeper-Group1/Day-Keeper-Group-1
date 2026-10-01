@@ -11,10 +11,10 @@
  */
 
 import "server-only";
-import { Pool, types, type PoolClient, type QueryResultRow } from "pg";
-import { databaseSsl } from "@/lib/database-tls";
-import { hostIsLocal } from "@/lib/local-host";
-import { env } from "./env";
+import type { NodePgDatabase } from "drizzle-orm/node-postgres";
+import { types, type Pool, type PoolClient, type QueryResultRow } from "pg";
+import { env } from "@/server/env";
+import { createDb } from "./client";
 
 /**
  * A due date is a day, not an instant.
@@ -37,48 +37,27 @@ types.setTypeParser(1082, (value: string) => value);
  * module-level pool would leak a new set of connections on every save until
  * Postgres refused to accept any more. Hanging it off globalThis survives the
  * reload.
+ *
+ * KAN-92: the pool is kept together with the Drizzle handle over it, so the
+ * builder and the raw SQL helpers below share one set of connections while
+ * the statements move from the second to the first. How the pool is made is
+ * in ./client.ts.
  */
-const globalForDb = globalThis as unknown as { __daykeeperPool?: Pool };
+const globalForDb = globalThis as unknown as {
+  __daykeeperDb?: { db: NodePgDatabase; pool: Pool };
+};
 
+/** The app's one handle, cached on globalThis because Next reloads modules on every edit. */
+export function db(): NodePgDatabase {
+  globalForDb.__daykeeperDb ??= createDb(env().DATABASE_URL);
+  return globalForDb.__daykeeperDb.db;
+}
+export type { Db } from "./client";
+
+/** The pool under that handle. */
 export function pool(): Pool {
-  if (!globalForDb.__daykeeperPool) {
-    /**
-     * A database on this machine or a database somewhere else. Two things
-     * follow from the second, and both are wrong to guess at.
-     *
-     * The connection has to be encrypted, because it now crosses a network
-     * that is not this laptop. And every running copy of the app gets its own
-     * pool, so on a host that runs the app as functions there can be a great
-     * many pools at once; ten connections each is how a free-tier database
-     * runs out of connections while the app looks idle. One connection per
-     * copy, and the pool is then just the reconnect logic.
-     *
-     * The local Postgres in docker-compose.yml does not speak TLS at all, so
-     * asking for it there fails to connect rather than quietly falling back.
-     */
-    const url = env().DATABASE_URL;
-    const isLocal = hostIsLocal(url);
-
-    globalForDb.__daykeeperPool = new Pool({
-      connectionString: url,
-      // Small: a student laptop, a free-tier database, and a handful of
-      // concurrent requests. Raising this hides connection leaks rather than
-      // fixing them.
-      max: isLocal ? 10 : 1,
-      // Encrypted and verified for anything not local; see
-      // src/lib/database-tls.ts, which the scripts in db/ use too.
-      ssl: databaseSsl(url),
-      idleTimeoutMillis: 30_000,
-      connectionTimeoutMillis: 10_000,
-    });
-
-    globalForDb.__daykeeperPool.on("error", (err) => {
-      // An idle client blew up. Log it rather than letting it take the process
-      // down, which is the default behaviour of an unhandled 'error' event.
-      console.error("[db] idle client error", err);
-    });
-  }
-  return globalForDb.__daykeeperPool;
+  globalForDb.__daykeeperDb ??= createDb(env().DATABASE_URL);
+  return globalForDb.__daykeeperDb.pool;
 }
 
 /** Run a query and get the rows. Parameters are always bound, never interpolated. */
