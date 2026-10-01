@@ -84,7 +84,7 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: npx --yes netlify-cli@27.9.0 deploy --build --alias "pr-$PR" --message "PR #$PR ${{ github.event.pull_request.head.sha }}"
+      - run: npx --yes netlify-cli@27.9.0 deploy --build --alias "pr-$PR" --message "pr-$PR ${{ github.event.pull_request.head.sha }}"
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ vars.NETLIFY_SITE_ID }}
