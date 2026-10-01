@@ -17,10 +17,10 @@
 
 import type { ContractFieldKey } from "./fields";
 import { APP_TIME_ZONE, todayInZone } from "./dates";
+import type { DocumentStatus, TaskState, UserRole } from "./enums";
 
 /** Where a document is in its life. Mirrors document_status in db/schema.sql. */
-export type DocumentStatus =
-  "processing" | "needs-review" | "confirmed" | "failed" | "archived";
+export type { DocumentStatus };
 
 /**
  * A task's state as the interface shows it.
@@ -416,7 +416,7 @@ export type SessionUser = {
   id: string;
   email: string;
   displayName: string;
-  role: "user" | "platform_operator" | "org_admin" | "org_worker";
+  role: UserRole;
   /** IANA zone name, defaulted server-side. Her "today" is today here. */
   timeZone: string;
 };
@@ -464,7 +464,7 @@ export function taskTitle(parts: {
 }
 
 export function deriveTaskStatus(
-  state: "open" | "completed" | "dismissed",
+  state: TaskState,
   dueDate: string | null,
   now: Date = new Date(),
   timeZone: string = APP_TIME_ZONE,

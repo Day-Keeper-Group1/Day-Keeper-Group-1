@@ -7,8 +7,11 @@
 AGENTS.md       @Jason-Junchun-Zhang
 CLAUDE.md       @Jason-Junchun-Zhang
 
-# The database: its schema, and the scripts that reset and seed it.
-/db/            @Jason-Junchun-Zhang
+# The database: its definition, the migrations generated from it, and the
+# scripts that migrate, reset and seed it.
+/db/                      @Jason-Junchun-Zhang
+/src/server/db/schema/    @Jason-Junchun-Zhang
+/drizzle.config.ts        @Jason-Junchun-Zhang
 
 # CI/CD: the workflows, this file, and how the site is built on Netlify.
 /.github/       @Jason-Junchun-Zhang

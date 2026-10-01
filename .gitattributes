@@ -5,3 +5,7 @@ data/**/*.png filter=lfs diff=lfs merge=lfs -text
 # The recorded demo inside a presentation. Video is the one kind of file in
 # docs/ too large to keep as an ordinary blob.
 docs/presentations/**/*.mp4 filter=lfs diff=lfs merge=lfs -text
+
+# Generated migrations. The same bytes on every machine, whatever
+# core.autocrlf says.
+db/migrations/** text eol=lf

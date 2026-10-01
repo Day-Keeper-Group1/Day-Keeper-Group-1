@@ -13,6 +13,7 @@
  */
 
 import { z } from "zod";
+import { FIELD_STATUSES, IDENTIFIER_STATUSES } from "./enums";
 import {
   ACTION_WORDS,
   actionWordOf,
@@ -64,11 +65,7 @@ export const CONTRACT_VERSION = "2.0" as const;
  * database would throw that away, and the synthetic evaluation line is now the
  * only place accuracy is measured.
  */
-export const fieldStatusSchema = z.enum([
-  "confirmed",
-  "uncertain",
-  "unreadable",
-]);
+export const fieldStatusSchema = z.enum(FIELD_STATUSES);
 export type FieldStatus = z.infer<typeof fieldStatusSchema>;
 
 /**
@@ -122,7 +119,7 @@ export type ExtractedFieldPayload = z.infer<typeof extractedFieldSchema>;
 export const extractedIdentifierSchema = z.object({
   label: z.string().min(1),
   value: z.string().min(1),
-  status: z.enum(["confirmed", "uncertain"]),
+  status: z.enum(IDENTIFIER_STATUSES),
 });
 
 export type ExtractedIdentifierPayload = z.infer<
