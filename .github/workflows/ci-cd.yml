@@ -52,3 +52,46 @@ jobs:
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ vars.NETLIFY_SITE_ID }}
+
+  # Preview deployment (KAN-86): a pull request gets its own address,
+  # https://pr-<number>--daykeeper-group1.netlify.app, so a change can be
+  # opened and looked at before it merges. The address goes in a comment on
+  # the pull request and stays the same for every push to it.
+  #
+  # It uses the shared staging database and never changes its structure: only
+  # the deploy job, on main, may do that. A pull request that edits
+  # db/schema.sql will therefore show errors on the pages that need the new
+  # structure, which is expected.
+  preview:
+    needs: build
+    # Not for forks: a fork's pull request is given no secrets.
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    # This job alone may write to the pull request, to leave the comment.
+    permissions:
+      contents: read
+      pull-requests: write
+    # A newer push to the same pull request replaces an older preview in flight.
+    concurrency:
+      group: preview-pr-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    env:
+      PR: ${{ github.event.pull_request.number }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx --yes netlify-cli@27.9.0 deploy --build --alias "pr-$PR" --message "pr-$PR ${{ github.event.pull_request.head.sha }}"
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ vars.NETLIFY_SITE_ID }}
+      # One comment per pull request: written the first time, edited after.
+      - run: |
+          gh pr comment "$PR" --edit-last --create-if-none --body "**Preview of this pull request:** https://pr-$PR--daykeeper-group1.netlify.app
+
+          Built from \`${{ github.event.pull_request.head.sha }}\`. It uses the shared staging database, so sign in with your own account. If this pull request changes \`db/schema.sql\`, pages that need the new structure will show errors until it merges."
+        env:
+          GH_TOKEN: ${{ github.token }}
