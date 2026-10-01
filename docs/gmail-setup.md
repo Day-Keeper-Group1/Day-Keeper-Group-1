@@ -1,9 +1,9 @@
 # Connect a test Gmail mailbox
 
 The authenticated `/email` page connects one Gmail mailbox per DayKeeper user.
-It reads up to 20 inbox messages from the last 30 days on request. It does not
-send mail, alter Gmail, store message bodies, call AI, or create tasks. The
-public `/email-demo` remains synthetic and never accesses a real connection.
+It reads up to 20 inbox messages from the last 30 days automatically when the page opens with Gmail connected. It does not send or alter Gmail messages. Create task explicitly saves the selected
+email and runs the project Azure reader, then opens the existing review page.
+Only confirming creates a task and reminders; No action creates neither.
 
 ## Server configuration
 
@@ -37,7 +37,8 @@ worktree's callback port must match both `.env.local` and Google's registration.
 
 ## Database setup
 
-`db/schema.sql` now defines `gmail_connections` and `gmail_oauth_attempts`.
+`db/schema.sql` defines `gmail_connections`, `gmail_oauth_attempts` and
+`document_emails` (the source of emails explicitly selected for extraction).
 Following the repository's no-migrations convention, the normal setup command is
 `npm run db:reset`. **It deletes existing local data and rebuilds the seed and
 bucket.** Coordinate with anyone using the checkout before running it. This code
@@ -45,8 +46,8 @@ change does not automatically reset the shared development database.
 
 Restart `npm run dev`, sign in to DayKeeper, and open
 `http://localhost:3000/email`. Select Connect Gmail, select your test account and
-grant read-only access. After returning, press Check email. For the first test,
-send the mailbox a short plain-text message. Use the expander to read it.
+grant read-only access. After returning, the inbox loads automatically. For the first test,
+send the mailbox a short plain-text message. Choose it in the inbox list to read it.
 
 The registered callback is now implemented. A successful callback returns to
 `/email?connection=connected`; failures return `connection=failed` without
@@ -65,11 +66,17 @@ echoing codes, tokens or Google error details.
   requests check connection identity before returning. Disconnect does not revoke
   the Google-side grant; remove it through Google account third-party connections
   if required. Already displayed/downloaded content cannot be recalled.
-- HTML is never rendered, remote content is not loaded, and attachments are not
-  processed. Messages lacking a valid plain-text body or exceeding the schema's
+- HTML alternatives are sanitized on the server before display. Emphasis, lists,
+  tables and safe links are retained; scripts, images, forms, embedded content and
+  arbitrary styles are removed. Links open without opener access or a referrer.
+  Plain text is the fallback when HTML is absent, empty or oversized. Attachments
+  are not processed. Messages lacking a valid plain-text body or exceeding the schema's
   limits are counted as unsupported, not classified as `no-action`.
-- There is no background polling, pagination UI, persistent import, or deduplication
-  database yet. Each check replaces the displayed batch, so no tasks are duplicated.
+- There is no background mailbox polling, pagination UI or automatic import.
+  The reading screen polls the selected document until extraction finishes.
+  Each inbox visit loads a fresh batch. Create task imports
+  only the selected message; a user/mailbox/message unique key prevents duplicate
+  readings and tasks. Failed readings may be retried with Create task.
 - Google Testing refresh tokens expire after seven days for this scope. Reconnect
   when prompted. Broader deployment requires reviewing Google's verification rules.
 - Do not log callback query strings at a reverse proxy: they contain temporary
@@ -77,8 +84,16 @@ echoing codes, tokens or Google error details.
 
 ## Verification
 
-`npm run -s test -- tests/gmail.test.ts tests/email.test.ts` uses mocked Google
+`npm run -s test` includes mocked Google, extraction and endpoint tests.
+`node --conditions=react-server --import tsx scripts/test-email-workflow.ts` creates
+and removes a disposable local database to test the full import/review/confirmation
+flow without touching the application database. The unit tests use mocked Google
 responses and needs no credentials or database. Also run typecheck, lint and build.
+Email extraction also requires `AI_EXTRACTION_PROVIDER=azure` and the project
+Azure endpoint/key. It reuses the photo voting scheme and the existing review,
+confirmation, task and reminder logic. Imported source emails are retained when
+Gmail is disconnected so a saved task can still be understood.
+
 Live OAuth still needs the private configuration, initialized database and a human
-granting consent. Verify connect, check, reconnect, disconnect, sign-out and a second
+granting consent. Verify connect, automatic inbox loading, disconnect, reconnect, sign-out and a second
 DayKeeper account before demonstrating real mailbox access.

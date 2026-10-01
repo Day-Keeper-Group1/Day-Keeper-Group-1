@@ -239,6 +239,21 @@ CREATE INDEX documents_user_uploaded_idx ON documents (user_id, uploaded_at DESC
 CREATE INDEX documents_user_status_idx ON documents (user_id, status);
 CREATE INDEX documents_user_due_idx ON documents (user_id, due_date) WHERE due_date IS NOT NULL;
 
+-- Only emails explicitly selected for Create task are kept. Gmail access can
+-- be disconnected later without deleting the correspondence behind a task.
+-- The unique key makes repeated clicks and concurrent requests idempotent.
+CREATE TABLE document_emails (
+  document_id uuid PRIMARY KEY REFERENCES documents(id) ON DELETE CASCADE,
+  user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  mailbox text NOT NULL,
+  provider_message_id text NOT NULL,
+  sender text NOT NULL,
+  subject text NOT NULL,
+  received_at timestamptz NOT NULL,
+  text_body text NOT NULL,
+  UNIQUE (user_id, mailbox, provider_message_id)
+);
+
 -- One photographed sheet. The bytes live in the object store; this row holds
 -- the key and enough about the image to lay out a thumbnail without fetching
 -- it first.

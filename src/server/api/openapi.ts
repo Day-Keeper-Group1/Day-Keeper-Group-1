@@ -130,7 +130,7 @@ const paths = {
       tags: ["Gmail"],
       summary: "Read recent Gmail messages",
       description: specified(
-        "Requires the configured callback Origin. Reads the first 20 inbox messages within 30 days, accepting plain-text bodies only. Unsupported messages count toward skipped. Bodies are neither persisted nor sent to AI. Replies use Cache-Control: no-store.",
+        "Requires the configured callback Origin. Reads the first 20 inbox messages within 30 days, returning plain text with an optional sanitized HTML alternative. Unsupported messages count toward skipped. Bodies are neither persisted nor sent to AI. Replies use Cache-Control: no-store.",
         "gmail-development-endpoints",
       ),
       security: [{ session: [] }],
@@ -156,6 +156,7 @@ const paths = {
                     from: { type: "string", format: "email" },
                     subject: { type: "string", maxLength: 2000 },
                     receivedAt: { type: "string", format: "date-time" },
+                    sanitizedHtmlBody: { type: "string", maxLength: 100000 },
                     textBody: {
                       type: "string",
                       minLength: 1,
@@ -174,6 +175,57 @@ const paths = {
         403: { description: "Foreign Origin." },
         409: { description: "Reconnect Gmail." },
         500: { description: "Configuration or provider failure." },
+      },
+    },
+  },
+  "/api/email/gmail/extract": {
+    post: {
+      tags: ["Gmail"],
+      summary: "Read one email for task review",
+      description: specified(
+        "Fetches the selected message from the signed-in user's connected mailbox, saves its source and queues six-field extraction. Duplicate selections reuse the same document. Confirm through the document review flow to create a task and reminders. Requires the configured callback Origin.",
+        "gmail-development-endpoints",
+      ),
+      security: [{ session: [] }],
+      requestBody: {
+        required: true,
+        content: {
+          "application/json": {
+            schema: {
+              type: "object",
+              additionalProperties: false,
+              required: ["messageId", "mailbox"],
+              properties: {
+                messageId: {
+                  type: "string",
+                  pattern: "^[a-zA-Z0-9_-]{1,200}$",
+                },
+                mailbox: { type: "string", format: "email" },
+              },
+            },
+          },
+        },
+      },
+      responses: {
+        202: {
+          description: "Reading queued or existing document reused.",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["documentId"],
+                properties: { documentId: { type: "string", format: "uuid" } },
+              },
+            },
+          },
+        },
+        400: { description: "Invalid selection or unsupported message body." },
+        401: NOT_SIGNED_IN,
+        403: { description: "Foreign Origin." },
+        409: { description: "Gmail connection changed or needs reconnection." },
+        500: {
+          description: "Reader configuration, provider or database failure.",
+        },
       },
     },
   },

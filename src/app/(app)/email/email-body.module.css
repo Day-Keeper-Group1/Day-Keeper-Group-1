@@ -1,0 +1,49 @@
+.body {
+  overflow-wrap: anywhere;
+  overflow-x: auto;
+}
+
+.body :is(p, blockquote, ul, ol, pre, table) {
+  margin-block: 1em;
+}
+.body > :first-child {
+  margin-top: 0;
+}
+.body > :last-child {
+  margin-bottom: 0;
+}
+.body :is(h1, h2, h3, h4, h5, h6) {
+  font-weight: 700;
+  font-size: 1.15em;
+  margin-block: 1em 0.5em;
+}
+.body ul {
+  list-style: disc;
+  padding-inline-start: 1.5em;
+}
+.body ol {
+  list-style: decimal;
+  padding-inline-start: 1.5em;
+}
+.body blockquote {
+  border-inline-start: 2px solid var(--line);
+  padding-inline-start: 1em;
+}
+.body a {
+  color: var(--primary);
+  text-decoration: underline;
+}
+.body pre {
+  white-space: pre-wrap;
+}
+.body table {
+  border-collapse: collapse;
+}
+.body :is(td, th) {
+  border: 1px solid var(--line);
+  padding: 0.5em;
+}
+.body hr {
+  border-color: var(--line);
+  margin-block: 1em;
+}

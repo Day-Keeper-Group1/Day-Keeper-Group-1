@@ -58,6 +58,7 @@ type DocumentRow = {
   reference: string | null;
   uploaded_at: Date;
   page_count: number;
+  email_subject?: string | null;
 };
 
 /**
@@ -131,10 +132,14 @@ export function documentLabel(input: {
   uploadedAt: string;
   pageCount: number;
   timeZone: string;
+  emailSubject?: string | null;
 }): string {
   if (input.issuer && input.documentType) {
     return `${input.issuer} · ${input.documentType}`;
   }
+
+  if (input.emailSubject != null)
+    return `Email: ${input.emailSubject || "(No subject)"}`;
 
   const { day, time } = uploadLocalParts(input.uploadedAt, input.timeZone);
   const pages = `${input.pageCount} page${input.pageCount === 1 ? "" : "s"}`;
@@ -155,6 +160,7 @@ function mapDocument(row: DocumentRow, timeZone: string): DocumentSummary {
 
   return {
     id: row.id,
+    ...(row.email_subject != null && { source: "email" as const }),
     issuer: row.issuer,
     documentType: row.document_type,
     label: documentLabel({
@@ -162,6 +168,7 @@ function mapDocument(row: DocumentRow, timeZone: string): DocumentSummary {
       documentType: row.document_type,
       uploadedAt,
       pageCount: row.page_count,
+      emailSubject: row.email_subject,
       timeZone,
     }),
     status: row.status,
@@ -171,7 +178,14 @@ function mapDocument(row: DocumentRow, timeZone: string): DocumentSummary {
     ...(row.reference && { reference: row.reference }),
     uploadedAt,
     pageCount: row.page_count,
-    ...(row.status === "failed" && { failure: { message: FAILURE_MESSAGE } }),
+    ...(row.status === "failed" && {
+      failure: {
+        message:
+          row.email_subject != null
+            ? "Something went wrong reading this email. Open your inbox and try Create task again."
+            : FAILURE_MESSAGE,
+      },
+    }),
   };
 }
 
@@ -237,7 +251,8 @@ export async function listDocuments(
             d.uploaded_at,
             (SELECT count(*)::integer
                FROM document_pages p
-              WHERE p.document_id = d.id) AS page_count
+              WHERE p.document_id = d.id) AS page_count,
+            (SELECT e.subject FROM document_emails e WHERE e.document_id = d.id AND e.user_id = d.user_id) AS email_subject
        FROM documents d
       WHERE d.user_id = $1
       ORDER BY d.uploaded_at DESC, d.id DESC`,
@@ -276,7 +291,8 @@ export async function getDocument(
             d.uploaded_at,
             (SELECT count(*)::integer
                FROM document_pages p
-              WHERE p.document_id = d.id) AS page_count
+              WHERE p.document_id = d.id) AS page_count,
+            (SELECT e.subject FROM document_emails e WHERE e.document_id = d.id AND e.user_id = d.user_id) AS email_subject
        FROM documents d
       WHERE d.id = $1
         AND d.user_id = $2`,
@@ -318,10 +334,30 @@ export async function getDocument(
     ),
   ]);
 
+  const email =
+    row.email_subject != null
+      ? await queryOne<{
+          sender: string;
+          subject: string;
+          received_at: Date;
+          text_body: string;
+        }>(
+          "SELECT sender, subject, received_at, text_body FROM document_emails WHERE document_id = $1 AND user_id = $2",
+          [documentId, userId],
+        )
+      : null;
   const views = row.status === "processing" ? [] : fieldViews(fields);
 
   return {
     ...mapDocument(row, timeZone),
+    ...(email && {
+      sourceEmail: {
+        from: email.sender,
+        subject: email.subject,
+        receivedAt: email.received_at.toISOString(),
+        textBody: email.text_body,
+      },
+    }),
     // Empty while the letter is still being read, and empty for a letter no
     // reading ever succeeded for. The second case falls out of the query, which
     // finds nothing; the first is stated here as a rule rather than left to be
@@ -422,7 +458,8 @@ export async function getHome(
               d.uploaded_at,
               (SELECT count(*)::integer
                  FROM document_pages p
-                WHERE p.document_id = d.id) AS page_count
+                WHERE p.document_id = d.id) AS page_count,
+            (SELECT e.subject FROM document_emails e WHERE e.document_id = d.id AND e.user_id = d.user_id) AS email_subject
          FROM documents d
         WHERE d.user_id = $1
           AND d.status IN ('processing', 'needs-review', 'failed')

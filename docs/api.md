@@ -4,14 +4,16 @@
 
 These authenticated endpoints support the separate Module 2 prototype at `/email`.
 All replies use `Cache-Control: no-store`. POST requests require an Origin matching
-the configured Gmail callback origin. No message bodies are persisted or sent to AI.
+the configured Gmail callback origin. Browsing is read-only. Selecting Create task
+explicitly saves that email and sends its plain-text body to the project Azure reader.
 
 | Method / URL | Result |
 |---|---|
 | POST `/api/email/gmail/connect` | 303 to Google consent; ten-minute, single-use state bound to the browser and DayKeeper user, with PKCE |
 | GET `/api/email/gmail/callback` | Consumes state, exchanges code, verifies read scope, stores encrypted refresh token; 303 to `/email?connection=connected` or `failed` |
 | GET `/api/email/gmail/status` | `{ configured, connected, email }`; no tokens |
-| POST `/api/email/gmail/messages` | `{ messages, skipped, hasMore }`; first 20 inbox messages within 30 days, plain-text bodies only; unsupported messages counted in `skipped` |
+| POST `/api/email/gmail/messages` | `{ messages, skipped, hasMore }`; first 20 inbox messages within 30 days, plain-text bodies with optional server-sanitized `sanitizedHtmlBody` for formatted display; unsupported messages counted in `skipped` |
+| POST `/api/email/gmail/extract` | JSON `{ messageId, mailbox }`; fetches the message from the current user's Gmail connection, saves its source, queues extraction, and returns `{ documentId }` with 202. Repeated requests for the same user/mailbox/message reuse the document. The existing document detail, review and confirm endpoints complete the flow. |
 | POST `/api/email/gmail/disconnect` | Deletes this user's token and pending connection attempts; `{ disconnected: true }`. Google grant can also be removed in Google account settings. |
 
 Errors use the existing envelope: 401 without sign-in, 403 for a foreign Origin,

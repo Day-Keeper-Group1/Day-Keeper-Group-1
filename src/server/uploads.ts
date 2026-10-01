@@ -301,7 +301,7 @@ export async function readDocument(
   documentId: string,
   userId: string,
   pages: UploadedPage[],
-  options: { pauseMs?: number } = {},
+  options: { pauseMs?: number; read?: typeof readLetter } = {},
 ): Promise<void> {
   const pauseMs = options.pauseMs ?? RETRY_PAUSE_MS;
   // Claiming the run is also the ownership check, so knowing a document id is
@@ -374,6 +374,7 @@ export async function readDocument(
         slot,
         cell,
         pauseMs,
+        options.read ?? readLetter,
       );
 
     // The two reader calls are independent, so they are made at the same time.
@@ -468,10 +469,11 @@ async function callWithAttempts(
   slot: number,
   cell: Cell,
   pauseMs: number,
+  read: typeof readLetter,
 ): Promise<CallOutcome> {
   for (let attempt = 1; ; attempt++) {
     try {
-      const reading = await readLetter(input, cell);
+      const reading = await read(input, cell);
       await recordCall(runId, { role, slot, attempt, cell, reading });
       return { ok: true, reading };
     } catch (error) {

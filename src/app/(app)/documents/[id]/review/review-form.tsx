@@ -168,6 +168,19 @@ export function ReviewForm({
               ))}
             </div>
           ) : null}
+          {document.sourceEmail && (
+            <details className="mt-4 border-t border-line pt-3">
+              <summary className="min-h-12 cursor-pointer py-3 font-semibold text-primary">
+                Read the original email
+              </summary>
+              <p className="mb-3 break-words text-sub text-ink-dim">
+                {document.sourceEmail.subject} — {document.sourceEmail.from}
+              </p>
+              <p className="whitespace-pre-wrap break-words text-row leading-relaxed">
+                {document.sourceEmail.textBody}
+              </p>
+            </details>
+          )}
           <PhotoStrip
             documentId={document.id}
             count={document.pages.length}

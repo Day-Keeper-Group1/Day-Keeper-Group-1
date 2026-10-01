@@ -80,6 +80,8 @@ export type DocumentFailureView = {
  * them.
  */
 export type DocumentSummary = {
+  /** Present for correspondence imported from Gmail. */
+  source?: "email";
   id: string;
   issuer: string | null;
   documentType: string | null;
@@ -214,6 +216,12 @@ export type ExtractedFieldView = {
 };
 
 export type DocumentDetail = DocumentSummary & {
+  sourceEmail?: {
+    from: string;
+    subject: string;
+    receivedAt: string;
+    textBody: string;
+  };
   /**
    * Empty while status is 'processing' and for a document that has never been
    * read successfully. Otherwise the most recent successful reading, exactly as

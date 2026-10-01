@@ -67,3 +67,23 @@ The code in `src/server/extraction/` follows this file, not the other way round.
 **Basis** [01-full-grid/REPORT.md](../experiments/module-01-extraction/01-full-grid/REPORT.md). On the fifteen letters in scope, four cells scored full marks: luna `medium`, luna `xhigh`, terra `low`, terra `xhigh`. luna `medium` is the cheapest of the four at about A$0.008 a letter, against A$0.069 for terra `low`.
 
 **Status: provisional.** The report's own verdict is that one read per cell cannot show stability: the full cells are separated from their neighbours by one or two letters, and effort does not order them. This choice is made so the reading step can be built now rather than after the next experiment. Experiment 02 will read the four full cells repeatedly. If luna `medium` holds, this entry is confirmed; if it does not, the entry above this one will say what replaced it.
+
+## 2026-09-28 · Selected email reading, development extension
+
+The email reader in `src/server/email/extraction.ts` uses the same reader, judge,
+agreement rules and retry scheme as photo uploads. The photo prompt, model and
+effort are unchanged. The separate email prompt in `src/server/email/prompt.md`
+adapts the six-field instructions to a sender, subject, received timestamp and
+plain-text body; the email is untrusted source material, never instructions.
+Only a selected email is sent, after Create task. Azure configuration is required;
+real mail never receives invented mock extraction results.
+
+This is a development extension, not a claim that the photo experiment's accuracy
+transfers to email. The reproducible synthetic smoke experiment lives under
+`experiments/module-02-email/01-selected-email/`. Broader email accuracy evaluation
+remains separate from the implementation's contract, security and workflow tests.
+
+Smoke result: the three synthetic fixtures passed the final prompt, including
+the optional appointment time and the newsletter's No action. The first run's
+omitted appointment time is retained in report-initial.json beside report.json.
+This is provisional email behaviour, not the photo benchmark's accuracy claim.

@@ -97,29 +97,43 @@ export default async function DocumentDetailPage({
           ) : null}
         </div>
 
-        <Panel>
-          {/* The prototype's `.cap2`. */}
-          <p className="mb-[7px] text-label text-ink-dim">
-            {photoCount === 1
-              ? "1 photo · kept with this letter"
-              : `${photoCount} photos · kept with this letter`}
-          </p>
-          {photoCount === 0 ? (
-            <p className="text-row text-foreground">
-              The photographs of this letter are not available.
+        {document.sourceEmail ? (
+          <Panel title="Original email">
+            <h2 className="break-words text-cta font-bold">
+              {document.sourceEmail.subject || "(No subject)"}
+            </h2>
+            <p className="my-3 break-all text-sub text-ink-dim">
+              From: {document.sourceEmail.from}
             </p>
-          ) : (
-            <LetterPages
-              documentId={document.id}
-              count={document.pages.length}
-              pages={photos.map((page) => ({
-                id: page.id,
-                pageNumber: page.pageNumber,
-                url: page.url as string,
-              }))}
-            />
-          )}
-        </Panel>
+            <p className="whitespace-pre-wrap break-words text-row leading-relaxed">
+              {document.sourceEmail.textBody}
+            </p>
+          </Panel>
+        ) : (
+          <Panel>
+            {/* The prototype's `.cap2`. */}
+            <p className="mb-[7px] text-label text-ink-dim">
+              {photoCount === 1
+                ? "1 photo · kept with this letter"
+                : `${photoCount} photos · kept with this letter`}
+            </p>
+            {photoCount === 0 ? (
+              <p className="text-row text-foreground">
+                The photographs of this letter are not available.
+              </p>
+            ) : (
+              <LetterPages
+                documentId={document.id}
+                count={document.pages.length}
+                pages={photos.map((page) => ({
+                  id: page.id,
+                  pageNumber: page.pageNumber,
+                  url: page.url as string,
+                }))}
+              />
+            )}
+          </Panel>
+        )}
       </div>
     </div>
   );

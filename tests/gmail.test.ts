@@ -85,7 +85,7 @@ describe("Gmail boundaries", () => {
     );
     expect(gmailConfigured()).toBe(false);
   });
-  it("reads plain text without fetching/rendering HTML or attachments", () => {
+  it("keeps plain text when the HTML has no safe content and ignores attachments", () => {
     const raw = googleMessage("Hello Margaret, café tomorrow.");
     raw.payload.parts.push({
       mimeType: "text/plain",
