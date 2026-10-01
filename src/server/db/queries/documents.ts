@@ -7,8 +7,9 @@
  * it, holds every statement the app runs against them. The rules stay with the
  * callers: src/server/documents.ts decides what a letter is called and which
  * of its fields a screen may show, src/server/tasks.ts shows a task beside
- * the letter it came from, and src/server/confirm.ts decides whether a letter
- * may be saved.
+ * the letter it came from, src/server/confirm.ts decides whether a letter may
+ * be saved, and src/server/uploads decides what an upload has to be and
+ * what a reading may write onto its letter.
  *
  * Every function takes the handle first: `db()` from a service, or the `tx` of
  * a transaction the service opened. Nothing here opens a transaction, and
@@ -226,4 +227,159 @@ export async function markOwnedDocumentConfirmed(
     .update(documents)
     .set({ status: "confirmed", confirmedAt: dbNow })
     .where(and(eq(documents.id, documentId), ownedDocument(userId)));
+}
+
+/**
+ * Mark one letter of a person's failed: no reading of it is coming. Nothing
+ * changes when there is no such letter, or when it is somebody else's.
+ *
+ * updated_at is written without being named, as for
+ * markOwnedDocumentConfirmed() above.
+ */
+export async function markOwnedDocumentFailed(
+  db: Db,
+  userId: string,
+  documentId: string,
+): Promise<void> {
+  await db
+    .update(documents)
+    .set({ status: "failed" })
+    .where(and(eq(documents.id, documentId), ownedDocument(userId)));
+}
+
+/**
+ * Write a reading onto one letter of a person's: the six columns a list and
+ * the calendar read, whatever else the reader returned, and the status that
+ * says it is ready to be checked. Nothing changes when there is no such
+ * letter, or when it is somebody else's.
+ *
+ * Which values of a reading may reach these columns is decided by
+ * columnsFromReading() in src/server/uploads, whose answer this takes.
+ * `openPayload` is handed over as an object and never as its JSON text.
+ * updated_at is written without being named, as for
+ * markOwnedDocumentConfirmed() above.
+ */
+export async function writeReadingOntoOwnedDocument(
+  db: Db,
+  userId: string,
+  documentId: string,
+  columns: {
+    issuer: string | null;
+    documentType: string | null;
+    dueDate: string | null;
+    dueTime: string | null;
+    amountText: string | null;
+    reference: string | null;
+    openPayload: Record<string, unknown>;
+  },
+): Promise<void> {
+  await db
+    .update(documents)
+    .set({
+      status: "needs-review",
+      issuer: columns.issuer,
+      documentType: columns.documentType,
+      dueDate: columns.dueDate,
+      dueTime: columns.dueTime,
+      amountText: columns.amountText,
+      reference: columns.reference,
+      openPayload: columns.openPayload,
+    })
+    .where(and(eq(documents.id, documentId), ownedDocument(userId)));
+}
+
+/**
+ * A new letter of a person's, under an id the caller chose, at 'processing'.
+ * Answers the moment the database stamped it as photographed, a Date.
+ *
+ * The id is the caller's because the keys of the photographs contain it, and
+ * the photographs are in the bucket before this row is written
+ * (src/server/uploads says why).
+ */
+export async function insertDocument(
+  db: Db,
+  userId: string,
+  documentId: string,
+): Promise<Date> {
+  const [row] = await db
+    .insert(documents)
+    .values({ id: documentId, userId, status: "processing" })
+    .returning({ uploadedAt: documents.uploadedAt });
+  return row.uploadedAt;
+}
+
+/**
+ * One row for each photograph of a letter, as one statement: which page it
+ * is, where its bytes are kept, and what kind of image and how large. No
+ * photographs, no statement: an insert of no rows is something the builder
+ * refuses to write.
+ *
+ * Unscoped on purpose: a page row does not say whose it is, its letter does,
+ * and the letter was written under its owner by insertDocument() in the same
+ * transaction.
+ */
+export async function insertPages(
+  db: Db,
+  documentId: string,
+  pages: ReadonlyArray<{
+    pageNumber: number;
+    mimeType: string;
+    byteSize: number;
+    key: string;
+  }>,
+): Promise<void> {
+  if (pages.length === 0) return;
+  await db.insert(documentPages).values(
+    pages.map((page) => ({
+      documentId,
+      pageNumber: page.pageNumber,
+      storagePath: page.key,
+      mimeType: page.mimeType,
+      byteSize: page.byteSize,
+    })),
+  );
+}
+
+/**
+ * Whether any letter has this id, whoever it belongs to.
+ *
+ * Unscoped on purpose: this is how sending the same letter twice is noticed
+ * before its rows are written again, and an id is taken once it is anybody's.
+ * Asked under one owner, an id that somebody else's letter holds would answer
+ * "no", and the insert that followed would meet the primary key and reach the
+ * person as a server error. It answers yes or no and nothing of the letter.
+ */
+export async function documentExistsForAnyOwner(
+  db: Db,
+  documentId: string,
+): Promise<boolean> {
+  const rows = await db
+    .select({ id: documents.id })
+    .from(documents)
+    .where(eq(documents.id, documentId));
+  return rows.length > 0;
+}
+
+/**
+ * The photographs of one letter as its page rows describe them, in the order
+ * they were taken: which page, what kind of image, how large, and the key its
+ * bytes are kept under.
+ *
+ * Unscoped on purpose: its one caller is continueReadings() in
+ * src/server/uploads, which hands it the ids
+ * listOwnedDocumentIdsWithQueuedRound() (./readings.ts) has just answered
+ * under the owner. Call it with an id from anywhere else and the owner has to
+ * be checked first.
+ */
+export async function listStoredPages(db: Db, documentId: string) {
+  return db
+    .select({
+      pageNumber: documentPages.pageNumber,
+      mimeType: documentPages.mimeType,
+      byteSize: documentPages.byteSize,
+      key: documentPages.storagePath,
+    })
+    .from(documentPages)
+    .where(eq(documentPages.documentId, documentId))
+    .orderBy(asc(documentPages.pageNumber));
 }

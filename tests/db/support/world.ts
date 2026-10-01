@@ -36,7 +36,11 @@ import { hashPassword } from "@/server/auth/password";
 import { confirmDocument } from "@/server/confirm";
 import { ExtractionFailure } from "@/server/extraction/provider";
 import { uploadObjectKey } from "@/server/storage";
-import { createStoredDocument, readDocument } from "@/server/uploads";
+import {
+  createStoredDocument,
+  readDocument,
+  type UploadedPage,
+} from "@/server/uploads";
 import { readerAnswers } from "./fakes";
 import { rows } from "./witness";
 
@@ -117,6 +121,19 @@ function lastPageFirst(pages: number): number[] {
   return Array.from({ length: pages }, (_, index) => pages - index);
 }
 
+/**
+ * The photographs of a letter of so many pages as readDocument() is handed
+ * them, already in memory. Last page first, like the page rows.
+ */
+export function photographsOf(pages: number): UploadedPage[] {
+  return lastPageFirst(pages).map((pageNumber) => ({
+    pageNumber,
+    bytes: PHOTOGRAPH,
+    mimeType: "image/png",
+    byteSize: PHOTOGRAPH.byteLength,
+  }));
+}
+
 /** What a letter's status is now, read through the witness. */
 async function statusOf(documentId: string): Promise<string | undefined> {
   const [letter] = await rows<{ status: string }>(
@@ -169,16 +186,7 @@ async function readWith(
   answer: ExtractionResult | Error,
 ): Promise<void> {
   readerAnswers(answer, answer);
-  await readDocument(
-    documentId,
-    person.id,
-    lastPageFirst(pages).map((pageNumber) => ({
-      pageNumber,
-      bytes: PHOTOGRAPH,
-      mimeType: "image/png",
-      byteSize: PHOTOGRAPH.byteLength,
-    })),
-  );
+  await readDocument(documentId, person.id, photographsOf(pages));
 }
 
 /**
@@ -234,6 +242,47 @@ export async function aFailedLetter(
   if (status !== "failed") {
     throw new Error(`aFailedLetter: the letter is '${status}', not 'failed'.`);
   }
+  return documentId;
+}
+
+/**
+ * Turn the queued round of a letter into one the host stopped: 'processing',
+ * and started some time ago. Answers the round's id.
+ *
+ * Written directly. A round is left like this by a request that was stopped
+ * half way through reading it, which is the one thing a test cannot do.
+ */
+export async function aRoundTheHostStopped(
+  documentId: string,
+  startedAgo = "3 minutes",
+): Promise<string> {
+  const [round] = await rows<{ id: string }>(
+    `UPDATE extraction_runs
+        SET status = 'processing', started_at = now() - $2::interval
+      WHERE document_id = $1 AND status = 'queued'
+      RETURNING id`,
+    [documentId, startedAgo],
+  );
+  if (!round) {
+    throw new Error("aRoundTheHostStopped: the letter has no queued round.");
+  }
+  return round.id;
+}
+
+/**
+ * A letter marked failed whose round is still queued: what is left when the
+ * round could not even be claimed. Answers its id.
+ *
+ * Written directly, the second half of it: the letter is made by the app, and
+ * its status is then set by hand.
+ */
+export async function aFailedLetterStillQueued(
+  person: Person,
+): Promise<string> {
+  const documentId = await aQueuedLetter(person);
+  await rows("UPDATE documents SET status = 'failed' WHERE id = $1", [
+    documentId,
+  ]);
   return documentId;
 }
 

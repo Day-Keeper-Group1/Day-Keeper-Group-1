@@ -34,12 +34,34 @@ import {
   type DocumentSummary,
   type UploadSlots,
 } from "@/lib/contract/api";
-import { isIsoDate } from "@/lib/contract/dates";
+import { isIsoDate, isWallClock } from "@/lib/contract/dates";
 import {
   extraFieldsOf,
   type ExtractionResult,
 } from "@/lib/contract/extraction";
-import { query, queryOne, transaction } from "@/server/db";
+import { isUuid } from "@/lib/uuid";
+import { db } from "@/server/db";
+import { dbCause } from "@/server/db/errors";
+import {
+  documentExistsForAnyOwner,
+  insertDocument,
+  insertPages,
+  listStoredPages,
+  markOwnedDocumentFailed,
+  writeReadingOntoOwnedDocument,
+} from "@/server/db/queries/documents";
+import {
+  claimOwnedQueuedRound,
+  closeRoundAsFailed,
+  closeRoundAsSucceeded,
+  insertFields,
+  insertIdentifiers,
+  insertModelCall,
+  insertQueuedRound,
+  listOwnedDocumentIdsWithQueuedRound,
+  listOwnedStoppedRounds,
+  queueRoundAfter,
+} from "@/server/db/queries/readings";
 import { documentLabel } from "@/server/documents";
 import {
   ExtractionFailure,
@@ -246,7 +268,7 @@ async function removeStranded(
   await deleteObjects(stored.map(({ key }) => key)).catch((cleanupError) => {
     console.error(
       `[uploads] could not remove the photographs of document ${documentId} after a failed upload`,
-      cleanupError,
+      dbCause(cleanupError),
     );
   });
 }
@@ -271,37 +293,29 @@ async function recordDocument(
 ): Promise<DocumentSummary> {
   const reader = extractionProvider();
 
-  const row = await transaction(async (client) => {
-    const inserted = await client.query<{ uploaded_at: Date }>(
-      `INSERT INTO documents (id, user_id, status)
-            VALUES ($1, $2, 'processing')
-         RETURNING uploaded_at`,
-      [documentId, userId],
-    );
+  // Every statement in here is sent on `tx`, as in each transaction below. One
+  // sent on db() would run outside the transaction, and where the pool holds
+  // a single connection it would wait for the very connection this
+  // transaction is holding.
+  const photographedAt = await db().transaction(async (tx) => {
+    const inserted = await insertDocument(tx, userId, documentId);
 
-    for (const page of stored) {
-      await client.query(
-        `INSERT INTO document_pages
-           (document_id, page_number, storage_path, mime_type, byte_size)
-         VALUES ($1, $2, $3, $4, $5)`,
-        [documentId, page.pageNumber, page.key, page.mimeType, page.byteSize],
-      );
-    }
+    await insertPages(tx, documentId, stored);
 
     // The run is written now, queued, rather than when the reading starts, so
     // that a letter whose reader never woke up says so in the table instead
     // of looking like a letter nobody ever tried to read. `contract_version`
     // stays null until there is a payload whose shape it can describe.
-    await client.query(
-      `INSERT INTO extraction_runs (document_id, status, provider, model)
-            VALUES ($1, 'queued', $2, $3)`,
-      [documentId, reader.name, reader.model],
-    );
+    await insertQueuedRound(tx, {
+      documentId,
+      provider: reader.name,
+      model: reader.model,
+    });
 
-    return inserted.rows[0];
+    return inserted;
   });
 
-  const uploadedAt = row.uploaded_at.toISOString();
+  const uploadedAt = photographedAt.toISOString();
 
   return {
     id: documentId,
@@ -369,9 +383,6 @@ export async function planUpload(
   };
 }
 
-/** A letter id as randomUUID() writes it. */
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 /** HEIC and HEIF are one family; image-type.ts calls both image/heic. */
 function sameImageType(declared: string, sniffed: string | null): boolean {
   const family = (type: string) =>
@@ -399,7 +410,7 @@ export async function checkStoredUpload(
   documentId: string,
   mimeTypes: readonly string[],
 ): Promise<StoredPage[]> {
-  if (!UUID.test(documentId)) {
+  if (!isUuid(documentId)) {
     throw new UploadRejected(
       "Those photos did not come through. Please send them again.",
     );
@@ -409,11 +420,7 @@ export async function checkStoredUpload(
   // A letter id that already has a row is a letter already sent, most likely
   // the same one twice. Its photographs belong to that letter now, so they
   // are left alone rather than cleaned up as strays.
-  const existing = await queryOne<{ id: string }>(
-    `SELECT id FROM documents WHERE id = $1`,
-    [documentId],
-  );
-  if (existing) {
+  if (await documentExistsForAnyOwner(db(), documentId)) {
     throw new UploadRejected("These photos have already been sent.");
   }
 
@@ -521,7 +528,7 @@ export async function readStoredDocument(
   } catch (error) {
     console.error(
       `[uploads] could not fetch the photographs of document ${documentId} to read them`,
-      error,
+      dbCause(error),
     );
     await markDocumentFailed(documentId, userId);
     return;
@@ -594,20 +601,7 @@ export async function readDocument(
   try {
     // Which round this is, counted from the letter's runs, because the round
     // before it was read by another request. A round the host stopped counts.
-    const started = await queryOne<{ id: string; round: number }>(
-      `UPDATE extraction_runs e
-          SET status = 'processing',
-              started_at = now()
-         FROM documents d
-        WHERE d.id = e.document_id
-          AND e.document_id = $1
-          AND d.user_id = $2
-          AND e.status = 'queued'
-      RETURNING e.id,
-                (SELECT count(*)::int FROM extraction_runs r
-                  WHERE r.document_id = e.document_id) AS round`,
-      [documentId, userId],
-    );
+    const started = await claimOwnedQueuedRound(db(), userId, documentId);
 
     if (!started) {
       console.error(
@@ -616,11 +610,11 @@ export async function readDocument(
       return;
     }
     runId = started.id;
-    round = started.round ?? 1;
+    round = started.round;
   } catch (error) {
     console.error(
       `[uploads] could not start the reading of document ${documentId}`,
-      error,
+      dbCause(error),
     );
     // Nothing is going to pick this letter up later. There is no repair
     // endpoint in this release, and the request that would have carried the
@@ -709,7 +703,7 @@ export async function readDocument(
     // refusal.
     console.error(
       `[uploads] could not write the reading of document ${documentId}`,
-      error,
+      dbCause(error),
     );
     await recordFailedReading(runId, documentId, userId, failureDetail(error));
   }
@@ -767,71 +761,32 @@ export const ROUND_DEADLINE_SECONDS = 120;
  */
 export async function continueReadings(userId: string): Promise<void> {
   try {
-    const stopped = await query<{
-      id: string;
-      document_id: string;
-      round: number;
-    }>(
-      `SELECT e.id, e.document_id,
-              (SELECT count(*)::int FROM extraction_runs r
-                WHERE r.document_id = e.document_id) AS round
-         FROM extraction_runs e
-         JOIN documents d ON d.id = e.document_id
-        WHERE d.user_id = $1
-          AND d.status = 'processing'
-          AND e.status = 'processing'
-          AND e.started_at < now() - make_interval(secs => $2)`,
-      [userId, ROUND_DEADLINE_SECONDS],
+    const stopped = await listOwnedStoppedRounds(
+      db(),
+      userId,
+      ROUND_DEADLINE_SECONDS,
     );
     for (const run of stopped) {
       await endRoundUndecided(
         run.id,
-        run.document_id,
+        run.documentId,
         userId,
         run.round,
         `RoundTimedOut: round ${run.round} of ${MAX_ROUNDS} was still processing after ${ROUND_DEADLINE_SECONDS} seconds; the request reading it was stopped`,
       );
     }
 
-    const queued = await query<{ document_id: string }>(
-      `SELECT DISTINCT e.document_id
-         FROM extraction_runs e
-         JOIN documents d ON d.id = e.document_id
-        WHERE d.user_id = $1
-          AND d.status = 'processing'
-          AND e.status = 'queued'`,
-      [userId],
-    );
+    const queued = await listOwnedDocumentIdsWithQueuedRound(db(), userId);
     await Promise.all(
-      queued.map(async ({ document_id: documentId }) => {
-        const stored = await query<{
-          page_number: number;
-          mime_type: string;
-          byte_size: number;
-          storage_path: string;
-        }>(
-          `SELECT page_number, mime_type, byte_size, storage_path
-             FROM document_pages
-            WHERE document_id = $1
-            ORDER BY page_number`,
-          [documentId],
-        );
-        await readStoredDocument(
-          documentId,
-          userId,
-          stored.map((page) => ({
-            pageNumber: page.page_number,
-            mimeType: page.mime_type,
-            byteSize: page.byte_size,
-            key: page.storage_path,
-          })),
-        );
+      queued.map(async (documentId) => {
+        const stored = await listStoredPages(db(), documentId);
+        await readStoredDocument(documentId, userId, stored);
       }),
     );
   } catch (error) {
     console.error(
       `[uploads] could not carry on the readings of user ${userId}`,
-      error,
+      dbCause(error),
     );
   }
 }
@@ -862,7 +817,7 @@ async function callWithAttempts(
       const detail = failureDetail(error);
       console.error(
         `[uploads] reading document ${documentId} failed: ${role} ${slot}, attempt ${attempt} of ${MAX_READING_ATTEMPTS}`,
-        error,
+        dbCause(error),
       );
       await recordCall(runId, {
         role,
@@ -917,34 +872,27 @@ async function recordCall(
   const answer: unknown = reading ? reading.result : failure?.answer;
   const seconds = reading ? reading.call.seconds : (failure?.seconds ?? null);
   try {
-    await query(
-      `INSERT INTO model_calls
-         (extraction_run_id, role, slot, attempt, status, model, effort,
-          raw_response, failure_detail, input_tokens, cached_tokens,
-          reasoning_tokens, output_tokens, estimated_cost_usd, duration_ms)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
-      [
-        runId,
-        call.role,
-        call.slot,
-        call.attempt,
-        reading ? "succeeded" : "failed",
-        model,
-        reading?.call.effort ?? call.cell.effort,
-        answer === undefined ? null : JSON.stringify(answer),
-        "detail" in call ? call.detail : null,
-        usage?.input_tokens ?? null,
-        usage?.cached_tokens ?? null,
-        usage?.reasoning_tokens ?? null,
-        usage?.output_tokens ?? null,
-        estimatedCostUsd(model, usage),
-        seconds === null ? null : Math.round(seconds * 1000),
-      ],
-    );
+    await insertModelCall(db(), {
+      runId,
+      role: call.role,
+      slot: call.slot,
+      attempt: call.attempt,
+      status: reading ? "succeeded" : "failed",
+      model,
+      effort: reading?.call.effort ?? call.cell.effort,
+      answer,
+      failureDetail: "detail" in call ? call.detail : null,
+      inputTokens: usage?.input_tokens ?? null,
+      cachedTokens: usage?.cached_tokens ?? null,
+      reasoningTokens: usage?.reasoning_tokens ?? null,
+      outputTokens: usage?.output_tokens ?? null,
+      estimatedCostUsd: estimatedCostUsd(model, usage),
+      durationMs: seconds === null ? null : Math.round(seconds * 1000),
+    });
   } catch (error) {
     console.error(
       `[uploads] could not record a model call of run ${runId}`,
-      error,
+      dbCause(error),
     );
   }
 }
@@ -954,35 +902,18 @@ async function recordCall(
  * The name is kept beside the message because "ExtractionFailure" and
  * "TypeError" are the first thing anyone reading the row wants to know, and
  * because it also guarantees the column is never the empty string.
+ *
+ * KAN-92: a statement that failed arrives wrapped, and the wrapper's message
+ * quotes the statement with every value bound to it. The error PostgreSQL
+ * sent is taken out first (src/server/db/errors.ts), so the column says
+ * "error: <what PostgreSQL said>", as it always has.
  */
 function failureDetail(error: unknown): string {
-  return error instanceof Error
-    ? `${error.name}: ${error.message}`
-    : String(error);
+  const cause = dbCause(error);
+  return cause instanceof Error
+    ? `${cause.name}: ${cause.message}`
+    : String(cause);
 }
-
-/**
- * KAN-63: the totals a round is closed with, as the SET clause of the UPDATE
- * that closes it: whether it called the judge, what its calls used and cost
- * (their model_calls rows added up), and how long it took by the database's
- * clock, from the round's start to now.
- *
- * Every way a round ends goes through an UPDATE that includes this, so there is
- * one definition of what the totals mean. The model_calls rows are already
- * committed by then: recordCall writes each one outside any transaction.
- */
-export const ROUND_TOTALS = `
-  judged = EXISTS (SELECT 1 FROM model_calls c
-                    WHERE c.extraction_run_id = extraction_runs.id
-                      AND c.role = 'judge'),
-  input_tokens = (SELECT sum(c.input_tokens) FROM model_calls c
-                   WHERE c.extraction_run_id = extraction_runs.id),
-  output_tokens = (SELECT sum(c.output_tokens) FROM model_calls c
-                    WHERE c.extraction_run_id = extraction_runs.id),
-  estimated_cost_usd = (SELECT sum(c.estimated_cost_usd) FROM model_calls c
-                         WHERE c.extraction_run_id = extraction_runs.id),
-  finished_at = now(),
-  duration_ms = (extract(epoch FROM now() - started_at) * 1000)::integer`;
 
 /**
  * Close a round that decided nothing and queue the next, as one unit.
@@ -1004,33 +935,19 @@ async function queueNextRound(
   detail: string,
 ): Promise<"queued" | "not-mine" | "error"> {
   try {
-    return await transaction(async (client) => {
-      const closed = await client.query<{ id: string }>(
-        `UPDATE extraction_runs
-            SET status = 'failed',
-                failure_detail = $2,${ROUND_TOTALS}
-          WHERE id = $1
-            AND status = 'processing'
-         RETURNING id`,
-        [runId, detail],
-      );
-      if (closed.rows.length === 0) return "not-mine";
+    return await db().transaction(async (tx) => {
+      const closed = await closeRoundAsFailed(tx, runId, detail);
+      if (!closed) return "not-mine";
 
       // KAN-63: the next round of the scheme, on the same letter. Its calls
       // are written under it as model_calls rows.
-      await client.query(
-        `INSERT INTO extraction_runs (document_id, status, provider, model)
-         SELECT document_id, 'queued', provider, model
-           FROM extraction_runs
-          WHERE id = $1`,
-        [runId],
-      );
+      await queueRoundAfter(tx, closed);
       return "queued";
     });
   } catch (error) {
     console.error(
       `[uploads] could not queue another reading of document ${documentId}`,
-      error,
+      dbCause(error),
     );
     return "error";
   }
@@ -1051,74 +968,17 @@ async function writeReading(
 ): Promise<void> {
   const columns = columnsFromReading(result);
 
-  await transaction(async (client) => {
-    // failure_detail is set back to null in so many words: db/schema.sql
-    // refuses a succeeded run that carries one, and saying it here means the
-    // constraint and the statement agree in writing. KAN-75: and only a round
-    // still 'processing' is this reading's to finish; see recordFailedReading.
-    const finished = await client.query<{ id: string }>(
-      `UPDATE extraction_runs
-          SET status = 'succeeded',
-              model = $2,
-              contract_version = $3,
-              raw_response = $4,
-              failure_detail = NULL,${ROUND_TOTALS}
-        WHERE id = $1
-          AND status = 'processing'
-       RETURNING id`,
-      [runId, result.model, result.contract_version, JSON.stringify(result)],
-    );
-    if (finished.rows.length === 0) return;
+  await db().transaction(async (tx) => {
+    // KAN-75: only a round still 'processing' is this reading's to finish;
+    // see recordFailedReading.
+    if (!(await closeRoundAsSucceeded(tx, runId, result))) return;
 
-    for (const field of result.fields) {
-      await client.query(
-        `INSERT INTO extracted_fields
-           (extraction_run_id, field_key, extracted_value, status, confidence)
-         VALUES ($1, $2, $3, $4, $5)`,
-        [runId, field.key, field.value, field.status, field.confidence ?? null],
-      );
-    }
+    await insertFields(tx, runId, result.fields);
 
     // KAN-58: every number the letter printed, in the order the reader gave.
-    for (const [position, identifier] of result.identifiers.entries()) {
-      await client.query(
-        `INSERT INTO extracted_identifiers
-           (extraction_run_id, position, label, value, status)
-         VALUES ($1, $2, $3, $4, $5)`,
-        [
-          runId,
-          position,
-          identifier.label,
-          identifier.value,
-          identifier.status,
-        ],
-      );
-    }
+    await insertIdentifiers(tx, runId, result.identifiers);
 
-    await client.query(
-      `UPDATE documents
-          SET status = 'needs-review',
-              issuer = $3,
-              document_type = $4,
-              due_date = $5,
-              due_time = $6,
-              amount_text = $7,
-              reference = $8,
-              open_payload = $9
-        WHERE id = $1
-          AND user_id = $2`,
-      [
-        documentId,
-        userId,
-        columns.issuer,
-        columns.documentType,
-        columns.dueDate,
-        columns.dueTime,
-        columns.amountText,
-        columns.reference,
-        JSON.stringify(columns.openPayload),
-      ],
-    );
+    await writeReadingOntoOwnedDocument(tx, userId, documentId, columns);
   });
 }
 
@@ -1134,28 +994,13 @@ async function recordFailedReading(
   detail: string,
 ): Promise<void> {
   try {
-    await transaction(async (client) => {
+    await db().transaction(async (tx) => {
       // KAN-75: only a round still 'processing' is this reading's to close.
       // One that is already closed was declared stopped by a later request,
       // which has already decided what becomes of the letter.
-      const closed = await client.query<{ id: string }>(
-        `UPDATE extraction_runs
-            SET status = 'failed',
-                failure_detail = $2,${ROUND_TOTALS}
-          WHERE id = $1
-            AND status = 'processing'
-         RETURNING id`,
-        [runId, detail],
-      );
-      if (closed.rows.length === 0) return;
+      if (!(await closeRoundAsFailed(tx, runId, detail))) return;
 
-      await client.query(
-        `UPDATE documents
-            SET status = 'failed'
-          WHERE id = $1
-            AND user_id = $2`,
-        [documentId, userId],
-      );
+      await markOwnedDocumentFailed(tx, userId, documentId);
     });
   } catch (writeError) {
     // The letter stays on 'processing' and this line is the only record of
@@ -1163,7 +1008,7 @@ async function recordFailedReading(
     // database that will not take this write will not take another either.
     console.error(
       `[uploads] could not record the failed reading of document ${documentId}`,
-      writeError,
+      dbCause(writeError),
     );
   }
 }
@@ -1182,17 +1027,11 @@ async function markDocumentFailed(
   userId: string,
 ): Promise<void> {
   try {
-    await query(
-      `UPDATE documents
-          SET status = 'failed'
-        WHERE id = $1
-          AND user_id = $2`,
-      [documentId, userId],
-    );
+    await markOwnedDocumentFailed(db(), userId, documentId);
   } catch (error) {
     console.error(
       `[uploads] could not mark document ${documentId} as failed`,
-      error,
+      dbCause(error),
     );
   }
 }
@@ -1209,9 +1048,6 @@ function confidentValue(result: ExtractionResult, key: string): string | null {
   if (!field || field.status !== "confirmed") return null;
   return field.value;
 }
-
-/** A real 24 hour wall clock, which is what the `time` column will accept. */
-const HH_MM = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 /**
  * What a reading writes onto the document row.
@@ -1245,7 +1081,7 @@ export function columnsFromReading(result: ExtractionResult): {
   // it and no reminder can count back from it. So the time column is filled only
   // when the date column is.
   const dueTime =
-    dueDate && dueTimeValue && HH_MM.test(dueTimeValue) ? dueTimeValue : null;
+    dueDate && dueTimeValue && isWallClock(dueTimeValue) ? dueTimeValue : null;
 
   return {
     issuer: confidentValue(result, "issuer"),

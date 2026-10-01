@@ -15,7 +15,7 @@
  */
 
 import "server-only";
-import { sql } from "drizzle-orm";
+import { sql, type SQL, type SQLWrapper } from "drizzle-orm";
 import type { AnyPgColumn } from "drizzle-orm/pg-core";
 
 /**
@@ -37,6 +37,31 @@ export const dbNow = sql<Date>`now()`;
  */
 export function keepOrNow(column: AnyPgColumn) {
   return sql<Date>`coalesce(${column}, now())`;
+}
+
+/**
+ * `column < now() - make_interval(secs => n)`: whether the moment a column
+ * holds is more than a number of seconds ago.
+ *
+ * The builder has no interval arithmetic, and the clock has to be the
+ * database's: the column was stamped by it (dbNow above), and held against
+ * the clock of whichever copy of the app is asking, two clocks a few seconds
+ * apart would disagree about how old the moment is. The seconds are bound.
+ */
+export function olderThanSeconds(column: AnyPgColumn, seconds: number) {
+  return sql<boolean>`${column} < now() - make_interval(secs => ${seconds})`;
+}
+
+/**
+ * `(extract(epoch from now() - column) * 1000)::integer`: how many
+ * milliseconds ago the moment a column holds was, by the database's clock.
+ *
+ * The builder has no extract. Both ends of the stretch are the database's own
+ * (the column was stamped by dbNow above), so no copy of the app's clock is in
+ * the figure.
+ */
+export function elapsedMsSince(column: AnyPgColumn) {
+  return sql<number>`(extract(epoch from now() - ${column}) * 1000)::integer`;
 }
 
 /**
@@ -87,4 +112,42 @@ export function rankOf(column: AnyPgColumn, values: readonly string[]) {
     (value, index) => sql`WHEN ${value} THEN ${index + 1}::integer`,
   );
   return sql<number>`CASE ${column} ${sql.join(ranked, sql` `)} ELSE ${values.length + 1}::integer END`;
+}
+
+/**
+ * `(query)`: a SELECT written with the builder, used as one value inside
+ * another statement.
+ *
+ * The builder can count the rows of a table beside a row (`db.$count`), and
+ * that is the only subquery it can put where a value goes: it has no word for
+ * a sum, and `db.$count` cannot read a table under a second name. The SELECT
+ * handed over is still written with the builder; this only stands it where a
+ * value is expected. It must select one column and answer one row. The
+ * parentheses are not written here: Drizzle puts them round any query placed
+ * in a template.
+ *
+ * PostgreSQL answers a count or a sum as text, so add `.mapWith(Number)`
+ * where the value is read back. Where it is only written into a column,
+ * PostgreSQL does the conversion.
+ */
+export function scalar<T = unknown>(query: SQLWrapper): SQL<T> {
+  return sql<T>`${query}`;
+}
+
+/**
+ * `value::jsonb`: a value stored in a jsonb column as the JSON it is, with
+ * JSON `null` kept as JSON `null`.
+ *
+ * Handed a JavaScript null, the builder writes SQL NULL, the absence of any
+ * value. A model can answer the JSON value `null`, and in the model_calls
+ * table those two say different things: SQL NULL means the call never reached
+ * the model, JSON `null` means it did and that is what it said. So the value
+ * is bound as its JSON text and cast, which is the form this column was
+ * written in before the builder.
+ *
+ * This is the one place a jsonb value is turned into text by hand. Every
+ * other jsonb column is given the object itself.
+ */
+export function jsonbValue(value: unknown) {
+  return sql<unknown>`${JSON.stringify(value)}::jsonb`;
 }

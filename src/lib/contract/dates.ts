@@ -106,6 +106,15 @@ export function isIsoDate(value: string): boolean {
   );
 }
 
+/**
+ * True for a real 24 hour wall clock written 'HH:mm', which is the one shape a
+ * time of day travels in, and what a `time` column will accept. '24:00' and
+ * '9:30' are false.
+ */
+export function isWallClock(value: string): boolean {
+  return /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
+}
+
 function assertIsoDate(value: string, caller: string): void {
   if (!isIsoDate(value)) {
     throw new TypeError(`${caller} expects 'YYYY-MM-DD', got "${value}"`);
