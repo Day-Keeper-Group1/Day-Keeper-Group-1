@@ -1,10 +1,9 @@
 import { cookies } from "next/headers";
 
-import type { SessionUser } from "@/lib/contract/api";
 import { fail, json, route } from "@/server/api/respond";
+import { findAccountForSignIn } from "@/server/auth/accounts";
 import { hashPassword, verifyPassword } from "@/server/auth/password";
 import { SESSION_COOKIE_NAME, createSession } from "@/server/auth/session";
-import { queryOne } from "@/server/db";
 
 /**
  * POST /api/auth/login — exchange an email and password for a session.
@@ -35,15 +34,6 @@ function absentUserHash(): Promise<string> {
   return noSuchUserHash;
 }
 
-type UserRow = {
-  id: string;
-  email: string;
-  display_name: string;
-  password_hash: string;
-  role: SessionUser["role"];
-  timezone: string;
-};
-
 export const POST = route(async (request: Request) => {
   const body = (await request.json().catch(() => null)) as {
     email?: unknown;
@@ -67,22 +57,16 @@ export const POST = route(async (request: Request) => {
 
   // email_canonical is lower(btrim(email)), generated and uniquely indexed in
   // db/schema.sql, so this is both the correct match and the indexed one.
-  const row = await queryOne<UserRow>(
-    `SELECT id, email, display_name, password_hash, role, timezone
-       FROM users
-      WHERE email_canonical = $1
-        AND deactivated_at IS NULL`,
-    [email],
-  );
+  const account = await findAccountForSignIn(email);
 
   const matches = await verifyPassword(
     password,
-    row?.password_hash ?? (await absentUserHash()),
+    account?.passwordHash ?? (await absentUserHash()),
   );
-  if (!row || !matches) return fail("unauthenticated", NO_MATCH);
+  if (!account || !matches) return fail("unauthenticated", NO_MATCH);
 
   const { token, expiresAt } = await createSession(
-    row.id,
+    account.user.id,
     request.headers.get("user-agent") ?? undefined,
   );
 
@@ -98,14 +82,5 @@ export const POST = route(async (request: Request) => {
     expires: expiresAt,
   });
 
-  // Built field by field rather than returned as the row: password_hash is in
-  // the row, and one careless `json(row)` would put it on the wire.
-  const user: SessionUser = {
-    id: row.id,
-    email: row.email,
-    displayName: row.display_name,
-    role: row.role,
-    timeZone: row.timezone,
-  };
-  return json(user);
+  return json(account.user);
 });
