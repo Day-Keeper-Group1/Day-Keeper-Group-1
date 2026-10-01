@@ -13,8 +13,10 @@
  */
 
 import "server-only";
+import { and, count, eq, gte } from "drizzle-orm";
 import type { Db } from "../client";
 import { auditLogs } from "../schema";
+import { startOfTodayIn } from "../sql";
 
 /**
  * One line: what happened, and when given, who did it and to what.
@@ -40,4 +42,33 @@ export async function insertAuditLog(
     targetId: entry.targetId,
     ...(entry.detail !== undefined && { detail: entry.detail }),
   });
+}
+
+/**
+ * How many lines with one action have been written since today began in a
+ * time zone. A number, and 0 when there are none.
+ *
+ * Where today begins is decided by the database (startOfTodayIn in ../sql.ts),
+ * so the count turns over at the same moment for every copy of the app.
+ *
+ * Unscoped on purpose: this counts what everybody did, not what one person
+ * did. Its one caller is the school key's daily ceiling
+ * (src/server/ai/school-key.ts), which is for the whole site because a limit
+ * per account is walked round by registering another account.
+ */
+export async function countAuditActionsSinceStartOfToday(
+  db: Db,
+  action: string,
+  timeZone: string,
+): Promise<number> {
+  const [row] = await db
+    .select({ used: count() })
+    .from(auditLogs)
+    .where(
+      and(
+        eq(auditLogs.action, action),
+        gte(auditLogs.createdAt, startOfTodayIn(timeZone)),
+      ),
+    );
+  return row.used;
 }

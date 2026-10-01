@@ -31,7 +31,11 @@
 import "server-only";
 import OpenAI from "openai";
 import { APP_TIME_ZONE } from "@/lib/contract/dates";
-import { query, queryOne } from "@/server/db";
+import { db } from "@/server/db";
+import {
+  countAuditActionsSinceStartOfToday,
+  insertAuditLog,
+} from "@/server/db/queries/audit";
 import { env } from "@/server/env";
 
 /** The audit_logs action that records one use of the key. */
@@ -83,19 +87,21 @@ export type SchoolKeyBudget = {
   exhausted: boolean;
 };
 
-/** How much of today's ceiling is used. Cheap: one count over an indexed column. */
+/**
+ * How much of today's ceiling is used. Cheap: one count over an indexed
+ * column, countAuditActionsSinceStartOfToday() in
+ * src/server/db/queries/audit.ts, and with no ceiling set, no question to the
+ * database at all.
+ */
 export async function schoolKeyBudget(): Promise<SchoolKeyBudget> {
   const limit = env().AI_DAILY_CALL_LIMIT ?? null;
   if (limit === null) return { limit, used: 0, exhausted: false };
 
-  const row = await queryOne<{ used: number }>(
-    `SELECT count(*)::int AS used
-       FROM audit_logs
-      WHERE action = $1
-        AND created_at >= (date_trunc('day', now() AT TIME ZONE $2) AT TIME ZONE $2)`,
-    [SCHOOL_KEY_ACTION, APP_TIME_ZONE],
+  const used = await countAuditActionsSinceStartOfToday(
+    db(),
+    SCHOOL_KEY_ACTION,
+    APP_TIME_ZONE,
   );
-  const used = row?.used ?? 0;
   return { limit, used, exhausted: used >= limit };
 }
 
@@ -113,9 +119,10 @@ export async function spendSchoolKey(
   const budget = await schoolKeyBudget();
   if (budget.exhausted) throw new SchoolKeyExhausted(budget.limit!);
 
-  await query(
-    `INSERT INTO audit_logs (action, target_type, target_id, detail)
-          VALUES ($1, $2, $3, $4)`,
-    [SCHOOL_KEY_ACTION, target?.type ?? null, target?.id ?? null, { module }],
-  );
+  await insertAuditLog(db(), {
+    action: SCHOOL_KEY_ACTION,
+    targetType: target?.type ?? null,
+    targetId: target?.id ?? null,
+    detail: { module },
+  });
 }

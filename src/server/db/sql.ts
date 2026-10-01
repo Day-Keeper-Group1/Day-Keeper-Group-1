@@ -25,3 +25,18 @@ import { sql } from "drizzle-orm";
  * as SQL, one clock stamps every row, whichever copy wrote it.
  */
 export const dbNow = sql<Date>`now()`;
+
+/**
+ * `(date_trunc('day', now() AT TIME ZONE tz) AT TIME ZONE tz)`: the instant
+ * today began in a time zone, by the database's clock.
+ *
+ * The builder has no date_trunc and no AT TIME ZONE. The inner AT TIME ZONE
+ * turns the database's now into the time on a wall clock in that zone,
+ * date_trunc winds that clock back to midnight, and the outer AT TIME ZONE
+ * turns the midnight back into an instant. PostgreSQL does all three, so
+ * daylight saving is its business, and the day turns at the same moment for
+ * every copy of the app. The zone is bound, never spliced into the text.
+ */
+export function startOfTodayIn(timeZone: string) {
+  return sql<Date>`(date_trunc('day', now() AT TIME ZONE ${timeZone}) AT TIME ZONE ${timeZone})`;
+}
