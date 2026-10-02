@@ -34,8 +34,8 @@ npm ci                    # exactly what package-lock.json says
 cp .env.example .env.local
 docker compose up -d      # Postgres on 15432, MinIO on 19020, viewers on 8080 and 19021
 docker compose ps         # wait until db says "healthy", usually a few seconds
-npm run db:reset          # build the schema, make the bucket, seed both
-npm test                  # the contract tests
+npm run db:reset          # rebuild the database from db/migrations, empty the bucket, then seed both
+npm test                  # every test; the database tests need the Postgres above
 ```
 
 On Windows, run these in PowerShell or Git Bash. In `cmd.exe` there is no `cp`;
@@ -108,10 +108,15 @@ Accounts, all already hashed in the database:
 
 | | |
 |---|---|
-| `npm run db:reset` | rebuild the schema from `db/schema.sql`, empty the bucket, then seed both. In that order: the seed writes photographs, so emptying afterwards would delete them |
+| `npm run db:reset` | rebuild the database from `db/migrations`, empty the bucket, then seed both. In that order: the seed writes photographs, so emptying afterwards would delete them |
+| `npm run db:schema` | rebuild empty tables from the migrations, no seed |
 | `npm run db:seed` | reseed without touching the schema |
+| `npm run db:generate -- --name=<what_changed>` | after editing `src/server/db/schema`: write the migration |
+| `npm run db:migrate` | apply pending migrations, keeping the data. A local database built before KAN-92 has no record of applied migrations, so it needs one `npm run db:reset` before this can ever work |
 | `npm run storage:reset` | make the bucket exist and empty it, without touching the database. The seeded photographs go with it; `npm run db:reset` puts both sides back |
-| `npm test` | the contract tests |
+| `npm test` | every test; the database tests need the Postgres above |
+| `npm run test:unit` | only the tests that need no database |
+| `npm run test:db` | only the database tests |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run dev` | the application |
 | `npm run lint` | eslint |
@@ -147,14 +152,19 @@ hand-built artefacts keep their hand-set shape.
 
 ## Changing the database
 
-There are no migrations. `db/schema.sql` is the truth: edit it and run
-`npm run db:reset`, which drops everything and rebuilds. Everyone's database is
-therefore identical to everyone else's, always.
+The tables are declared in TypeScript, in `src/server/db/schema/`, and that is
+the only definition of them. To change the database, edit a schema file and run
+`npm run db:generate -- --name=<what_changed>`: it writes a migration under
+`db/migrations/`, which you commit with the schema file. `npm run db:migrate`
+applies it to your database and keeps your data; `npm run db:reset` drops
+everything, applies every migration from the first, and seeds. A database built
+before KAN-92 needs that `db:reset` once before `db:migrate` can work (see
+Commands, above).
 
-This works because there is no data worth keeping. It stops working the moment
-there is, and `db/reset.ts` refuses to run against a non-local database so
-nobody finds that out the hard way. The rest of the reasoning is at the top of
-`db/schema.sql`.
+Migrations are generated, never written or edited by hand, and one that has
+been merged is never changed. `src/server/db/AGENTS.md` has the rules and the
+reasons. `db/reset.ts` still refuses to run against a database that is not
+local, and against one that holds accounts nobody seeded.
 
 ## Where things are
 
@@ -162,8 +172,9 @@ One rule, so you never have to open a file to find out where it may be used:
 **`src/lib` is safe anywhere, `src/server` never reaches the browser.**
 
 ```
-db/schema.sql             the database, and the only definition of it
+db/reset.ts, migrate.ts   rebuild the database, or bring it up to date
 db/seed.ts                Margaret's world, for showing the product
+db/migrations/            generated from the schema files; never edited by hand
 
 src/lib/contract/         the agreement. Import from here, do not restate it.
   fields.ts                 the six fields (and the optional due_time), labels, meanings
@@ -174,7 +185,10 @@ src/lib/contract/         the agreement. Import from here, do not restate it.
 
 src/server/               server only (password.ts and token.ts excepted: the
                           seed and the tests need them, and they are pure)
-  db.ts                     query, queryOne, transaction
+  db/
+    schema/                 the database, and the only definition of it
+    queries/                every statement the app runs
+    index.ts                db(), the handle a query is run with
   storage.ts                the photographs themselves: put, signed link, delete
   env.ts                    environment variables, checked once
   auth/password.ts          hashing and verifying passwords
@@ -203,8 +217,10 @@ they match the shapes the interface pages were written against, down to
 statuses using hyphens. If you find yourself declaring a type that looks like
 one of those, import it instead.
 
-**Query through `src/server/db.ts`.** It has `query`, `queryOne` and
-`transaction`, and it already fixes a trap: by default the driver turns a `date`
+**Statements live in `src/server/db/queries/`.** A service calls a query
+function and passes it `db()`, or `tx` inside a transaction; nothing else in the
+app writes SQL. Dates come back as the string PostgreSQL stored, `'YYYY-MM-DD'`,
+because the schema declares them that way: by default the driver turns a `date`
 column into a timestamp in the local zone, which can move a due date to the day
 before. For a product about deadlines that is the worst available bug.
 
@@ -224,7 +240,9 @@ it.
 
 **Scope every query by user id.** There is no "get this document" that does not
 also ask whose it is. A missing `WHERE user_id` is how one person ends up
-reading another person's mail.
+reading another person's mail. Query functions with `Owned` in their name take
+the person's id as their second argument and filter on it;
+`src/server/db/AGENTS.md` has the rule.
 
 **Dates are strings, and the rules live in `src/lib/contract/dates.ts`.** On
 the wire a date is `'YYYY-MM-DD'` and a time is `'HH:mm'`. Never

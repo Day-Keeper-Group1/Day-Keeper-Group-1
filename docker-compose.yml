@@ -1,7 +1,7 @@
 # Local development database and file storage.
 #
 #   docker compose up -d      start Postgres and MinIO (plus their two viewers)
-#   npm run db:reset          build the schema, seed it, empty the bucket
+#   npm run db:reset          build the database from db/migrations, empty the bucket, seed both
 #   docker compose down       stop
 #   docker compose down -v    stop and throw the data away
 #
@@ -50,8 +50,6 @@ services:
   # writing files on the server's own disk instead would be a second way of
   # doing storage that has to be unwritten before anything is deployed, and it
   # would be unwritten by whoever is deploying, which is the worst moment.
-  #
-  # See docs/architecture/adr-003-data-storage.md.
   storage:
     image: minio/minio:latest
     container_name: daykeeper-storage

@@ -55,8 +55,8 @@ async function appliedMigrations(db: Db): Promise<number> {
  * yet, and say how many that was.
  *
  * The migrator applies what is pending as one transaction, so a migration that
- * fails leaves the database as it found it. It takes no lock: run it from one
- * place at a time.
+ * fails leaves the application's tables and rows as they were. It takes no
+ * lock: run it from one place at a time.
  */
 export async function applyMigrations(db: NodePgDatabase): Promise<number> {
   const before = await appliedMigrations(db);

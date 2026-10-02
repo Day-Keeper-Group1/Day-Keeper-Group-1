@@ -10,7 +10,7 @@
  *
  * No guard stands in front of it, because it destroys nothing. Everything
  * pending is applied as one transaction, so a migration that fails leaves the
- * database as it was found.
+ * application's tables and rows as they were.
  *
  * It takes no lock, so run it from one place at a time. Against Supabase it
  * goes through the session pooler (port 5432), not the transaction pooler,

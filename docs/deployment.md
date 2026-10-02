@@ -37,7 +37,7 @@ The Supabase MCP server above was added to Jason's Claude Code on 2026-09-25 as 
 `list_tables` and `get_advisors` report a **critical** "Row Level Security is disabled" on all 11 tables, saying anyone with the anon key can read or change every row. That check only looks at the RLS flag. Two other locks already stop that:
 
 1. The Data API is off, so the anon key has no way in.
-2. The Supabase API roles have no rights at all. `db/schema.sql` drops and recreates the `public` schema, which removes the grants Supabase gives them by default. Verified with:
+2. The Supabase API roles have no rights at all. `npm run db:schema` (`db/reset.ts`) drops and recreates the `public` schema before it applies the migrations, which removes the grants Supabase gives them by default. Verified with:
 
 ```sql
 select r.rolname,
@@ -46,11 +46,11 @@ select r.rolname,
 from pg_roles r where r.rolname in ('anon', 'authenticated', 'service_role');
 ```
 
-Every value came back `false`. If either lock is ever opened (the Data API switched on, or grants added), this warning becomes real.
+Every value came back `false`. If either lock is ever opened (the Data API switched on, or grants added), this warning becomes real. A table created later by `npm run db:migrate` lands in the existing `public` schema, so after the first migration that adds a table, run this query again with `public.<the new table>` in place of `public.users`.
 
 **Decided 2026-09-25 (Jason): do not enable RLS for now. Agents: do not add it, and do not run the advisor's remediation SQL, without asking.** The reasoning: DayKeeper's browser never talks to the database. It talks to our own server, which connects as the tables' owner and enforces all three layers in code: every endpoint checks the session, accounts carry a role, and every query is scoped to the signed in person. RLS is Supabase's answer for products whose browser queries the database directly, which ours does not. Adding it now would be overengineering. Once real people use a deployed DayKeeper it should be revisited for defence in depth.
 
-The advisor also warns (level WARN) that the function `public.touch_updated_at` has a mutable `search_path`. It is a hardening suggestion for `db/schema.sql`, not a problem in use.
+The advisor also warns (level WARN) that the function `public.touch_updated_at` has a mutable `search_path`. The function was removed in KAN-92 (`updated_at` is set by the application now), so the warning goes away when the database is rebuilt.
 
 ## Why Netlify and not Vercel (2026-09-25)
 
@@ -113,7 +113,7 @@ Running on Netlify then took four commits on branch `kan-75-vercel-trial`, each 
 1. **`484fb4f6` Build with webpack** (`netlify.toml`). See "Mistakes made on the way".
 2. **`e98aea68` Shrink photographs over 1 MB in the browser** (`src/lib/photos.ts`). At or under 1 MB a photograph is sent untouched, so a small file from a poor camera is not squeezed further. Over it, the long side is drawn at 3508 pixels, the size of the synthetic A4 pages at 300 dpi that the reader was measured on, never smaller; then only the JPEG quality goes down, from 0.85 to 0.5. A phone photograph of a page on a computer screen still comes out near 2 MB at 0.5 (moiré and sensor noise), and it is sent at that size rather than shrunk further. Checked on the iPhone that its browser does honour the quality setting.
 3. **`141da32e` Send photographs straight to the bucket.** The capture screen asks `POST /api/documents/uploads` for a letter id and one signed upload link per page, PUTs each photograph to its link, then posts the id to `POST /api/documents` as JSON. The app sees a few lines of JSON; the photographs go from the phone to Sydney without crossing to Ohio. The server derives every key from the signed-in person, reads the first 12 bytes of each object to check it arrived, its size, and that it is the image type declared, and removes the lot if any page fails. The old multipart upload still works for curl and Swagger. The storage client no longer signs a body checksum into links. Supabase and local MinIO both accept a signed PUT from a browser page (CORS checked with a real PUT against each on 2026-09-26).
-4. **`1c114a29` Read a letter one round per request.** Because of the 30 second limit. The upload reads round 1 after answering; a round that decides nothing queues the next, and `GET /api/home`, which the screen polls every five seconds while anything is being read, reads it after answering (`continueReadings` in `src/server/uploads.ts`). A round still processing two minutes after it started is taken as stopped by the host and counts as a round that decided nothing. Rounds are only closed while still processing, so two polls cannot both queue a successor. Consequence: a letter whose person closes the app mid-reading waits, queued, until they open it again.
+4. **`1c114a29` Read a letter one round per request.** Because of the 30 second limit. The upload reads round 1 after answering; a round that decides nothing queues the next, and `GET /api/home`, which the screen polls every five seconds while anything is being read, reads it after answering (`continueReadings` in `src/server/uploads/reading.ts`). A round still processing two minutes after it started is taken as stopped by the host and counts as a round that decided nothing. Rounds are only closed while still processing, so two polls cannot both queue a successor. Consequence: a letter whose person closes the app mid-reading waits, queued, until they open it again.
 
 ## Accounts
 
@@ -153,7 +153,7 @@ Supabase offers three connections. We use the **Transaction pooler**.
 | Session pooler | 5432 | IPv4 | Long running servers on IPv4 |
 | **Transaction pooler** | **6543** | **IPv4** | Serverless functions, where each request is a short lived copy of the app |
 
-The pooler keeps connections to Postgres open and lends one out per transaction, so a freshly started function does not pay for a new connection each time. The app opens at most one connection per copy when the database is not local (`max: isLocal ? 10 : 1` in `src/server/db.ts`), which is what the transaction pooler expects.
+The pooler keeps connections to Postgres open and lends one out per transaction, so a freshly started function does not pay for a new connection each time. The app opens at most one connection per copy when the database is not local (`poolOptions()` in `src/server/db/client.ts`), which is what the transaction pooler expects. Drizzle sends unnamed statements unless `.prepare()` is called, and lint forbids `.prepare()`, so the transaction pooler keeps working.
 
 The connection dialog warns "Transaction pooler uses IPv6 by default". That refers to the paid dedicated pooler. The shared pooler we use resolves to IPv4 addresses (checked 2026-09-25), so the IPv4 add-on is not needed.
 
@@ -169,7 +169,7 @@ The user name carries the project ref (`postgres.<ref>`) because the shared pool
 
 ### The certificate (`DATABASE_CA_CERT`)
 
-The app always encrypts a connection to a database that is not local, and it checks who answered (`remoteTls()` in `src/server/db.ts`). Supabase's pooler presents a certificate signed by Supabase's own root, which is not in Node's default list of trusted signers, so without help the first query fails with `SELF_SIGNED_CERT_IN_CHAIN` before anything is sent: no password, no query. In the app this shows as "Something went wrong at our end" on sign in, and the terminal shows the real error. Seen and fixed on 2026-09-25.
+The app always encrypts a connection to a database that is not local, and it checks who answered (`databaseSsl()` in `src/lib/database-tls.ts`). Supabase's pooler presents a certificate signed by Supabase's own root, which is not in Node's default list of trusted signers, so without help the first query fails with `SELF_SIGNED_CERT_IN_CHAIN` before anything is sent: no password, no query. In the app this shows as "Something went wrong at our end" on sign in, and the terminal shows the real error. Seen and fixed on 2026-09-25.
 
 The fix is configuration only: give the app Supabase's root certificate.
 
@@ -185,21 +185,21 @@ After the certificate, signing in as Margaret worked from the laptop against Sup
 
 ## Building the schema on Supabase
 
-Done on 2026-09-25. The tables come from `db/schema.sql`, the same file that builds the local database.
+First done on 2026-09-25, when the tables came from the schema file the project had then, `db/schema.sql`. Now the tables are built from the migrations under `db/migrations`, the same files that build the local database.
 
-1. In `.env.local`, comment out the local `DATABASE_URL` and add the Supabase one below it.
+1. In `.env.local`, comment out the local `DATABASE_URL` and add the Supabase one below it. Use the **session pooler** address, which is the one under "Connecting to the database" with port 5432 in place of 6543, and have `DATABASE_CA_CERT` set, because `db:schema` now runs the migrator.
 2. In `.env.local`, uncomment `DK_ALLOW_REMOTE_RESET=yes`.
 3. Run `db:schema` from VS Code's NPM Scripts panel in the Explorer sidebar. Not `db:reset`, the line above it, which also empties the photograph bucket and loads the seed.
 4. In `.env.local`, comment `DK_ALLOW_REMOTE_RESET=yes` out again straight away.
 
-It printed `Schema rebuilt from db/schema.sql.`, and the Table Editor shows 11 tables and 1 view (`document_reading_totals`).
+It prints `Schema rebuilt from db/migrations.`, and the Table Editor shows 11 tables and 1 view (`document_reading_totals`).
 
 What `db:schema` does, in order (`db/reset.ts`):
 
 1. Reads `DATABASE_URL` from `.env.local`.
 2. **First guard.** If the host is not on this machine (`src/lib/local-host.ts` keeps the list), it refuses unless `DK_ALLOW_REMOTE_RESET` is exactly `yes`.
-3. **Second guard.** If the `users` table holds any address outside `@example.com`, someone registered through the app, and it refuses unless `DK_DESTROY_REAL_ACCOUNTS` is exactly `yes`. A fresh database has no `users` table and passes. See `db/real-accounts.ts`.
-4. Sends `db/schema.sql` in one transaction: drop the `public` schema with everything in it, create it again, create every table. All of it happens or none of it does.
+3. **Second guard.** If the `users` table holds any address outside `@example.com`, someone registered through the app, and it refuses unless `DK_DESTROY_REAL_ACCOUNTS` is exactly `yes`. A fresh database has no `users` table and passes. See `db/lib/real-accounts.ts`.
+4. Drops the `drizzle` schema (where the record of applied migrations lives) and the `public` schema, creates `public` again, and applies every migration under `db/migrations`. The drop and the rebuild are not one transaction: if the rebuild fails, the database is left empty and the command is run again.
 5. Prints the line above.
 
 It builds empty tables and nothing else. It does not load the seed (`db:seed` does that) and it does not touch photographs.
@@ -209,7 +209,9 @@ Two consequences worth knowing:
 - Running it again wipes every row. Photographs already in the bucket stay there with nothing pointing at them.
 - Once real people have registered on the deployed app, the second guard blocks it even with the first switch on. That is intended.
 
-The project has no migrations: every change to the database rebuilds it from `db/schema.sql`. That is safe only while no data needs keeping, and `db/schema.sql` says so at the top.
+### Changing the schema later
+
+`npm run db:migrate` applies the migrations a database has not had yet and keeps its data. Against Supabase, run it through the **session pooler** (port 5432), not the transaction pooler, with `DATABASE_CA_CERT` set. It has no guard, because it destroys nothing. A database built before KAN-92, from the old `db/schema.sql`, has no record of applied migrations, so `npm run db:migrate` fails on it: it needs one rebuild with `npm run db:schema` or `npm run db:reset` first. The deployed database gets that rebuild once, right after KAN-92 merges.
 
 ## Loading the seed on Supabase
 
@@ -253,7 +255,7 @@ Two letters from these tests stayed failed on purpose: one whose round 2 was sto
 
 ## Reset on 2026-09-26
 
-After the phone tests Margaret's inbox held nine test letters, and main had meanwhile changed `db/schema.sql` (KAN-62, reminders as days marked on Home), so the deployed code and the hosted tables no longer matched. With the scripts encrypted, `npm run db:reset` was run against Supabase with `DK_ALLOW_REMOTE_RESET=yes` set for that one command in the shell rather than in `.env.local`. It rebuilt the schema, emptied the bucket (31 objects) and loaded the seed: Margaret's three reminders are counted from 26 September. Every account and every test letter went with it; the real accounts guard found none to protect. The merged code was deployed to the `preview` alias straight after, because the old deploy expected the old tables.
+After the phone tests Margaret's inbox held nine test letters, and main had meanwhile changed the tables (KAN-62, reminders as days marked on Home), so the deployed code and the hosted tables no longer matched. With the scripts encrypted, `npm run db:reset` was run against Supabase with `DK_ALLOW_REMOTE_RESET=yes` set for that one command in the shell rather than in `.env.local`. It rebuilt the schema, emptied the bucket (31 objects) and loaded the seed: Margaret's three reminders are counted from 26 September. Every account and every test letter went with it; the real accounts guard found none to protect. The merged code was deployed to the `preview` alias straight after, because the old deploy expected the old tables.
 
 ## Photograph storage on Supabase
 
@@ -318,8 +320,8 @@ Checked on the providers' own pages on 2026-09-24.
 ## Open items
 
 - **A script that refreshes Margaret only. Deferred on 2026-09-26, and must be written before the first demonstration after any teammate keeps their own data on the deployed database.** Until then `npm run db:reset` with `DK_ALLOW_REMOTE_RESET=yes` does the job, because the hosted database holds nothing but the seed. The seed is for weekly demonstrations and changes with them, and Margaret's three reminders are dated from the day the seed runs, so a deployed copy goes stale within days even when the seed does not change. Both existing scripts wipe everything (`db:reset` truncates tables and empties the bucket; `db:seed` truncates every table but leaves old photographs behind), which is wrong on a hosted database where teammates may have their own test data. The new script deletes Margaret's letters, tasks and reminders and her photographs under `uploads/<her id>/`, then writes her five letters again from the current seed with dates counted from that day. Other accounts are not touched. Same two guards and TLS as the other scripts. Run it against the deployed database before each demonstration.
-- **`touch_updated_at` search_path** (advisor WARN): a small hardening change to `db/schema.sql`, not yet decided.
-- ~~Encrypt the setup scripts~~: done 2026-09-26, commit `78116a25`. The rule moved from `src/server/db.ts` to `src/lib/database-tls.ts`, and the app's pool and all three scripts use it. Checked: the scripts reach Supabase over TLS 1.3 and local Docker without TLS. The schema build and seed of 2026-09-25 had travelled unencrypted; the reset of 2026-09-26 was encrypted. Next step to consider: Supabase's "Enforce SSL", so an unencrypted connection is refused outright.
+- ~~`touch_updated_at` search_path~~ (advisor WARN): the function was removed in KAN-92 (`updated_at` is set by the application now), so the warning goes away when the database is rebuilt.
+- ~~Encrypt the setup scripts~~: done 2026-09-26, commit `78116a25`. The rule moved out of the file that builds the app's pool (now `src/server/db/client.ts`) into `src/lib/database-tls.ts`, and the app's pool and all three scripts use it. Checked: the scripts reach Supabase over TLS 1.3 and local Docker without TLS. The schema build and seed of 2026-09-25 had travelled unencrypted; the reset of 2026-09-26 was encrypted. Next step to consider: Supabase's "Enforce SSL", so an unencrypted connection is refused outright.
 - **The project is public, on purpose.** Decided 2026-09-26 (Jason): the team tests it from their own phones, which are not signed in to Netlify. The cost is that the seeded passwords are in this public repository, so anyone who finds the URL can sign in and spend Azure credit on readings, and can see whatever has been uploaded to the seeded accounts. So upload nothing there that the whole internet may not read. To close it: Project configuration, General, Visitor access, Edit visibility, Private; it then opens only in a browser signed in to Netlify with the project account. A change takes a few minutes to apply.
 - **A letter whose reader closes the app mid-reading waits** until they open it again, because the next round is read by their own screen's poll. Nothing reads a letter nobody is watching; that needs a real queue or a scheduled function, not decided.
 - **Photographs of a screen read less reliably** than the clean pages the scheme was measured on (Tarnwell read as Tamwell, above). For KAN-76.

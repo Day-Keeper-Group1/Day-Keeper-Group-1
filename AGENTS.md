@@ -13,7 +13,8 @@ DayKeeper (Group 1): an AI-powered life management system for people in vulnerab
 - [`docs/project-description.md`](docs/project-description.md): the official project description, verbatim. Our requirements baseline; when wording conflicts, this file wins on what the product is for, and [`docs/scope.md`](docs/scope.md) says which part of it we are building now.
 - [`docs/prototype/user/daykeeper-sketch-live.html`](docs/prototype/user/daykeeper-sketch-live.html): clickable prototype of the user flow (phone). The live one; user-flow design work happens here, and its `:root` block is where the theme's palette lives. See "The look" below.
 - [`.agents/skills/daykeeper-jira/`](.agents/skills/daykeeper-jira/): how this team's Jira board actually works, as a skill. Codex loads it when a ticket, the board or a sprint comes up; it needs the Atlassian MCP server, which [`.codex/config.toml`](.codex/config.toml) already defines and the README explains how to authenticate. Optional: nothing in the build depends on it.
-- [`db/schema.sql`](db/schema.sql): the database, and its only definition. No migrations: edit it and run `npm run db:reset`.
+- [`src/server/db/schema/`](src/server/db/schema/): the database, and its only definition: every table, column, constraint and index as Drizzle declarations, with the reason for each beside it. To change the database, edit a schema file, run `npm run db:generate -- --name=<what_changed>`, and commit the schema file together with the migration that command wrote under [`db/migrations/`](db/migrations/). Nobody writes or edits a migration by hand. [`src/server/db/AGENTS.md`](src/server/db/AGENTS.md) has the rules, and the recipe for a new table, a new query and a new module.
+- [`db/`](db/): what you run from a terminal: `reset.ts`, `migrate.ts` and `seed.ts`, their helpers in `db/lib/`, and the generated migrations. There are two folders named db, and one rule tells them apart: if the app imports it, it lives under `src/server/db/`; if you run it from a terminal, it lives under `db/`.
 - [`docs/deployment.md`](docs/deployment.md): the trial deployment (KAN-75), Netlify for the app and Supabase for the database and photographs, all under one project mailbox. How to deploy, every setting and why, what the free plans limit, and how to read the live state as an agent. The passwords and keys are not in it: they are in Teams, in the private channel Internal Documents of the team P000473SE-G1-DayKeeper, and "Where the keys are" in that file says exactly where, what is in them, and that an agent asks the person for a value rather than ever writing one down.
 
 **Supabase will report "RLS disabled" on every table as critical. It does not apply here, and agents must not enable RLS or run the advisor's fix without asking.** The browser never talks to the database: the Data API is off, Supabase's API roles have no grants, and our own server enforces who sees what. [`docs/deployment.md`](docs/deployment.md), "Advisor warnings you will see", has the reasoning and the query that checks it.
@@ -23,7 +24,10 @@ DayKeeper (Group 1): an AI-powered life management system for people in vulnerab
   sources beside it; [`docs/walkthrough/README.md`](docs/walkthrough/README.md) says how to rebuild it and how the diagrams are made.
 - [`experiments/`](experiments/): where a product decision was settled by measuring. One folder per question, with its raw results kept so the decision can be checked later. Each has its own `README.md` (the question) and `AGENTS.md` (how the code is arranged).
 - [`src/lib/contract/`](src/lib/contract/): the agreement, in TypeScript, with validators: the six fields, the shapes the browser receives, the date rules and the reminder ladder. Import these types; do not restate them.
-- [`src/server/`](src/server/): server-only code. [`db.ts`](src/server/db.ts) for queries, [`storage.ts`](src/server/storage.ts) for the photographs themselves (an S3 bucket, MinIO locally), [`extraction/`](src/server/extraction/) for the reader interface, the Azure reader that runs the voting scheme, and the mock. `src/lib` is safe anywhere; `src/server` never reaches the browser.
+- [`src/server/`](src/server/): server-only code. `src/lib` is safe anywhere; `src/server` never reaches the browser.
+  - [`db/`](src/server/db/): everything that knows about PostgreSQL, and the only folder under `src/` that imports Drizzle. `schema/` says what the tables are; `queries/` holds every statement the app runs, one file per family of tables, named like its schema file; `sql.ts` holds the few named SQL expressions the builder cannot say; `index.ts` is `db()`, the handle a query is run with. There is no hand-written SQL anywhere else under `src/`, and lint keeps it so.
+  - The services: [`documents.ts`](src/server/documents.ts), [`tasks.ts`](src/server/tasks.ts), [`confirm.ts`](src/server/confirm.ts), [`field-views.ts`](src/server/field-views.ts), [`uploads/`](src/server/uploads/) (`intake.ts` is a letter arriving, `reading.ts` is a letter being read) and [`auth/`](src/server/auth/) (`session.ts` answers who is asking, `accounts.ts` registers and signs in). They hold the rules and turn rows into the shapes in `src/lib/contract/`. They call query functions and contain no SQL. Routes and pages call services, never the database.
+  - [`storage.ts`](src/server/storage.ts) for the photographs themselves (an S3 bucket, MinIO locally), [`extraction/`](src/server/extraction/) for the reader interface, the Azure reader that runs the voting scheme, and the mock, `voice/` for the Module 3 prototype, `api/` for the response helpers and the Swagger description, and `env.ts` for the environment, checked once.
 - [`src/server/ai/school-key.ts`](src/server/ai/school-key.ts): **the school's Azure key, and the one door in front of it.** Any module that calls a model on that key (letters today; voice and email as they arrive) takes its client from `schoolKeyClient()` and calls `spendSchoolKey("<module>")` before each request. The door enforces `AI_DAILY_CALL_LIMIT`, the site-wide daily ceiling that keeps the deployed site from burning the key (KAN-91). Building an `OpenAI` client with the key anywhere else walks round it. The letter reader in [`extraction/azure-provider.ts`](src/server/extraction/azure-provider.ts) is the worked example.
 - [`src/app/`](src/app/): the interface, one page tree for phone and desktop, laid out from the phone prototype and given more room on a wide screen. Pages read the endpoints in [`docs/api.md`](docs/api.md) or call `src/server/` directly from server components; nothing reads fixture data.
 
@@ -65,9 +69,12 @@ The short version, so you know when to go and read it:
 npm ci                    # installs exactly what package-lock.json says; never rewrites it
 cp .env.example .env.local
 docker compose up -d      # Postgres on 15432, MinIO on 19020; viewers on 8080 and 19021
-npm run db:reset          # rebuild the schema from db/schema.sql, empty the bucket, then seed both
+npm run db:reset          # rebuild the database from db/migrations, empty the bucket, then seed both
 npm run dev               # http://localhost:3000
-npm test                  # the contract tests
+npm test                  # every test; the database tests need the Postgres above
+npm run test:unit         # only the tests that need no database
+npm run db:generate -- --name=<what_changed>   # after editing src/server/db/schema: write the migration
+npm run db:migrate        # apply migrations you pulled, keeping your data (a database built before KAN-92 needs one db:reset first)
 npm run typecheck
 npm run build
 npm run lint
@@ -79,7 +86,7 @@ Git hooks install themselves through `npm ci` (husky): staged files are formatte
 
 Terminal output follows one rule: silence means success, anything printed is signal. When running scripts to read their output (as an AI agent does), prefer `npm run -s <script>`: it drops the three-line npm banner and nothing else. Do not set `loglevel=silent` anywhere permanent; it also swallows npm's own error reporting.
 
-Tests are Vitest, in `tests/`. [`tests/contract.test.ts`](tests/contract.test.ts) needs no database and no network: it checks that the agreement between the reader and everything else still holds.
+Tests are Vitest, in two projects. `tests/*.test.ts` need no database and no network (`npm run test:unit`); [`tests/contract.test.ts`](tests/contract.test.ts) checks that the agreement between the reader and everything else still holds. `tests/db/*.test.ts` run the real functions against a real PostgreSQL 17 and look at what ended up in the tables: each run builds its own databases, named `dk_test_...`, from `db/migrations`, beside yours, and drops them afterwards. They never skip: with Docker down, `npm test` fails and says to run `docker compose up -d`. To run one file: `npm run test:db -- tests/db/tasks.test.ts`.
 
 Sign in with a seeded account (`margaret@example.com` or `operator@example.com`, password `daykeeper`; each teammate also has an empty one, printed by the seed); `npm run dev` then shows the interface over the seed's letters and tasks. The seed is for showing the product: three reminders due today and two ticked tasks, see [`docs/start-here.md`](docs/start-here.md). Uploading a letter runs the reader named by `AI_EXTRACTION_PROVIDER`: the mock by default, `azure` for the real reading that [`docs/extraction.md`](docs/extraction.md) describes.
 
@@ -106,7 +113,7 @@ When asked to parallelise work across worktrees:
 ```bash
 npm run worktree:setup   # derives this worktree's database + bucket + port, writes .env.local, creates the DB
 npm ci                   # once per worktree
-npm run db:reset         # schema + seed + bucket, all THIS worktree's own
+npm run db:reset         # migrations + seed + bucket, all THIS worktree's own
 npm run dev              # serves on the port setup printed (it is in .env.local)
 ```
 
@@ -119,7 +126,7 @@ The main checkout keeps the shared defaults (database `daykeeper`, port 3000); `
 | `ECONNREFUSED` / timeout at the database or at storage | docker is down, or `.env.local` was never written | `docker compose up -d`, then `npm run worktree:setup` |
 | `EADDRINUSE` | a stale process on this worktree's own port | `npm run dev` clears its own port first; just rerun it |
 | `Cannot find module ...` | dependencies not installed here | `npm ci` |
-| `column ... does not exist` or `relation ... does not exist` | this database was built from an older `db/schema.sql`: you pulled a schema change, and there are no migrations to bring it along | `npm run db:reset` |
+| `column ... does not exist` or `relation ... does not exist` | you pulled a migration that this database has not had yet | `npm run db:migrate` (keeps your data), or `npm run db:reset` for a clean start. A local database built before KAN-92 has no record of applied migrations, so it needs one `npm run db:reset` before `db:migrate` can ever work |
 
 **Never edit application source or configuration to dodge an environment problem** — changing a port in code, pointing at a different database, weakening a check. If the environment blocks you, the fix is one of the commands above; if none of them fixes it, say so plainly instead of working around it.
 

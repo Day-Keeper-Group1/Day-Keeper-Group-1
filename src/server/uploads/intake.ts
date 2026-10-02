@@ -256,10 +256,10 @@ async function recordDocument(
 ): Promise<DocumentSummary> {
   const reader = extractionProvider();
 
-  // Every statement in here is sent on `tx`, as in each transaction below. One
-  // sent on db() would run outside the transaction, and where the pool holds
-  // a single connection it would wait for the very connection this
-  // transaction is holding.
+  // Every statement in here is sent on `tx`, as in each transaction in
+  // ./reading.ts. One sent on db() would run outside the transaction, and
+  // where the pool holds a single connection it would wait for the very
+  // connection this transaction is holding.
   const photographedAt = await db().transaction(async (tx) => {
     const inserted = await insertDocument(tx, userId, documentId);
 

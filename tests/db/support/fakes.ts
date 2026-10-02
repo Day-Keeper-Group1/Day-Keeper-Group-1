@@ -43,8 +43,8 @@ import { vi } from "vitest";
 import type { ExtractionResult } from "@/lib/contract/extraction";
 // Only the type, which costs nothing: the module itself is the one replaced.
 import type { Reading } from "@/server/extraction";
-// The real one, from the file that defines it: src/server/uploads.ts asks
-// `instanceof ExtractionFailure`, and a copy would never be an instance.
+// The real one, from the file that defines it: src/server/uploads/reading.ts
+// asks `instanceof ExtractionFailure`, and a copy would never be an instance.
 import { ExtractionFailure } from "@/server/extraction/provider";
 
 /* The bucket ---------------------------------------------------------------- */

@@ -77,9 +77,9 @@ jobs:
   # the pull request and stays the same for every push to it.
   #
   # It uses the shared staging database and never changes its structure: only
-  # the deploy job, on main, may do that. A pull request that edits
-  # db/schema.sql will therefore show errors on the pages that need the new
-  # structure, which is expected.
+  # the deploy job, on main, may do that. A pull request that adds a migration
+  # under db/migrations will therefore show errors on the pages that need the
+  # new structure, which is expected.
   preview:
     needs: build
     # Not for forks: a fork's pull request is given no secrets.
@@ -110,6 +110,6 @@ jobs:
       - run: |
           gh pr comment "$PR" --edit-last --create-if-none --body "**Preview of this pull request:** https://pr-$PR--daykeeper-group1.netlify.app
 
-          Built from \`${{ github.event.pull_request.head.sha }}\`. It uses the shared staging database, so sign in with your own account. If this pull request changes \`db/schema.sql\`, pages that need the new structure will show errors until it merges."
+          Built from \`${{ github.event.pull_request.head.sha }}\`. It uses the shared staging database, so sign in with your own account. If this pull request adds a migration under \`db/migrations\`, pages that need the new structure will show errors until it merges."
         env:
           GH_TOKEN: ${{ github.token }}
