@@ -67,17 +67,54 @@ Each of these was run. Each one either answers wrongly without an error, or fail
 
 ## How the database changes
 
-The schema files are the only definition of the database. The migrations under [`db/migrations/`](../../../db/migrations/) are generated from them and are never written or edited by hand.
+The schema files are the only definition of the database. The migrations under [`db/migrations/`](../../../db/migrations/) are generated from them. The one kind a person writes is a data migration, and it too starts from a command (see "Moving data" below).
 
 1. **Edit a schema file, and name everything.** Every column's database name is written out (`text("display_name")`), and every foreign key, unique constraint, check and index carries its name. One left unnamed gets a name Drizzle chooses, and a name that changes later is a migration that renames a constraint and does nothing else.
-2. **`npm run db:generate -- --name=<what_changed>`.** It compares the schema files with the newest snapshot and writes the next migration. It needs no database. For a rename, run it in a real terminal: drizzle-kit asks whether the thing was renamed or dropped and made again, and in an agent's shell there is nobody to answer.
+2. **`npm run db:generate -- --name=<what_changed>`.** It writes the next migration from the difference between the schema files and the newest snapshot, then checks what it wrote: `db:check`, and `db:rehearse` when a local PostgreSQL answers. If either refuses the migration, the message says what to change and which command writes it again.
 3. **`npm run db:migrate`.** It applies the migrations your database has not had yet and keeps your data. `npm run db:reset` is the clean start: it drops everything and applies every migration from the first.
-4. **Commit the schema file and the three generated files together:** the new `.sql`, its snapshot under `meta/`, and `meta/_journal.json`. `npm run db:check` answers whether the schema files and the newest migration agree, and it runs with the tests.
+4. **Commit the schema file and the three generated files together:** the new `.sql`, its snapshot under `meta/`, and `meta/_journal.json`.
 
-The migrator (`db/migrate.ts`) records what it applied in `drizzle.__drizzle_migrations`, and applies every migration in the journal that is newer than the last one recorded there. It compares no hashes, runs everything pending in one transaction, and takes no lock. Three rules follow.
+### The checks, and where each one runs
 
-- **A merged migration stays as it was merged.** The migrator would not notice an edit or a deletion: the databases that already applied it keep the old shape, new ones get the new shape, and nothing reports the difference. To change the database again, change the schema file and generate the next migration.
-- **When main gains a migration while yours is unmerged, generate yours again.** Delete your generated files, merge main, then run `db:generate`. `_journal.json` is never merged by hand: a migration whose journal entry is older than one a database has already applied is skipped on that database, silently.
+Each check prints what is wrong, where, and the commands that put it right. Read the message and do what it says; it was written for whoever is at the keyboard, which is usually a coding agent. The checks run in three places, earliest first, so that a problem is met as soon as it exists.
+
+| Check | What it refuses | Runs |
+|---|---|---|
+| `npm run db:check` | The schema files and the newest migration disagree. The journal is out of order. A migration that is on main was edited. A new migration adds a NOT NULL column with no default. | After `db:generate`; at commit, when the commit touches the schema files or the migrations; in CI. No database. |
+| `npm run db:rehearse` | A new migration that cannot be applied to a database with rows in it. It builds a database as main has it, fills it with the seed's rows, and applies this branch's new migrations. | After `db:generate`, when PostgreSQL answers; in CI. |
+| The notice on the pull request | Nothing. When a new migration drops or renames a table or a column, or deletes rows, the pull request's comment opens with a warning that quotes the statement. | In CI, on a pull request. |
+
+A DROP is not refused, on purpose: removing a column is a normal thing to do, and whether the data in it may go is a person's decision. Everything under `db/` and `schema/` needs the code owner's review, and the notice puts the statement in front of them.
+
+### Renaming a column
+
+drizzle-kit cannot tell a rename from a drop and an add, so it asks, and it can only ask at a real terminal. Do a rename as three migrations in one pull request, which needs no question:
+
+1. Add the new column beside the old one in the schema file, nullable for now. `npm run db:generate -- --name=add_<new>`.
+2. `npm run db:generate -- --custom --name=copy_<old>_to_<new>`, and in the empty file it writes: `UPDATE "<table>" SET "<new>" = "<old>";`.
+3. Remove the old column from the schema file, and make the new one `.notNull()` if it needs to be. `npm run db:generate -- --name=drop_<old>`.
+
+`db:generate` says exactly this when it meets a rename with no terminal to ask in, and stops with a failure. Run by itself, `drizzle-kit generate` would write nothing and report success.
+
+### Moving data
+
+A migration that changes rows, not structure, is the one kind a person writes. `npm run db:generate -- --custom --name=<what_it_does>` creates an empty migration in its place in the history, and the SQL goes into that file. It is reviewed, rehearsed and applied like any other. Keep it to plain `UPDATE`, `INSERT` and `DELETE` statements that can run again on a database where they already ran.
+
+### When a migration has to be written again
+
+`npm run db:regenerate -- --name=<what_changed>` makes `db/migrations` exactly what main has and then generates this branch's migration afresh. Use it in two cases:
+
+- **A check refused the migration,** and the schema file has been corrected.
+- **main gained a migration while this branch was open.** Both branches wrote "the next migration", and git reports a conflict in `meta/_journal.json`. Take main's side of everything under `db/migrations` and run `db:regenerate`. The journal is never merged by hand: the migrator applies only migrations dated later than the last one a database has had, so this branch's, dated earlier than main's, would be skipped on that database without a word. Written again, it is dated now.
+
+It removes every migration this branch added. A `--custom` migration's SQL is hand-written: copy it out first, and put it back with `db:generate -- --custom`. A rename done as three migrations has to be done again as three.
+
+### What the migrator does, and three rules that follow
+
+The migrator (`db/migrate.ts`) records what it applied in `drizzle.__drizzle_migrations`, and applies every migration in the journal that is newer than the last one recorded there. It compares no hashes, runs everything pending in one transaction, and takes no lock.
+
+- **A merged migration stays as it was merged.** The migrator would not notice an edit: the databases that already applied it keep the old shape, new ones get the new shape, and nothing reports the difference. To change the database again, change the schema file and generate the next migration. `db:check` refuses an edit to a migration that is on main. Removing one is allowed, because that is what reverting a pull request does.
+- **A column is removed in the same pull request as the code that used it.** Nobody uses the deployed site yet, so the few minutes between the database changing and the new code going live are an accepted gap. When real people depend on the site, this becomes two pull requests: stop using the column, deploy, then drop it.
 - **`db:migrate` runs from one place at a time.** With no lock, two runs that start together both see the same pending migrations and both try to apply them.
 
 ## A new module, with email as the worked example
