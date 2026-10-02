@@ -244,9 +244,8 @@ describe("sessions", () => {
   });
 
   describe("ending one", () => {
-    // Pinned as it behaves. The comments in session.ts and in the logout route
-    // say signing out ends the session everywhere; what goes is the one row
-    // of the browser that asked.
+    // Signing out is for the device that asked (KAN-93): what goes is the one
+    // row of that browser, and the person's other devices stay signed in.
     it("deletes the row of the browser that asked, and no other", async () => {
       await signIn(margaret, "Margaret's laptop");
       const phone = await signIn(margaret, "Margaret's phone");
