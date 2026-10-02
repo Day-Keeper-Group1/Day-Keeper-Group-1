@@ -36,6 +36,16 @@ requireMain();
 
 const problems: string[] = [];
 
+/**
+ * On GitHub, also say it where a person looks first: one line under
+ * "Annotations" on the run's page and on the file in the pull request. The
+ * full message, with the commands, is in the log either way.
+ */
+function annotate(path: string, summary: string): void {
+  if (process.env.GITHUB_ACTIONS !== "true") return;
+  console.log(`::error file=${path},title=Migration check::${summary}`);
+}
+
 // 1. main's migrations are as main has them. The journal is expected to
 // change (every new migration adds an entry to it), so it is not looked at.
 const edited = migrationChanges().filter(
@@ -44,6 +54,10 @@ const edited = migrationChanges().filter(
     (change.path.endsWith(".sql") || /_snapshot\.json$/.test(change.path)),
 );
 for (const { path } of edited) {
+  annotate(
+    path,
+    "This migration is already on main and was changed. Put it back and generate a new migration instead (the log has the commands).",
+  );
   problems.push(
     `${path} is already on main, and this branch changed it.\n\n` +
       "A migration that has been merged is history: a database that already applied it\n" +
@@ -60,6 +74,10 @@ for (const path of newMigrations()) {
   for (const statement of requiredColumnsWithoutDefault(
     readFileSync(path, "utf8"),
   )) {
+    annotate(
+      path,
+      "Adds a NOT NULL column with no default, which fails on a table that holds rows. Give it a default or leave it nullable, then npm run db:regenerate.",
+    );
     problems.push(
       `${path} adds a column that is NOT NULL and has no default:\n\n` +
         `  ${statement}\n\n` +
