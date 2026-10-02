@@ -76,9 +76,10 @@ if (collided || conflictLeftInJournal) {
       "  git fetch origin main\n" +
       `  git merge ${MAIN}\n` +
       "  npm run db:regenerate -- --name=<what_changed>\n" +
-      "  git commit          (when the merge stopped on a conflict and is still open)\n\n" +
+      "  git commit\n\n" +
       "The merge reports conflicts under db/migrations. Leave them: db:regenerate replaces\n" +
-      "that folder with main's and writes this branch's migration after it. A conflict in a\n" +
+      "that folder with main's, writes this branch's migration after it, and stages the\n" +
+      "folder, so the commit that ends the merge already holds it. A conflict in a\n" +
       "schema file is solved by keeping both changes. meta/_journal.json is never merged by\n" +
       "hand: the migrator would skip this branch's migration on a database that already had\n" +
       "main's, and say nothing.\n\n" +

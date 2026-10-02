@@ -7,8 +7,9 @@
  * written again:
  *
  * - main gained a migration while this branch was open. Both branches wrote
- *   "the next migration", so git reports a conflict in
- *   db/migrations/meta/_journal.json. Merging that file by hand looks fine and
+ *   "the next migration", so merging main stops on a conflict in
+ *   db/migrations/meta/_journal.json. This runs with that merge still open,
+ *   and settles the conflict. Merging that file by hand looks fine and
  *   is not: the migrator runs only migrations dated later than the last one a
  *   database applied, so this branch's, dated earlier than main's, would be
  *   skipped without a word. Written again now, it is dated now.
@@ -17,8 +18,9 @@
  *
  * What it does: makes db/migrations exactly what main has, which removes every
  * migration this branch added, then runs `npm run db:generate` with the name
- * given. The schema files are not touched; they are what the new migration is
- * written from.
+ * given, then stages the folder. The schema files are not touched; they are
+ * what the new migration is written from, which is why main has to be merged
+ * into this branch before any of it: see the refusal below.
  *
  * It only ever removes files under db/migrations that main does not have, and
  * those are generated: nothing a person wrote is lost, with one exception. A
@@ -95,3 +97,13 @@ console.log(
 // The generate script itself, with the same node and the same arguments, so
 // that nothing has to be quoted for a shell on the way.
 run(process.execPath, ["--import", "tsx", "db/generate.ts", ...args]);
+
+// The folder was put back through the index, so the index is told about the
+// new files too. Without this a `git commit` that ends the merge would leave
+// the migration it was all for outside the commit.
+run("git", ["add", "--", MIGRATIONS_PATH]);
+console.log(
+  openMerge() === null
+    ? `${MIGRATIONS_PATH} is staged. Commit it together with the schema file.`
+    : `${MIGRATIONS_PATH} is staged. The merge is still open: when no other file is in conflict, git commit.`,
+);
