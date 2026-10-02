@@ -63,3 +63,62 @@ export function destructiveStatements(sql: string): string[] {
       /^\s*(TRUNCATE|DELETE FROM)\b/i.test(statement),
   );
 }
+
+/** One file under db/migrations that differs from main's. */
+export type MigrationFileChange = {
+  /**
+   * A: only here. M: on main, and different here. D: on main, and gone here.
+   * U: git is in the middle of a merge and has both versions of the file.
+   */
+  status: "A" | "M" | "D" | "U";
+  /** From the repository root, with forward slashes: db/migrations/0001_x.sql. */
+  path: string;
+};
+
+/**
+ * What the differences from main's db/migrations mean.
+ *
+ * Two different things leave a file "modified", and they need opposite
+ * remedies, so they are told apart here.
+ *
+ * - `collided`: main gained a migration while this branch was open. Both wrote
+ *   "the next migration", so this branch's snapshot with that number is not
+ *   main's, and main's .sql with that number is missing here while this branch
+ *   has one of its own. Nobody edits a snapshot by hand, so a modified
+ *   snapshot is this and nothing else. The remedy is to merge main and write
+ *   this branch's migration again. Putting main's files back and generating
+ *   from schema files that have not met main's change would write a migration
+ *   that drops what main just added.
+ * - `edited`: a .sql file that is on main was changed here. The remedy is to
+ *   put it back.
+ *
+ * When the branch collided, nothing is reported as edited: the same files show
+ * up as modified for that reason alone.
+ */
+export function readChanges(changes: MigrationFileChange[]): {
+  collided: boolean;
+  edited: string[];
+} {
+  const isSql = (change: MigrationFileChange) => change.path.endsWith(".sql");
+  const isSnapshot = (change: MigrationFileChange) =>
+    /_snapshot\.json$/.test(change.path);
+  const has = (
+    status: MigrationFileChange["status"],
+    test: (change: MigrationFileChange) => boolean,
+  ) => changes.some((change) => change.status === status && test(change));
+
+  const collided =
+    has("M", isSnapshot) ||
+    (has("D", isSql) && has("A", isSql)) ||
+    // A merge that stopped on these files is the same collision, seen by git.
+    has("U", () => true);
+
+  return {
+    collided,
+    edited: collided
+      ? []
+      : changes
+          .filter((change) => change.status === "M" && isSql(change))
+          .map((change) => change.path),
+  };
+}

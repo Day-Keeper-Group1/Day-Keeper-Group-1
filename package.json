@@ -17,7 +17,7 @@
     "db:generate": "tsx db/generate.ts",
     "db:regenerate": "tsx db/regenerate.ts",
     "db:migrate": "tsx db/migrate.ts",
-    "db:check": "vitest run --project unit tests/migrations.test.ts && tsx db/check-migrations.ts",
+    "db:check": "tsx db/check-migrations.ts && vitest run --project unit tests/migrations.test.ts",
     "db:rehearse": "tsx db/rehearse.ts",
     "db:notice": "tsx db/notice.ts",
     "db:reset": "tsx db/reset.ts && tsx scripts/storage-reset.ts && tsx db/seed.ts",

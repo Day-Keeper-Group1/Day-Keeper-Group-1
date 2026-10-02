@@ -32,7 +32,12 @@
 
 import { spawnSync } from "node:child_process";
 
-import { MAIN, MIGRATIONS_PATH, requireMain } from "./lib/main-branch";
+import {
+  MAIN,
+  MIGRATIONS_PATH,
+  mainIsMergedIn,
+  requireMain,
+} from "./lib/main-branch";
 
 const args = process.argv.slice(2);
 if (!args.some((arg) => arg.startsWith("--name"))) {
@@ -52,6 +57,21 @@ function run(command: string, commandArgs: string[]): void {
 // Best effort: with no network, main as it was last fetched is used.
 spawnSync("git", ["fetch", "--quiet", "origin", "main"], { stdio: "ignore" });
 requireMain();
+
+// The new migration is written from this branch's schema files against main's
+// newest snapshot. If main's own schema change is not in those files yet, the
+// difference reads as "remove what main added", and that is what would be
+// written. So main has to be in this branch first.
+if (!mainIsMergedIn()) {
+  console.error(
+    `This branch does not hold ${MAIN} yet. Merge it, then run this again:\n\n` +
+      `  git merge ${MAIN}\n` +
+      "  npm run db:regenerate -- --name=<what_changed>\n\n" +
+      "Conflicts under db/migrations are expected and can be left: this command replaces\n" +
+      "that folder with main's. A conflict in a schema file is solved by keeping both changes.",
+  );
+  process.exit(1);
+}
 
 // db/migrations as main has it: the files this branch changed are put back,
 // and the ones it added are removed, whether git knows them yet or not.

@@ -161,6 +161,9 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // What `netlify deploy` builds locally before uploading it. Generated.
     ".netlify/**",
+    // main's files, unpacked while `npm run db:rehearse` runs and removed when
+    // it ends. If a run was interrupted, they are still not this branch's code.
+    ".rehearse/**",
   ]),
 ]);
 

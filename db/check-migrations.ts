@@ -1,4 +1,4 @@
-// KAN-86: two things about db/migrations that are wrong before any database is asked.
+// KAN-86: three things about db/migrations that are wrong before any database is asked.
 
 /**
  * Check this branch's migrations against main's, with no database.
@@ -8,16 +8,21 @@
  * migration agree). The commit hook runs both when a commit touches the schema
  * files or the migrations, and CI runs both on every pull request.
  *
- * 1. A migration that is on main was changed. Databases that already applied
+ * 1. main gained a migration while this branch was open, so both wrote "the
+ *    next migration". This branch's has to be written again on top of main's,
+ *    after main is merged in.
+ * 2. A migration that is on main was changed. Databases that already applied
  *    it never look at it again, so the edit reaches some databases and not
  *    others, and nothing reports the difference. Deleting one is allowed: that
  *    is what reverting a pull request does.
- * 2. A new migration adds a column that every existing row would need a value
+ * 3. A new migration adds a column that every existing row would need a value
  *    for, and gives none. It works on the empty databases the tests build and
  *    fails on one that holds rows.
  *
- * Whoever reads the message is usually a coding agent, so each message says
- * what is wrong, where, and the commands that put it right.
+ * The first two both show up as "a file under db/migrations differs from
+ * main's" and need opposite remedies; db/lib/migration-rules.ts tells them
+ * apart. Whoever reads the message is usually a coding agent, so each message
+ * says what is wrong, where, and the commands that put it right.
  *
  *   npm run db:check
  */
@@ -30,11 +35,13 @@ import {
   newMigrations,
   requireMain,
 } from "./lib/main-branch";
-import { requiredColumnsWithoutDefault } from "./lib/migration-rules";
+import {
+  readChanges,
+  requiredColumnsWithoutDefault,
+} from "./lib/migration-rules";
 
-requireMain();
-
-const problems: string[] = [];
+const RULES =
+  'The rules, and the reason for each: src/server/db/AGENTS.md, "How the database changes".';
 
 /**
  * On GitHub, also say it where a person looks first: one line under
@@ -46,14 +53,38 @@ function annotate(path: string, summary: string): void {
   console.log(`::error file=${path},title=Migration check::${summary}`);
 }
 
-// 1. main's migrations are as main has them. The journal is expected to
-// change (every new migration adds an entry to it), so it is not looked at.
-const edited = migrationChanges().filter(
-  (change) =>
-    change.status === "M" &&
-    (change.path.endsWith(".sql") || /_snapshot\.json$/.test(change.path)),
-);
-for (const { path } of edited) {
+requireMain();
+
+const { collided, edited } = readChanges(migrationChanges());
+
+// 1. Said first, and alone: every other finding about these files would
+// follow from it, and their remedies would make it worse.
+if (collided) {
+  annotate(
+    "db/migrations/meta/_journal.json",
+    "main gained a migration while this branch was open. Merge origin/main, then npm run db:regenerate (the log has the commands).",
+  );
+  console.error(
+    'main gained a migration while this branch was open, and both wrote "the next migration".\n\n' +
+      "This branch's has to be written again on top of main's. Merge main first, so that the\n" +
+      "schema files hold main's change as well as this branch's, then regenerate:\n\n" +
+      `  git merge ${MAIN}\n` +
+      "  npm run db:regenerate -- --name=<what_changed>\n" +
+      "  git commit          (when the merge stopped on a conflict and is still open)\n\n" +
+      "The merge reports conflicts under db/migrations. Leave them: db:regenerate replaces\n" +
+      "that folder with main's and writes this branch's migration after it. A conflict in a\n" +
+      "schema file is solved by keeping both changes. meta/_journal.json is never merged by\n" +
+      "hand: the migrator would skip this branch's migration on a database that already had\n" +
+      "main's, and say nothing.\n\n" +
+      RULES,
+  );
+  process.exit(1);
+}
+
+const problems: string[] = [];
+
+// 2. main's migrations are as main has them.
+for (const path of edited) {
   annotate(
     path,
     "This migration is already on main and was changed. Put it back and generate a new migration instead (the log has the commands).",
@@ -69,7 +100,7 @@ for (const { path } of edited) {
   );
 }
 
-// 2. A new migration must be able to run on a table that holds rows.
+// 3. A new migration must be able to run on a table that holds rows.
 for (const path of newMigrations()) {
   for (const statement of requiredColumnsWithoutDefault(
     readFileSync(path, "utf8"),
@@ -92,8 +123,6 @@ for (const path of newMigrations()) {
 
 if (problems.length > 0) {
   console.error(problems.join("\n\n----\n\n"));
-  console.error(
-    '\nThe rules, and the reason for each: src/server/db/AGENTS.md, "How the database changes".',
-  );
+  console.error(`\n${RULES}`);
   process.exit(1);
 }

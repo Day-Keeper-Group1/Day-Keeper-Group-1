@@ -10,6 +10,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   destructiveStatements,
+  readChanges,
   requiredColumnsWithoutDefault,
   statementsOf,
 } from "../db/lib/migration-rules";
@@ -84,5 +85,71 @@ describe("a statement that removes or renames something that holds data", () => 
         ].join(BREAK),
       ),
     ).toEqual([]);
+  });
+});
+
+describe("what the differences from main's migrations mean", () => {
+  const change = (status: "A" | "M" | "D" | "U", path: string) => ({
+    status,
+    path: `db/migrations/${path}`,
+  });
+
+  it("is nothing to report when the branch only adds a migration", () => {
+    expect(
+      readChanges([
+        change("A", "0001_add_note.sql"),
+        change("A", "meta/0001_snapshot.json"),
+        change("M", "meta/_journal.json"),
+      ]),
+    ).toEqual({ collided: false, edited: [] });
+  });
+
+  it("is an edit when a .sql that is on main was changed", () => {
+    expect(readChanges([change("M", "0000_initial_schema.sql")])).toEqual({
+      collided: false,
+      edited: ["db/migrations/0000_initial_schema.sql"],
+    });
+  });
+
+  it("is a collision, and not an edit, when main and the branch each wrote the next migration", () => {
+    // What a branch cut before main's 0001 looks like against main.
+    expect(
+      readChanges([
+        change("D", "0001_add_foo.sql"),
+        change("A", "0001_add_bar.sql"),
+        change("M", "meta/0001_snapshot.json"),
+        change("M", "meta/_journal.json"),
+      ]),
+    ).toEqual({ collided: true, edited: [] });
+  });
+
+  it("is a collision while git is in the middle of merging those files", () => {
+    expect(
+      readChanges([
+        change("U", "meta/_journal.json"),
+        change("U", "meta/0001_snapshot.json"),
+      ]),
+    ).toEqual({ collided: true, edited: [] });
+  });
+
+  it("is nothing to report when the branch is only behind main", () => {
+    // main's newer migration is missing here, and this branch adds none.
+    expect(
+      readChanges([
+        change("D", "0001_add_foo.sql"),
+        change("D", "meta/0001_snapshot.json"),
+        change("M", "meta/_journal.json"),
+      ]),
+    ).toEqual({ collided: false, edited: [] });
+  });
+
+  it("allows a merged migration to be removed, which is what a revert does", () => {
+    expect(
+      readChanges([
+        change("D", "0003_drop_due_time.sql"),
+        change("D", "meta/0003_snapshot.json"),
+        change("M", "meta/_journal.json"),
+      ]),
+    ).toEqual({ collided: false, edited: [] });
   });
 });
