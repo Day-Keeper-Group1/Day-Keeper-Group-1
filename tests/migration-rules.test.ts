@@ -10,6 +10,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   destructiveStatements,
+  hasConflictMarkers,
   readChanges,
   requiredColumnsWithoutDefault,
   statementsOf,
@@ -151,5 +152,31 @@ describe("what the differences from main's migrations mean", () => {
         change("M", "meta/_journal.json"),
       ]),
     ).toEqual({ collided: false, edited: [] });
+  });
+});
+
+describe("a journal a merge left in conflict", () => {
+  it("is recognised by the markers git wrote into it", () => {
+    expect(
+      hasConflictMarkers(
+        [
+          `{ "entries": [`,
+          `<<<<<<< HEAD`,
+          `    { "idx": 1, "tag": "0001_add_nickname" }`,
+          `=======`,
+          `    { "idx": 1, "tag": "0001_add_task_note" }`,
+          `>>>>>>> origin/main`,
+          `] }`,
+        ].join("\n"),
+      ),
+    ).toBe(true);
+  });
+
+  it("is not seen in a journal that is whole", () => {
+    expect(
+      hasConflictMarkers(
+        `{ "entries": [{ "idx": 0, "tag": "0000_initial_schema" }] }`,
+      ),
+    ).toBe(false);
   });
 });

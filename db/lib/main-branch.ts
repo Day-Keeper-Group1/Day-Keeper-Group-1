@@ -54,6 +54,15 @@ export function requireMain(): void {
   process.exit(1);
 }
 
+/** The commit a merge that has not been committed yet is bringing in, if there is one. */
+export function openMerge(): string | null {
+  try {
+    return git(["rev-parse", "--verify", "--quiet", "MERGE_HEAD"]).trim();
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Whether this branch already holds everything main has: main is merged into
  * it, or is being merged into it right now. A merge that stopped on a conflict
@@ -66,12 +75,7 @@ export function mainIsMergedIn(): boolean {
     git(["merge-base", "--is-ancestor", main, "HEAD"]);
     return true;
   } catch {
-    try {
-      const merging = git(["rev-parse", "--verify", "--quiet", "MERGE_HEAD"]);
-      return merging.trim() === main;
-    } catch {
-      return false;
-    }
+    return openMerge() === main;
   }
 }
 

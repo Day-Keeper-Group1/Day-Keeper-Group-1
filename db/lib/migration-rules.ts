@@ -122,3 +122,12 @@ export function readChanges(changes: MigrationFileChange[]): {
           .map((change) => change.path),
   };
 }
+
+/**
+ * Whether a file still holds the markers git writes into a conflict. In
+ * meta/_journal.json they mean a merge of main stopped there and the file was
+ * saved or staged as it was: the same collision, one step further on.
+ */
+export function hasConflictMarkers(text: string): boolean {
+  return /^(<{7}|>{7}) /m.test(text);
+}

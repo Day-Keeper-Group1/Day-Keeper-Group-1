@@ -27,7 +27,7 @@
  *   npm run db:check
  */
 
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 
 import {
   MAIN,
@@ -36,6 +36,7 @@ import {
   requireMain,
 } from "./lib/main-branch";
 import {
+  hasConflictMarkers,
   readChanges,
   requiredColumnsWithoutDefault,
 } from "./lib/migration-rules";
@@ -55,19 +56,24 @@ function annotate(path: string, summary: string): void {
 
 requireMain();
 
+const JOURNAL = "db/migrations/meta/_journal.json";
+
 const { collided, edited } = readChanges(migrationChanges());
+const conflictLeftInJournal =
+  existsSync(JOURNAL) && hasConflictMarkers(readFileSync(JOURNAL, "utf8"));
 
 // 1. Said first, and alone: every other finding about these files would
 // follow from it, and their remedies would make it worse.
-if (collided) {
+if (collided || conflictLeftInJournal) {
   annotate(
-    "db/migrations/meta/_journal.json",
-    "main gained a migration while this branch was open. Merge origin/main, then npm run db:regenerate (the log has the commands).",
+    JOURNAL,
+    "main gained a migration while this branch was open. Fetch and merge origin/main, then npm run db:regenerate (the log has the commands).",
   );
   console.error(
     'main gained a migration while this branch was open, and both wrote "the next migration".\n\n' +
       "This branch's has to be written again on top of main's. Merge main first, so that the\n" +
       "schema files hold main's change as well as this branch's, then regenerate:\n\n" +
+      "  git fetch origin main\n" +
       `  git merge ${MAIN}\n` +
       "  npm run db:regenerate -- --name=<what_changed>\n" +
       "  git commit          (when the merge stopped on a conflict and is still open)\n\n" +

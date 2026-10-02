@@ -36,6 +36,7 @@ import {
   MAIN,
   MIGRATIONS_PATH,
   mainIsMergedIn,
+  openMerge,
   requireMain,
 } from "./lib/main-branch";
 
@@ -54,8 +55,12 @@ function run(command: string, commandArgs: string[]): void {
   if (done.status !== 0) process.exit(done.status ?? 1);
 }
 
-// Best effort: with no network, main as it was last fetched is used.
-spawnSync("git", ["fetch", "--quiet", "origin", "main"], { stdio: "ignore" });
+// Best effort: with no network, main as it was last fetched is used. Not while
+// a merge is open: that merge is of main as it was fetched then, and a newer
+// main could not be merged until this one is committed.
+if (openMerge() === null) {
+  spawnSync("git", ["fetch", "--quiet", "origin", "main"], { stdio: "ignore" });
+}
 requireMain();
 
 // The new migration is written from this branch's schema files against main's
@@ -65,6 +70,7 @@ requireMain();
 if (!mainIsMergedIn()) {
   console.error(
     `This branch does not hold ${MAIN} yet. Merge it, then run this again:\n\n` +
+      "  git fetch origin main\n" +
       `  git merge ${MAIN}\n` +
       "  npm run db:regenerate -- --name=<what_changed>\n\n" +
       "Conflicts under db/migrations are expected and can be left: this command replaces\n" +
@@ -74,15 +80,13 @@ if (!mainIsMergedIn()) {
 }
 
 // db/migrations as main has it: the files this branch changed are put back,
-// and the ones it added are removed, whether git knows them yet or not.
-run("git", [
-  "restore",
-  `--source=${MAIN}`,
-  "--staged",
-  "--worktree",
-  "--",
-  MIGRATIONS_PATH,
-]);
+// and the ones it added are removed, whether git knows them yet or not. In
+// three steps, because `git restore --source` refuses a file that a merge left
+// in conflict, and a merge of main leaves exactly these files in conflict:
+// the index first (which also settles the conflict), then the files on disk
+// from the index, then what the index no longer lists.
+run("git", ["reset", "--quiet", MAIN, "--", MIGRATIONS_PATH]);
+run("git", ["restore", "--worktree", "--", MIGRATIONS_PATH]);
 run("git", ["clean", "-fdq", "--", MIGRATIONS_PATH]);
 console.log(
   `${MIGRATIONS_PATH} is as ${MAIN} has it. Writing this branch's migration again.`,
