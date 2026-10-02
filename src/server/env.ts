@@ -109,12 +109,6 @@ const envSchema = z.object({
    */
   AI_DAILY_CALL_LIMIT: z.coerce.number().int().positive().optional(),
 
-  /**
-   * How long a signed-in session lasts. Long, because asking someone with a
-   * failing memory to sign in repeatedly is a way of losing them.
-   */
-  SESSION_TTL_DAYS: z.coerce.number().int().positive().default(30),
-
   NODE_ENV: z
     .enum(["development", "test", "production"])
     .default("development"),

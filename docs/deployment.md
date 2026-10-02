@@ -301,7 +301,6 @@ Filled in as each stage gets there.
 | `DATABASE_CA_CERT` | Supabase, Database, Settings, SSL configuration, Download certificate | Needed; known (not secret) |
 | `STORAGE_ENDPOINT`, `STORAGE_BUCKET`, `STORAGE_REGION`, `STORAGE_ACCESS_KEY`, `STORAGE_SECRET_KEY` | Supabase Storage, see "Photograph storage on Supabase" | Known |
 | Azure reader settings (`AI_EXTRACTION_PROVIDER`, `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`) | The school's Azure key, entered by Jason as a secret for Production, Deploy Previews and Branch deploys | Set |
-| `SESSION_TTL_DAYS` | Same as local | Set |
 | `AI_DAILY_CALL_LIMIT` | KAN-91. How many model calls the school's key may make per day across the whole site; `200`. A letter is two calls when the two readings agree and three when a judge is needed, so 200 calls is roughly 70 to 100 letters, well under A$1 a day. Set with `netlify env:set AI_DAILY_CALL_LIMIT 200`. Once reached, uploading answers 429 and reading resumes at midnight in Melbourne. Not set on a laptop. | To set |
 
 ## Who can use the site, and what stops them burning the key (KAN-91, 2026-10-01)

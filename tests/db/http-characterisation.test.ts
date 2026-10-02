@@ -602,8 +602,7 @@ describe("the API, as it answered before the database layer moved", () => {
     await record("a task nobody has", showing(NOBODYS));
     await record("tick a task nobody has", ticking(NOBODYS));
     await record("untick a task nobody has", unticking(NOBODYS));
-    // 500 today, where a letter answers 404: nothing checks the shape of a task
-    // id before PostgreSQL does. Pinned as it is, not as it should be.
+    // KAN-93: 404, as a letter answers. These three answered 500 until then.
     await record("a task id that is not an id", showing(MALFORMED));
     await record("tick a task id that is not an id", ticking(MALFORMED));
     await record("untick a task id that is not an id", unticking(MALFORMED));
@@ -665,13 +664,10 @@ describe("the API, as it answered before the database layer moved", () => {
     // Every scripted reading was asked for: no round was skipped or repeated.
     expect(answersLeft()).toBe(0);
     // And nothing was logged that the story does not explain: the two reader
-    // calls of letter three, and the three task ids PostgreSQL refused.
+    // calls of letter three.
     expect(logged).toEqual([
       "[uploads] reading document <id> failed: reader 1, attempt 1 of 3",
       "[uploads] reading document <id> failed: reader 2, attempt 1 of 3",
-      "[api] unhandled error",
-      "[api] unhandled error",
-      "[api] unhandled error",
     ]);
   });
 });

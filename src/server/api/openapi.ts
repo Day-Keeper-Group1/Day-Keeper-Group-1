@@ -149,7 +149,7 @@ const paths = {
       tags: ["Signing in"],
       summary: "Sign out",
       description: specified(
-        "Ends the session everywhere, not only in this browser, by deleting its row.",
+        "Ends the session of this browser by deleting its row. The person's other devices stay signed in.",
         "sign-out",
       ),
       security: [{ session: [] }],

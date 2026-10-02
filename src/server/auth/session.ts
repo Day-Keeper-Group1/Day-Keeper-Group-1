@@ -21,9 +21,10 @@
  * sessions table, one row per signed-in browser. Rows rather than a
  * self-contained signed token, because signing out, deactivating an account and
  * a lost laptop all have to end a session immediately, and a signed token stays
- * valid until it expires no matter what we do. Deleting the row signs out
- * everywhere, at once, using the database this module already queries on every
- * request.
+ * valid until it expires no matter what we do. Deleting the row ends that one
+ * session at once, wherever a copy of its cookie is held, using the database
+ * this module already queries on every request. A person signed in on two
+ * devices has two rows, and signing out on one leaves the other signed in.
  *
  * Ownership is enforced in the queries rather than by row level security: every
  * statement that reads a person's data is scoped by their user id. That is a
@@ -63,7 +64,11 @@ import { generateSessionToken, hashSessionToken } from "./token";
 /** The cookie's name, shared with the login/logout handlers that set and clear it. */
 export const SESSION_COOKIE_NAME = "dk_session";
 
-/** How long a session lives without being renewed. */
+/**
+ * How long a session lives without being renewed. Long, because asking someone
+ * with a failing memory to sign in repeatedly is a way of losing them. A
+ * constant and not a setting: nothing about a deployment changes it.
+ */
 export const SESSION_TTL_DAYS = 30;
 
 /**
@@ -158,9 +163,10 @@ export async function requireUser(): Promise<SessionUser> {
 }
 
 /**
- * End the current session everywhere. Deleting the row is what signs out; the
- * logout handler should also clear the cookie, but even a browser that keeps
- * the cookie now holds a token that opens nothing.
+ * End the session of the browser that is asking, and no other: the person's
+ * other devices stay signed in. Deleting the row is what signs out; the logout
+ * handler should also clear the cookie, but even a browser that keeps the
+ * cookie now holds a token that opens nothing.
  */
 export async function destroySession(): Promise<void> {
   const cookieStore = await cookies();

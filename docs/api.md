@@ -300,7 +300,7 @@ comparison that keeps the timing equal is in `src/server/auth/password.ts`.
 
 ## Sign out
 
-Ends the session everywhere, not just in this browser.
+Ends the session of this browser. The person's other devices stay signed in.
 
 **URL** : `/api/auth/logout`
 
@@ -320,8 +320,9 @@ Ends the session everywhere, not just in this browser.
 
 ### Notes
 
-Deletes the session row rather than only clearing the cookie, which is what
-makes it true everywhere.
+Deletes the session row rather than only clearing the cookie, so a copy of the
+cookie kept anywhere opens nothing. Each browser a person signs in on has its
+own session, and this ends only the one that asked.
 
 ## Who is signed in
 
