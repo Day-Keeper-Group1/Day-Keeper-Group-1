@@ -8,7 +8,8 @@
  * name does not line up.
  *
  * Statuses keep the database's spellings, hyphens and all, so that a value read
- * out of Postgres is the value a component compares against. See db/schema.sql.
+ * out of Postgres is the value a component compares against. See
+ * src/server/db/schema/enums.ts.
  *
  * Wire formats: a date is 'YYYY-MM-DD', a time of day is 'HH:mm' on a 24-hour
  * clock, an instant is ISO 8601 with a zone. The rule and its helpers live in
@@ -17,10 +18,13 @@
 
 import type { ContractFieldKey } from "./fields";
 import { APP_TIME_ZONE, todayInZone } from "./dates";
+import type { DocumentStatus, TaskState, UserRole } from "./enums";
 
-/** Where a document is in its life. Mirrors document_status in db/schema.sql. */
-export type DocumentStatus =
-  "processing" | "needs-review" | "confirmed" | "failed" | "archived";
+/**
+ * Where a document is in its life. Mirrors document_status in
+ * src/server/db/schema/enums.ts.
+ */
+export type { DocumentStatus };
 
 /**
  * A task's state as the interface shows it.
@@ -408,15 +412,15 @@ export type ApiError = {
 /**
  * The signed-in person.
  *
- * `role` mirrors user_role in db/schema.sql. The operator roles stay in the
- * schema and this release builds no surface for them; docs/scope.md says why
- * that absence is deliberate rather than an oversight.
+ * `role` mirrors user_role in src/server/db/schema/enums.ts. The operator
+ * roles stay in the schema and this release builds no surface for them;
+ * docs/scope.md says why that absence is deliberate rather than an oversight.
  */
 export type SessionUser = {
   id: string;
   email: string;
   displayName: string;
-  role: "user" | "platform_operator" | "org_admin" | "org_worker";
+  role: UserRole;
   /** IANA zone name, defaulted server-side. Her "today" is today here. */
   timeZone: string;
 };
@@ -464,7 +468,7 @@ export function taskTitle(parts: {
 }
 
 export function deriveTaskStatus(
-  state: "open" | "completed" | "dismissed",
+  state: TaskState,
   dueDate: string | null,
   now: Date = new Date(),
   timeZone: string = APP_TIME_ZONE,

@@ -32,7 +32,7 @@ reasoning attached. This document names them and does not repeat them:
 | dates, times, and whose day it is | `src/lib/contract/dates.ts` |
 | the reminder ladder, and what a reminder is | `src/lib/contract/reminders.ts` |
 | sessions, passwords, and who is asking | `src/server/auth/` |
-| the tables, and why each column exists | `db/schema.sql` |
+| the tables, and why each column exists | `src/server/db/schema/` |
 
 ## How to read an entry
 
@@ -216,9 +216,9 @@ and towards a note beside the computer, which for this reader is the worse
 outcome. A long plain phrase is what we want and what the rule allows.
 
 **The timezone is not asked for.** `users.timezone` defaults to
-`Australia/Melbourne` in `db/schema.sql`, and registration lets the default
-stand. It is a value she cannot be expected to know she has, and a settings
-screen can expose it later.
+`Australia/Melbourne` in `src/server/db/schema/users.ts`, and registration
+lets the default stand. It is a value she cannot be expected to know she has,
+and a settings screen can expose it later.
 
 **Uniqueness is the index's answer, not a query's.** The insert runs and a
 `23505` becomes the `409` above. Asking first and inserting second reads more
@@ -580,7 +580,7 @@ the Home tab and the message that says a letter is ready all read it.
 | The reading is decided but the database will not store it | Not tried again; the letter fails | `failed` | the red row with the failure sentence |
 | The reading could not even be started in the database | Nothing is read; the letter fails | `failed` | the red row with the failure sentence |
 
-The failure sentence is `FAILURE_MESSAGE` in `src/lib/contract/api.ts`, the same for every row: the person is not told which of these happened, because none of them is something she can do anything about. A failed letter stays failed. Repair is out of scope, so there is no retry endpoint and no retake endpoint. `readDocument()` in `src/server/uploads.ts` has the rules.
+The failure sentence is `FAILURE_MESSAGE` in `src/lib/contract/api.ts`, the same for every row: the person is not told which of these happened, because none of them is something she can do anything about. A failed letter stays failed. Repair is out of scope, so there is no retry endpoint and no retake endpoint. `readDocument()` in `src/server/uploads/reading.ts` has the rules.
 
 ## List letters
 
@@ -1223,9 +1223,9 @@ would mean building the wrong thing twice.
   it has answered; a round that decides nothing queues the next, and
   `GET /api/home`, which the screen polls every five seconds while anything is
   being read, reads it after answering (`continueReadings` in
-  `src/server/uploads.ts`). The reason is the host: Netlify stops a request at
-  30 seconds, background work included, and a round takes 10 to 25. Still
-  open is anything that reads a letter nobody is watching: a letter whose
+  `src/server/uploads/reading.ts`). The reason is the host: Netlify stops a
+  request at 30 seconds, background work included, and a round takes 10 to 25.
+  Still open is anything that reads a letter nobody is watching: a letter whose
   person closes the app mid-reading waits, queued, until they open it again
 - **what the capture screen says at the last page.** The size half is
   decided (KAN-75): the capture screen redraws any photograph over 1 MB so its

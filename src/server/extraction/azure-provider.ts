@@ -87,9 +87,9 @@ export class AzureExtractionProvider implements DocumentExtractionProvider {
     // KAN-91: one call from today's budget, or none. Not retryable: the day's
     // reading is used up, and asking again a moment later costs a query and
     // answers the same. (The SDK's own retries are off in schoolKeyClient():
-    // src/server/uploads.ts already makes a failed call again and writes down
-    // each attempt, and two layers of retrying would make up to nine requests
-    // out of what the table records as three.)
+    // src/server/uploads/reading.ts already makes a failed call again and
+    // writes down each attempt, and two layers of retrying would make up to
+    // nine requests out of what the table records as three.)
     try {
       await spendSchoolKey("letters", {
         type: "document",

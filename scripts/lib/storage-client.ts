@@ -4,9 +4,9 @@
  * Two of them talk to the bucket: `db/seed.ts` writes the photographs the
  * seeded letters are made of, and `scripts/storage-reset.ts` empties it.
  * Neither can import `src/server/storage.ts`, which is `server-only` and throws
- * outside Next, the same way `db/reset.ts` cannot use `src/server/db.ts`. So
- * the client is built here once instead of once per script, and the endpoint,
- * the address style and the credentials are read in a single place.
+ * outside Next, the same way `db/reset.ts` cannot use `src/server/db/index.ts`.
+ * So the client is built here once instead of once per script, and the
+ * endpoint, the address style and the credentials are read in a single place.
  *
  * Call these after dotenv has loaded: the environment is read at call time.
  */

@@ -27,15 +27,15 @@
  *
  * Ownership is enforced in the queries rather than by row level security: every
  * statement that reads a person's data is scoped by their user id. That is a
- * rule handlers keep rather than something the database enforces, so it earns a
- * test as soon as there are handlers to test, one that proves a document
- * belonging to one person is invisible to another.
+ * rule the code keeps rather than something the database enforces, so it has
+ * a test: tests/db/ownership.test.ts asks every service and every
+ * owner-scoped statement for one person's letters and tasks as somebody else.
  *
- * Roles are defined in db/schema.sql and grant nothing here. The one that could
- * have, platform_operator, existed for an admin dashboard that is not in this
- * release (docs/scope.md). What kept letter content away from it was never a
- * promise on a screen: it is the scoping rule above, which leaves no path from
- * any role to another person's letter.
+ * Roles are defined in src/server/db/schema/enums.ts and grant nothing here.
+ * The one that could have, platform_operator, existed for an admin dashboard
+ * that is not in this release (docs/scope.md). What kept letter content away
+ * from it was never a promise on a screen: it is the scoping rule above, which
+ * leaves no path from any role to another person's letter.
  *
  * What is deliberately NOT here: the auth route handlers themselves (register,
  * login, logout, me). They are specified in docs/api.md and are ordinary
@@ -50,8 +50,14 @@
 
 import "server-only";
 import { cookies } from "next/headers";
-import { queryOne } from "../db";
 import type { SessionUser } from "@/lib/contract/api";
+import { db } from "@/server/db";
+import {
+  deleteSessionByTokenHash,
+  insertSession,
+  touchSessionAndFindUser,
+  type SessionUserRow,
+} from "@/server/db/queries/users";
 import { generateSessionToken, hashSessionToken } from "./token";
 
 /** The cookie's name, shared with the login/logout handlers that set and clear it. */
@@ -90,48 +96,43 @@ export async function createSession(
   const expiresAt = new Date(
     Date.now() + SESSION_TTL_DAYS * 24 * 60 * 60 * 1000,
   );
-  await queryOne(
-    `INSERT INTO sessions (user_id, token_hash, expires_at, user_agent)
-     VALUES ($1, $2, $3, $4)`,
-    [userId, hashSessionToken(token), expiresAt, userAgent ?? null],
-  );
+  await insertSession(db(), {
+    userId,
+    tokenHash: hashSessionToken(token),
+    expiresAt,
+    userAgent: userAgent ?? null,
+  });
   return { token, expiresAt };
 }
 
 /**
  * Who is asking? Null when nobody is: signed out is a state, not an error.
  *
- * One statement does everything: finds the session by token hash, checks it
- * has not expired, checks the account is still active, stamps last_seen_at,
- * and returns the user. Atomic, one round trip, nothing to keep in step.
+ * The lookup is one statement, touchSessionAndFindUser() in
+ * src/server/db/queries/users.ts, which says what it checks.
  */
 export async function getCurrentUser(): Promise<SessionUser | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
   if (!token) return null;
 
-  const row = await queryOne<{
-    id: string;
-    email: string;
-    display_name: string;
-    role: SessionUser["role"];
-    timezone: string;
-  }>(
-    `UPDATE sessions s SET last_seen_at = now()
-       FROM users u
-      WHERE s.token_hash = $1
-        AND s.expires_at > now()
-        AND u.id = s.user_id
-        AND u.deactivated_at IS NULL
-      RETURNING u.id, u.email, u.display_name, u.role, u.timezone`,
-    [hashSessionToken(token)],
-  );
-  if (!row) return null;
+  const row = await touchSessionAndFindUser(db(), hashSessionToken(token));
+  return row ? mapSessionUser(row) : null;
+}
 
+/**
+ * A person as the browser receives them, from the row the database answered.
+ *
+ * Built field by field rather than returned as the row: password_hash is in
+ * the row sign in reads, and one careless `json(row)` would put it on the
+ * wire. Every answer that carries a person is built here, so they all carry
+ * the same five keys in the same order.
+ */
+export function mapSessionUser(row: SessionUserRow): SessionUser {
   return {
     id: row.id,
     email: row.email,
-    displayName: row.display_name,
+    displayName: row.displayName,
     role: row.role,
     timeZone: row.timezone,
   };
@@ -143,7 +144,8 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
  * The shape every protected handler starts with:
  *
  *   const user = await requireUser();          // throws UnauthenticatedError
- *   ...WHERE user_id = $1 with user.id...      // never a query without it
+ *   ...a service, handed user.id...            // which passes it to a query
+ *                                              // function named Owned
  *
  * and in the handler's catch:
  *
@@ -164,7 +166,5 @@ export async function destroySession(): Promise<void> {
   const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
   if (!token) return;
-  await queryOne(`DELETE FROM sessions WHERE token_hash = $1`, [
-    hashSessionToken(token),
-  ]);
+  await deleteSessionByTokenHash(db(), hashSessionToken(token));
 }

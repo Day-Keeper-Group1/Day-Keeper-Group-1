@@ -31,8 +31,9 @@
  * credentials in the browser bundle.
  *
  * One controlled exception: `scripts/storage-reset.ts` speaks to storage
- * without going through here, the same way `db/reset.ts` bypasses `db.ts`. A
- * script that runs outside Next cannot import a `server-only` module.
+ * without going through here, the same way `db/reset.ts` bypasses
+ * `src/server/db/index.ts`. A script that runs outside Next cannot import a
+ * `server-only` module.
  */
 
 import "server-only";

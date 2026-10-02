@@ -22,9 +22,9 @@
  *
  * This script talks to storage directly rather than through
  * `src/server/storage.ts`, for the same reason `db/reset.ts` does not use
- * `src/server/db.ts`: those modules are `server-only`, which throws outside
- * Next.js. The client itself is in `scripts/lib/storage-client.ts`, shared with
- * the seed.
+ * `src/server/db/index.ts`: those modules are `server-only`, which throws
+ * outside Next.js. The client itself is in `scripts/lib/storage-client.ts`,
+ * shared with the seed.
  *
  *   npm run storage:reset
  */
@@ -32,7 +32,7 @@
 import { DeleteObjectsCommand, ListObjectsV2Command } from "@aws-sdk/client-s3";
 import { config } from "dotenv";
 
-import { refuseIfRealAccounts } from "../db/real-accounts";
+import { refuseIfRealAccounts } from "../db/lib/real-accounts";
 import { hostIsLocal } from "../src/lib/local-host";
 import {
   ensureBucket,

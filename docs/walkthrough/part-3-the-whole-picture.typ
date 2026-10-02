@@ -47,9 +47,10 @@ comparison made when somebody asks. Reminders off is the tick, read at the
 moment Home draws the row.
 
 The definition of every column, and the reason it exists, is in
-#raw("db/schema.sql"). That file is not a description of the database. It is
-the database: there are no migrations, so editing it and running
-#raw("npm run db:reset") is the whole of changing the schema.
+#raw("src/server/db/schema/"). Those files are not a description of the
+database. They are the database: the migrations under #raw("db/migrations/")
+are generated from them, and #raw("npm run db:reset") rebuilds everything from
+those migrations.
 
 #page(flipped: true)[
   #v(4pt)
@@ -107,7 +108,7 @@ That is why the reasoning was put in the code.
   [why the review screen has no inputs], [`src/lib/contract/api.ts`],
   [the 7/3/1 reminder rule, and what a reminder actually is], [`src/lib/contract/reminders.ts`],
   [why every date is Melbourne and date only], [`src/lib/contract/dates.ts`],
-  [every table and every column, with reasons], [`db/schema.sql`],
+  [every table and every column, with reasons], [`src/server/db/schema/`],
   [what a reader has to promise], [`src/server/extraction/provider.ts`],
   [how the mock reader misbehaves, and why], [`src/server/extraction/mock-provider.ts`],
   [sessions, and why the passwords are hashed that way], [`src/server/auth/`],

@@ -13,6 +13,7 @@
  */
 
 import { z } from "zod";
+import { FIELD_STATUSES, IDENTIFIER_STATUSES } from "./enums";
 import {
   ACTION_WORDS,
   actionWordOf,
@@ -50,7 +51,7 @@ export const CONTRACT_VERSION = "2.0" as const;
  *   there is nothing to pay or nothing to be on time for. A letter that truly
  *   gives no date or asks for no money says so with a confident Not applicable
  *   or No payment required, so this rule never touches it. Enforced in
- *   readDocument() in src/server/uploads.ts.
+ *   readDocument() in src/server/uploads/reading.ts.
  * - Any other field not `confirmed`: the server collapses `uncertain` to
  *   `unreadable` on the way out and the screen does not draw the row. No
  *   screen, no response, no task and no calendar entry carries a value the
@@ -64,11 +65,7 @@ export const CONTRACT_VERSION = "2.0" as const;
  * database would throw that away, and the synthetic evaluation line is now the
  * only place accuracy is measured.
  */
-export const fieldStatusSchema = z.enum([
-  "confirmed",
-  "uncertain",
-  "unreadable",
-]);
+export const fieldStatusSchema = z.enum(FIELD_STATUSES);
 export type FieldStatus = z.infer<typeof fieldStatusSchema>;
 
 /**
@@ -122,7 +119,7 @@ export type ExtractedFieldPayload = z.infer<typeof extractedFieldSchema>;
 export const extractedIdentifierSchema = z.object({
   label: z.string().min(1),
   value: z.string().min(1),
-  status: z.enum(["confirmed", "uncertain"]),
+  status: z.enum(IDENTIFIER_STATUSES),
 });
 
 export type ExtractedIdentifierPayload = z.infer<

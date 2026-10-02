@@ -28,11 +28,13 @@
  * that actually happens.
  */
 
-import { Client } from "pg";
+import { notLike, sql } from "drizzle-orm";
 
-import { databaseSsl } from "../src/lib/database-tls";
+import { dbCause } from "../../src/server/db/errors";
+import { users } from "../../src/server/db/schema";
+import { connect } from "./connect";
 
-/** Every account the seed creates lives here. See db/seed.ts. */
+/** Every account the seed creates lives here. See ./seed-world.ts. */
 const SEED_DOMAIN = "@example.com";
 
 /**
@@ -55,26 +57,26 @@ export async function realAccounts(
 ): Promise<string[]> {
   // Encrypted like every other connection to a database that is not local:
   // this query reads back every account's email address.
-  const db = new Client({
-    connectionString,
-    ssl: databaseSsl(connectionString),
-  });
-  await db.connect();
+  const { db, pool } = connect(connectionString);
   try {
-    const table = await db.query<{ present: boolean }>(
-      `select to_regclass('public.users') is not null as present`,
+    // Asked first, because the select below fails on a database that has no
+    // users table, and a check that fails stops the very script that was
+    // about to build that table.
+    const table = await db.execute<{ present: boolean }>(
+      sql`select to_regclass('public.users') is not null as present`,
     );
     if (!table.rows[0]?.present) return [];
 
-    const found = await db.query<{ email: string }>(
-      `select email from users
-        where lower(btrim(email)) not like $1
-        order by email`,
-      [`%${SEED_DOMAIN}`],
-    );
-    return found.rows.map((row) => row.email);
+    // email_canonical is the address lowered and trimmed, worked out by the
+    // database, so " Someone@Example.COM " still counts as one of the seed's.
+    const found = await db
+      .select({ email: users.email })
+      .from(users)
+      .where(notLike(users.emailCanonical, `%${SEED_DOMAIN}`))
+      .orderBy(users.email);
+    return found.map((row) => row.email);
   } finally {
-    await db.end();
+    await pool.end();
   }
 }
 
@@ -96,9 +98,13 @@ export async function refuseIfRealAccounts(
     // A database that cannot be reached cannot be checked, and a check that
     // fails open is not a check. The script that was about to run would have
     // failed on the same connection anyway, so this costs nothing.
+    //
+    // The driver's own message is printed, not the one Drizzle wraps it in,
+    // which quotes the statement and every value bound to it.
+    const cause = dbCause(error);
     console.error(
       `Could not check this database for real accounts, so nothing has run.\n\n` +
-        `  ${error instanceof Error ? error.message : String(error)}`,
+        `  ${cause instanceof Error ? cause.message : String(cause)}`,
     );
     process.exit(1);
   }

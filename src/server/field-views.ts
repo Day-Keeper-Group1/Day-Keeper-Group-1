@@ -29,13 +29,7 @@ import {
   isContractFieldKey,
   type OptionalFieldKey,
 } from "@/lib/contract/fields";
-
-/** One row of extracted_fields, as the queries in this repository select it. */
-export type ExtractedFieldRow = {
-  field_key: string;
-  extracted_value: string | null;
-  status: "confirmed" | "uncertain" | "unreadable";
-};
+import type { FieldRow, IdentifierRow } from "@/server/db/queries/readings";
 
 /**
  * What a field is called on screen.
@@ -68,26 +62,19 @@ export function fieldLabel(key: string): string {
  * it through a date formatter would throw, and a letter would fail to render
  * over a field that was answered correctly.
  */
-export function mapField(row: ExtractedFieldRow): ExtractedFieldView {
+export function mapField(row: FieldRow): ExtractedFieldView {
   const confirmed = row.status === "confirmed";
-  const value = confirmed ? row.extracted_value : null;
+  const value = confirmed ? row.extractedValue : null;
   const isDate =
-    row.field_key === "due_date" && value !== null && isIsoDate(value);
+    row.fieldKey === "due_date" && value !== null && isIsoDate(value);
 
   return {
-    key: row.field_key,
-    label: fieldLabel(row.field_key),
+    key: row.fieldKey,
+    label: fieldLabel(row.fieldKey),
     value: isDate ? formatDueDate(value, "fact") : value,
     status: confirmed ? "confirmed" : "unreadable",
   };
 }
-
-/** KAN-58: one row of extracted_identifiers, as the queries select it. */
-export type ExtractedIdentifierRow = {
-  label: string;
-  value: string;
-  status: "confirmed" | "uncertain";
-};
 
 const collapse = (s: string) => s.trim().replace(/\s+/g, " ").toLowerCase();
 
@@ -101,7 +88,7 @@ const collapse = (s: string) => s.trim().replace(/\s+/g, " ").toLowerCase();
  * reading, so the reference is read once.
  */
 export function identifierViews(
-  rows: ExtractedIdentifierRow[],
+  rows: IdentifierRow[],
   fields: ExtractedFieldView[],
 ): IdentifierView[] {
   const reference = fields.find(
