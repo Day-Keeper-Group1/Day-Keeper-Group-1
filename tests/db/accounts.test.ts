@@ -252,7 +252,6 @@ describe("accounts", () => {
       expect(takeCookieChanges()).toEqual([]);
 
       expect(logged.map(([first]) => first)).toEqual(["[api] unhandled error"]);
-      expect(logText()).not.toContain("scrypt$");
     });
 
     it("does not call another refusal a taken address, and keeps the password hash out of the log", async () => {

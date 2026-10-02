@@ -31,6 +31,8 @@ vi.mock("@/server/extraction", async () =>
 );
 
 import { MAX_PAGE_BYTES } from "@/lib/contract/api";
+import { db } from "@/server/db";
+import { insertPages } from "@/server/db/queries/documents";
 import { documentLabel } from "@/server/documents";
 import { readLetter } from "@/server/extraction";
 import { SNIFF_BYTES } from "@/server/image-type";
@@ -301,8 +303,29 @@ describe("a letter arriving", () => {
     });
   });
 
+  // An upload with nothing attached is refused before any row is written
+  // (tests/upload-rules.test.ts), so the app never hands the statement that
+  // writes the page rows an empty list, and only a direct call can. An insert
+  // of no rows is one the query builder refuses to write, so the statement
+  // has to return before it gets that far.
+  describe("the statement that writes the page rows, called directly", () => {
+    it("writes no row, and sends nothing, when handed no photographs", async () => {
+      const letter = await aQueuedLetter(margaret);
+      const before = await snapshot();
+
+      await expect(insertPages(db(), letter, [])).resolves.toBeUndefined();
+
+      expect(await snapshot()).toEqual(before);
+    });
+  });
+
   describe("straight into the bucket: looking at what landed", () => {
     it("answers with each page as the bucket holds it", async () => {
+      // Letters that already have their rows, hers and somebody else's. The
+      // id about to be sent is nobody's, and is not "already sent" for there
+      // being other letters.
+      await aQueuedLetter(margaret);
+      await aQueuedLetter(dorothy);
       const letter = randomUUID();
       const firstKey = keyOf(margaret, letter, 1, "image/jpeg");
       const secondKey = keyOf(margaret, letter, 2, "image/jpeg");

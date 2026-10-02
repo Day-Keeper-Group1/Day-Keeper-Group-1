@@ -20,7 +20,11 @@
  * database's decision. So a use that fell yesterday is a row these tests write
  * directly, placed around the midnight PostgreSQL itself computes. That makes
  * these tests of the real today only: what happens on the day the clocks
- * change is seen by running them on that day.
+ * change is seen by running them on that day. A run that crosses midnight in
+ * Melbourne between a test writing its rows and counting them fails, because
+ * the rows were placed around a midnight that is yesterday's by the time they
+ * are counted; that is accepted, because it is a few milliseconds of one day
+ * and the next run passes.
  */
 
 import { randomUUID } from "node:crypto";
@@ -56,6 +60,7 @@ import {
 } from "@/server/ai/school-key";
 import { countAuditActionsSinceStartOfToday } from "@/server/db/queries/audit";
 
+import { withTheAppClockIn2001 } from "./support/fakes";
 import { rows } from "./support/witness";
 
 const MELBOURNE = "Australia/Melbourne";
@@ -163,6 +168,21 @@ describe("the school key's budget", () => {
         used: 0,
         exhausted: false,
       });
+    });
+
+    // The ceiling is one for the whole site, so the day has to turn at one
+    // moment for every copy of the app: the database's midnight, not the
+    // midnight each copy's own clock names. On one machine those are the same
+    // midnight. By a clock that says 2001, today began a quarter of a century
+    // ago and yesterday's use would be counted with today's.
+    it("starts the day by the database's clock, whatever the app's clock says", async () => {
+      ceiling.limit = 200;
+      await aLine(SCHOOL_KEY_ACTION, "-1 minute");
+      await aLine(SCHOOL_KEY_ACTION, "1 minute");
+
+      expect(
+        await withTheAppClockIn2001(() => schoolKeyBudget()),
+      ).toStrictEqual({ limit: 200, used: 1, exhausted: false });
     });
   });
 

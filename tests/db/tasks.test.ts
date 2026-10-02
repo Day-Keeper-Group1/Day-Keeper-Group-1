@@ -31,6 +31,8 @@ import {
   listOwnedFieldRowsInTaskOrder,
   listOwnedIdentifierRows,
 } from "@/server/db/queries/readings";
+import { extractedFields } from "@/server/db/schema";
+import { rankOf } from "@/server/db/sql";
 import {
   completeTask,
   getTask,
@@ -39,7 +41,7 @@ import {
   reopenTask,
 } from "@/server/tasks";
 
-import { resetFakes } from "./support/fakes";
+import { resetFakes, withTheAppClockIn2001 } from "./support/fakes";
 import { backdate, rows, snapshot } from "./support/witness";
 import {
   aConfirmedLetter,
@@ -139,6 +141,26 @@ function remindersOf(taskId: string) {
   );
 }
 
+/**
+ * A reminder written after a task's others, for a day before all of them. A
+ * statement that did not put a task's reminders in order would hand it back
+ * last.
+ */
+async function anEarlierReminder(taskId: string): Promise<void> {
+  await rows(
+    "INSERT INTO reminders (task_id, remind_on) VALUES ($1, '2099-03-01')",
+    [taskId],
+  );
+}
+
+/** The days the bill's task is marked on once it has the earlier one, earliest first. */
+const WITH_THE_EARLIER_DAY = [
+  "2099-03-01",
+  "2099-03-08",
+  "2099-03-12",
+  "2099-03-14",
+];
+
 describe("tasks", () => {
   let margaret: Person;
   let dorothy: Person;
@@ -206,11 +228,7 @@ describe("tasks", () => {
         a.task! < b.task! ? -1 : 1,
       );
       await backdate("tasks", "created_at", older.task!, "1 hour");
-      // A reminder written after the others, for an earlier day.
-      await rows(
-        "INSERT INTO reminders (task_id, remind_on) VALUES ($1, '2099-03-01')",
-        [bill.task],
-      );
+      await anEarlierReminder(bill.task!);
 
       const result = await listTasks(margaret.id, MELBOURNE);
 
@@ -271,7 +289,7 @@ describe("tasks", () => {
       const listedBill = result.find((task) => task.id === bill.task)!;
       expect(
         listedBill.reminders.map((reminder) => reminder.localDate),
-      ).toEqual(["2099-03-01", "2099-03-08", "2099-03-12", "2099-03-14"]);
+      ).toEqual(WITH_THE_EARLIER_DAY);
 
       // The keys in the order a route sends them, the optional ones left out
       // rather than sent as null.
@@ -293,6 +311,44 @@ describe("tasks", () => {
         "status",
         "reminders",
       ]);
+    });
+
+    it("keeps two tasks due on the same day in the order they were made, whatever else would order them", async () => {
+      // The task made later is written first and has the earlier id, so the
+      // order the rows went in and the order of the ids both put it first.
+      // Only the moment each was made puts it second.
+      await rows(
+        `INSERT INTO tasks (id, user_id, title, due_date, created_at)
+         VALUES ('00000000-0000-4000-8000-000000000001', $1,
+                 'Made later', '2099-03-15', now()),
+                ('ffffffff-ffff-4fff-8fff-ffffffffffff', $1,
+                 'Made earlier', '2099-03-15', now() - interval '1 hour')`,
+        [margaret.id],
+      );
+
+      expect(
+        (await listTasks(margaret.id, MELBOURNE)).map((task) => task.title),
+      ).toEqual(["Made earlier", "Made later"]);
+    });
+
+    it("puts two tasks due on the same day and made at the same moment in the order of their ids", async () => {
+      // Rows written by one statement carry one created_at, as a seed's do.
+      // Then only the id is left to order them by, and without it PostgreSQL
+      // may hand the two back either way round, differently from one request
+      // to the next. The task with the later id is written first, so the
+      // order the rows went in puts it first.
+      await rows(
+        `INSERT INTO tasks (id, user_id, title, due_date, created_at)
+         VALUES ('ffffffff-ffff-4fff-8fff-ffffffffffff', $1,
+                 'Later id', '2099-03-15', '2026-01-01T00:00:00Z'),
+                ('00000000-0000-4000-8000-000000000001', $1,
+                 'Earlier id', '2099-03-15', '2026-01-01T00:00:00Z')`,
+        [margaret.id],
+      );
+
+      expect(
+        (await listTasks(margaret.id, MELBOURNE)).map((task) => task.title),
+      ).toEqual(["Earlier id", "Later id"]);
     });
 
     it("uses the person's timezone when deciding whether a task is overdue", async () => {
@@ -320,6 +376,7 @@ describe("tasks", () => {
     it("updates only the owned task and does not write reminders", async () => {
       const bill = await aConfirmedLetter(margaret, BILL);
       const form = await aConfirmedLetter(margaret, FORM);
+      await anEarlierReminder(bill.task!);
       const reminders = await storedReminders();
       const ticked = {
         id: bill.task,
@@ -331,7 +388,11 @@ describe("tasks", () => {
         status: "completed",
         reminders: await remindersOf(bill.task!),
       };
-      expect(ticked.reminders).toHaveLength(3);
+      // The answer comes from the statement that ticks, which puts the
+      // reminders in order itself.
+      expect(ticked.reminders.map((reminder) => reminder.localDate)).toEqual(
+        WITH_THE_EARLIER_DAY,
+      );
 
       expect(await completeTask(bill.task!, margaret.id, MELBOURNE)).toEqual(
         ticked,
@@ -361,6 +422,23 @@ describe("tasks", () => {
       });
     });
 
+    // On one machine the tick above is of just now by either clock. The seven
+    // days a tick stays on Home are counted in the database from this moment,
+    // so it has to be the database's, whichever copy of the app took the tick.
+    it("stamps a first tick by the database's clock, whatever the app's clock says", async () => {
+      const bill = await aConfirmedLetter(margaret, BILL);
+      const today = new Date();
+
+      await withTheAppClockIn2001(() =>
+        completeTask(bill.task!, margaret.id, MELBOURNE, today),
+      );
+
+      expect(await storedTask(bill.task!)).toMatchObject({
+        state: "completed",
+        tickedJustNow: true,
+      });
+    });
+
     it("returns null when the task is missing or belongs to another user", async () => {
       const bill = await aConfirmedLetter(margaret, BILL);
       const dismissed = await aTaskNoCodeWrites(margaret, {
@@ -382,6 +460,11 @@ describe("tasks", () => {
   describe("one task", () => {
     it("returns the owned task with its fields and page count", async () => {
       const bill = await aConfirmedLetter(margaret, BILL, { pages: 2 });
+      // A second letter of hers, saved as well, with other fields, no numbers
+      // and another count of pages: a statement that answered with any letter
+      // of hers would mix the two.
+      const form = await aConfirmedLetter(margaret, FORM, { pages: 3 });
+      await anEarlierReminder(bill.task!);
 
       const result = await getTask(bill.task!, margaret.id, MELBOURNE);
 
@@ -482,6 +565,15 @@ describe("tasks", () => {
         "identifiers",
         "pageCount",
       ]);
+      expect(result?.reminders.map((reminder) => reminder.localDate)).toEqual(
+        WITH_THE_EARLIER_DAY,
+      );
+
+      // And the other task is shown beside its own letter.
+      const other = await getTask(form.task!, margaret.id, MELBOURNE);
+      expect(other?.pageCount).toBe(3);
+      expect(other?.fields).toHaveLength(6);
+      expect(other?.identifiers).toEqual([]);
 
       // A task shows the fields that are stored and fills none in: with one
       // taken out of storage, it is missing here, where the letter screen
@@ -500,6 +592,56 @@ describe("tasks", () => {
         "reference",
         "bpay_biller_code",
         "supply_period",
+      ]);
+    });
+
+    // The order above comes from rankOf() in src/server/db/sql.ts, over the
+    // seven keys the task screen lists: ranks 1 to 8, and a single digit
+    // sorts the same as text as it does as a number. PostgreSQL takes a bare
+    // parameter in a THEN for text, and as text 10 sorts before 2, so the
+    // helper casts its ranks. No list in the app is long enough to show
+    // whether it does. So the helper is asked directly, with a list of ten,
+    // over a letter of eleven fields.
+    it("ranks a list of ten by number, where text would put the tenth second", async () => {
+      await aConfirmedLetter(
+        margaret,
+        aReading({
+          document_type: "Utility bill",
+          issuer: "Example Energy",
+          action_required: "Pay Example Energy",
+          due_date: "2099-03-15",
+          due_time: "10:30",
+          amount: "$347.60",
+          reference: "4417 2290 113",
+          bpay_biller_code: "23796",
+          meter_number: "MTR 88 201",
+          supply_period: "1 Dec 2098 to 28 Feb 2099",
+          tariff: "Residential single rate",
+        }),
+      );
+      // Not the order the fields were stored in, and not the order of their
+      // keys. The eleventh, bpay_biller_code, is not listed.
+      const listed = [
+        "tariff",
+        "supply_period",
+        "document_type",
+        "issuer",
+        "action_required",
+        "due_date",
+        "due_time",
+        "amount",
+        "reference",
+        "meter_number",
+      ];
+
+      const ranked = await db()
+        .select({ key: extractedFields.fieldKey })
+        .from(extractedFields)
+        .orderBy(rankOf(extractedFields.fieldKey, listed));
+
+      expect(ranked.map((field) => field.key)).toEqual([
+        ...listed,
+        "bpay_biller_code",
       ]);
     });
 
@@ -582,6 +724,7 @@ describe("tasks", () => {
     it("reopens only the owned task and leaves reminders unchanged", async () => {
       const bill = await aConfirmedLetter(margaret, BILL);
       const form = await aConfirmedLetter(margaret, FORM);
+      await anEarlierReminder(bill.task!);
       await completeTask(bill.task!, margaret.id, MELBOURNE);
       await completeTask(form.task!, margaret.id, MELBOURNE);
       const reminders = await storedReminders();
@@ -598,7 +741,11 @@ describe("tasks", () => {
         status: "upcoming",
         reminders: await remindersOf(bill.task!),
       });
-      expect(result?.reminders).toHaveLength(3);
+      // The answer comes from the statement that unticks, which puts the
+      // reminders in order itself.
+      expect(result?.reminders.map((reminder) => reminder.localDate)).toEqual(
+        WITH_THE_EARLIER_DAY,
+      );
 
       expect(await storedTask(bill.task!)).toEqual({
         state: "open",

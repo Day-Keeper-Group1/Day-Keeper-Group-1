@@ -30,7 +30,7 @@ import {
   markOwnedDocumentConfirmed,
 } from "@/server/db/queries/documents";
 
-import { resetFakes } from "./support/fakes";
+import { resetFakes, withTheAppClockIn2001 } from "./support/fakes";
 import { backdate, rows, snapshot } from "./support/witness";
 import {
   aConfirmedLetter,
@@ -108,6 +108,16 @@ const BILL_DUE_TOMORROW = aReading({
   issuer: "Example Energy",
   action_required: "Pay Example Energy",
   due_date: "2026-09-16",
+  amount: "$41.20",
+  reference: "Not applicable",
+});
+
+/** A bill that was due on Monday 14 September, the day before NOW in Melbourne. */
+const BILL_DUE_YESTERDAY = aReading({
+  document_type: "Gas bill",
+  issuer: "Example Energy",
+  action_required: "Pay Example Energy",
+  due_date: "2026-09-14",
   amount: "$41.20",
   reference: "Not applicable",
 });
@@ -295,6 +305,25 @@ describe("confirming a letter", () => {
     });
   });
 
+  // "At the database's now" above is also what the app's clock would say, on
+  // one machine. Deployed, each copy of the app has a clock of its own, and
+  // the moment a letter was confirmed must not depend on which copy took the
+  // tap.
+  it("confirms at the database's now, whatever the app's clock says", async () => {
+    const letter = await aLetterToCheck(margaret, WATER_BILL);
+    await backdate("documents", "updated_at", letter, "1 hour");
+
+    await withTheAppClockIn2001(() =>
+      confirmDocument(letter, margaret.id, MELBOURNE, NOW),
+    );
+
+    expect(await storedLetter(letter)).toEqual({
+      status: "confirmed",
+      confirmedJustNow: true,
+      updatedJustNow: true,
+    });
+  });
+
   it("keeps a letter that asks for nothing, and makes no task", async () => {
     const letter = await aLetterToCheck(margaret, STATEMENT);
 
@@ -442,6 +471,63 @@ describe("confirming a letter", () => {
     expect(task.title).toBe("Letter from Wattlebank Super");
     expect(result?.task?.id).toBe(task.id);
     expect((await storedLetter(letter)).status).toBe("confirmed");
+  });
+
+  it("names the task from the round that succeeded, and from no other", async () => {
+    // In the reading that succeeded the reader was unsure of the action, so
+    // there is no action to name the task from.
+    const letter = await aLetterToCheck(margaret, UNSURE_STATEMENT);
+    // The app writes fields only under a round that succeeded, so a failed
+    // round that holds one is written directly: an action the reader was
+    // sure of, which is not the letter's reading.
+    const [failedRound] = await rows<{ id: string }>(
+      `INSERT INTO extraction_runs (document_id, status, provider, failure_detail)
+       VALUES ($1, 'failed', 'scripted', 'written by a test')
+       RETURNING id`,
+      [letter],
+    );
+    await rows(
+      `INSERT INTO extracted_fields (extraction_run_id, field_key, extracted_value, status)
+       VALUES ($1, 'action_required', 'Pay Somebody Else', 'confirmed')`,
+      [failedRound.id],
+    );
+
+    await confirmDocument(letter, margaret.id, MELBOURNE, NOW);
+
+    const [task] = await storedTasks();
+    expect(task.title).toBe("Letter from Wattlebank Super");
+  });
+
+  it("answers with the task as it stands in the person's own time zone", async () => {
+    // The same letter for two people, saved at the same instant. It is the
+    // 15th in Melbourne and still the 14th in Los Angeles, so a bill due on
+    // the 14th is overdue for one of them and due today for the other.
+    const hers = await aLetterToCheck(margaret, BILL_DUE_YESTERDAY);
+    const theirs = await aLetterToCheck(dorothy, BILL_DUE_YESTERDAY);
+
+    const inMelbourne = await confirmDocument(
+      hers,
+      margaret.id,
+      MELBOURNE,
+      NOW,
+    );
+    const inLosAngeles = await confirmDocument(
+      theirs,
+      dorothy.id,
+      "America/Los_Angeles",
+      NOW,
+    );
+
+    expect(inMelbourne?.task).toMatchObject({
+      dueDate: "2026-09-14",
+      status: "overdue",
+      reminders: [],
+    });
+    expect(inLosAngeles?.task).toMatchObject({
+      dueDate: "2026-09-14",
+      status: "upcoming",
+      reminders: [],
+    });
   });
 
   it("copies the time of an appointment onto its task", async () => {

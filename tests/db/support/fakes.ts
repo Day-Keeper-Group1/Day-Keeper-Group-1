@@ -31,6 +31,10 @@
  * the work left for afterwards runs. `resetFakes()` in a `beforeEach` gives
  * every test an empty bucket and an empty script.
  *
+ * One more thing is moved rather than replaced, and needs no `vi.mock`: the
+ * app's clock. `withTheAppClockIn2001()`, at the end of this file, is how a
+ * test tells a moment the database stamped from one the app did.
+ *
  * No tests in here.
  */
 
@@ -272,4 +276,33 @@ export function resetFakes(): void {
   changes.length = 0;
   asking = "nobody";
   pending.length = 0;
+}
+
+/* The app's clock ----------------------------------------------------------- */
+
+/**
+ * Run one thing while the app's clock says the first moment of 2001, and put
+ * the clock back when it has finished.
+ *
+ * The moments the app writes down are meant to be the database's: `now()` in
+ * the statement, never `new Date()` bound to it, because every copy of the
+ * deployed app has a clock of its own. On one machine the two clocks agree,
+ * so a test cannot see which one stamped a row. With the app's clock a
+ * quarter of a century behind it can: what the database stamped is still of
+ * just now, and what the app stamped is in 2001. The database's clock is not
+ * touched, and cannot be.
+ *
+ * Only `Date` is replaced, and it stands still. Timers run as they do, so the
+ * pool still gives up waiting when it should. Build the fixtures first and
+ * hand this the one call the test is about.
+ */
+export async function withTheAppClockIn2001<T>(
+  run: () => Promise<T>,
+): Promise<T> {
+  vi.setSystemTime(new Date("2001-01-01T00:00:00.000Z"));
+  try {
+    return await run();
+  } finally {
+    vi.useRealTimers();
+  }
 }

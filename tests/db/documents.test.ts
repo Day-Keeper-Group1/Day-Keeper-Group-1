@@ -266,6 +266,10 @@ describe("letters, read back", () => {
     // that had lost its owner. So the later ones are also asked directly.
     it("asks for a letter, its reading and its pages under one owner", async () => {
       const letter = await aLetterToCheck(margaret, BILL, { pages: 2 });
+      // A second letter of hers, read the same, with one page more. A
+      // statement that answered with any letter of hers, or with all of
+      // them, would count its fields, numbers and pages in with these.
+      const other = await aLetterToCheck(margaret, BILL, { pages: 3 });
 
       expect((await getDocument(letter, margaret.id, MELBOURNE))?.id).toBe(
         letter,
@@ -285,6 +289,11 @@ describe("letters, read back", () => {
       expect(await listOwnedPageRows(db(), margaret.id, letter)).toHaveLength(
         2,
       );
+      // And each finds the other letter when that is the one asked for.
+      expect((await findOwnedDocumentRow(db(), margaret.id, other))?.id).toBe(
+        other,
+      );
+      expect(await listOwnedPageRows(db(), margaret.id, other)).toHaveLength(3);
 
       // ...and asked by anybody else, each of them finds nothing.
       expect(await findOwnedDocumentRow(db(), dorothy.id, letter)).toBeNull();
@@ -297,6 +306,8 @@ describe("letters, read back", () => {
 
     it("finds a photograph only underneath the person who owns the letter", async () => {
       const letter = await aQueuedLetter(margaret, { pages: 2 });
+      // A second letter of hers, read, with a page 1 of its own and no page 2.
+      const other = await aLetterToCheck(margaret, FORM);
 
       expect(await getPageStoragePath(letter, 1, margaret.id)).toBe(
         `uploads/${margaret.id}/${letter}/1.png`,
@@ -304,6 +315,12 @@ describe("letters, read back", () => {
       expect(await getPageStoragePath(letter, 2, margaret.id)).toBe(
         `uploads/${margaret.id}/${letter}/2.png`,
       );
+      // The page is found under the letter asked for, not under any letter of
+      // hers that has a page of that number.
+      expect(await getPageStoragePath(other, 1, margaret.id)).toBe(
+        `uploads/${margaret.id}/${other}/1.png`,
+      );
+      expect(await getPageStoragePath(other, 2, margaret.id)).toBeNull();
 
       // A page of somebody else's letter is a page that is not there, which is
       // the same answer a page number nobody photographed gets.
@@ -593,9 +610,11 @@ describe("letters, read back", () => {
       const tickedLongAgo = (await aConfirmedLetter(margaret, BILL)).task!;
       await completeTask(tickedRecently, margaret.id, MELBOURNE);
       await completeTask(tickedLongAgo, margaret.id, MELBOURNE);
-      // The database's clock cannot be faked, so the ticks are made old.
+      // The database's clock cannot be faked, so the ticks are made old: one a
+      // day inside the seven, and one an hour outside them, which a window a
+      // day too long would still hold.
       await backdate("tasks", "completed_at", tickedRecently, "6 days");
-      await backdate("tasks", "completed_at", tickedLongAgo, "8 days");
+      await backdate("tasks", "completed_at", tickedLongAgo, "7 days 1 hour");
 
       const now = new Date();
       const home = await getHome(margaret.id, MELBOURNE, now);

@@ -59,11 +59,14 @@ import {
   claimOwnedQueuedRound,
   closeRoundAsFailed,
   closeRoundAsSucceeded,
+  insertFields,
   insertModelCall,
   listOwnedDocumentIdsWithQueuedRound,
   listOwnedStoppedRounds,
   queueRoundAfter,
 } from "@/server/db/queries/readings";
+import { users } from "@/server/db/schema";
+import { jsonbValue } from "@/server/db/sql";
 import {
   ExtractionFailure,
   readLetter,
@@ -81,7 +84,12 @@ import {
   readStoredDocument,
 } from "@/server/uploads";
 
-import { answersLeft, readerAnswers, resetFakes } from "./support/fakes";
+import {
+  answersLeft,
+  readerAnswers,
+  resetFakes,
+  withTheAppClockIn2001,
+} from "./support/fakes";
 import { backdate, rows, snapshot } from "./support/witness";
 import {
   aFailedLetterStillQueued,
@@ -434,6 +442,9 @@ describe("a letter being read", () => {
     // not enough to spend a model call on somebody else's letter.
     it("claims a queued reading of an owned letter, and nothing else", async () => {
       const letter = await aQueuedLetter(margaret);
+      // Somebody else has a letter of her own waiting to be read. Owning a
+      // letter is not owning this one.
+      const theirs = await aQueuedLetter(dorothy);
       const before = await snapshot();
 
       // Somebody else, holding the letter's id.
@@ -463,6 +474,10 @@ describe("a letter being read", () => {
 
       expect(readLetter).toHaveBeenCalledTimes(2);
       expect(await snapshot()).toEqual(afterTheReading);
+      // Nobody's reading touched the other person's letter.
+      expect((await storedRounds(theirs)).map((round) => round.status)).toEqual(
+        ["queued"],
+      );
       expect(logged).toEqual([
         `[uploads] no queued reading for document ${letter}; nothing was read`,
         `[uploads] no queued reading for document ${letter}; nothing was read`,
@@ -471,6 +486,16 @@ describe("a letter being read", () => {
 
     it("answers the round and which round of the letter it is, as a number", async () => {
       const letter = await aQueuedLetter(margaret);
+      // The round has been waiting for an hour. A queued round carries the
+      // moment its row was written, so only a claim that stamps the start
+      // itself leaves it saying now.
+      await rows(
+        `UPDATE extraction_runs SET started_at = started_at - interval '1 hour'
+          WHERE document_id = $1`,
+        [letter],
+      );
+      // Refused though she has a queued letter of her own.
+      await aQueuedLetter(dorothy);
 
       expect(await claimOwnedQueuedRound(db(), dorothy.id, letter)).toBeNull();
 
@@ -532,13 +557,18 @@ describe("a letter being read", () => {
   describe("a round that decides", () => {
     it("writes the reading, the run and the letter as one unit", async () => {
       const letter = await aQueuedLetter(margaret);
-      const decided = reading(
-        [
-          { key: "due_time", value: "10:30", status: "confirmed" },
-          { key: "bpay_biller_code", value: "23796", status: "confirmed" },
-        ],
-        { envelope_postmark: "2026-08-09" },
-      );
+      // The reading names the model that read it, which is not the one the
+      // queued round was written with ("scripted-1").
+      const decided = {
+        ...reading(
+          [
+            { key: "due_time", value: "10:30", status: "confirmed" },
+            { key: "bpay_biller_code", value: "23796", status: "confirmed" },
+          ],
+          { envelope_postmark: "2026-08-09" },
+        ),
+        model: READER.model,
+      };
 
       // Both reader calls answer the same, so the judge is never called.
       await readARound(
@@ -565,7 +595,7 @@ describe("a letter being read", () => {
       expect(round).toMatchObject({
         status: "succeeded",
         provider: "scripted",
-        model: "scripted-1",
+        model: READER.model,
         contractVersion: CONTRACT_VERSION,
         failureDetail: null,
         rawIs: "object",
@@ -825,6 +855,22 @@ describe("a letter being read", () => {
     });
   });
 
+  // The contract gives every reading its six fields, so the app never hands
+  // the statement that writes them an empty list, and only a direct call can.
+  // An insert of no rows is one the query builder refuses to write, so the
+  // statement has to return before it gets that far.
+  describe("the statement that writes the fields, called directly", () => {
+    it("writes no row, and sends nothing, when handed no fields", async () => {
+      const letter = await aQueuedLetter(margaret);
+      const round = await claimOwnedQueuedRound(db(), margaret.id, letter);
+      const before = await snapshot();
+
+      await expect(insertFields(db(), round!.id, [])).resolves.toBeUndefined();
+
+      expect(await snapshot()).toEqual(before);
+    });
+  });
+
   describe("a call that fails", () => {
     it("records a reading that failed on both the run and the letter", async () => {
       const letter = await aQueuedLetter(margaret);
@@ -896,6 +942,33 @@ describe("a letter being read", () => {
         `[uploads] reading document ${letter} failed: reader 1, attempt 1 of ${MAX_READING_ATTEMPTS}`,
         `[uploads] reading document ${letter} failed: reader 2, attempt 1 of ${MAX_READING_ATTEMPTS}`,
       ]);
+    });
+
+    it("leaves the letter alone when another request closed the round before the failure could be written", async () => {
+      const letter = await aQueuedLetter(margaret);
+      const failure = () =>
+        new ExtractionFailure("the reader has no key", { retryable: false });
+      // While the first reader call is out, another request finds the round
+      // and closes it. Then the call fails.
+      vi.mocked(readLetter).mockImplementationOnce(async () => {
+        await closedBySomebodyElse(letter);
+        throw failure();
+      });
+
+      await readARound(margaret, letter, failure());
+
+      // The round is as the other request left it, and what becomes of the
+      // letter is that request's to decide: it is not failed from here.
+      const [round, ...others] = await storedRounds(letter);
+      expect(others).toEqual([]);
+      expect(round).toMatchObject({
+        status: "failed",
+        failureDetail: "closed by another request",
+      });
+      expect(await storedLetter(letter)).toMatchObject({
+        status: "processing",
+        updatedSinceItArrived: false,
+      });
     });
 
     // KAN-59: a model that answered badly once usually does not twice running,
@@ -1112,6 +1185,22 @@ describe("a letter being read", () => {
         answerIs: "null",
         answer: null,
       });
+    });
+
+    // In that INSERT PostgreSQL takes the type of the parameter from the
+    // column it goes into, so the answer would be stored as jsonb with or
+    // without the cast jsonbValue() writes after it. The helper says jsonb on
+    // its own, and where no column gives the type the cast is all that makes
+    // it so. So it is asked directly, in a select list: without the cast
+    // PostgreSQL takes the parameter for text and hands the JSON back as a
+    // string.
+    it("hands PostgreSQL an answer as jsonb by its own cast, where no column gives the type", async () => {
+      const [selected] = await db()
+        .select({ answer: jsonbValue({ said: ["not", "a", "reading"] }) })
+        .from(users)
+        .limit(1);
+
+      expect(selected).toEqual({ answer: { said: ["not", "a", "reading"] } });
     });
 
     // The row is the record of a call that already happened; a database
@@ -1472,6 +1561,37 @@ describe("a letter being read", () => {
       expect(logged).toEqual([]);
     });
 
+    it("finds a stopped round only while both the round and its letter say they are being read", async () => {
+      const letter = await aQueuedLetter(margaret);
+      const stopped = await aRoundTheHostStopped(letter, "3 minutes");
+
+      // A failed letter whose round still says it is being read, from just
+      // as long ago. Nothing is going to read a failed letter.
+      const failed = await aQueuedLetter(margaret);
+      await aRoundTheHostStopped(failed, "3 minutes");
+      await rows("UPDATE documents SET status = 'failed' WHERE id = $1", [
+        failed,
+      ]);
+
+      // A letter that is being read, with two rounds as old as that and
+      // neither of them being read: the one that decided nothing, and the
+      // one queued after it, which nobody has come for yet.
+      const waiting = await aQueuedLetter(margaret);
+      await readARound(margaret, waiting, ...neverAgreeing());
+      await rows(
+        `UPDATE extraction_runs SET started_at = started_at - interval '3 minutes'
+          WHERE document_id = $1`,
+        [waiting],
+      );
+      expect(
+        (await storedRounds(waiting)).map((round) => round.status),
+      ).toEqual(["failed", "queued"]);
+
+      expect(
+        await listOwnedStoppedRounds(db(), margaret.id, ROUND_DEADLINE_SECONDS),
+      ).toEqual([{ id: stopped, documentId: letter, round: 1 }]);
+    });
+
     it("fails the letter when the round the host stopped was the last", async () => {
       const letter = await aQueuedLetter(margaret);
       for (let round = 1; round < MAX_ROUNDS; round++) {
@@ -1799,6 +1919,82 @@ describe("a letter being read", () => {
       });
       expect(totals.cost).toBeCloseTo(0.0095, 8);
       expect(totals.duration_ms).toBeGreaterThanOrEqual(3000);
+    });
+  });
+
+  /*
+   * A round is timed by the database's clock from end to end: it stamps
+   * started_at and finished_at, the two minutes after which a round counts as
+   * stopped are counted on it, and so is duration_ms. On one machine the
+   * app's clock agrees with it, so every test above would pass with the app's
+   * clock in any of the four. Deployed, each copy of the app has a clock of
+   * its own, and a round started by one copy is found, closed and measured by
+   * another. So here the app's clock says 2001 while each statement is sent.
+   */
+  describe("the clock a round is timed by", () => {
+    /** One round's two moments, as whether each is of just now by the database's clock, and how long it took. */
+    async function clockOf(round: string) {
+      const [stored] = await rows<{
+        startedJustNow: boolean;
+        finishedJustNow: boolean | null;
+        durationMs: number | null;
+      }>(
+        `SELECT started_at > now() - interval '1 minute' AS "startedJustNow",
+                finished_at > now() - interval '1 minute' AS "finishedJustNow",
+                duration_ms AS "durationMs"
+           FROM extraction_runs WHERE id = $1`,
+        [round],
+      );
+      return stored;
+    }
+
+    it("starts a round at the database's now", async () => {
+      const letter = await aQueuedLetter(margaret);
+      // Waiting for an hour, so only a claim that stamps the start leaves it
+      // saying now.
+      await rows(
+        `UPDATE extraction_runs SET started_at = started_at - interval '1 hour'
+          WHERE document_id = $1`,
+        [letter],
+      );
+
+      const claimed = await withTheAppClockIn2001(() =>
+        claimOwnedQueuedRound(db(), margaret.id, letter),
+      );
+
+      expect(await clockOf(claimed!.id)).toMatchObject({
+        startedJustNow: true,
+      });
+    });
+
+    it("finds a round stopped by the database's two minutes", async () => {
+      const letter = await aQueuedLetter(margaret);
+      const stopped = await aRoundTheHostStopped(letter, "3 minutes");
+      // And a round that is slow, not stopped: half a minute old.
+      const slow = await aQueuedLetter(margaret);
+      await aRoundTheHostStopped(slow, "30 seconds");
+
+      const found = await withTheAppClockIn2001(() =>
+        listOwnedStoppedRounds(db(), margaret.id, ROUND_DEADLINE_SECONDS),
+      );
+
+      expect(found).toEqual([{ id: stopped, documentId: letter, round: 1 }]);
+    });
+
+    it("ends a round at the database's now, and measures it on the same clock", async () => {
+      const letter = await aQueuedLetter(margaret);
+      const round = await aRoundTheHostStopped(letter, "3 minutes");
+
+      await withTheAppClockIn2001(() =>
+        closeRoundAsFailed(db(), round, "RoundTimedOut"),
+      );
+
+      // From a start three minutes ago to an end now: the three minutes, and
+      // not the twenty-five years between the two clocks.
+      const closed = await clockOf(round);
+      expect(closed.finishedJustNow).toBe(true);
+      expect(closed.durationMs).toBeGreaterThanOrEqual(180_000);
+      expect(closed.durationMs).toBeLessThan(240_000);
     });
   });
 });

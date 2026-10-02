@@ -29,7 +29,12 @@ import {
   requireUser,
 } from "@/server/auth/session";
 
-import { browserOf, keepCookie, resetFakes } from "./support/fakes";
+import {
+  browserOf,
+  keepCookie,
+  resetFakes,
+  withTheAppClockIn2001,
+} from "./support/fakes";
 import { backdate, rows } from "./support/witness";
 import { aPerson, type Person } from "./support/world";
 
@@ -191,6 +196,27 @@ describe("sessions", () => {
 
       expect(await getCurrentUser()).toBeNull();
       await expect(requireUser()).rejects.toBeInstanceOf(UnauthenticatedError);
+      expect((await clockOf(token)).seenJustNow).toBe(false);
+    });
+
+    // A session is stamped, and held to its expiry, by the database's clock.
+    // On one machine the app's clock agrees with it, so the tests above
+    // cannot tell the two apart. By a clock that says 2001, a session that
+    // expired yesterday still has twenty-five years to run.
+    it("holds a session to the database's clock, whatever the app's clock says", async () => {
+      const token = await signIn(margaret, "Margaret's laptop");
+      const session = await sessionOf(token);
+      await backdate("sessions", "last_seen_at", session, "2 hours");
+
+      expect(await withTheAppClockIn2001(() => getCurrentUser())).toEqual(
+        asReceived(margaret),
+      );
+      expect((await clockOf(token)).seenJustNow).toBe(true);
+
+      await backdate("sessions", "expires_at", session, "31 days");
+      await backdate("sessions", "last_seen_at", session, "2 hours");
+
+      expect(await withTheAppClockIn2001(() => getCurrentUser())).toBeNull();
       expect((await clockOf(token)).seenJustNow).toBe(false);
     });
 
