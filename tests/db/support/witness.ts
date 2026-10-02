@@ -14,9 +14,9 @@
  * last week, a round that has been processing for three minutes.
  *
  * One thing to know when asserting a `date`: this client hands a `date` column
- * back as a JavaScript Date unless the app's handle has been imported in the
- * same file (src/server/db/index.ts changes that for the whole process).
- * Select it `::text` and the assertion reads the same either way.
+ * back as a JavaScript Date. The app's handle answers 'YYYY-MM-DD', but Drizzle
+ * arranges that for its own statements only, and nothing changes it for the
+ * process. Select it `::text` and the assertion reads the day as it is stored.
  *
  * No tests in here.
  */
