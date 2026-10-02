@@ -31,8 +31,7 @@
  * readers can never be racing over the same photographs. Every query that
  * reads a reading asks for the succeeded run and nothing else.
  *
- * Script-safe: no `server-only`, because drizzle-kit, the scripts in db/ and
- * Vitest load the schema outside Next.js, where that module throws.
+ * Script-safe, for the reason ./index.ts gives.
  */
 
 import { eq, sql } from "drizzle-orm";

@@ -9,11 +9,11 @@
  * and the interface polls rather than making anyone watch a spinner.
  *
  * Every transition is written down as it happens, so that a letter interrupted
- * at any point leaves a database that describes what became of it. A run left
- * on 'queued' means the call never started, 'processing' means it started and
- * nothing came back, and 'failed' carries the developer's sentence about why.
- * A letter stuck on 'processing' forever is the same fact told as a lie, which
- * is the reason src/server/db/schema/enums.ts has a 'failed' status at all.
+ * at any point leaves a database that describes what became of it: what each
+ * status of a round says is written beside runStatus in
+ * src/server/db/schema/enums.ts. A letter stuck on 'processing' forever is the
+ * same fact told as a lie, which is the reason that file has a 'failed' status
+ * at all.
  *
  * The two audiences are kept apart on purpose. `failure_detail` is written for
  * whoever reads the table later and never leaves the server; the sentence a

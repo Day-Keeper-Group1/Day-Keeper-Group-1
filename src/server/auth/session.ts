@@ -27,9 +27,9 @@
  *
  * Ownership is enforced in the queries rather than by row level security: every
  * statement that reads a person's data is scoped by their user id. That is a
- * rule handlers keep rather than something the database enforces, so it earns a
- * test as soon as there are handlers to test, one that proves a document
- * belonging to one person is invisible to another.
+ * rule the code keeps rather than something the database enforces, so it has
+ * a test: tests/db/ownership.test.ts asks every service and every
+ * owner-scoped statement for one person's letters and tasks as somebody else.
  *
  * Roles are defined in src/server/db/schema/enums.ts and grant nothing here.
  * The one that could have, platform_operator, existed for an admin dashboard
@@ -144,7 +144,8 @@ export function mapSessionUser(row: SessionUserRow): SessionUser {
  * The shape every protected handler starts with:
  *
  *   const user = await requireUser();          // throws UnauthenticatedError
- *   ...WHERE user_id = $1 with user.id...      // never a query without it
+ *   ...a service, handed user.id...            // which passes it to a query
+ *                                              // function named Owned
  *
  * and in the handler's catch:
  *

@@ -3,11 +3,14 @@
 /**
  * Empty it, build it, wipe its rows.
  *
- * These are the only statements in the project that act on the database as a
- * whole rather than on a row, and none of them has a query builder form, so
- * they are sent as they are, here and nowhere else. `db:reset` drops and
- * rebuilds with them; the database tests build their template with them and
- * wipe the rows between two tests.
+ * These statements act on everything a database holds rather than on a row,
+ * and none of them has a query builder form, so they are sent as they are,
+ * here and nowhere else. `db:reset` drops and rebuilds with them; the database
+ * tests build their template with them and wipe the rows between two tests.
+ * Making and dropping a database itself is done where it is needed:
+ * tests/db/support/databases.ts for the test databases, and
+ * scripts/worktree-setup.mjs and scripts/worktree-teardown.mjs for a
+ * worktree's own.
  *
  * Nothing here is run directly. The scripts beside this folder are what a
  * terminal calls. Relative imports, like every script: this file is loaded by

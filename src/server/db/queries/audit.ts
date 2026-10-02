@@ -4,12 +4,15 @@
  * The audit log: the statements.
  *
  * The table is declared in ../schema/audit.ts, and this file, named like it,
- * holds every statement the app runs against it. What is worth a line in the
- * log is decided by the service that writes it.
+ * holds every statement the app runs against it. The rules stay with the
+ * callers, which decide what is worth a line: src/server/auth/accounts.ts
+ * writes one when a person registers, src/server/confirm.ts when a letter is
+ * saved, and src/server/ai/school-key.ts before each use of the school's key,
+ * which it then counts to hold the daily ceiling.
  *
- * Every function takes the handle first: `db()` from a service, or the `tx` of
- * a transaction the service opened, which is how a line is written together
- * with the thing it records or not at all.
+ * Every function takes the handle first, `db()` or a `tx`, and none opens a
+ * transaction: src/server/db/AGENTS.md, rules 1 to 3. Handed the `tx`, a line
+ * is written together with the thing it records or not at all.
  */
 
 import "server-only";

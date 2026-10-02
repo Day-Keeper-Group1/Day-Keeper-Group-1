@@ -113,6 +113,7 @@ Accounts, all already hashed in the database:
 | `npm run db:seed` | reseed without touching the schema |
 | `npm run db:generate -- --name=<what_changed>` | after editing `src/server/db/schema`: write the migration |
 | `npm run db:migrate` | apply pending migrations, keeping the data. A local database built before KAN-92 has no record of applied migrations, so it needs one `npm run db:reset` before this can ever work |
+| `npm run db:check` | answers, with no database, whether the schema files and the newest migration agree. It also runs inside `npm test` |
 | `npm run storage:reset` | make the bucket exist and empty it, without touching the database. The seeded photographs go with it; `npm run db:reset` puts both sides back |
 | `npm test` | every test; the database tests need the Postgres above |
 | `npm run test:unit` | only the tests that need no database |
@@ -163,8 +164,8 @@ Commands, above).
 
 Migrations are generated, never written or edited by hand, and one that has
 been merged is never changed. `src/server/db/AGENTS.md` has the rules and the
-reasons. `db/reset.ts` still refuses to run against a database that is not
-local, and against one that holds accounts nobody seeded.
+reasons. `db/reset.ts` refuses to run against a database that is not local,
+and against one that holds accounts nobody seeded.
 
 ## Where things are
 
@@ -174,6 +175,7 @@ One rule, so you never have to open a file to find out where it may be used:
 ```
 db/reset.ts, migrate.ts   rebuild the database, or bring it up to date
 db/seed.ts                Margaret's world, for showing the product
+db/lib/                   what those scripts share: connecting, the two guards, the seed's rows
 db/migrations/            generated from the schema files; never edited by hand
 
 src/lib/contract/         the agreement. Import from here, do not restate it.
@@ -183,12 +185,21 @@ src/lib/contract/         the agreement. Import from here, do not restate it.
   dates.ts                  the timezone, and every date rule: today, format, parse
   reminders.ts              the one reminder-scheduling rule
 
-src/server/               server only (password.ts and token.ts excepted: the
-                          seed and the tests need them, and they are pure)
+src/server/               server only. Among the files that carry no
+                          "server-only" import, these leave it out on purpose,
+                          so that a script can load them outside Next.js:
+                          auth/password.ts and auth/token.ts, which are pure,
+                          the script-safe files of db/ (schema/, client.ts,
+                          errors.ts), and extraction/agreement.ts and
+                          extraction/prices.ts, which the experiments import
   db/
+    AGENTS.md               the rules of this folder, and the reason for each
     schema/                 the database, and the only definition of it
     queries/                every statement the app runs
+    sql.ts                  the named SQL expressions the query builder cannot say
     index.ts                db(), the handle a query is run with
+    client.ts               how a pool and the handle over it are made
+    errors.ts               dbCause() and isUniqueViolation(), for a failed statement
   storage.ts                the photographs themselves: put, signed link, delete
   env.ts                    environment variables, checked once
   auth/password.ts          hashing and verifying passwords

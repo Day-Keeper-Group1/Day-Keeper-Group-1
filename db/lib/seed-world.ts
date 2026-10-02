@@ -162,10 +162,11 @@ export async function seedWorld(
 
     // ---- Three reminders due today ------------------------------------------
     // Reminder days fall seven, three and one day before a due date
-    // (src/lib/contract/reminders.ts), and on one Home marks the task's row. A letter due in seven days has its
-    // seven day reminder today, one due in three has its three day reminder
-    // today, and one due tomorrow has its last one today. Three letters, and
-    // all three rungs of the ladder are on today at once.
+    // (src/lib/contract/reminders.ts), and on one Home marks the task's row.
+    // A letter due in seven days has its seven day reminder today, one due in
+    // three has its three day reminder today, and one due tomorrow has its
+    // last one today. Three letters, and all three rungs of the ladder are on
+    // today at once.
     //
     // Three different issuers, and none of the fixtures a demonstration is
     // likely to photograph live, so a letter uploaded in front of someone
@@ -377,7 +378,7 @@ async function confirmedLetter(
     confirmedAt: new Date(uploadedAt.getTime() + 10 * 60_000),
   });
 
-  await insertPages(tx, storePage, userId, documentId, spec.pageSource);
+  await seedPages(tx, storePage, userId, documentId, spec.pageSource);
 
   const runId = randomUUID();
   await tx.insert(extractionRuns).values({
@@ -391,7 +392,7 @@ async function confirmedLetter(
     finishedAt: seededAt,
     durationMs: 5800,
   });
-  await insertFields(tx, runId, [
+  await seedFields(tx, runId, [
     ["document_type", spec.documentType, 0.96],
     ["issuer", spec.issuer, 0.95],
     ["action_required", spec.action, 0.93],
@@ -399,7 +400,7 @@ async function confirmedLetter(
     ["amount", spec.amount, 0.95],
     ["reference", spec.reference, 0.9],
   ]);
-  await insertIdentifiers(
+  await seedIdentifiers(
     tx,
     runId,
     spec.identifiers ?? [["Reference", spec.reference]],
@@ -446,7 +447,7 @@ async function confirmedLetter(
 }
 
 /** KAN-58: the numbers a seeded reading found printed, in order, all confident. */
-async function insertIdentifiers(
+async function seedIdentifiers(
   tx: Db,
   runId: string,
   identifiers: Array<[label: string, value: string]>,
@@ -464,7 +465,7 @@ async function insertIdentifiers(
 }
 
 /** The six fields of a seeded reading, each confident, with how sure the reader was. */
-async function insertFields(
+async function seedFields(
   tx: Db,
   runId: string,
   fields: Array<[key: string, value: string | null, confidence: number]>,
@@ -511,7 +512,7 @@ function pageFiles(folder: string): string[] {
  * The bytes go up inside the seed's transaction. A rollback leaves them behind,
  * which costs nothing: a reset empties the bucket before it seeds.
  */
-async function insertPages(
+async function seedPages(
   tx: Db,
   storePage: StorePage,
   userId: string,

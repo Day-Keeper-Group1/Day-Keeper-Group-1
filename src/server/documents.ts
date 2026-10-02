@@ -47,13 +47,10 @@ import {
 import {
   listOwnedFieldRows,
   listOwnedIdentifierRows,
+  type FieldRow,
 } from "@/server/db/queries/readings";
 import { listOwnedRecentlyCompletedTaskIds } from "@/server/db/queries/tasks";
-import {
-  identifierViews,
-  mapField,
-  type ExtractedFieldRow,
-} from "@/server/field-views";
+import { identifierViews, mapField } from "@/server/field-views";
 import { listTasks } from "@/server/tasks";
 
 /**
@@ -169,7 +166,7 @@ function mapDocument(row: DocumentRow, timeZone: string): DocumentSummary {
  * from the other two. Optional and unrecognised keys follow, because six is a
  * floor and a reader that returned more is not punished for being richer.
  */
-function fieldViews(rows: ExtractedFieldRow[]): ExtractedFieldView[] {
+function fieldViews(rows: FieldRow[]): ExtractedFieldView[] {
   if (rows.length === 0) return [];
 
   const byKey = new Map(rows.map((row) => [row.fieldKey, row]));

@@ -3,8 +3,7 @@
 /**
  * People
  *
- * Script-safe: no `server-only`, because drizzle-kit, the scripts in db/ and
- * Vitest load the schema outside Next.js, where that module throws.
+ * Script-safe, for the reason ./index.ts gives.
  */
 
 import { sql } from "drizzle-orm";

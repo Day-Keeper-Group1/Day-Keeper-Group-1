@@ -13,8 +13,7 @@
  * there and it is legal everywhere at once; invent one anywhere else and
  * Postgres rejects it.
  *
- * Script-safe: no `server-only`, because drizzle-kit, the scripts in db/ and
- * Vitest load the schema outside Next.js, where that module throws.
+ * Script-safe, for the reason ./index.ts gives.
  */
 
 import { sql, type SQL } from "drizzle-orm";
@@ -61,7 +60,25 @@ export const documentStatus = pgEnum("document_status", DOCUMENT_STATUSES);
  */
 export const fieldStatus = pgEnum("field_status", FIELD_STATUSES);
 
-/** Where a reading got to. */
+/**
+ * Where one round of a reading got to. A round is one extraction_runs row
+ * (./readings.ts).
+ *   queued      written down, and none of its calls has started
+ *   processing  a request took it and is making its calls; each attempt at
+ *               one is written as a model_calls row when it ends, and the
+ *               round itself is not closed yet
+ *   succeeded   it decided the reading, and its fields are the letter's
+ *   failed      it was closed with no reading: a call failed, its readings
+ *               differed, the host stopped it, the reading it decided was
+ *               unsure of the due date or the amount, or the database refused
+ *               that reading; failure_detail carries the developer's sentence
+ *               about why
+ *
+ * Each status is written as the round reaches it, so a round whose request
+ * was interrupted says how far it got: left on 'queued' its calls never
+ * started, left on 'processing' it was taken and never closed, and the
+ * model_calls rows under it are the attempts that ended before it stopped.
+ */
 export const runStatus = pgEnum("run_status", RUN_STATUSES);
 
 /**

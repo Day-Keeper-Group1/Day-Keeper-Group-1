@@ -45,7 +45,7 @@ export type DocumentStatus = (typeof DOCUMENT_STATUSES)[number];
 
 /**
  * How much the reading trusts one field.
- * What each value means: src/server/db/schema/enums.ts.
+ * What each value means: ./extraction.ts.
  */
 export const FIELD_STATUSES = ["confirmed", "uncertain", "unreadable"] as const;
 export type FieldStatus = (typeof FIELD_STATUSES)[number];

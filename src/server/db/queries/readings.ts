@@ -7,13 +7,17 @@
  * it, holds every statement the app runs against them. A letter is read in
  * rounds: a round is one extraction_runs row, and each model call a round
  * makes is one model_calls row under it. A letter's reading is the fields and
- * the numbers of the one round that succeeded for it. When a round is read,
- * how it ends and what follows it are decided by src/server/uploads; how a
- * stored field is worded on a screen is decided by src/server/field-views.ts.
+ * the numbers of the one round that succeeded for it.
  *
- * Every function takes the handle first: `db()` from a service, or the `tx` of
- * a transaction the service opened. Nothing here opens a transaction, and
- * nothing here imports the app's handle.
+ * The rules stay with the callers: src/server/uploads decides when a round is
+ * read, how it ends and what follows it, src/server/documents.ts and
+ * src/server/tasks.ts decide which fields of a reading a screen shows and in
+ * which order, and src/server/confirm.ts names the task a letter becomes
+ * after the action its reading found. How a stored field is worded on a
+ * screen is src/server/field-views.ts, which takes its row types from here.
+ *
+ * Every function takes the handle first, `db()` or a `tx`, and none opens a
+ * transaction: src/server/db/AGENTS.md, rules 1 to 3.
  *
  * Every function with `Owned` in its name takes the person's id second and
  * filters by it, whatever its caller already checked. These rows do not say
@@ -48,9 +52,11 @@ import { ownedDocument } from "./documents";
  * A new round for a letter, waiting to be read: 'queued', with the reader it
  * will be read by.
  *
- * Unscoped on purpose: a round does not say whose it is, its letter does, and
- * the letter was written under its owner by insertDocument() (./documents.ts)
- * in the same transaction.
+ * Unscoped on purpose: a round does not say whose it is, its letter does. For
+ * a letter's first round, the letter was written under its owner by
+ * insertDocument() (./documents.ts) in the same transaction. For a later
+ * round, queueRoundAfter() below hands over the letter of the round it
+ * follows, whose owner was checked when that round was claimed.
  */
 export async function insertQueuedRound(
   db: Db,
@@ -257,11 +263,12 @@ function roundTotals(db: Db) {
 }
 
 /**
- * Close a round that decided nothing or could not be read: 'failed', with the
- * developer's sentence about why and the round's totals. Only a round still
- * on 'processing' is closed. Answers what the next round of the same letter
- * would be made from (its letter, and the reader it was to be read by), or
- * null when the round was not on 'processing' and nothing was changed.
+ * Close a round with no reading (runStatus in ../schema/enums.ts lists the
+ * ways that happens): 'failed', with the developer's sentence about why and
+ * the round's totals. Only a round still on 'processing' is closed. Answers
+ * what the next round of the same letter would be made from (its letter, and
+ * the reader it was to be read by), or null when the round was not on
+ * 'processing' and nothing was changed.
  *
  * The status guard is what makes two requests that reach the same round safe:
  * the first closes it, and the second is answered null and knows the round
@@ -302,6 +309,11 @@ export async function closeRoundAsFailed(
  * reader as the round closeRoundAsFailed() has just closed: 'queued'. Its
  * calls are written under it as model_calls rows.
  *
+ * The row is the one insertQueuedRound() above writes for a letter's first
+ * round, so this calls it and the statement is written once. Each of the two
+ * names says what its caller means: a letter arriving there, a round that
+ * decided nothing here.
+ *
  * Unscoped on purpose: `closed` is what closeRoundAsFailed() answered in the
  * same transaction, for a round whose owner was checked when it was claimed.
  */
@@ -309,7 +321,7 @@ export async function queueRoundAfter(
   db: Db,
   closed: { documentId: string; provider: string; model: string | null },
 ): Promise<void> {
-  await db.insert(extractionRuns).values({ ...closed, status: "queued" });
+  await insertQueuedRound(db, closed);
 }
 
 /**
@@ -404,20 +416,6 @@ export async function insertIdentifiers(
 }
 
 /**
- * The order the task screen shows a letter's fields in. A key that is not
- * here comes after all of these, in the order of the keys themselves.
- */
-const TASK_DETAIL_FIELD_ORDER = [
-  "document_type",
-  "issuer",
-  "action_required",
-  "due_date",
-  "due_time",
-  "amount",
-  "reference",
-] as const;
-
-/**
  * The fields of the reading of one letter of a person's, not yet in any
  * order. None for a letter no round succeeded for, and none for a letter that
  * is somebody else's.
@@ -460,16 +458,20 @@ export async function listOwnedFieldRows(
 
 /**
  * The fields of a letter's reading, in the order the task screen shows them:
- * TASK_DETAIL_FIELD_ORDER first, then every other key in the order of the
- * keys. Both halves are sorted by the database (rankOf in ../sql.ts says why).
+ * the keys in `keyOrder` first, as they are listed there, then every other
+ * key in the order of the keys. Which keys come first is the screen's rule
+ * and its caller's to hand in (TASK_DETAIL_FIELD_ORDER in
+ * src/server/tasks.ts). Both halves are sorted by the database (rankOf in
+ * ../sql.ts says why).
  */
 export async function listOwnedFieldRowsInTaskOrder(
   db: Db,
   userId: string,
   documentId: string,
+  keyOrder: readonly string[],
 ) {
   return ownedFieldRows(db, userId, documentId).orderBy(
-    rankOf(extractedFields.fieldKey, TASK_DETAIL_FIELD_ORDER),
+    rankOf(extractedFields.fieldKey, keyOrder),
     asc(extractedFields.fieldKey),
   );
 }

@@ -67,12 +67,8 @@ export function route<A extends unknown[]>(handler: Handler<A>): Handler<A> {
       if (error instanceof UnauthenticatedError) {
         return fail("unauthenticated", error.message);
       }
-      // KAN-92: a statement that failed through Drizzle arrives wrapped, and the
-      // wrapper's message quotes every value bound to the statement: a
-      // password hash, the contents of a letter. dbCause() leaves the wrapper
-      // out, so what is logged is the driver's own error, as it was before
-      // Drizzle. For a constraint violation that one can still quote the
-      // failing row in its `detail`, exactly as it could before this change.
+      // A failed statement is logged as dbCause(error), never as it was
+      // thrown: src/server/db/errors.ts says what that keeps out of the log.
       console.error("[api] unhandled error", dbCause(error));
       return fail(
         "server_error",

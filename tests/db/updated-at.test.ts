@@ -1,14 +1,14 @@
-// KAN-92: every way the app changes a row moves its updated_at, now that no trigger does.
+// KAN-92: every way the app changes a row moves its updated_at, with no trigger to do it.
 
 /**
  * updated_at.
  *
- * Three tables carry updated_at: users, documents and tasks. A trigger used to
- * set it on every UPDATE. Now the column sets itself, on every UPDATE sent
- * through the query builder (updatedAt in src/server/db/schema/columns.ts),
- * and nothing in the database does. A statement that reached the database any
- * other way would leave a row saying it has not changed since the day it was
- * made, and nothing would fail.
+ * Three tables carry updated_at: users, documents and tasks. The column sets
+ * itself, on every UPDATE sent through the query builder (updatedAt in
+ * src/server/db/schema/columns.ts), and nothing in the database does: there
+ * is no trigger. A statement that reached the database any other way would
+ * leave a row saying it has not changed since the day it was made, and
+ * nothing would fail.
  *
  * So every way the app changes a row of those tables runs here, on a row whose
  * updated_at was first moved an hour into the past, and afterwards the column

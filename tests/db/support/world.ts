@@ -225,16 +225,12 @@ export async function aLetterToCheck(
  * The app logs each failed call, so a test that makes one of these hears
  * console.error twice.
  */
-export async function aFailedLetter(
-  person: Person,
-  options: { pages?: number } = {},
-): Promise<string> {
-  const pages = options.pages ?? 1;
-  const documentId = await aQueuedLetter(person, { pages });
+export async function aFailedLetter(person: Person): Promise<string> {
+  const documentId = await aQueuedLetter(person);
   await readWith(
     person,
     documentId,
-    pages,
+    1,
     new ExtractionFailure("the reader has no key", { retryable: false }),
   );
 
@@ -247,14 +243,15 @@ export async function aFailedLetter(
 
 /**
  * Turn the queued round of a letter into one the host stopped: 'processing',
- * and started some time ago. Answers the round's id.
+ * and started so long ago, said as PostgreSQL says an interval ("3 minutes").
+ * Answers the round's id.
  *
  * Written directly. A round is left like this by a request that was stopped
  * half way through reading it, which is the one thing a test cannot do.
  */
 export async function aRoundTheHostStopped(
   documentId: string,
-  startedAgo = "3 minutes",
+  startedAgo: string,
 ): Promise<string> {
   const [round] = await rows<{ id: string }>(
     `UPDATE extraction_runs

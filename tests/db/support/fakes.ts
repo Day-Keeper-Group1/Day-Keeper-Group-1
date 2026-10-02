@@ -182,7 +182,7 @@ export function scriptedReader() {
 type Cookie = { value: string; options?: Record<string, unknown> };
 
 /** One change a response made to the cookies of the browser it answered. */
-export type CookieChange =
+type CookieChange =
   | { set: string; value: string; options?: Record<string, unknown> }
   | { deleted: string };
 

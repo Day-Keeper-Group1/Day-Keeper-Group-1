@@ -27,12 +27,10 @@ export type Db = PgDatabase<NodePgQueryResultHKT>;
 
 /**
  * 10 connections and no TLS when the database is on this machine, 1 and TLS
- * otherwise.
+ * otherwise. Two things follow from a database that is somewhere else, and
+ * both are wrong to guess at.
  *
- * A database on this machine or a database somewhere else. Two things follow
- * from the second, and both are wrong to guess at.
- *
- * The connection has to be encrypted, because it now crosses a network that is
+ * The connection has to be encrypted, because it crosses a network that is
  * not this laptop. And every running copy of the app gets its own pool, so on
  * a host that runs the app as functions there can be a great many pools at
  * once; ten connections each is how a free-tier database runs out of
@@ -49,8 +47,9 @@ export function poolOptions(url: string): PoolConfig {
     // concurrent requests. Raising this hides connection leaks rather than
     // fixing them.
     max: hostIsLocal(url) ? 10 : 1,
-    // Encrypted and verified for anything not local; see
-    // src/lib/database-tls.ts, which the scripts in db/ use too.
+    // Encrypted and verified for anything not local: src/lib/database-tls.ts.
+    // The scripts in db/ connect through createDb() below, so they get the
+    // same answer.
     ssl: databaseSsl(url),
     idleTimeoutMillis: 30_000,
     connectionTimeoutMillis: 10_000,

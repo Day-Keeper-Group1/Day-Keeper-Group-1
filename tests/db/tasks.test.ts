@@ -34,6 +34,7 @@ import {
 import { extractedFields } from "@/server/db/schema";
 import { rankOf } from "@/server/db/sql";
 import {
+  TASK_DETAIL_FIELD_ORDER,
   completeTask,
   getTask,
   getTaskSummary,
@@ -663,7 +664,12 @@ describe("tasks", () => {
       ).toBeNull();
       expect(await findOwnedPageCount(db(), margaret.id, bill.letter)).toBe(2);
       expect(
-        await listOwnedFieldRowsInTaskOrder(db(), margaret.id, bill.letter),
+        await listOwnedFieldRowsInTaskOrder(
+          db(),
+          margaret.id,
+          bill.letter,
+          TASK_DETAIL_FIELD_ORDER,
+        ),
       ).toHaveLength(9);
       expect(
         await listOwnedIdentifierRows(db(), margaret.id, bill.letter),
@@ -672,7 +678,12 @@ describe("tasks", () => {
         await findOwnedPageCount(db(), dorothy.id, bill.letter),
       ).toBeNull();
       expect(
-        await listOwnedFieldRowsInTaskOrder(db(), dorothy.id, bill.letter),
+        await listOwnedFieldRowsInTaskOrder(
+          db(),
+          dorothy.id,
+          bill.letter,
+          TASK_DETAIL_FIELD_ORDER,
+        ),
       ).toEqual([]);
       expect(
         await listOwnedIdentifierRows(db(), dorothy.id, bill.letter),

@@ -10,9 +10,8 @@
  * shows, and src/server/confirm.ts decides what the task a letter becomes is
  * called and which days it is marked on.
  *
- * Every function takes the handle first: `db()` from a service, or the `tx` of
- * a transaction the service opened. Nothing here opens a transaction, and
- * nothing here imports the app's handle.
+ * Every function takes the handle first, `db()` or a `tx`, and none opens a
+ * transaction: src/server/db/AGENTS.md, rules 1 to 3.
  *
  * Every function with `Owned` in its name takes the person's id second and
  * filters by it: knowing a task's id must never be enough to read it, or to
@@ -79,7 +78,9 @@ export async function listOwnedTaskRows(db: Db, userId: string) {
 }
 
 /**
- * One task of a person's, with every reminder. No rows when there is no such
+ * One task of a person's, with every reminder. It answers rows where every
+ * other `find` answers one thing or null, because one task is one row per
+ * reminder, and a single row when it has none. No rows when there is no such
  * task, when it is somebody else's, when it was dismissed, or when the letter
  * it came from is gone.
  */
@@ -156,7 +157,8 @@ function changeOwnedTaskRows(
 }
 
 /**
- * Tick one task of a person's, and answer with it and its reminders.
+ * Tick one task of a person's, and answer with it and its reminders: rows,
+ * because one task is one row per reminder, as for findOwnedTaskRows() above.
  *
  * A task ticked a second time keeps the moment of the first tick (keepOrNow in
  * ../sql.ts).
@@ -172,7 +174,11 @@ export async function completeOwnedTaskRows(
   });
 }
 
-/** Untick one task of a person's, and answer with it and its reminders. The moment of the tick is forgotten. */
+/**
+ * Untick one task of a person's, and answer with it and its reminders: rows,
+ * because one task is one row per reminder, as for findOwnedTaskRows() above.
+ * The moment of the tick is forgotten.
+ */
 export async function reopenOwnedTaskRows(
   db: Db,
   userId: string,

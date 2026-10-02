@@ -4,8 +4,8 @@
  * Ownership.
  *
  * Every letter and every task belongs to one person, and the only thing that
- * keeps one person's post from another is a filter in a WHERE clause. KAN-92
- * rewrote every one of those clauses. This file holds each of them to the
+ * keeps one person's post from another is a filter in a WHERE clause, written
+ * again in every statement named `Owned`. This file holds each of them to the
  * rule, from both sides.
  *
  * From the outside: every function of the four services that is handed a
@@ -96,6 +96,7 @@ import { readLetter } from "@/server/extraction";
 import { putObject, uploadObjectKey } from "@/server/storage";
 import * as taskService from "@/server/tasks";
 import {
+  TASK_DETAIL_FIELD_ORDER,
   completeTask,
   getTask,
   getTaskSummary,
@@ -469,7 +470,12 @@ const STATEMENTS: Record<string, Case> = {
   },
   listOwnedFieldRowsInTaskOrder: {
     ask: (asker, hers) =>
-      listOwnedFieldRowsInTaskOrder(db(), asker.id, hers.toCheck),
+      listOwnedFieldRowsInTaskOrder(
+        db(),
+        asker.id,
+        hers.toCheck,
+        TASK_DETAIL_FIELD_ORDER,
+      ),
     answers: [],
   },
   listOwnedIdentifierRows: {
@@ -523,9 +529,11 @@ const WRITES_THE_OWNER = [
 ];
 
 /**
- * Reads or changes rows that are already there without asking whose they
- * are, deliberately. Each says why where it is written, in a comment that
- * starts "Unscoped on purpose:", and the inventory checks that it does.
+ * Neither filters by the owner nor writes one, deliberately: it reads or
+ * changes rows that are already there, or makes new rows that carry no owner
+ * of their own, under a parent row. Each says why where it is written, in a
+ * comment that starts "Unscoped on purpose:", and the inventory checks that
+ * it does.
  */
 const UNSCOPED_ON_PURPOSE = [
   // queries/users.ts
@@ -768,7 +776,12 @@ describe("ownership", () => {
       expect(await getTask(task, dorothy.id, dorothy.timeZone)).toBeNull();
       expect(await findOwnedPageCount(db(), dorothy.id, letter)).toBeNull();
       expect(
-        await listOwnedFieldRowsInTaskOrder(db(), dorothy.id, letter),
+        await listOwnedFieldRowsInTaskOrder(
+          db(),
+          dorothy.id,
+          letter,
+          TASK_DETAIL_FIELD_ORDER,
+        ),
       ).toEqual([]);
       expect(await listOwnedIdentifierRows(db(), dorothy.id, letter)).toEqual(
         [],

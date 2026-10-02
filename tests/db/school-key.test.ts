@@ -66,8 +66,9 @@ import { rows } from "./support/witness";
 const MELBOURNE = "Australia/Melbourne";
 
 /**
- * The instant today began in Melbourne, in the words of the statement the
- * query builder replaced. $1 is the zone.
+ * The instant today began in a zone, written out as SQL for the witness, so
+ * the test does not ask the helper it is testing (startOfTodayIn in
+ * src/server/db/sql.ts). $1 is the zone.
  */
 const MIDNIGHT = "(date_trunc('day', now() AT TIME ZONE $1) AT TIME ZONE $1)";
 

@@ -33,6 +33,20 @@ import {
 // value shows.
 import { identifierViews, mapField } from "@/server/field-views";
 
+/**
+ * The order the task screen shows a letter's fields in. A key that is not
+ * here comes after all of these, in the order of the keys themselves.
+ */
+export const TASK_DETAIL_FIELD_ORDER = [
+  "document_type",
+  "issuer",
+  "action_required",
+  "due_date",
+  "due_time",
+  "amount",
+  "reference",
+] as const;
+
 function mapTaskRows(
   rows: TaskReminderRow[],
   timeZone: string,
@@ -110,7 +124,12 @@ export async function getTask(
 
   const [pageCount, fields, identifiers] = await Promise.all([
     findOwnedPageCount(db(), userId, summary.documentId),
-    listOwnedFieldRowsInTaskOrder(db(), userId, summary.documentId),
+    listOwnedFieldRowsInTaskOrder(
+      db(),
+      userId,
+      summary.documentId,
+      TASK_DETAIL_FIELD_ORDER,
+    ),
     listOwnedIdentifierRows(db(), userId, summary.documentId),
   ]);
 

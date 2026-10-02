@@ -466,10 +466,9 @@ async function recordCall(
  * "TypeError" are the first thing anyone reading the row wants to know, and
  * because it also guarantees the column is never the empty string.
  *
- * KAN-92: a statement that failed arrives wrapped, and the wrapper's message
- * quotes the statement with every value bound to it. The error PostgreSQL
- * sent is taken out first (src/server/db/errors.ts), so the column says
- * "error: <what PostgreSQL said>", as it always has.
+ * A failed statement is unwrapped first (dbCause in src/server/db/errors.ts
+ * says why), so for one the column says "error: <what PostgreSQL said>", and
+ * the wrapper's list of the values the statement was sent with stays behind.
  */
 function failureDetail(error: unknown): string {
   const cause = dbCause(error);
@@ -502,8 +501,6 @@ async function queueNextRound(
       const closed = await closeRoundAsFailed(tx, runId, detail);
       if (!closed) return "not-mine";
 
-      // KAN-63: the next round of the scheme, on the same letter. Its calls
-      // are written under it as model_calls rows.
       await queueRoundAfter(tx, closed);
       return "queued";
     });

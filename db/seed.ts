@@ -74,7 +74,7 @@ async function main() {
   try {
     // Each page's bytes into the bucket, under the key seedWorld() spelled for
     // it. `image/png` because that key ends in `.png`: db/lib/seed-world.ts,
-    // above insertPages(), says why the two have to agree.
+    // above seedPages(), says why the two have to agree.
     await seedWorld(db, async ({ file, key }) => {
       const bytes = readPageImage(file);
       await storage.s3.send(

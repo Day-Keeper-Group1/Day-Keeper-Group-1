@@ -11,9 +11,8 @@
  * be saved, and src/server/uploads decides what an upload has to be and
  * what a reading may write onto its letter.
  *
- * Every function takes the handle first: `db()` from a service, or the `tx` of
- * a transaction the service opened. Nothing here opens a transaction, and
- * nothing here imports the app's handle.
+ * Every function takes the handle first, `db()` or a `tx`, and none opens a
+ * transaction: src/server/db/AGENTS.md, rules 1 to 3.
  *
  * Every function with `Owned` in its name takes the person's id second and
  * filters by it, whatever its caller already checked. Knowing a letter's id
@@ -298,12 +297,15 @@ export async function writeReadingOntoOwnedDocument(
  */
 export async function insertDocument(
   db: Db,
-  userId: string,
-  documentId: string,
+  document: { id: string; userId: string },
 ): Promise<Date> {
   const [row] = await db
     .insert(documents)
-    .values({ id: documentId, userId, status: "processing" })
+    .values({
+      id: document.id,
+      userId: document.userId,
+      status: "processing",
+    })
     .returning({ uploadedAt: documents.uploadedAt });
   return row.uploadedAt;
 }

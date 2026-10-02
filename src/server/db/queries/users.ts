@@ -8,9 +8,8 @@
  * callers: src/server/auth/session.ts answers who is asking, and
  * src/server/auth/accounts.ts registers a person and finds one at sign in.
  *
- * Every function takes the handle first: `db()` from a service, or the `tx` of
- * a transaction the service opened. Nothing here opens a transaction, and
- * nothing here imports the app's handle.
+ * Every function takes the handle first, `db()` or a `tx`, and none opens a
+ * transaction: src/server/db/AGENTS.md, rules 1 to 3.
  *
  * No function in this file is scoped by a user id, because these are the
  * statements that find out who the user is. Each one that reads or changes

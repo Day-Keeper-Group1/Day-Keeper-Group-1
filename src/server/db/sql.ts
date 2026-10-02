@@ -85,8 +85,8 @@ export function startOfTodayIn(timeZone: string) {
  *
  * The builder has no interval arithmetic. The instant is the caller's, bound
  * as the text of `toISOString()`; taking the days off it is left to the
- * database, as it was when this was written by hand, so what a day is when
- * the clocks change stays PostgreSQL's answer and never becomes JavaScript's.
+ * database, so what a day is when the clocks change is PostgreSQL's answer
+ * and never JavaScript's.
  */
 export function daysBefore(instant: Date, days: number) {
   return sql<Date>`(${instant.toISOString()}::timestamptz - make_interval(days => ${days}))`;
@@ -142,8 +142,8 @@ export function scalar<T = unknown>(query: SQLWrapper): SQL<T> {
  * value. A model can answer the JSON value `null`, and in the model_calls
  * table those two say different things: SQL NULL means the call never reached
  * the model, JSON `null` means it did and that is what it said. So the value
- * is bound as its JSON text and cast, which is the form this column was
- * written in before the builder.
+ * is bound as its JSON text and cast: `'null'::jsonb` is JSON `null`, a
+ * value, where a bound null would be SQL NULL.
  *
  * This is the one place a jsonb value is turned into text by hand. Every
  * other jsonb column is given the object itself.

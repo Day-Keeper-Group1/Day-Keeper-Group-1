@@ -31,9 +31,6 @@ import {
 } from "@/lib/contract/fields";
 import type { FieldRow, IdentifierRow } from "@/server/db/queries/readings";
 
-/** One row of extracted_fields, as src/server/db/queries/readings.ts selects it. */
-export type ExtractedFieldRow = FieldRow;
-
 /**
  * What a field is called on screen.
  *
@@ -65,7 +62,7 @@ export function fieldLabel(key: string): string {
  * it through a date formatter would throw, and a letter would fail to render
  * over a field that was answered correctly.
  */
-export function mapField(row: ExtractedFieldRow): ExtractedFieldView {
+export function mapField(row: FieldRow): ExtractedFieldView {
   const confirmed = row.status === "confirmed";
   const value = confirmed ? row.extractedValue : null;
   const isDate =
@@ -79,9 +76,6 @@ export function mapField(row: ExtractedFieldRow): ExtractedFieldView {
   };
 }
 
-/** KAN-58: one row of extracted_identifiers, as src/server/db/queries/readings.ts selects it. */
-export type ExtractedIdentifierRow = IdentifierRow;
-
 const collapse = (s: string) => s.trim().replace(/\s+/g, " ").toLowerCase();
 
 /**
@@ -94,7 +88,7 @@ const collapse = (s: string) => s.trim().replace(/\s+/g, " ").toLowerCase();
  * reading, so the reference is read once.
  */
 export function identifierViews(
-  rows: ExtractedIdentifierRow[],
+  rows: IdentifierRow[],
   fields: ExtractedFieldView[],
 ): IdentifierView[] {
   const reference = fields.find(

@@ -12,10 +12,14 @@
  * file.
  *
  * The recording was taken while every statement was still hand-written SQL.
- * KAN-92 moves those statements to Drizzle without changing what any endpoint
- * answers, and this is the test that holds it to that: **a change under
+ * KAN-92 moved those statements to Drizzle without changing what any endpoint
+ * answers, and this is the test that holds the code to it: **a change under
  * tests/db/__snapshots__/ is a change in behaviour.** Do not update the
- * snapshot to make this pass; find what changed.
+ * snapshot to make this pass; find what changed. When an answer is changed on
+ * purpose, update the snapshot in the same commit as the change, and say so in
+ * the commit message:
+ *
+ *   npm run test:db -- tests/db/http-characterisation.test.ts -u
  *
  * A body is recorded as the text of its JSON rather than as an object, because
  * a snapshot of an object sorts its keys and the order the keys were sent in is

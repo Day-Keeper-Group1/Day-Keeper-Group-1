@@ -40,4 +40,7 @@ export function db(): NodePgDatabase {
   globalForDb.__daykeeperDb ??= createDb(env().DATABASE_URL);
   return globalForDb.__daykeeperDb.db;
 }
+
+// The only route by which a service can type a `tx` parameter: lint keeps
+// services away from ./client.
 export type { Db } from "./client";

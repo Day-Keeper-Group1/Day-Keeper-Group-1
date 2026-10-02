@@ -261,7 +261,7 @@ async function recordDocument(
   // where the pool holds a single connection it would wait for the very
   // connection this transaction is holding.
   const photographedAt = await db().transaction(async (tx) => {
-    const inserted = await insertDocument(tx, userId, documentId);
+    const inserted = await insertDocument(tx, { id: documentId, userId });
 
     await insertPages(tx, documentId, stored);
 
