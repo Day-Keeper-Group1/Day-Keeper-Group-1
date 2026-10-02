@@ -15,6 +15,7 @@
     "worktree:teardown": "node scripts/worktree-teardown.mjs",
     "typecheck": "next typegen && tsc --noEmit",
     "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx db/migrate.ts",
     "db:check": "vitest run --project unit tests/migrations.test.ts",
     "db:reset": "tsx db/reset.ts && tsx scripts/storage-reset.ts && tsx db/seed.ts",
     "db:schema": "tsx db/reset.ts",

@@ -12,9 +12,13 @@
  * accepted.
  *
  * Everything goes through the witness, as SQL written out: what is under test
- * is the database, and it has to be asked directly.
+ * is the database, and it has to be asked directly. The last case is the one
+ * exception: it empties and rebuilds this file's database with the two
+ * functions `npm run db:reset` uses, and then asks the witness what is there.
  */
 
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import {
@@ -24,6 +28,13 @@ import {
   TASK_STATES,
   USER_ROLES,
 } from "@/lib/contract/enums";
+import { createDb } from "@/server/db/client";
+
+import {
+  MIGRATIONS_FOLDER,
+  applyMigrations,
+  dropEverything,
+} from "../../db/lib/admin";
 import { rows } from "./support/witness";
 
 /** The SQLSTATE of a statement the database refused, and the constraint or index that refused it. */
@@ -598,5 +609,52 @@ describe("the address a person signs in with", () => {
         ),
       ),
     ).toMatchObject({ code: "428C9" });
+  });
+});
+
+describe("a database emptied and rebuilt, the way db:reset does it", () => {
+  const tables = () =>
+    one<number>(
+      `SELECT count(*)::integer AS value
+         FROM information_schema.tables
+        WHERE table_schema = 'public' AND table_type = 'BASE TABLE'`,
+    );
+
+  /** Where the migrator writes down what it applied. Null when the database has never met it. */
+  const record = () =>
+    one<string | null>(
+      `SELECT to_regclass('drizzle.__drizzle_migrations')::text AS value`,
+    );
+
+  it("has the eleven tables and every migration on record, and nothing is left to apply", async () => {
+    // How many migrations there are: one today. Read off the journal rather
+    // than typed here, or every new migration would fail this test.
+    const journal = JSON.parse(
+      readFileSync(resolve(MIGRATIONS_FOLDER, "meta/_journal.json"), "utf8"),
+    ) as { entries: unknown[] };
+
+    const { db, pool } = createDb(process.env.DATABASE_URL!, { max: 1 });
+    try {
+      // This file's database was copied from the template, so it starts with
+      // the tables and with the migrator's record. Both have to go: a record
+      // left behind would say an empty database is up to date.
+      await dropEverything(db);
+      expect(await tables()).toBe(0);
+      expect(await record()).toBeNull();
+
+      expect(await applyMigrations(db)).toBe(journal.entries.length);
+      expect(await tables()).toBe(11);
+      expect(
+        await one<number>(
+          `SELECT count(*)::integer AS value FROM drizzle.__drizzle_migrations`,
+        ),
+      ).toBe(journal.entries.length);
+
+      // A second run finds nothing pending, and says so.
+      expect(await applyMigrations(db)).toBe(0);
+      expect(await tables()).toBe(11);
+    } finally {
+      await pool.end();
+    }
   });
 });

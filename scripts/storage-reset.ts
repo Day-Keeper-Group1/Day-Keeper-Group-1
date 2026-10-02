@@ -32,7 +32,7 @@
 import { DeleteObjectsCommand, ListObjectsV2Command } from "@aws-sdk/client-s3";
 import { config } from "dotenv";
 
-import { refuseIfRealAccounts } from "../db/real-accounts";
+import { refuseIfRealAccounts } from "../db/lib/real-accounts";
 import { hostIsLocal } from "../src/lib/local-host";
 import {
   ensureBucket,
