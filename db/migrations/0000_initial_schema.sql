@@ -18,7 +18,7 @@ CREATE TABLE "users" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"email" text NOT NULL,
 	"email_canonical" text GENERATED ALWAYS AS (lower(btrim(email))) STORED,
-	"display_name" text NOT NULL,
+	"display_name" varchar(80) NOT NULL,
 	"password_hash" text NOT NULL,
 	"role" "user_role" DEFAULT 'user' NOT NULL,
 	"timezone" text DEFAULT 'Australia/Melbourne' NOT NULL,
