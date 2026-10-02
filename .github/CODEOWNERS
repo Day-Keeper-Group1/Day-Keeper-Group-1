@@ -13,6 +13,8 @@ CLAUDE.md       @Jason-Junchun-Zhang
 /src/server/db/schema/    @Jason-Junchun-Zhang
 /drizzle.config.ts        @Jason-Junchun-Zhang
 
-# CI/CD: the workflows, this file, and how the site is built on Netlify.
+# CI/CD: the workflows, this file, how the site is built on Netlify, and the
+# git hooks, which run the same migration checks before a commit exists.
 /.github/       @Jason-Junchun-Zhang
 /netlify.toml   @Jason-Junchun-Zhang
+/.husky/        @Jason-Junchun-Zhang

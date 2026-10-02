@@ -18,6 +18,7 @@ package-lock.json
 node_modules/
 next-env.d.ts
 db/migrations/
+.rehearse/
 
 # Presentations are slides as they were shown, fonts and data included. A
 # reflow would change a record, not fix code.

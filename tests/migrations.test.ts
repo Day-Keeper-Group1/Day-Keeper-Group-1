@@ -53,6 +53,8 @@ const REGENERATE = [
   "migration here without saying so. Throw this branch's migrations away and write them again",
   "on top of main's:",
   "",
+  "  git fetch origin main",
+  "  git merge origin/main",
   "  npm run db:regenerate -- --name=<what_changed>",
 ].join("\n");
 

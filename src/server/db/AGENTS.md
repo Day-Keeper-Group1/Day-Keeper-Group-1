@@ -80,7 +80,7 @@ Each check prints what is wrong, where, and the commands that put it right. Read
 
 | Check | What it refuses | Runs |
 |---|---|---|
-| `npm run db:check` | The schema files and the newest migration disagree. The journal is out of order. A migration that is on main was edited. A new migration adds a NOT NULL column with no default. | After `db:generate`; at commit, when the commit touches the schema files or the migrations; in CI. No database. |
+| `npm run db:check` | main gained a migration while this branch was open. A migration that is on main was edited. A new migration adds a NOT NULL column with no default. The schema files and the newest migration disagree. The journal is out of order. | After `db:generate`; at commit, when the commit touches the schema files or the migrations; in CI. No database. |
 | `npm run db:rehearse` | A new migration that cannot be applied to a database with rows in it. It builds a database as main has it, fills it with the seed's rows, and applies this branch's new migrations. | After `db:generate`, when PostgreSQL answers; in CI. |
 | The notice on the pull request | Nothing. When a new migration drops or renames a table or a column, or deletes rows, the pull request's comment opens with a warning that quotes the statement. | In CI, on a pull request. |
 
@@ -105,9 +105,18 @@ A migration that changes rows, not structure, is the one kind a person writes. `
 `npm run db:regenerate -- --name=<what_changed>` makes `db/migrations` exactly what main has and then generates this branch's migration afresh. Use it in two cases:
 
 - **A check refused the migration,** and the schema file has been corrected.
-- **main gained a migration while this branch was open.** Both branches wrote "the next migration", and git reports a conflict in `meta/_journal.json`. Take main's side of everything under `db/migrations` and run `db:regenerate`. The journal is never merged by hand: the migrator applies only migrations dated later than the last one a database has had, so this branch's, dated earlier than main's, would be skipped on that database without a word. Written again, it is dated now.
+- **main gained a migration while this branch was open.** Both branches wrote "the next migration". `db:check` says so, at commit and in CI, and gives these commands:
 
-It removes every migration this branch added. A `--custom` migration's SQL is hand-written: copy it out first, and put it back with `db:generate -- --custom`. A rename done as three migrations has to be done again as three.
+  ```bash
+  git fetch origin main
+  git merge origin/main        # stops on conflicts under db/migrations: leave them
+  npm run db:regenerate -- --name=<what_changed>
+  git commit                   # ends the merge; db:regenerate staged db/migrations
+  ```
+
+  Main is merged first so that the schema files hold main's change as well as this branch's. `db:regenerate` refuses to run before that: generating from schema files that have not met main's change would write a migration that drops what main just added. A conflict in a schema file is solved by keeping both changes. The journal is never merged by hand: the migrator applies only migrations dated later than the last one a database has had, so this branch's, dated earlier than main's, would be skipped on that database without a word. Written again, it is dated now.
+
+It removes every migration this branch added, and stages the folder when it is done. A `--custom` migration's SQL is hand-written: copy it out first, and put it back with `db:generate -- --custom`. A rename done as three migrations has to be done again as three.
 
 ### What the migrator does, and three rules that follow
 
