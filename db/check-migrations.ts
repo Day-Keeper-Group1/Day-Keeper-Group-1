@@ -1,0 +1,81 @@
+// KAN-86: two things about db/migrations that are wrong before any database is asked.
+
+/**
+ * Check this branch's migrations against main's, with no database.
+ *
+ * It is the second half of `npm run db:check` (the first is
+ * tests/migrations.test.ts, which asks whether the schema files and the newest
+ * migration agree). The commit hook runs both when a commit touches the schema
+ * files or the migrations, and CI runs both on every pull request.
+ *
+ * 1. A migration that is on main was changed. Databases that already applied
+ *    it never look at it again, so the edit reaches some databases and not
+ *    others, and nothing reports the difference. Deleting one is allowed: that
+ *    is what reverting a pull request does.
+ * 2. A new migration adds a column that every existing row would need a value
+ *    for, and gives none. It works on the empty databases the tests build and
+ *    fails on one that holds rows.
+ *
+ * Whoever reads the message is usually a coding agent, so each message says
+ * what is wrong, where, and the commands that put it right.
+ *
+ *   npm run db:check
+ */
+
+import { readFileSync } from "node:fs";
+
+import {
+  MAIN,
+  migrationChanges,
+  newMigrations,
+  requireMain,
+} from "./lib/main-branch";
+import { requiredColumnsWithoutDefault } from "./lib/migration-rules";
+
+requireMain();
+
+const problems: string[] = [];
+
+// 1. main's migrations are as main has them. The journal is expected to
+// change (every new migration adds an entry to it), so it is not looked at.
+const edited = migrationChanges().filter(
+  (change) =>
+    change.status === "M" &&
+    (change.path.endsWith(".sql") || /_snapshot\.json$/.test(change.path)),
+);
+for (const { path } of edited) {
+  problems.push(
+    `${path} is already on main, and this branch changed it.\n\n` +
+      "A migration that has been merged is history: a database that already applied it\n" +
+      "will never see the edit. Put the file back, change the schema file instead, and\n" +
+      "let a new migration carry the change:\n\n" +
+      `  git restore --source=${MAIN} --staged --worktree -- ${path}\n` +
+      "  (edit the table under src/server/db/schema/)\n" +
+      "  npm run db:generate -- --name=<what_changed>",
+  );
+}
+
+// 2. A new migration must be able to run on a table that holds rows.
+for (const path of newMigrations()) {
+  for (const statement of requiredColumnsWithoutDefault(
+    readFileSync(path, "utf8"),
+  )) {
+    problems.push(
+      `${path} adds a column that is NOT NULL and has no default:\n\n` +
+        `  ${statement}\n\n` +
+        "PostgreSQL refuses this on a table that already holds rows, because the existing\n" +
+        "rows would have no value for it. In the schema file, give the column a default\n" +
+        "(.default(...)) or leave it nullable (remove .notNull()), then write the\n" +
+        "migration again:\n\n" +
+        "  npm run db:regenerate -- --name=<what_changed>",
+    );
+  }
+}
+
+if (problems.length > 0) {
+  console.error(problems.join("\n\n----\n\n"));
+  console.error(
+    '\nThe rules, and the reason for each: src/server/db/AGENTS.md, "How the database changes".',
+  );
+  process.exit(1);
+}
