@@ -4,10 +4,11 @@
  * Document reads shared by the letter endpoints and the home screen.
  *
  * A letter's row is written twice and never by a person: once when the
- * photographs are stored, and once when the reading comes back
- * (src/server/uploads.ts). Everything here is the other direction, and it is
- * only presentation: what to call a letter before anyone knows who sent it,
- * which of its fields a screen may show, and where its photographs are.
+ * photographs are stored (src/server/uploads/intake.ts), and once when the
+ * reading comes back (src/server/uploads/reading.ts). Everything here is the
+ * other direction, and it is only presentation: what to call a letter before
+ * anyone knows who sent it, which of its fields a screen may show, and where
+ * its photographs are.
  *
  * Every query is scoped by user id. Knowing a letter's id must never be enough
  * to read it, which is also why a letter belonging to somebody else comes back
@@ -70,7 +71,7 @@ const COMPLETED_TASK_WINDOW_DAYS = 7;
  * Formatting rather than arithmetic: Intl is asked what clock this instant
  * shows over there, which is the same thing todayInZone() does in
  * src/lib/contract/dates.ts. It happens here rather than in SQL because
- * src/server/uploads.ts forms the same label for a letter it has just
+ * src/server/uploads/intake.ts forms the same label for a letter it has just
  * inserted, and a second way of reaching these two strings is a second way for
  * them to disagree.
  */

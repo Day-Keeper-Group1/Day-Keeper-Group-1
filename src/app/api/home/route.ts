@@ -25,7 +25,7 @@ export const GET = route(async () => {
   // round per request, and a round that decided nothing leaves the next one
   // queued; this reads it, after the answer has gone, so the poll is not
   // slowed by it. Only while something is being read, so an ordinary visit
-  // to Home costs nothing. src/server/uploads.ts, continueReadings.
+  // to Home costs nothing. src/server/uploads/reading.ts, continueReadings.
   if (home.counts.processing > 0) {
     after(() => continueReadings(user.id));
   }

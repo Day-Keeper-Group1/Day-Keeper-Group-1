@@ -44,8 +44,8 @@ export type ExtractionInput = {
  * rejection and no repair: a letter is never turned away for being the wrong
  * sort of document, a photograph is never refused for being blurred, and nobody
  * is asked to take it again. So a failure here is our side failing. The same
- * call is made again a couple of times first (src/server/uploads.ts), and
- * only when every try has failed is the document marked failed.
+ * call is made again a couple of times first (src/server/uploads/reading.ts),
+ * and only when every try has failed is the document marked failed.
  *
  * `message` is developer text. It is stored with the run and never shown; the
  * sentence a person reads is worded once, in src/lib/contract/api.ts, so that
@@ -56,10 +56,10 @@ export class ExtractionFailure extends Error {
    * KAN-59: whether reading the same photographs again could come out
    * differently. A call that errored, an answer that was not JSON, and an
    * answer outside the contract are all things a model does once and not the
-   * next time, so they are worth another try (src/server/uploads.ts). A page
-   * handed over without its bytes, or a reader with no key configured, fails
-   * the same way however many times it is asked, and says so here so nobody
-   * pays for the asking.
+   * next time, so they are worth another try (src/server/uploads/reading.ts).
+   * A page handed over without its bytes, or a reader with no key configured,
+   * fails the same way however many times it is asked, and says so here so
+   * nobody pays for the asking.
    */
   readonly retryable: boolean;
 

@@ -55,7 +55,7 @@ export function factLines(
   // KAN-59: an appointment happens at a time on a day, so the two are one row,
   // "When", the way the prototype writes it. A time with no date to hang on
   // is not shown at all, the same rule that keeps it off the document row
-  // (columnsFromReading in src/server/uploads.ts).
+  // (columnsFromReading in src/server/uploads/reading-columns.ts).
   const date = shown.find((field) => field.key === "due_date");
   const time = shown.find(
     (field) => field.key === "due_time" && isWallClock(field.value as string),

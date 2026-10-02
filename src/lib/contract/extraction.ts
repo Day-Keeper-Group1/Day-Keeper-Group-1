@@ -51,7 +51,7 @@ export const CONTRACT_VERSION = "2.0" as const;
  *   there is nothing to pay or nothing to be on time for. A letter that truly
  *   gives no date or asks for no money says so with a confident Not applicable
  *   or No payment required, so this rule never touches it. Enforced in
- *   readDocument() in src/server/uploads.ts.
+ *   readDocument() in src/server/uploads/reading.ts.
  * - Any other field not `confirmed`: the server collapses `uncertain` to
  *   `unreadable` on the way out and the screen does not draw the row. No
  *   screen, no response, no task and no calendar entry carries a value the
