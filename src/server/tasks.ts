@@ -5,6 +5,10 @@
  * is upcoming or overdue is derived here, at read time, in that person's time
  * zone. Every query is scoped by user id: knowing another task's id must never
  * be enough to read it.
+ *
+ * KAN-93: an id that is not the shape of an id is a task nobody has, so each
+ * function that is handed one answers null before asking the database, as the
+ * letter functions do (src/lib/uuid.ts says why).
  */
 
 import "server-only";
@@ -14,6 +18,7 @@ import {
   type TaskDetail,
   type TaskSummary,
 } from "@/lib/contract/api";
+import { isUuid } from "@/lib/uuid";
 import { db } from "@/server/db";
 import { findOwnedPageCount } from "@/server/db/queries/documents";
 import {
@@ -107,6 +112,8 @@ export async function getTaskSummary(
   timeZone: string,
   now: Date = new Date(),
 ): Promise<TaskSummary | null> {
+  if (!isUuid(taskId)) return null;
+
   const rows = await findOwnedTaskRows(db(), userId, taskId);
 
   return mapTaskRows(rows, timeZone, now)[0] ?? null;
@@ -153,6 +160,8 @@ export async function completeTask(
   timeZone: string,
   now: Date = new Date(),
 ): Promise<TaskSummary | null> {
+  if (!isUuid(taskId)) return null;
+
   const rows = await completeOwnedTaskRows(db(), userId, taskId);
 
   return mapTaskRows(rows, timeZone, now)[0] ?? null;
@@ -165,6 +174,8 @@ export async function reopenTask(
   timeZone: string,
   now: Date = new Date(),
 ): Promise<TaskSummary | null> {
+  if (!isUuid(taskId)) return null;
+
   const rows = await reopenOwnedTaskRows(db(), userId, taskId);
 
   return mapTaskRows(rows, timeZone, now)[0] ?? null;

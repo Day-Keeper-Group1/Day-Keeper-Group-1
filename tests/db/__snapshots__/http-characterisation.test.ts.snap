@@ -326,18 +326,18 @@ exports[`the API, as it answered before the database layer moved > answers every
     "step": "untick a task nobody has",
   },
   {
-    "body": "{"error":{"code":"server_error","message":"Something went wrong at our end. Please try again in a moment."}}",
-    "status": 500,
+    "body": "{"error":{"code":"not_found","message":"Task not found."}}",
+    "status": 404,
     "step": "a task id that is not an id",
   },
   {
-    "body": "{"error":{"code":"server_error","message":"Something went wrong at our end. Please try again in a moment."}}",
-    "status": 500,
+    "body": "{"error":{"code":"not_found","message":"Task not found."}}",
+    "status": 404,
     "step": "tick a task id that is not an id",
   },
   {
-    "body": "{"error":{"code":"server_error","message":"Something went wrong at our end. Please try again in a moment."}}",
-    "status": 500,
+    "body": "{"error":{"code":"not_found","message":"Task not found."}}",
+    "status": 404,
     "step": "untick a task id that is not an id",
   },
   {

@@ -25,7 +25,6 @@ vi.mock("@/server/extraction", async () =>
 );
 
 import { db } from "@/server/db";
-import { dbCause } from "@/server/db/errors";
 import { findOwnedPageCount } from "@/server/db/queries/documents";
 import {
   listOwnedFieldRowsInTaskOrder,
@@ -712,22 +711,17 @@ describe("tasks", () => {
       expect("documentId" in listed).toBe(false);
     });
 
-    // 500 at the endpoint, where a letter answers 404: nothing checks the
-    // shape of a task id before PostgreSQL does. Pinned as it is, not as it
-    // should be (tests/db/http-characterisation.test.ts records the 500).
-    it("lets PostgreSQL refuse an id these tables could not hold", async () => {
-      const refusedByPostgres = (error: unknown) =>
-        (dbCause(error) as { code?: string }).code === "22P02";
-
-      await expect(
-        getTask("not-a-uuid", margaret.id, MELBOURNE),
-      ).rejects.toSatisfy(refusedByPostgres);
-      await expect(
-        completeTask("not-a-uuid", margaret.id, MELBOURNE),
-      ).rejects.toSatisfy(refusedByPostgres);
-      await expect(
-        reopenTask("not-a-uuid", margaret.id, MELBOURNE),
-      ).rejects.toSatisfy(refusedByPostgres);
+    // KAN-93: 404 at the endpoint, as a letter answers. The shape of the id is
+    // checked before PostgreSQL is asked, which would refuse it with an error.
+    it("treats an id these tables could not hold as a task nobody has", async () => {
+      expect(await getTask("not-a-uuid", margaret.id, MELBOURNE)).toBeNull();
+      expect(
+        await getTaskSummary("not-a-uuid", margaret.id, MELBOURNE),
+      ).toBeNull();
+      expect(
+        await completeTask("not-a-uuid", margaret.id, MELBOURNE),
+      ).toBeNull();
+      expect(await reopenTask("not-a-uuid", margaret.id, MELBOURNE)).toBeNull();
     });
   });
 
