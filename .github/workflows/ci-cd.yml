@@ -32,6 +32,9 @@ jobs:
           --health-retries 20
     steps:
       - uses: actions/checkout@v7
+      # KAN-86: the migration checks compare this branch with main. The
+      # checkout brings one commit, so main's is fetched beside it.
+      - run: git fetch --depth=1 origin +refs/heads/main:refs/remotes/origin/main
       - uses: actions/setup-node@v7
         with:
           node-version: 24
@@ -40,7 +43,21 @@ jobs:
       - run: npm run format:check
       - run: npm run lint
       - run: npm run typecheck
+      # KAN-86: the schema files and the migrations agree, no migration that is
+      # on main was edited, and no new one adds a required column with no
+      # default. Each failure prints the commands that fix it: the reader is
+      # usually a coding agent, and it should be able to put this right alone.
+      - name: Migrations agree with the schema and with main
+        run: npm run db:check
       - run: npm test
+        env:
+          DATABASE_URL: postgres://daykeeper:daykeeper_local_dev@localhost:5432/daykeeper
+      # KAN-86: the tests prove a migration runs on empty tables. This applies
+      # this branch's new migrations to a database built as main has it and
+      # filled with the seed's rows, which is what the deployed one looks like.
+      # A branch that adds no migration passes at once.
+      - name: Rehearse new migrations on a database that holds rows
+        run: npm run db:rehearse
         env:
           DATABASE_URL: postgres://daykeeper:daykeeper_local_dev@localhost:5432/daykeeper
       - run: npm run build
@@ -97,6 +114,8 @@ jobs:
       PR: ${{ github.event.pull_request.number }}
     steps:
       - uses: actions/checkout@v7
+      # For the notice below, which reads the migrations this branch adds.
+      - run: git fetch --depth=1 origin +refs/heads/main:refs/remotes/origin/main
       - uses: actions/setup-node@v7
         with:
           node-version: 24
@@ -107,9 +126,19 @@ jobs:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ vars.NETLIFY_SITE_ID }}
       # One comment per pull request: written the first time, edited after.
+      #
+      # It opens with a warning when a migration in the pull request drops or
+      # renames something that holds data (db/notice.ts prints it, or nothing).
+      # The check stays green on purpose: whether data may go is the code
+      # owner's decision, and this puts the statement in front of them.
       - run: |
-          gh pr comment "$PR" --edit-last --create-if-none --body "**Preview of this pull request:** https://pr-$PR--daykeeper-group1.netlify.app
-
-          Built from \`${{ github.event.pull_request.head.sha }}\`. It uses the shared staging database, so sign in with your own account. If this pull request adds a migration under \`db/migrations\`, pages that need the new structure will show errors until it merges."
+          {
+            npm run -s db:notice
+            echo
+            echo "**Preview of this pull request:** https://pr-$PR--daykeeper-group1.netlify.app"
+            echo
+            echo "Built from \`${{ github.event.pull_request.head.sha }}\`. It uses the shared staging database, so sign in with your own account. If this pull request adds a migration under \`db/migrations\`, pages that need the new structure will show errors until it merges."
+          } > "$RUNNER_TEMP/comment.md"
+          gh pr comment "$PR" --edit-last --create-if-none --body-file "$RUNNER_TEMP/comment.md"
         env:
           GH_TOKEN: ${{ github.token }}
