@@ -109,8 +109,8 @@ function judgeCountAndTypes(mimeTypes: readonly string[]): void {
 /** Whether one page's size is within the limits. */
 function judgeSize(pageNumber: number, byteSize: number): void {
   // A file of no bytes passes every other check here and then breaks the
-  // byte_size constraint in db/schema.sql, which would reach the person as a
-  // server error instead of as a sentence she can act on.
+  // byte_size constraint in src/server/db/schema/documents.ts, which would
+  // reach the person as a server error instead of as a sentence she can act on.
   if (byteSize === 0) {
     throw new UploadRejected("One of those photos did not come through.", {
       pages: `Page ${pageNumber} is empty.`,

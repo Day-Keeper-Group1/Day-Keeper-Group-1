@@ -56,7 +56,8 @@ export const POST = route(async (request: Request) => {
   }
 
   // email_canonical is lower(btrim(email)), generated and uniquely indexed in
-  // db/schema.sql, so this is both the correct match and the indexed one.
+  // src/server/db/schema/users.ts, so this is both the correct match and the
+  // indexed one.
   const account = await findAccountForSignIn(email);
 
   const matches = await verifyPassword(

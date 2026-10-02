@@ -87,8 +87,8 @@ const TEAM = [
  * The obvious `new Date()` + `toISOString()` version had a bug worth
  * remembering: setDate works in local time and toISOString converts to UTC, so
  * in any zone ahead of UTC an early-morning `npm run db:reset` shifted every
- * seeded due date to the day before. The exact bug src/server/db.ts guards
- * against, reintroduced one layer up.
+ * seeded due date to the day before. The exact bug
+ * src/server/db/schema/documents.ts guards against, reintroduced one layer up.
  */
 function isoDaysFromNow(days: number): string {
   return addDays(todayInZone(APP_TIME_ZONE), days);

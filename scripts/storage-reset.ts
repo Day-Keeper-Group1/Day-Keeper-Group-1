@@ -22,9 +22,9 @@
  *
  * This script talks to storage directly rather than through
  * `src/server/storage.ts`, for the same reason `db/reset.ts` does not use
- * `src/server/db.ts`: those modules are `server-only`, which throws outside
- * Next.js. The client itself is in `scripts/lib/storage-client.ts`, shared with
- * the seed.
+ * `src/server/db/index.ts`: those modules are `server-only`, which throws
+ * outside Next.js. The client itself is in `scripts/lib/storage-client.ts`,
+ * shared with the seed.
  *
  *   npm run storage:reset
  */

@@ -319,8 +319,8 @@ describe("what an upload has to be", () => {
   });
 
   // A file of no bytes passes every other rule and then breaks the byte_size
-  // constraint in db/schema.sql, where it would reach the person as a server
-  // error instead of as a sentence she can act on.
+  // constraint in src/server/db/schema/documents.ts, where it would reach the
+  // person as a server error instead of as a sentence she can act on.
   it("refuses a photograph that carries no bytes", async () => {
     const refusal = await refusalOf([photo("page-1.jpg", 0)]);
 

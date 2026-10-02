@@ -13,7 +13,7 @@
  * on 'queued' means the call never started, 'processing' means it started and
  * nothing came back, and 'failed' carries the developer's sentence about why.
  * A letter stuck on 'processing' forever is the same fact told as a lie, which
- * is the reason db/schema.sql has a 'failed' status at all.
+ * is the reason src/server/db/schema/enums.ts has a 'failed' status at all.
  *
  * The two audiences are kept apart on purpose. `failure_detail` is written for
  * whoever reads the table later and never leaves the server; the sentence a

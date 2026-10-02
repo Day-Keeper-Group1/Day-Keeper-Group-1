@@ -31,11 +31,11 @@
  * test as soon as there are handlers to test, one that proves a document
  * belonging to one person is invisible to another.
  *
- * Roles are defined in db/schema.sql and grant nothing here. The one that could
- * have, platform_operator, existed for an admin dashboard that is not in this
- * release (docs/scope.md). What kept letter content away from it was never a
- * promise on a screen: it is the scoping rule above, which leaves no path from
- * any role to another person's letter.
+ * Roles are defined in src/server/db/schema/enums.ts and grant nothing here.
+ * The one that could have, platform_operator, existed for an admin dashboard
+ * that is not in this release (docs/scope.md). What kept letter content away
+ * from it was never a promise on a screen: it is the scoping rule above, which
+ * leaves no path from any role to another person's letter.
  *
  * What is deliberately NOT here: the auth route handlers themselves (register,
  * login, logout, me). They are specified in docs/api.md and are ordinary

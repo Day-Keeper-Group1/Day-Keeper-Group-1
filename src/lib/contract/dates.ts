@@ -15,8 +15,10 @@
  * There are two directions the invention can creep in, and they are guarded in
  * two places:
  *
- * - src/server/db.ts stops the driver turning a `date` column into a shifted
- *   JavaScript Date on the way OUT of the database.
+ * - the schema files under src/server/db/schema/ declare every `date` column
+ *   in string mode, which stops the driver turning it into a shifted
+ *   JavaScript Date on the way OUT of the database. The comment above dueDate
+ *   in documents.ts says why.
  * - this module stops arithmetic and formatting shifting the day on the way TO
  *   the screen. `new Date('2026-08-15')` parses as UTC midnight, which in any
  *   zone behind UTC formats back as the 14th. Nothing in this file ever

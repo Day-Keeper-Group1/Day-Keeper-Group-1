@@ -3,13 +3,13 @@
  * certificate at the other end.
  *
  * One definition for everything that opens a connection: the app's pool in
- * src/server/db.ts, and the scripts in db/ that build the schema, load the
- * seed and look for real accounts. They used to disagree. The app encrypted
+ * src/server/db/client.ts, and the scripts in db/ that build the schema, load
+ * the seed and look for real accounts. They used to disagree. The app encrypted
  * every connection to a database that was not local; the scripts encrypted
  * none, so rebuilding the schema on Supabase on 25 September sent the
  * database password exchange, every account's email address (read by
- * db/real-accounts.ts) and the whole schema across the internet in the clear,
- * over a connection that anything in between could also have written to
+ * db/lib/real-accounts.ts) and the whole schema across the internet in the
+ * clear, over a connection that anything in between could also have written to
  * (KAN-75).
  *
  * Deliberately free of imports, including `server-only`, for the reason

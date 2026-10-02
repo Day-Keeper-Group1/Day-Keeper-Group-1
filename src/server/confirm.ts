@@ -87,8 +87,8 @@ export async function confirmDocument(
     }
 
     // The action the person saw on the card: confident values only, from the
-    // one reading that succeeded (db/schema.sql). A hedged action was never
-    // shown, so it is not used to name anything either.
+    // one reading that succeeded (src/server/db/schema/readings.ts). A hedged
+    // action was never shown, so it is not used to name anything either.
     const actionText = await findConfirmedAction(tx, documentId);
 
     // A letter that asks for nothing is kept, and makes no task.
@@ -130,7 +130,7 @@ export async function confirmDocument(
     await markOwnedDocumentConfirmed(tx, userId, documentId);
 
     // Metadata only: which letter, which task, how many reminders. Never a
-    // value from the letter (db/schema.sql, "Audit").
+    // value from the letter (src/server/db/schema/audit.ts).
     await insertAuditLog(tx, {
       actorId: userId,
       action: "document.confirm",
