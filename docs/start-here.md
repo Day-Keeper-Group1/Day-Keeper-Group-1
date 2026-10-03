@@ -111,9 +111,11 @@ Accounts, all already hashed in the database:
 | `npm run db:reset` | rebuild the database from `db/migrations`, empty the bucket, then seed both. In that order: the seed writes photographs, so emptying afterwards would delete them |
 | `npm run db:schema` | rebuild empty tables from the migrations, no seed |
 | `npm run db:seed` | reseed without touching the schema |
-| `npm run db:generate -- --name=<what_changed>` | after editing `src/server/db/schema`: write the migration |
+| `npm run db:generate -- --name=<what_changed>` | after editing `src/server/db/schema`: write the migration, then check and rehearse it. When it refuses, the message says what to change |
+| `npm run db:regenerate -- --name=<what_changed>` | throw this branch's migration away and write it again on top of main's: after a check refused it, or after main gained a migration of its own |
 | `npm run db:migrate` | apply pending migrations, keeping the data. A local database built before KAN-92 has no record of applied migrations, so it needs one `npm run db:reset` before this can ever work |
-| `npm run db:check` | answers, with no database, whether the schema files and the newest migration agree. It also runs inside `npm test` |
+| `npm run db:check` | answers, with no database, whether the schema files and the migrations agree and whether main's migrations are untouched. It runs at commit when a commit touches either, and in CI |
+| `npm run db:rehearse` | applies this branch's new migrations to a scratch database built as main has it, with the seed's rows in it. A migration that only works on empty tables fails here, before the merge |
 | `npm run storage:reset` | make the bucket exist and empty it, without touching the database. The seeded photographs go with it; `npm run db:reset` puts both sides back |
 | `npm test` | every test; the database tests need the Postgres above |
 | `npm run test:unit` | only the tests that need no database |
@@ -162,8 +164,9 @@ everything, applies every migration from the first, and seeds. A database built
 before KAN-92 needs that `db:reset` once before `db:migrate` can work (see
 Commands, above).
 
-Migrations are generated, never written or edited by hand, and one that has
-been merged is never changed. `src/server/db/AGENTS.md` has the rules and the
+Migrations are generated, a generated one is never edited by hand, and one that
+has been merged is never changed. The checks that run after `db:generate`, at
+commit and in CI say what to do when a migration is wrong. `src/server/db/AGENTS.md` has the rules and the
 reasons. `db/reset.ts` refuses to run against a database that is not local,
 and against one that holds accounts nobody seeded.
 

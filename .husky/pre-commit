@@ -2,3 +2,12 @@
 # fast no matter how big the repository gets. Configuration: "lint-staged" in
 # package.json. --quiet: print problems, not progress.
 npx lint-staged --quiet
+
+# KAN-86: a commit that touches the schema files or the migrations is checked
+# before it exists: the two must agree, and a migration that is already on
+# main must be as main has it. About two seconds, no database. Every other
+# commit skips this. The message says what to run when it fails; CI runs the
+# same check, so a commit made with --no-verify is caught there.
+if git diff --cached --name-only | grep -qE '^(db/migrations/|src/server/db/schema/)'; then
+  npm run -s db:check
+fi
