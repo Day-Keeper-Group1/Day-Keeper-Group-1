@@ -34,14 +34,13 @@
  *   npm run db:seed
  */
 
-import { readFileSync } from "node:fs";
-import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { dbCause } from "../src/server/db/errors";
 import { connect, databaseUrl, loadEnv, refuseIfNotLocal } from "./lib/connect";
 import { refuseIfRealAccounts } from "./lib/real-accounts";
 import { seedWorld } from "./lib/seed-world";
 import {
   ensureBucket,
+  pageUploader,
   storageFromEnv,
   storageUnreachableMessage,
 } from "../scripts/lib/storage-client";
@@ -52,9 +51,6 @@ const url = databaseUrl();
 // The same guard db/reset.ts has, for the same reason: the seed truncates
 // every table.
 refuseIfNotLocal(url, "seed", "The seed truncates every table.");
-
-/** PNG's first eight bytes, which readPageImage() holds each fixture to. */
-const PNG_MAGIC = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
 async function main() {
   // The seed truncates every table before it writes, so it destroys exactly
@@ -73,20 +69,8 @@ async function main() {
   const { db, pool } = connect(url);
   try {
     // Each page's bytes into the bucket, under the key seedWorld() spelled for
-    // it. `image/png` because that key ends in `.png`: db/lib/seed-world.ts,
-    // above seedPages(), says why the two have to agree.
-    await seedWorld(db, async ({ file, key }) => {
-      const bytes = readPageImage(file);
-      await storage.s3.send(
-        new PutObjectCommand({
-          Bucket: storage.bucket,
-          Key: key,
-          Body: bytes,
-          ContentType: "image/png",
-        }),
-      );
-      return bytes.byteLength;
-    });
+    // it (scripts/lib/storage-client.ts, pageUploader).
+    await seedWorld(db, pageUploader(storage));
 
     console.log(`
 Seeded.
@@ -100,11 +84,8 @@ Seeded.
                     jason@example.com  / Jason123
                     hiruni@example.com / Hiruni123
 
-  Margaret has three reminders today, one on each rung of the ladder:
-    home insurance, due in 7 days
-    water bill,     due in 3 days
-    parking fine,   due tomorrow
-  and two tasks ticked off yesterday. Nothing is waiting to be checked.
+  Margaret has this week's letters: db/demo/margaret.json, dated from today.
+  Nothing is waiting to be checked.
 
 Every page above has a real photograph in the bucket. Photograph a letter in
 the app to see one read, checked and put on the calendar.
@@ -112,24 +93,6 @@ the app to see one read, checked and put on the calendar.
   } finally {
     await pool.end();
   }
-}
-
-/**
- * One page file, as bytes, with the single failure worth naming caught here:
- * a clone made without Git LFS holds a small text pointer where each image
- * should be, and uploading that puts 130 bytes of text behind every letter.
- */
-function readPageImage(file: string): Buffer {
-  const bytes = readFileSync(file);
-  if (!bytes.subarray(0, PNG_MAGIC.length).equals(PNG_MAGIC)) {
-    throw new Error(
-      `${file} is not a PNG.\n\n` +
-        `The synthetic letters are stored with Git LFS, and this is the\n` +
-        `pointer file that stands in for one. Install git-lfs, run\n` +
-        `'git lfs pull', and seed again.`,
-    );
-  }
-  return bytes;
 }
 
 main().catch((error) => {

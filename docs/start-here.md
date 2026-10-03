@@ -85,8 +85,10 @@ day reminder until a week before its due date.
 So Margaret has three letters whose reminders all fall on today, one on each
 rung of the seven, three and one day ladder, and two tasks she ticked off
 yesterday, which are there only to show the account has been used. Nothing is
-waiting to be checked. `db/seed.ts` is the inventory: what it prints when it
-runs is the list.
+waiting to be checked. Which letters she has is the demonstration list,
+`db/demo/margaret.json`, one entry per letter with the reason beside it; the
+seed plants it, and so does the Refresh Margaret button on the deployed site
+(`docs/deployment.md`, "Changing what an account holds").
 
 The letters are real fixtures. Their photographs are the pages under
 `data/synthetic-letters`, and their fields come from that folder's
@@ -117,6 +119,8 @@ Accounts, all already hashed in the database:
 | `npm run db:check` | answers, with no database, whether the schema files and the migrations agree and whether main's migrations are untouched. It runs at commit when a commit touches either, and in CI |
 | `npm run db:rehearse` | applies this branch's new migrations to a scratch database built as main has it, with the seed's rows in it. A migration that only works on empty tables fails here, before the merge |
 | `npm run storage:reset` | make the bucket exist and empty it, without touching the database. The seeded photographs go with it; `npm run db:reset` puts both sides back |
+| `npm run account:refresh-margaret` | empty Margaret and plant `db/demo/margaret.json` again, dated from today. Nobody else is touched |
+| `npm run account:clear -- <someone>@example.com` | empty one `@example.com` account: its letters, tasks, reminders and photographs. The account stays |
 | `npm test` | every test; the database tests need the Postgres above |
 | `npm run test:unit` | only the tests that need no database |
 | `npm run test:db` | only the database tests |
@@ -178,6 +182,8 @@ One rule, so you never have to open a file to find out where it may be used:
 ```
 db/reset.ts, migrate.ts   rebuild the database, or bring it up to date
 db/seed.ts                Margaret's world, for showing the product
+db/demo/margaret.json     which letters Margaret has: this week's demonstration list
+db/demo-accounts.ts            empty one demonstration account, or refresh Margaret
 db/lib/                   what those scripts share: connecting, the two guards, the seed's rows
 db/migrations/            generated from the schema files; never edited by hand
 

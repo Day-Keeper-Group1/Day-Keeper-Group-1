@@ -1,0 +1,98 @@
+name: Demo accounts
+
+# KAN-86: what the demonstration accounts on the deployed site hold, changed
+# from a button: Actions, Demo accounts, Run workflow. Two things, one per run:
+#
+#   Refresh Margaret    empty margaret@example.com and plant the letters in
+#                       db/demo/margaret.json, dated from today. Press it
+#                       before a demonstration.
+#   Clear one account   empty the @example.com account typed in the email box:
+#                       its letters, tasks, reminders and photographs. The
+#                       account and its password stay.
+#
+# No other account is touched, and only @example.com accounts can be changed
+# (db/lib/demo-accounts.ts). The database and the bucket come from the staging
+# environment, which opens only for main, so run it from main.
+run-name: ${{ inputs.action }}${{ inputs.email && format(' {0}', inputs.email) || '' }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: What to do
+        type: choice
+        options:
+          - Refresh Margaret
+          - Clear one account
+        default: Refresh Margaret
+      email:
+        description: Which account, for Clear one account only (an @example.com address)
+        type: string
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  # Said here, with a sentence, before the staging environment refuses a run
+  # from another branch with a message about deployment protection rules.
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "::error::Run this from main. Choose main under 'Use workflow from'."
+            exit 1
+          fi
+          if [ "$ACTION" = "Clear one account" ] && [ -z "$EMAIL" ]; then
+            echo "::error::Clear one account needs an address in the email box, for example hiruni@example.com."
+            exit 1
+          fi
+        env:
+          ACTION: ${{ inputs.action }}
+          EMAIL: ${{ inputs.email }}
+
+  change:
+    needs: check
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 10
+    # The same queue as the deploy job in ci-cd.yml: a refresh never runs at
+    # the same moment as a migration.
+    concurrency:
+      group: staging
+      cancel-in-progress: false
+    env:
+      ACTION: ${{ inputs.action }}
+      EMAIL: ${{ inputs.email }}
+    steps:
+      - uses: actions/checkout@v7
+      # The letter photographs are in Git LFS. Only the ones the list names,
+      # and only when they are needed: the repository's LFS also holds the
+      # presentation videos.
+      - name: Fetch the photographs of this week's letters
+        if: inputs.action == 'Refresh Margaret'
+        run: |
+          include=$(node -e 'const l = require("./db/demo/margaret.json").letters; console.log(l.map((x) => "data/synthetic-letters/" + x.folder + "/**").join(","))')
+          git lfs pull --include "$include"
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # What it did goes into the run's summary as well as its log.
+      - name: Change the account
+        run: |
+          if [ "$ACTION" = "Refresh Margaret" ]; then
+            npm run -s account:refresh-margaret | tee -a "$GITHUB_STEP_SUMMARY"
+          else
+            npm run -s account:clear -- "$EMAIL" | tee -a "$GITHUB_STEP_SUMMARY"
+          fi
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_CA_CERT: ${{ vars.DATABASE_CA_CERT }}
+          STORAGE_ENDPOINT: ${{ vars.STORAGE_ENDPOINT }}
+          STORAGE_REGION: ${{ vars.STORAGE_REGION }}
+          STORAGE_BUCKET: ${{ vars.STORAGE_BUCKET }}
+          STORAGE_ACCESS_KEY: ${{ secrets.STORAGE_ACCESS_KEY }}
+          STORAGE_SECRET_KEY: ${{ secrets.STORAGE_SECRET_KEY }}
