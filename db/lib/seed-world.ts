@@ -5,8 +5,12 @@
  *
  * db/seed.ts is what a terminal runs, and its header says what this world is
  * and why it holds so little. This file is the rows themselves: the accounts,
- * the five letters with everything a confirmed letter has, and the audit
+ * Margaret's letters with everything a confirmed letter has, and the audit
  * lines, written through Drizzle in one transaction.
+ *
+ * Which letters Margaret has is not written here. It is the demonstration
+ * list, db/demo/margaret.json (./demo-list.ts reads it), so the seed and the
+ * Refresh Margaret button (db/demo-accounts.ts) plant the same thing.
  *
  * The one thing it does not do is touch the bucket. Whoever calls hands in the
  * function that stores a page and says how many bytes it was. db/seed.ts
@@ -45,6 +49,7 @@ import {
   users,
 } from "../../src/server/db/schema";
 import { truncateAll } from "./admin";
+import { LETTERS_DIR, readDemoList, type DemoLetter } from "./demo-list";
 
 /**
  * Store one page image and say how many bytes it was. db/seed.ts uploads it; a
@@ -63,8 +68,8 @@ export type StorePage = (page: {
 const SEED_PROVIDER = "seed";
 const SEED_MODEL = "answer-key";
 
-/** Where the fixture letters live, relative to the repository root. */
-const LETTERS_DIR = "data/synthetic-letters";
+/** The account the demonstration list belongs to. */
+export const MARGARET_EMAIL = "margaret@example.com";
 
 /**
  * One account each, so that testing together does not mean five people
@@ -116,6 +121,7 @@ function daysAgo(isoDate: string): number {
 export async function seedWorld(
   db: NodePgDatabase,
   storePage: StorePage,
+  list: DemoLetter[] = readDemoList(),
 ): Promise<void> {
   await db.transaction(async (tx) => {
     await truncateAll(tx);
@@ -129,7 +135,7 @@ export async function seedWorld(
     await tx.insert(users).values([
       {
         id: margaretId,
-        email: "margaret@example.com",
+        email: MARGARET_EMAIL,
         displayName: "Margaret Whitfield",
         passwordHash: password,
         role: "user",
@@ -157,92 +163,70 @@ export async function seedWorld(
     }
     await tx.insert(users).values(team);
 
-    // The moment every seeded reading says it started and finished.
-    const seededAt = new Date();
+    // `detail` is left out, so the line takes the column's default, {}.
+    await tx.insert(auditLogs).values({
+      actorId: margaretId,
+      action: "user.register",
+      targetType: "user",
+      targetId: margaretId,
+    });
 
-    // ---- Three reminders due today ------------------------------------------
-    // Reminder days fall seven, three and one day before a due date
-    // (src/lib/contract/reminders.ts), and on one Home marks the task's row.
-    // A letter due in seven days has its seven day reminder today, one due in
-    // three has its three day reminder today, and one due tomorrow has its
-    // last one today. Three letters, and all three rungs of the ladder are on
-    // today at once.
-    //
-    // Three different issuers, and none of the fixtures a demonstration is
-    // likely to photograph live, so a letter uploaded in front of someone
-    // never lands beside its own twin.
-    const insurance = await confirmedLetter(
-      tx,
-      storePage,
-      margaretId,
-      seededAt,
-      fixtureLetter("23-home-insurance-renewal", "Insurance renewal", {
-        dueInDays: 7,
-        uploadedDaysAgo: 2,
-      }),
-    );
-    const water = await confirmedLetter(
-      tx,
-      storePage,
-      margaretId,
-      seededAt,
-      fixtureLetter("03-water-bill", "Utility bill", {
-        dueInDays: 3,
-        uploadedDaysAgo: 6,
-      }),
-    );
-    const fine = await confirmedLetter(
-      tx,
-      storePage,
-      margaretId,
-      seededAt,
-      fixtureLetter("06-parking-infringement-notice", "Fine notice", {
-        dueInDays: 1,
-        uploadedDaysAgo: 8,
-      }),
-    );
+    // Margaret's letters: the demonstration list, db/demo/margaret.json. The
+    // reasons for its first version (three reminders on today, one on each
+    // rung of the ladder, and two ticked off yesterday) are written beside
+    // each entry there.
+    await plantLetters(tx, storePage, margaretId, list);
+  });
+}
 
-    // ---- Two already dealt with ---------------------------------------------
-    // Ticked off yesterday, so they sit under Later on Home with their ticks
-    // on. They are background: evidence the account has been lived in, not
-    // anything to talk about. These keep the date printed on their page.
-    const registration = await confirmedLetter(
-      tx,
-      storePage,
-      margaretId,
-      seededAt,
-      fixtureLetter(
-        "17-vehicle-registration-renewal-notice",
-        "Government letter",
-        { completedDaysAgo: 1 },
+/**
+ * The letters of a demonstration list, planted under one account, each with
+ * the audit line a confirmed letter has. Answers the new letters' ids.
+ *
+ * The seed calls it on an empty database. db/demo-accounts.ts calls it to refresh
+ * Margaret, after removing only her letters, so it writes nothing that is not
+ * hers.
+ */
+export async function plantLetters(
+  tx: Db,
+  storePage: StorePage,
+  userId: string,
+  list: DemoLetter[],
+): Promise<string[]> {
+  // The moment every seeded reading says it started and finished.
+  const seededAt = new Date();
+
+  const ids: string[] = [];
+  for (const entry of list) {
+    ids.push(
+      await confirmedLetter(
+        tx,
+        storePage,
+        userId,
+        seededAt,
+        fixtureLetter(
+          entry.folder,
+          entry.documentType,
+          "dueInDays" in entry
+            ? {
+                dueInDays: entry.dueInDays,
+                uploadedDaysAgo: entry.uploadedDaysAgo,
+              }
+            : { completedDaysAgo: entry.completedDaysAgo },
+        ),
       ),
     );
-    const rates = await confirmedLetter(
-      tx,
-      storePage,
-      margaretId,
-      seededAt,
-      fixtureLetter("04-council-rates-notice", "Council notice", {
-        completedDaysAgo: 1,
-      }),
-    );
+  }
 
-    // `detail` is left out, so each line takes the column's default, {}.
-    await tx.insert(auditLogs).values([
-      {
-        actorId: margaretId,
-        action: "user.register",
-        targetType: "user",
-        targetId: margaretId,
-      },
-      ...[insurance, water, fine, registration, rates].map((documentId) => ({
-        actorId: margaretId,
-        action: "document.confirm",
-        targetType: "document",
-        targetId: documentId,
-      })),
-    ]);
-  });
+  await tx.insert(auditLogs).values(
+    ids.map((documentId) => ({
+      actorId: userId,
+      action: "document.confirm",
+      targetType: "document",
+      targetId: documentId,
+    })),
+  );
+  return ids;
 }
 
 /** The shape of a fixture's ground-truth.json, as far as this file reads it. */

@@ -78,6 +78,8 @@ npm run db:regenerate -- --name=<what_changed> # throw this branch's migration a
 npm run db:migrate        # apply migrations you pulled, keeping your data (a database built before KAN-92 needs one db:reset first)
 npm run db:check          # with no database: do the schema files and the migrations agree, and is main's history untouched?
 npm run db:rehearse       # apply this branch's new migrations to a database built as main has it, with the seed's rows in it
+npm run account:refresh-margaret               # empty Margaret and plant db/demo/margaret.json again, dated from today
+npm run account:clear -- <someone>@example.com # empty one @example.com account; nobody else is touched
 npm run typecheck
 npm run build
 npm run lint

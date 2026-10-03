@@ -79,9 +79,10 @@ jobs:
     timeout-minutes: 10
     # Two merges close together deploy one after the other, never at once.
     # This is also what keeps db:migrate to one run at a time: it takes no
-    # lock of its own (src/server/db/AGENTS.md).
+    # lock of its own (src/server/db/AGENTS.md). The Demo accounts workflow
+    # waits in the same queue, so it never changes rows mid-migration.
     concurrency:
-      group: deploy-preview
+      group: staging
       cancel-in-progress: false
     steps:
       - uses: actions/checkout@v7

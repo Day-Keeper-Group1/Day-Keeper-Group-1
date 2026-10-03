@@ -24,6 +24,8 @@ On GitHub, the CI/CD pipeline holds four values, copied from the zip by Jason (S
 | Repository variable | `NETLIFY_SITE_ID` | Which Netlify site |
 | Environment `staging`, secret | `DATABASE_URL` | The Supabase database, through the **session pooler** (port 5432) |
 | Environment `staging`, variable | `DATABASE_CA_CERT` | Supabase's root certificate, the same as in the zip |
+| Environment `staging`, variables | `STORAGE_ENDPOINT`, `STORAGE_REGION`, `STORAGE_BUCKET` | The photograph bucket, for the Demo accounts button |
+| Environment `staging`, secrets | `STORAGE_ACCESS_KEY`, `STORAGE_SECRET_KEY` | The bucket's access key, for the Demo accounts button |
 
 The `staging` environment (Settings, Environments) opens only for a run on `main`: its deployment branch rule lists `main` alone. A pull request's run cannot read it, whatever that pull request's copy of the workflow says. That is why the database's address is there and not a repository secret: a run on a pull request happens before anyone has reviewed it. Set up by Jason on 2026-10-03 (KAN-86).
 
@@ -120,6 +122,15 @@ Docker is only for local development. Nothing in the cloud runs a container: Net
 3. **Ask the deployed site whether it can reach its database**: `GET /api/health` must answer 200 (`docs/api.md`, "Is the site up").
 
 If `build` or `deploy` fails on main, the job `report-failure` opens an issue titled "main is red: the CI/CD run failed" (or comments on the one already open) with the run's link, the command that prints the failed step's log, and what a failure at each step means. Close it when main is green again.
+
+## Changing what an account holds: the Demo accounts button (KAN-86)
+
+Migrations change what the tables are. What one account holds is changed by a button: on GitHub, **Actions, Demo accounts, Run workflow**, from `main`. It does one of two things per run:
+
+- **Refresh Margaret**: empty `margaret@example.com` and plant the letters in `db/demo/margaret.json`, dated from that day. Press it before a demonstration. To change what she holds, change that file (Jason reviews it).
+- **Clear one account**: empty the `@example.com` account typed in the email box (letters, tasks, reminders, photographs). The account, its password and its sessions stay.
+
+No other account is touched, and an address that does not end `@example.com` is refused: an account somebody registered with a real address is never changed by it. It waits in the same queue as a deploy, so it never runs during a migration. Locally the same thing is `npm run account:refresh-margaret` and `npm run account:clear -- <someone>@example.com`.
 
 The database changes before the code on purpose: new code may need the new structure, and the old code keeps working on it for the minutes in between, because a migration only adds, or drops what the code in the same pull request stopped using (`src/server/db/AGENTS.md`).
 
@@ -343,6 +354,7 @@ Checked on the providers' own pages on 2026-09-24.
 
 ## Open items
 
+- ~~**A script that refreshes Margaret only.**~~ Done on 2026-10-03 (KAN-86): the Demo accounts button, above. What follows is the original note.
 - **A script that refreshes Margaret only. Deferred on 2026-09-26, and must be written before the first demonstration after any teammate keeps their own data on the deployed database.** Until then `npm run db:reset` with `DK_ALLOW_REMOTE_RESET=yes` does the job, because the hosted database holds nothing but the seed. The seed is for weekly demonstrations and changes with them, and Margaret's three reminders are dated from the day the seed runs, so a deployed copy goes stale within days even when the seed does not change. Both existing scripts wipe everything (`db:reset` truncates tables and empties the bucket; `db:seed` truncates every table but leaves old photographs behind), which is wrong on a hosted database where teammates may have their own test data. The new script deletes Margaret's letters, tasks and reminders and her photographs under `uploads/<her id>/`, then writes her five letters again from the current seed with dates counted from that day. Other accounts are not touched. Same two guards and TLS as the other scripts. Run it against the deployed database before each demonstration.
 - ~~`touch_updated_at` search_path~~ (advisor WARN): the function was removed in KAN-92 (`updated_at` is set by the application now), so the warning goes away when the database is rebuilt.
 - ~~Encrypt the setup scripts~~: done 2026-09-26, commit `78116a25`. The rule moved out of the file that builds the app's pool (now `src/server/db/client.ts`) into `src/lib/database-tls.ts`, and the app's pool and all three scripts use it. Checked: the scripts reach Supabase over TLS 1.3 and local Docker without TLS. The schema build and seed of 2026-09-25 had travelled unencrypted; the reset of 2026-09-26 was encrypted. Next step to consider: Supabase's "Enforce SSL", so an unencrypted connection is refused outright.

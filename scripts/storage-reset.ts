@@ -29,13 +29,14 @@
  *   npm run storage:reset
  */
 
-import { DeleteObjectsCommand, ListObjectsV2Command } from "@aws-sdk/client-s3";
 import { config } from "dotenv";
 
 import { refuseIfRealAccounts } from "../db/lib/real-accounts";
 import { hostIsLocal } from "../src/lib/local-host";
 import {
+  deleteKeys,
   ensureBucket,
+  listKeys,
   storageFromEnv,
   storageUnreachableMessage,
 } from "./lib/storage-client";
@@ -44,7 +45,7 @@ config({ path: ".env.local", quiet: true });
 config({ path: ".env", quiet: true });
 
 const storage = storageFromEnv();
-const { s3, bucket, endpoint } = storage;
+const { bucket, endpoint } = storage;
 
 /**
  * The same guard `db/reset.ts` has, and for the same reason: this empties a
@@ -62,31 +63,9 @@ if (!isLocal && process.env.DK_ALLOW_REMOTE_RESET !== "yes") {
 }
 
 async function emptyBucket(): Promise<number> {
-  let removed = 0;
-  let token: string | undefined;
-
-  do {
-    const listed = await s3.send(
-      new ListObjectsV2Command({ Bucket: bucket, ContinuationToken: token }),
-    );
-    const keys = (listed.Contents ?? [])
-      .map((object) => object.Key)
-      .filter((key): key is string => Boolean(key));
-
-    if (keys.length > 0) {
-      await s3.send(
-        new DeleteObjectsCommand({
-          Bucket: bucket,
-          Delete: { Objects: keys.map((Key) => ({ Key })) },
-        }),
-      );
-      removed += keys.length;
-    }
-
-    token = listed.IsTruncated ? listed.NextContinuationToken : undefined;
-  } while (token);
-
-  return removed;
+  const keys = await listKeys(storage, "");
+  await deleteKeys(storage, keys);
+  return keys.length;
 }
 
 async function main() {
