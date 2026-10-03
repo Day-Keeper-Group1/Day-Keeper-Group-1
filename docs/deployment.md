@@ -1,6 +1,6 @@
 # Deployment (trial, KAN-75)
 
-Status (2026-09-26): runs end to end, phone included. It is a practice run on branch `kan-75-vercel-trial`, for Sai to review and the team to decide whether to adopt. The trial went in five stages, named below: 1 choose the platforms, 2 register the accounts, 3 the laptop against the hosted database and storage, 4 the app on Netlify, 5 a phone.
+Status (2026-10-03): in use. Every merge to `main` is deployed by the CD pipeline (KAN-86), and what to do day to day and when something breaks is in [`docs/runbook.md`](runbook.md). This file is how the deployment was set up and why. The trial went in five stages, named below: 1 choose the platforms, 2 register the accounts, 3 the laptop against the hosted database and storage, 4 the app on Netlify, 5 a phone.
 
 This file holds no passwords, keys or connection strings with a password in them. Those are in Teams; see the next section.
 
