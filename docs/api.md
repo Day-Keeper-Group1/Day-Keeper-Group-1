@@ -113,6 +113,7 @@ confirm that a letter with that id exists.
 | Tick a task off | `POST /api/tasks/:id/complete` |
 | Undo that | `DELETE /api/tasks/:id/complete` |
 | Everything the home screen needs | `GET /api/home` |
+| Is the site up | `GET /api/health` |
 
 There is no calendar endpoint, on purpose. See "The calendar".
 
@@ -1173,6 +1174,49 @@ is still being read, and both sit in `inbox`.
   nothing on screen to say so. Home now shows overdue, today and the next seven
   days whole, the first three of the rest, and a link to the calendar naming how
   many more there are (`src/lib/home.ts`).
+
+---
+
+# Deployment
+
+## Is the site up
+
+```
+GET /api/health
+```
+
+Whether the site can reach its database. No session, no body.
+
+The CD pipeline calls it right after every deploy (`.github/workflows/ci-cd.yml`,
+KAN-86): a site that is up but cannot reach its database fails every page, so
+that is what this asks about. It runs `select 1` and reads nothing of anybody's.
+
+### Success Response
+
+**Code:** `200 OK`
+
+```json
+{ "status": "ok" }
+```
+
+### Error Responses
+
+**Code:** `503 Service Unavailable`
+
+```json
+{ "status": "database_unreachable" }
+```
+
+### Notes
+
+- It answers outside the shared error envelope on purpose. Nothing went wrong
+  in the request: the site is up and its database is not, which is what 503
+  says, and no screen ever reads this answer.
+- Why the database did not answer goes to the site's log
+  (`[health] the database did not answer`), never into the answer: a driver
+  error names a host and a user, and this address is public.
+- On the free Supabase plan, a project with no activity for seven days is
+  paused. That is the usual reason for a 503 on a quiet week.
 
 ---
 

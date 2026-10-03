@@ -402,5 +402,11 @@
         ]
       }
     ]
+  },
+  "health": {
+    "status": "ok"
+  },
+  "healthDown": {
+    "status": "database_unreachable"
   }
 }

@@ -151,3 +151,12 @@ export function scalar<T = unknown>(query: SQLWrapper): SQL<T> {
 export function jsonbValue(value: unknown) {
   return sql<unknown>`${JSON.stringify(value)}::jsonb`;
 }
+
+/**
+ * `select 1`: a statement that reads nothing.
+ *
+ * KAN-86: the health check asks whether the database answers at all, and
+ * nothing else. The builder has no statement without a table, and any table
+ * would make the answer depend on what is in it.
+ */
+export const selectOne = sql<number>`select 1`;

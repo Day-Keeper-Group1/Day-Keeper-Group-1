@@ -537,6 +537,36 @@ const paths = {
       },
     },
   },
+  "/api/health": {
+    get: {
+      tags: ["Deployment"],
+      summary: "Is the site up",
+      description: specified(
+        "Whether the site can reach its database. No sign-in, and nothing in the answer but one word. The CD pipeline calls it right after every deploy, and a 503 turns the run red.",
+        "is-the-site-up",
+      ),
+      responses: {
+        "200": answer(
+          "The site answers and so does its database.",
+          {
+            type: "object",
+            properties: { status: { type: "string", enum: ["ok"] } },
+          },
+          examples.health,
+        ),
+        "503": answer(
+          "The site answers and its database does not. The reason is in the site's log, not here.",
+          {
+            type: "object",
+            properties: {
+              status: { type: "string", enum: ["database_unreachable"] },
+            },
+          },
+          examples.healthDown,
+        ),
+      },
+    },
+  },
   "/api/dev/extract": {
     post: {
       tags: ["Development"],
@@ -933,6 +963,10 @@ export const openApiDocument = {
     {
       name: "Home screen",
       description: "Everything the home screen draws, in one request.",
+    },
+    {
+      name: "Deployment",
+      description: "What the CD pipeline asks a fresh deploy.",
     },
     {
       name: "Development",
