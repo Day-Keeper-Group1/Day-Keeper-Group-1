@@ -120,9 +120,11 @@ jobs:
   # KAN-86: a red run on main is everybody's problem and nobody's screen, so it
   # opens an issue that says where to look, or adds to the one already open.
   # Written for whoever reads it first, usually a coding agent.
+  # Cancelled counts: that is how a deploy stopped by its ten-minute limit
+  # ends, and a hand-cancelled deploy on main deserves a look too.
   report-failure:
     needs: [build, deploy]
-    if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main' && (needs.build.result == 'failure' || needs.deploy.result == 'failure')
+    if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main' && (needs.build.result == 'failure' || needs.deploy.result == 'failure' || needs.deploy.result == 'cancelled')
     runs-on: ubuntu-latest
     permissions:
       issues: write
