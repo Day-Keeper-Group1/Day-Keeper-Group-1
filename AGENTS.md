@@ -100,6 +100,16 @@ Two rules that are easy to break by accident. Both are written where they are en
 - **The six fields are a floor, not a ceiling**, and a field the reader could not read says so rather than going missing. [`src/lib/contract/fields.ts`](src/lib/contract/fields.ts) and [`src/lib/contract/extraction.ts`](src/lib/contract/extraction.ts).
 - **The review screen shows, it never asks.** [`src/lib/contract/api.ts`](src/lib/contract/api.ts).
 
+## Changing the database, and what the accounts hold
+
+CI blocks agents, not people. Every database check is written for whoever is at the keyboard, which is usually a coding agent: when one goes red, at commit, in CI or after `db:generate`, its message says what is wrong and the commands that put it right. Run them and carry on.
+
+**The structure** (tables, columns, constraints, indexes) changes in `src/server/db/schema/` and nowhere else. `npm run db:generate -- --name=<what_changed>` writes the migration and checks it; commit the schema file together with what it wrote. The pull request runs the same checks, and when it merges, the CD pipeline applies the migration to the deployed database before it deploys the code. A rename is three migrations, and a change to rows is a `--custom` migration: [`src/server/db/AGENTS.md`](src/server/db/AGENTS.md), "How the database changes".
+
+**What an account holds** is changed by the Demo accounts button on the deployed site (GitHub, Actions, Demo accounts, Run workflow), and by `npm run account:clear` and `npm run account:refresh-margaret` on your own database. Each teammate's `@example.com` account is theirs: emptying your own is ordinary, and someone else's waits until they ask. Margaret belongs to the demonstration. What she holds is [`db/demo/margaret.json`](db/demo/margaret.json), which Jason reviews, and anyone may refresh her before a demonstration. `operator@example.com` is left as it is. [`docs/deployment.md`](docs/deployment.md), "Changing what an account holds".
+
+**The one line not to cross: nothing run from a laptop changes the deployed database.** Its structure changes only through the pipeline, so every database has had the same migrations in the same order; its accounts only through the button, so every change is on record where the whole team can see it. When something there needs a change neither of them can make, stop and ask Jason.
+
 ## Worktrees: parallel agents without collisions
 
 One shared docker stack serves every checkout. Each worktree owns its own **database** (inside the one Postgres), its own **bucket** (inside the one MinIO) and its own **dev port**, all derived deterministically from its branch name, so any number of agents can build, seed, reset and serve side by side without touching each other. `db:reset` in a worktree nukes only that worktree's database and bucket.
