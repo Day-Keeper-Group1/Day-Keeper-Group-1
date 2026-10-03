@@ -16,6 +16,17 @@ In Microsoft Teams: the team **P000473SE-G1-DayKeeper**, its private channel **I
 
 Not in it: `AZURE_OPENAI_API_KEY`. That is the school's key, issued to the team by RACE and handed round separately; ask Jason for it.
 
+On GitHub, the CI/CD pipeline holds four values, copied from the zip by Jason (Settings of the repository; names only here):
+
+| Where | Name | What it is |
+|---|---|---|
+| Repository secret | `NETLIFY_AUTH_TOKEN` | Lets the pipeline deploy to Netlify, for pull request previews and for main |
+| Repository variable | `NETLIFY_SITE_ID` | Which Netlify site |
+| Environment `staging`, secret | `DATABASE_URL` | The Supabase database, through the **session pooler** (port 5432) |
+| Environment `staging`, variable | `DATABASE_CA_CERT` | Supabase's root certificate, the same as in the zip |
+
+The `staging` environment (Settings, Environments) opens only for a run on `main`: its deployment branch rule lists `main` alone. A pull request's run cannot read it, whatever that pull request's copy of the workflow says. That is why the database's address is there and not a repository secret: a run on a pull request happens before anyone has reviewed it. Set up by Jason on 2026-10-03 (KAN-86).
+
 **For agents.** You cannot open Teams. When a task needs one of the values above, name the variable and ask the person to copy it from that file into their own `.env.local` (or into the Netlify dashboard) themselves. Never write a value into the repository, a commit message, a pull request, a Jira ticket, a group chat or a log; the repository is public. If the zip and this file disagree, the platforms are the truth, then the zip, then this file, and the person should be told so this file gets fixed.
 
 ## For agents: this file is a snapshot, the platforms are the truth
@@ -99,6 +110,18 @@ Mistakes made on the way, so nobody repeats them:
 The code does not know where any of these are. It reads their addresses and credentials from environment variables, so the same code runs against Docker on a laptop and against the hosted services, and deploying means filling in a second set of variables rather than changing code.
 
 Docker is only for local development. Nothing in the cloud runs a container: Netlify takes the built app and runs Next.js itself, and Supabase runs Postgres for us.
+
+## What a merge to main does (KAN-86)
+
+`.github/workflows/ci-cd.yml`, job `deploy`, after `build` has passed on main. One run at a time: a second merge waits for the first.
+
+1. **Apply new migrations to the staging database.** `npm run db:migrate` against Supabase, with `DATABASE_URL` and `DATABASE_CA_CERT` from the `staging` environment. Everything pending is applied in one transaction. If it fails, nothing changed, nothing is deployed, and the site stays on the version before. With nothing pending it prints `Nothing to apply`.
+2. **Deploy to Netlify**, to the `preview` alias.
+3. **Ask the deployed site whether it can reach its database**: `GET /api/health` must answer 200 (`docs/api.md`, "Is the site up").
+
+If `build` or `deploy` fails on main, the job `report-failure` opens an issue titled "main is red: the CI/CD run failed" (or comments on the one already open) with the run's link, the command that prints the failed step's log, and what a failure at each step means. Close it when main is green again.
+
+The database changes before the code on purpose: new code may need the new structure, and the old code keeps working on it for the minutes in between, because a migration only adds, or drops what the code in the same pull request stopped using (`src/server/db/AGENTS.md`).
 
 ## Code the deployment needed
 
@@ -211,7 +234,9 @@ Two consequences worth knowing:
 
 ### Changing the schema later
 
-`npm run db:migrate` applies the migrations a database has not had yet and keeps its data. Against Supabase, run it through the **session pooler** (port 5432), not the transaction pooler, with `DATABASE_CA_CERT` set. It has no guard, because it destroys nothing. A database built before KAN-92, from the old `db/schema.sql`, has no record of applied migrations, so `npm run db:migrate` fails on it: it needs one rebuild with `npm run db:schema` or `npm run db:reset` first. The deployed database gets that rebuild once, right after KAN-92 merges.
+Merge a pull request that adds a migration: the pipeline applies it to Supabase before it deploys the code (above, "What a merge to main does"). Nobody runs `npm run db:migrate` against Supabase by hand any more; two runs at once would both try to apply the same migrations.
+
+`npm run db:migrate` applies the migrations a database has not had yet and keeps its data. Against Supabase it goes through the **session pooler** (port 5432), not the transaction pooler, with `DATABASE_CA_CERT` set. It has no guard, because it destroys nothing. A database built before KAN-92, from the old `db/schema.sql`, has no record of applied migrations, so `npm run db:migrate` fails on it: it needs one rebuild with `npm run db:schema` or `npm run db:reset` first. The deployed database had that rebuild on 2026-10-02 at 21:05, right after KAN-92 merged.
 
 ## Loading the seed on Supabase
 

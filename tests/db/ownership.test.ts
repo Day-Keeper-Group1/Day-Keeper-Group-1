@@ -8,7 +8,7 @@
  * again in every statement named `Owned`. This file holds each of them to the
  * rule, from both sides.
  *
- * From the outside: every function of the four services that is handed a
+ * From the outside: every function of the services that is handed a
  * person (src/server/documents.ts, tasks.ts, confirm.ts and uploads) is asked
  * by a stranger for Margaret's things. It answers with nothing and writes
  * nothing.
@@ -53,6 +53,7 @@ import { db } from "@/server/db";
 import { dbCause } from "@/server/db/errors";
 import * as auditQueries from "@/server/db/queries/audit";
 import * as documentQueries from "@/server/db/queries/documents";
+import * as healthQueries from "@/server/db/queries/health";
 import {
   countOwnedDocumentsToCheck,
   findOwnedDocumentRow,
@@ -93,6 +94,7 @@ import {
   listDocuments,
 } from "@/server/documents";
 import { readLetter } from "@/server/extraction";
+import * as healthService from "@/server/health";
 import { putObject, uploadObjectKey } from "@/server/storage";
 import * as taskService from "@/server/tasks";
 import {
@@ -267,7 +269,7 @@ const refusal = (asked: Promise<unknown>) =>
   );
 
 /**
- * Every function of the four services that is handed a person. The functions
+ * Every function of the services that is handed a person. The functions
  * that are not here are in TAKES_NOTHING_OF_ANYBODYS below.
  */
 const SERVICES: Record<string, Case> = {
@@ -369,7 +371,7 @@ const SERVICES: Record<string, Case> = {
 };
 
 /**
- * The functions of the four services that are handed nothing of anybody's:
+ * The functions of the services that are handed nothing of anybody's:
  * they read no row, so there is nothing of Margaret's to ask them for.
  */
 const TAKES_NOTHING_OF_ANYBODYS = [
@@ -380,6 +382,7 @@ const TAKES_NOTHING_OF_ANYBODYS = [
   "planUpload", // picks a new id and signs links under the asker's own name
   "createDocument", // writes a new letter under the asker, with an id of its own choosing
   "columnsFromReading", // pure
+  "databaseIsReachable", // runs `select 1`, which reads no table
 ];
 
 /**
@@ -557,6 +560,8 @@ const UNSCOPED_ON_PURPOSE = [
   "findConfirmedAction",
   // queries/tasks.ts
   "insertReminders",
+  // queries/health.ts
+  "databaseAnswers",
 ];
 
 /** Not a statement: the owner filter itself, which the owner-scoped statements about a letter share. */
@@ -796,6 +801,7 @@ describe("ownership", () => {
       readings: readingQueries,
       tasks: taskQueries,
       audit: auditQueries,
+      health: healthQueries,
     };
     const statements = functionsOf(...Object.values(QUERIES));
 
@@ -845,7 +851,7 @@ describe("ownership", () => {
       expect(saysWhy.sort()).toEqual([...UNSCOPED_ON_PURPOSE].sort());
     });
 
-    it("has every function the four services export either asked as a stranger or listed as taking nothing of anybody's", () => {
+    it("has every function the services export either asked as a stranger or listed as taking nothing of anybody's", () => {
       expect(
         [...Object.keys(SERVICES), ...TAKES_NOTHING_OF_ANYBODYS].sort(),
       ).toEqual(
@@ -854,6 +860,7 @@ describe("ownership", () => {
           taskService,
           confirmService,
           uploadService,
+          healthService,
         ).sort(),
       );
     });

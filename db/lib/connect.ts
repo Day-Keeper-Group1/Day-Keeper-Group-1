@@ -45,9 +45,17 @@ export function databaseUrl(): string {
   return url;
 }
 
-/** The address as it may be printed: the password replaced by four stars. */
+/**
+ * The address as it may be printed: the user name and the password both
+ * replaced by four stars, so `postgres://****@host:port/database`.
+ *
+ * The user name goes too. On Supabase it carries the project's id
+ * (`postgres.<id>`), and this is printed in GitHub Actions, whose logs are
+ * public for a public repository. GitHub hides a secret only where the whole
+ * value appears, never a part of it.
+ */
 export function maskedUrl(url: string): string {
-  return url.replace(/:[^:@/]+@/, ":****@");
+  return url.replace(/\/\/[^/@]*@/, "//****@");
 }
 
 /**

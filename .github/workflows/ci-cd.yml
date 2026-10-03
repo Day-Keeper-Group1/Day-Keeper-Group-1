@@ -62,14 +62,24 @@ jobs:
           DATABASE_URL: postgres://daykeeper:daykeeper_local_dev@localhost:5432/daykeeper
       - run: npm run build
 
-  # CD (KAN-86): once build has passed on main, publish main to the shared
-  # preview alias on Netlify (docs/deployment.md). Pull requests stop at build.
-  # A preview deploy costs no Netlify credits; --prod would cost 15 of 300.
+  # CD (KAN-86): once build has passed on main, bring the staging database up
+  # to date, publish main to the shared preview alias on Netlify, and ask the
+  # site whether it can reach its database (docs/deployment.md). Pull requests
+  # stop at build. A preview deploy costs no Netlify credits; --prod would cost
+  # 15 of 300.
   deploy:
     needs: build
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    # The staging environment holds the database's address and certificate,
+    # and opens only for a run on main. A pull request's run, whatever its copy
+    # of this file says, cannot reach the database's structure.
+    environment: staging
+    # A paused or unreachable database must not hold the queue for six hours.
+    timeout-minutes: 10
     # Two merges close together deploy one after the other, never at once.
+    # This is also what keeps db:migrate to one run at a time: it takes no
+    # lock of its own (src/server/db/AGENTS.md).
     concurrency:
       group: deploy-preview
       cancel-in-progress: false
@@ -80,13 +90,77 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      # The database first, then the code: the new code may need the new
+      # structure, and the old code still runs on it in the minutes between.
+      # Everything pending is applied in one transaction, so a migration that
+      # fails changes nothing, and the deploy below does not happen: the site
+      # stays on the version before. With nothing pending it prints
+      # "Nothing to apply". The session pooler, port 5432: the address in the
+      # environment is not the one the site itself uses (6543).
+      - name: Apply new migrations to the staging database
+        run: npm run -s db:migrate
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_CA_CERT: ${{ vars.DATABASE_CA_CERT }}
       # --build runs netlify.toml's build command on this Linux machine. The
       # app's own settings (database, storage, the school's key) stay on
       # Netlify; GitHub holds only the token and which site to deploy to.
-      - run: npx --yes netlify-cli@27.9.0 deploy --build --alias preview --message "main ${{ github.sha }}"
+      - name: Deploy to Netlify
+        run: npx --yes netlify-cli@27.9.0 deploy --build --alias preview --message "main ${{ github.sha }}"
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ vars.NETLIFY_SITE_ID }}
+      # Up is not enough: a site that cannot reach its database fails every
+      # page. GET /api/health runs `select 1` and answers 200 or 503
+      # (docs/api.md, "Is the site up"). The retries cover a function that is
+      # still starting.
+      - name: Ask the deployed site whether it can reach its database
+        run: curl --fail --silent --show-error --retry 6 --retry-all-errors --retry-delay 5 --max-time 20 https://preview--daykeeper-group1.netlify.app/api/health
+
+  # KAN-86: a red run on main is everybody's problem and nobody's screen, so it
+  # opens an issue that says where to look, or adds to the one already open.
+  # Written for whoever reads it first, usually a coding agent.
+  # Cancelled counts: that is how a deploy stopped by its ten-minute limit
+  # ends, and a hand-cancelled deploy on main deserves a look too.
+  report-failure:
+    needs: [build, deploy]
+    if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main' && (needs.build.result == 'failure' || needs.deploy.result == 'failure' || needs.deploy.result == 'cancelled')
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      TITLE: "main is red: the CI/CD run failed"
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      RUN_ID: ${{ github.run_id }}
+      SHA: ${{ github.sha }}
+    steps:
+      - run: |
+          cat > "$RUNNER_TEMP/body.md" <<EOF
+          The CI/CD run for \`$SHA\` on main failed: $RUN_URL
+
+          Read the step that failed:
+
+          \`\`\`
+          gh run view $RUN_ID --log-failed --repo $GH_REPO
+          \`\`\`
+
+          What each place it can fail means:
+
+          - **build**: a check, a test or the build failed on main itself. The log names the step and, for the migration checks, the commands that fix it. Fix it on a branch and open a pull request.
+          - **Apply new migrations to the staging database**: nothing was deployed, and the site still runs the version before. PostgreSQL's own message is in the log. A refused connection or a timeout usually means the free Supabase project was paused after seven days with no activity: restore it in the Supabase dashboard, then re-run this workflow.
+          - **Deploy to Netlify**: the database already has this commit's migrations and the site still runs the version before. Re-run the workflow.
+          - **Ask the deployed site whether it can reach its database**: this commit is live, and GET /api/health did not answer 200. The site's own log on Netlify says why.
+
+          Close this issue when main is green again.
+          EOF
+          open=$(gh issue list --state open --search "in:title \"$TITLE\"" --json number,title --jq 'map(select(.title == env.TITLE)) | .[0].number // empty')
+          if [ -n "$open" ]; then
+            gh issue comment "$open" --body-file "$RUNNER_TEMP/body.md"
+          else
+            gh issue create --title "$TITLE" --body-file "$RUNNER_TEMP/body.md"
+          fi
 
   # Preview deployment (KAN-86): a pull request gets its own address,
   # https://pr-<number>--daykeeper-group1.netlify.app, so a change can be

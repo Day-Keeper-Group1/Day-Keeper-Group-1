@@ -124,7 +124,7 @@ The migrator (`db/migrate.ts`) records what it applied in `drizzle.__drizzle_mig
 
 - **A merged migration stays as it was merged.** The migrator would not notice an edit: the databases that already applied it keep the old shape, new ones get the new shape, and nothing reports the difference. To change the database again, change the schema file and generate the next migration. `db:check` refuses an edit to a migration that is on main. Removing one is allowed, because that is what reverting a pull request does.
 - **A column is removed in the same pull request as the code that used it.** Nobody uses the deployed site yet, so the few minutes between the database changing and the new code going live are an accepted gap. When real people depend on the site, this becomes two pull requests: stop using the column, deploy, then drop it.
-- **`db:migrate` runs from one place at a time.** With no lock, two runs that start together both see the same pending migrations and both try to apply them.
+- **`db:migrate` runs from one place at a time.** With no lock, two runs that start together both see the same pending migrations and both try to apply them. On the deployed database that one place is the CD pipeline: a merge to main applies the new migrations before the code is deployed, one run at a time (`docs/deployment.md`, "What a merge to main does"). Nobody runs it there by hand.
 
 ## A new module, with email as the worked example
 
