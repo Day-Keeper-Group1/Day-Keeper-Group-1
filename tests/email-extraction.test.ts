@@ -10,6 +10,10 @@ vi.mock("openai", () => {
   }
   return { default: Client };
 });
+vi.mock("@/server/ai/school-key", () => ({
+  schoolKeyClient: () => ({ responses: { create: mocks.create } }),
+  spendSchoolKey: vi.fn(),
+}));
 import { readEmailCall } from "@/server/email/extraction";
 import { READER } from "@/server/extraction/scheme";
 

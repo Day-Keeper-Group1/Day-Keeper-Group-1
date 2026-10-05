@@ -8,7 +8,8 @@
  * name does not line up.
  *
  * Statuses keep the database's spellings, hyphens and all, so that a value read
- * out of Postgres is the value a component compares against. See db/schema.sql.
+ * out of Postgres is the value a component compares against. See
+ * src/server/db/schema/enums.ts.
  *
  * Wire formats: a date is 'YYYY-MM-DD', a time of day is 'HH:mm' on a 24-hour
  * clock, an instant is ISO 8601 with a zone. The rule and its helpers live in
@@ -17,10 +18,13 @@
 
 import type { ContractFieldKey } from "./fields";
 import { APP_TIME_ZONE, todayInZone } from "./dates";
+import type { DocumentStatus, TaskState, UserRole } from "./enums";
 
-/** Where a document is in its life. Mirrors document_status in db/schema.sql. */
-export type DocumentStatus =
-  "processing" | "needs-review" | "confirmed" | "failed" | "archived";
+/**
+ * Where a document is in its life. Mirrors document_status in
+ * src/server/db/schema/enums.ts.
+ */
+export type { DocumentStatus };
 
 /**
  * A task's state as the interface shows it.
@@ -125,34 +129,16 @@ export type DocumentSummary = {
 };
 
 /**
- * One reminder, readable at last.
+ * One reminder: a day on which Home marks the task's row (./reminders.ts).
  *
- * `localDate` is the calendar day the server bucketed the reminder into, in the
- * person's zone. The calendar draws its dots from this string so the client
- * never has to turn an instant back into a day, and get it wrong by one.
+ * `localDate` is the day in the person's zone, written by the server, so the
+ * client compares it with today as a string and never turns an instant back
+ * into a day.
  */
 export type ReminderView = {
   id: string;
-  /** The instant it is scheduled for, ISO 8601 with zone. */
-  scheduledFor: string;
-  /** The day it lands on for calendar purposes, 'YYYY-MM-DD'. */
+  /** The day Home marks the task, 'YYYY-MM-DD'. */
   localDate: string;
-  /**
-   * The wall clock it lands at in the person's zone, 'HH:mm'. Computed beside
-   * `localDate` for the same reason: the day sheet says "a reminder goes out
-   * this morning, 9 am", and the only other way to that string is turning
-   * `scheduledFor` back into a local time in the browser, which is the
-   * conversion `localDate` exists to keep out of the client. It is always 09:00
-   * today; it is data rather than copy so that the day the hour becomes a
-   * setting, the sentence does not quietly start lying.
-   */
-  localTime: string;
-  channel: "in_app" | "email";
-  /**
-   * 'skipped' is what the dispatcher writes when the clock rang and the task was
-   * already ticked. Ticking changes no reminder row; see ./reminders.ts.
-   */
-  status: "scheduled" | "sent" | "skipped" | "failed";
 };
 
 export type TaskSummary = {
@@ -166,10 +152,9 @@ export type TaskSummary = {
   dueTime?: string;
   status: TaskStatus;
   /**
-   * Every reminder for this task, whatever its status: still scheduled, sent,
-   * skipped because the task was already done when the clock rang, or failed.
-   * The calendar draws its dots from these rows' `localDate`s, and the day sheet
-   * words each one from its status.
+   * Every day planned for this task as a reminder, past ones included. Home
+   * marks the row when one of them is today and the task is still open; see
+   * reminderToday() in src/lib/home.ts. The calendar does not draw them.
    */
   reminders: ReminderView[];
 };
@@ -286,6 +271,54 @@ export type DocumentPageView = {
 export const MAX_PAGES = 10;
 export const MAX_PAGE_BYTES = 10 * 1024 * 1024;
 
+/**
+ * What she is told when a letter has more pages than MAX_PAGES. The server
+ * says it of photographs and the capture screen says it of a PDF too long to
+ * add, and it is one sentence so the two cannot drift apart. (KAN-85)
+ */
+export const TOO_MANY_PAGES_MESSAGE = `Please send one letter at a time, up to ${MAX_PAGES} photos.`;
+
+/**
+ * KAN-75: a letter whose photographs go straight into the bucket.
+ *
+ * The capture screen does not send the photographs to the app. A host that
+ * runs the app as functions refuses a request much over four megabytes, and a
+ * letter of a few phone photographs is more than that, so the bytes go from
+ * the phone to storage and the app only ever sees a few lines of JSON. Three
+ * steps (docs/api.md, "Ask to upload a letter"):
+ *
+ *   1. POST /api/documents/uploads with an UploadRequest, answered with
+ *      UploadSlots: a letter id and one upload link per page;
+ *   2. PUT each photograph to its link, with the content type it declared;
+ *   3. POST /api/documents with a StoredUploadRequest, answered with the
+ *      DocumentSummary an ordinary upload gets.
+ *
+ * The same limits hold as for a photograph sent through the app: MAX_PAGES,
+ * MAX_PAGE_BYTES, images only.
+ */
+export type UploadRequest = {
+  /** One entry per photograph, in page order. */
+  pages: Array<{ contentType: string; byteSize: number }>;
+};
+
+export type UploadSlots = {
+  /** The letter these photographs will become. Send it back in step 3. */
+  documentId: string;
+  pages: Array<{
+    pageNumber: number;
+    /** Where to PUT this page. Good for a few minutes. */
+    uploadUrl: string;
+    /** The Content-Type header the PUT must carry; the link is signed for it. */
+    contentType: string;
+  }>;
+};
+
+export type StoredUploadRequest = {
+  documentId: string;
+  /** The same content types as step 1, in the same order. */
+  pages: Array<{ contentType: string }>;
+};
+
 /*
  * There is deliberately no ConfirmDocumentRequest, and deliberately no endpoint
  * anywhere that corrects a reading.
@@ -350,8 +383,8 @@ export const MAX_PAGE_BYTES = 10 * 1024 * 1024;
  * NO_ACTION in ./fields.ts): the letter is kept in Your letters and no task is
  * made, because a task titled "No action" is noise on a list whose whole job is
  * saying what to do. Otherwise it is the task the letter became, with every
- * reminder planned for it, so the calendar the person lands on can draw it
- * without asking again.
+ * reminder planned for it, so the screens she lands on can draw it without
+ * asking again.
  */
 export type ConfirmDocumentResponse = {
   documentId: string;
@@ -399,6 +432,7 @@ export type ApiError = {
       | "not_found"
       | "invalid_request"
       | "conflict"
+      | "too_many_requests"
       | "server_error";
     message: string;
     /** Field-level problems, keyed by field name, for form errors. */
@@ -409,16 +443,16 @@ export type ApiError = {
 /**
  * The signed-in person.
  *
- * `role` mirrors user_role in db/schema.sql. The operator roles stay in the
- * schema and this release builds no surface for them; docs/scope.md says why
- * that absence is deliberate rather than an oversight.
+ * `role` mirrors user_role in src/server/db/schema/enums.ts. The operator
+ * roles stay in the schema and this release builds no surface for them;
+ * docs/scope.md says why that absence is deliberate rather than an oversight.
  */
 export type SessionUser = {
   id: string;
   email: string;
   displayName: string;
-  role: "user" | "platform_operator" | "org_admin" | "org_worker";
-  /** IANA zone name, defaulted server-side. "9 am" means 9 am here. */
+  role: UserRole;
+  /** IANA zone name, defaulted server-side. Her "today" is today here. */
   timeZone: string;
 };
 
@@ -465,7 +499,7 @@ export function taskTitle(parts: {
 }
 
 export function deriveTaskStatus(
-  state: "open" | "completed" | "dismissed",
+  state: TaskState,
   dueDate: string | null,
   now: Date = new Date(),
   timeZone: string = APP_TIME_ZONE,

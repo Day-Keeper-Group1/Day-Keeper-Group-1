@@ -1,0 +1,20 @@
+# Files that change how the whole team works. A pull request that touches any
+# of them cannot merge until Jason approves it: the ruleset on main requires a
+# code owner's review. Every other change needs one approval from anyone.
+
+# Documents and agent instructions: agents read them as the source of truth.
+/docs/          @Jason-Junchun-Zhang
+AGENTS.md       @Jason-Junchun-Zhang
+CLAUDE.md       @Jason-Junchun-Zhang
+
+# The database: its definition, the migrations generated from it, and the
+# scripts that migrate, reset and seed it.
+/db/                      @Jason-Junchun-Zhang
+/src/server/db/schema/    @Jason-Junchun-Zhang
+/drizzle.config.ts        @Jason-Junchun-Zhang
+
+# CI/CD: the workflows, this file, how the site is built on Netlify, and the
+# git hooks, which run the same migration checks before a commit exists.
+/.github/       @Jason-Junchun-Zhang
+/netlify.toml   @Jason-Junchun-Zhang
+/.husky/        @Jason-Junchun-Zhang

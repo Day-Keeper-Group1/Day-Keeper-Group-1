@@ -1,0 +1,33 @@
+{
+  "version": "1.0",
+  "utterances": [
+    {
+      "index": 0,
+      "speaker": "Speaker 1",
+      "text": "Can you drive me to the library on Friday, 9 October 2026?",
+      "startMs": 0,
+      "endMs": 4000
+    },
+    {
+      "index": 1,
+      "speaker": "Speaker 2",
+      "text": "Yes, I can drive you there.",
+      "startMs": 4400,
+      "endMs": 6500
+    },
+    {
+      "index": 2,
+      "speaker": "Speaker 1",
+      "text": "Actually, please do not worry. The library visit has been cancelled.",
+      "startMs": 6900,
+      "endMs": 11300
+    },
+    {
+      "index": 3,
+      "speaker": "Speaker 2",
+      "text": "All right, I will not make the trip.",
+      "startMs": 11700,
+      "endMs": 14200
+    }
+  ]
+}

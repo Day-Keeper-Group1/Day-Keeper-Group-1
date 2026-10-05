@@ -1,0 +1,26 @@
+{
+  "version": "1.0",
+  "utterances": [
+    {
+      "index": 0,
+      "speaker": "Speaker 1",
+      "text": "Could you book my doctor appointment for 2 October 2026 at 10:30?",
+      "startMs": 0,
+      "endMs": 4300
+    },
+    {
+      "index": 1,
+      "speaker": "Speaker 2",
+      "text": "Yes, I will book the doctor appointment for 2 October at 10:30.",
+      "startMs": 4700,
+      "endMs": 9100
+    },
+    {
+      "index": 2,
+      "speaker": "Speaker 1",
+      "text": "Thank you.",
+      "startMs": 9500,
+      "endMs": 10300
+    }
+  ]
+}

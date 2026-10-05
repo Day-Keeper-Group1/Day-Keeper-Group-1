@@ -4,10 +4,11 @@
  * Document reads shared by the letter endpoints and the home screen.
  *
  * A letter's row is written twice and never by a person: once when the
- * photographs are stored, and once when the reading comes back
- * (src/server/uploads.ts). Everything here is the other direction, and it is
- * only presentation: what to call a letter before anyone knows who sent it,
- * which of its fields a screen may show, and where its photographs are.
+ * photographs are stored (src/server/uploads/intake.ts), and once when the
+ * reading comes back (src/server/uploads/reading.ts). Everything here is the
+ * other direction, and it is only presentation: what to call a letter before
+ * anyone knows who sent it, which of its fields a screen may show, and where
+ * its photographs are.
  *
  * Every query is scoped by user id. Knowing a letter's id must never be enough
  * to read it, which is also why a letter belonging to somebody else comes back
@@ -22,7 +23,6 @@ import {
   EMAIL_FAILURE_MESSAGES,
   type DocumentDetail,
   type DocumentPageView,
-  type DocumentStatus,
   type DocumentSummary,
   type ExtractedFieldView,
   type HomeCounts,
@@ -34,59 +34,29 @@ import {
   KNOWN_FIELD_KEYS,
   OPTIONAL_FIELD_KEYS,
 } from "@/lib/contract/fields";
-import { query, queryOne } from "@/server/db";
+import { isUuid } from "@/lib/uuid";
+import { db } from "@/server/db";
 import {
-  identifierViews,
-  mapField,
-  type ExtractedFieldRow,
-  type ExtractedIdentifierRow,
-} from "@/server/field-views";
+  findOwnedEmail,
+  findOwnedFailedEmailRound,
+} from "@/server/db/queries/email";
+import {
+  countOwnedDocumentsToCheck,
+  findOwnedDocumentRow,
+  findOwnedPageStoragePath,
+  listOwnedDocumentRows,
+  listOwnedInboxRows,
+  listOwnedPageRows,
+  type DocumentRow,
+} from "@/server/db/queries/documents";
+import {
+  listOwnedFieldRows,
+  listOwnedIdentifierRows,
+  type FieldRow,
+} from "@/server/db/queries/readings";
+import { listOwnedRecentlyCompletedTaskIds } from "@/server/db/queries/tasks";
+import { identifierViews, mapField } from "@/server/field-views";
 import { listTasks } from "@/server/tasks";
-
-/**
- * One document row, as every query below selects it. `uploaded_at` is an
- * instant and arrives as a Date; `due_date` arrives as 'YYYY-MM-DD' because
- * src/server/db.ts stops the driver turning a date column into a shifted Date.
- */
-type DocumentRow = {
-  id: string;
-  issuer: string | null;
-  document_type: string | null;
-  status: DocumentStatus;
-  due_date: string | null;
-  due_time: string | null;
-  amount_text: string | null;
-  reference: string | null;
-  uploaded_at: Date;
-  page_count: number;
-  email_subject?: string | null;
-  email_failure_reason?: keyof typeof EMAIL_FAILURE_MESSAGES | null;
-};
-
-// Classify only known reading failures in SQL. Never select raw failure details
-// into a browser-facing result, and keep the query correlated to the owned row.
-const EMAIL_FAILURE_REASON_SQL = `CASE WHEN d.status = 'failed' THEN (
-  SELECT CASE
-    WHEN r.failure_detail = 'UnsureOfWhatMatters: the decided reading''s due_date and amount is not confirmed' THEN 'due-date-and-amount'
-    WHEN r.failure_detail = 'UnsureOfWhatMatters: the decided reading''s due_date is not confirmed' THEN 'due-date'
-    WHEN r.failure_detail = 'UnsureOfWhatMatters: the decided reading''s amount is not confirmed' THEN 'amount'
-    ELSE 'other'
-  END
-  FROM extraction_runs r WHERE r.document_id = d.id
-  ORDER BY r.started_at DESC, r.id DESC LIMIT 1
-) END AS email_failure_reason`;
-
-/**
- * The shape of an id these tables will accept.
- *
- * `documents.id` is a uuid column, so an address carrying anything else reaches
- * Postgres as "invalid input syntax for type uuid", which is an error rather
- * than an answer: the endpoint would say 500 where docs/api.md says 404, and a
- * mistyped /documents/... would render the error page instead of the not found
- * page. A letter nobody owns is absent however the address was arrived at, so
- * the shape is checked before the query rather than discovered after it.
- */
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * How long a ticked off task stays on the home screen. Long enough that a row
@@ -103,7 +73,7 @@ const COMPLETED_TASK_WINDOW_DAYS = 7;
  * Formatting rather than arithmetic: Intl is asked what clock this instant
  * shows over there, which is the same thing todayInZone() does in
  * src/lib/contract/dates.ts. It happens here rather than in SQL because
- * src/server/uploads.ts forms the same label for a letter it has just
+ * src/server/uploads/intake.ts forms the same label for a letter it has just
  * inserted, and a second way of reaching these two strings is a second way for
  * them to disagree.
  */
@@ -170,29 +140,62 @@ export function documentLabel(input: {
  * and its sentence is worded once in src/lib/contract/api.ts so that every
  * surface says it identically.
  */
-function mapDocument(row: DocumentRow, timeZone: string): DocumentSummary {
-  const uploadedAt = row.uploaded_at.toISOString();
+type EmailDocumentRow = DocumentRow & {
+  email_subject: string | null;
+  email_failure_reason: keyof typeof EMAIL_FAILURE_MESSAGES | null;
+};
+
+async function emailDocumentRow(
+  row: DocumentRow,
+  userId: string,
+): Promise<EmailDocumentRow> {
+  const email = await findOwnedEmail(db(), userId, row.id);
+  const failed =
+    email && row.status === "failed"
+      ? await findOwnedFailedEmailRound(db(), userId, row.id)
+      : null;
+  const detail = failed?.failure_detail;
+  const reason =
+    detail ===
+    "UnsureOfWhatMatters: the decided reading's due_date and amount is not confirmed"
+      ? "due-date-and-amount"
+      : detail ===
+          "UnsureOfWhatMatters: the decided reading's due_date is not confirmed"
+        ? "due-date"
+        : detail ===
+            "UnsureOfWhatMatters: the decided reading's amount is not confirmed"
+          ? "amount"
+          : "other";
+  return {
+    ...row,
+    email_subject: email?.subject ?? null,
+    email_failure_reason: reason,
+  };
+}
+
+function mapDocument(row: EmailDocumentRow, timeZone: string): DocumentSummary {
+  const uploadedAt = row.uploadedAt.toISOString();
 
   return {
     id: row.id,
     ...(row.email_subject != null && { source: "email" as const }),
     issuer: row.issuer,
-    documentType: row.document_type,
+    documentType: row.documentType,
     label: documentLabel({
       issuer: row.issuer,
-      documentType: row.document_type,
+      documentType: row.documentType,
       uploadedAt,
-      pageCount: row.page_count,
+      pageCount: row.pageCount,
       emailSubject: row.email_subject,
       timeZone,
     }),
     status: row.status,
-    ...(row.due_date && { dueDate: row.due_date }),
-    ...(row.due_time && { dueTime: row.due_time }),
-    ...(row.amount_text && { amount: row.amount_text }),
+    ...(row.dueDate && { dueDate: row.dueDate }),
+    ...(row.dueTime && { dueTime: row.dueTime }),
+    ...(row.amountText && { amount: row.amountText }),
     ...(row.reference && { reference: row.reference }),
     uploadedAt,
-    pageCount: row.page_count,
+    pageCount: row.pageCount,
     ...(row.status === "failed" && {
       failure: {
         message:
@@ -214,15 +217,15 @@ function mapDocument(row: DocumentRow, timeZone: string): DocumentSummary {
  * from the other two. Optional and unrecognised keys follow, because six is a
  * floor and a reader that returned more is not punished for being richer.
  */
-function fieldViews(rows: ExtractedFieldRow[]): ExtractedFieldView[] {
+function fieldViews(rows: FieldRow[]): ExtractedFieldView[] {
   if (rows.length === 0) return [];
 
-  const byKey = new Map(rows.map((row) => [row.field_key, row]));
+  const byKey = new Map(rows.map((row) => [row.fieldKey, row]));
   const contract = CONTRACT_FIELD_KEYS.map((key) =>
     mapField(
       byKey.get(key) ?? {
-        field_key: key,
-        extracted_value: null,
+        fieldKey: key,
+        extractedValue: null,
         status: "unreadable",
       },
     ),
@@ -233,7 +236,7 @@ function fieldViews(rows: ExtractedFieldRow[]): ExtractedFieldView[] {
   });
   const extra = rows
     .filter(
-      (row) => !(KNOWN_FIELD_KEYS as readonly string[]).includes(row.field_key),
+      (row) => !(KNOWN_FIELD_KEYS as readonly string[]).includes(row.fieldKey),
     )
     .map((row) => mapField(row));
 
@@ -251,31 +254,13 @@ export async function listDocuments(
   userId: string,
   timeZone: string,
 ): Promise<DocumentSummary[]> {
-  const rows = await query<DocumentRow>(
-    `SELECT d.id,
-            d.issuer,
-            d.document_type,
-            d.status,
-            d.due_date,
-            CASE WHEN d.due_time IS NULL
-                 THEN NULL
-                 ELSE to_char(d.due_time, 'HH24:MI')
-            END AS due_time,
-            d.amount_text,
-            d.reference,
-            d.uploaded_at,
-            (SELECT count(*)::integer
-               FROM document_pages p
-              WHERE p.document_id = d.id) AS page_count,
-            (SELECT e.subject FROM document_emails e WHERE e.document_id = d.id AND e.user_id = d.user_id) AS email_subject,
-            ${EMAIL_FAILURE_REASON_SQL}
-       FROM documents d
-      WHERE d.user_id = $1
-      ORDER BY d.uploaded_at DESC, d.id DESC`,
-    [userId],
-  );
+  const rows = await listOwnedDocumentRows(db(), userId);
 
-  return rows.map((row) => mapDocument(row, timeZone));
+  return Promise.all(
+    rows.map(async (row) =>
+      mapDocument(await emailDocumentRow(row, userId), timeZone),
+    ),
+  );
 }
 
 /**
@@ -290,80 +275,21 @@ export async function getDocument(
   userId: string,
   timeZone: string,
 ): Promise<DocumentDetail | null> {
-  if (!UUID.test(documentId)) return null;
+  if (!isUuid(documentId)) return null;
 
-  const row = await queryOne<DocumentRow>(
-    `SELECT d.id,
-            d.issuer,
-            d.document_type,
-            d.status,
-            d.due_date,
-            CASE WHEN d.due_time IS NULL
-                 THEN NULL
-                 ELSE to_char(d.due_time, 'HH24:MI')
-            END AS due_time,
-            d.amount_text,
-            d.reference,
-            d.uploaded_at,
-            (SELECT count(*)::integer
-               FROM document_pages p
-              WHERE p.document_id = d.id) AS page_count,
-            (SELECT e.subject FROM document_emails e WHERE e.document_id = d.id AND e.user_id = d.user_id) AS email_subject,
-            ${EMAIL_FAILURE_REASON_SQL}
-       FROM documents d
-      WHERE d.id = $1
-        AND d.user_id = $2`,
-    [documentId, userId],
-  );
-  if (!row) return null;
+  const found = await findOwnedDocumentRow(db(), userId, documentId);
+  if (!found) return null;
+  const row = await emailDocumentRow(found, userId);
 
   const [fields, identifiers, pages] = await Promise.all([
-    query<ExtractedFieldRow>(
-      `SELECT f.field_key, f.extracted_value, f.status
-         FROM documents d
-         JOIN extraction_runs e ON e.document_id = d.id
-         JOIN extracted_fields f ON f.extraction_run_id = e.id
-        WHERE d.id = $1
-          AND d.user_id = $2
-          AND e.status = 'succeeded'
-        ORDER BY f.field_key`,
-      [documentId, userId],
-    ),
-    query<ExtractedIdentifierRow>(
-      `SELECT i.label, i.value, i.status
-         FROM documents d
-         JOIN extraction_runs e ON e.document_id = d.id
-         JOIN extracted_identifiers i ON i.extraction_run_id = e.id
-        WHERE d.id = $1
-          AND d.user_id = $2
-          AND e.status = 'succeeded'
-        ORDER BY i.position`,
-      [documentId, userId],
-    ),
-    query<{ id: string; page_number: number }>(
-      `SELECT p.id, p.page_number
-         FROM document_pages p
-         JOIN documents d ON d.id = p.document_id
-        WHERE p.document_id = $1
-          AND d.user_id = $2
-        ORDER BY p.page_number ASC`,
-      [documentId, userId],
-    ),
+    listOwnedFieldRows(db(), userId, documentId),
+    listOwnedIdentifierRows(db(), userId, documentId),
+    listOwnedPageRows(db(), userId, documentId),
   ]);
 
   const email =
     row.email_subject != null
-      ? await queryOne<{
-          sender: string;
-          subject: string;
-          received_at: Date;
-          text_body: string;
-          mailbox: string;
-          provider_message_id: string;
-        }>(
-          "SELECT sender, subject, received_at, text_body, mailbox, provider_message_id FROM document_emails WHERE document_id = $1 AND user_id = $2",
-          [documentId, userId],
-        )
+      ? await findOwnedEmail(db(), userId, documentId)
       : null;
   const views = row.status === "processing" ? [] : fieldViews(fields);
   const recovered =
@@ -374,8 +300,8 @@ export async function getDocument(
       : null;
   const repairFields = recovered?.result.fields.map((field) =>
     mapField({
-      field_key: field.key,
-      extracted_value: field.value,
+      fieldKey: field.key,
+      extractedValue: field.value,
       status: field.status,
     }),
   );
@@ -418,11 +344,11 @@ export async function getDocument(
         : identifierViews(identifiers, views),
     pages: pages.map((page): DocumentPageView => ({
       id: page.id,
-      pageNumber: page.page_number,
+      pageNumber: page.pageNumber,
       // The path rather than a link storage has signed, so that a payload
       // sitting in a cache cannot go stale. Who is asking is checked when the
       // path is followed.
-      url: `/api/documents/${documentId}/pages/${page.page_number}`,
+      url: `/api/documents/${documentId}/pages/${page.pageNumber}`,
     })),
   };
 }
@@ -435,14 +361,7 @@ export async function getDocument(
  * a letter whose reading landed while she was checking another.
  */
 export async function countLettersToCheck(userId: string): Promise<number> {
-  const row = await queryOne<{ waiting: number }>(
-    `SELECT count(*)::integer AS waiting
-       FROM documents d
-      WHERE d.user_id = $1
-        AND d.status = 'needs-review'`,
-    [userId],
-  );
-  return row?.waiting ?? 0;
+  return countOwnedDocumentsToCheck(db(), userId);
 }
 
 /**
@@ -458,19 +377,9 @@ export async function getPageStoragePath(
   pageNumber: number,
   userId: string,
 ): Promise<string | null> {
-  if (!UUID.test(documentId)) return null;
+  if (!isUuid(documentId)) return null;
 
-  const row = await queryOne<{ storage_path: string }>(
-    `SELECT p.storage_path
-       FROM document_pages p
-       JOIN documents d ON d.id = p.document_id
-      WHERE p.document_id = $1
-        AND p.page_number = $2
-        AND d.user_id = $3`,
-    [documentId, pageNumber, userId],
-  );
-
-  return row?.storage_path ?? null;
+  return findOwnedPageStoragePath(db(), userId, documentId, pageNumber);
 }
 
 /**
@@ -495,45 +404,24 @@ export async function getHome(
     // card, so they travel as the one list they are rather than as three the
     // client has to weave. KAN-59: oldest on top, because checking starts from
     // the top and the pile is checked in the order it was photographed.
-    query<DocumentRow>(
-      `SELECT d.id,
-              d.issuer,
-              d.document_type,
-              d.status,
-              d.due_date,
-              CASE WHEN d.due_time IS NULL
-                   THEN NULL
-                   ELSE to_char(d.due_time, 'HH24:MI')
-              END AS due_time,
-              d.amount_text,
-              d.reference,
-              d.uploaded_at,
-              (SELECT count(*)::integer
-                 FROM document_pages p
-                WHERE p.document_id = d.id) AS page_count,
-            (SELECT e.subject FROM document_emails e WHERE e.document_id = d.id AND e.user_id = d.user_id) AS email_subject,
-            ${EMAIL_FAILURE_REASON_SQL}
-         FROM documents d
-        WHERE d.user_id = $1
-          AND d.status IN ('processing', 'needs-review', 'failed')
-        ORDER BY d.uploaded_at ASC, d.id ASC`,
-      [userId],
-    ),
+    listOwnedInboxRows(db(), userId),
     listTasks(userId, timeZone, now),
     // Which ticks are recent enough to still be shown. The window is asked for
     // here rather than read off a task summary, because a summary carries the
     // tick and not the moment of it.
-    query<{ id: string }>(
-      `SELECT t.id
-         FROM tasks t
-        WHERE t.user_id = $1
-          AND t.state = 'completed'
-          AND t.completed_at >= $2::timestamptz - ($3::integer * interval '1 day')`,
-      [userId, now.toISOString(), COMPLETED_TASK_WINDOW_DAYS],
+    listOwnedRecentlyCompletedTaskIds(
+      db(),
+      userId,
+      now,
+      COMPLETED_TASK_WINDOW_DAYS,
     ),
   ]);
 
-  const inbox = inboxRows.map((row) => mapDocument(row, timeZone));
+  const inbox = await Promise.all(
+    inboxRows.map(async (row) =>
+      mapDocument(await emailDocumentRow(row, userId), timeZone),
+    ),
+  );
   const counts: HomeCounts = {
     needsReview: inbox.filter((row) => row.status === "needs-review").length,
     processing: inbox.filter((row) => row.status === "processing").length,
@@ -545,7 +433,7 @@ export async function getHome(
   // puts it first. Completed rows are the only ones that age out. Nothing is
   // cut here: a cap dropped the furthest tasks without a word. Home folds the
   // far end instead and says how many it folded (src/lib/home.ts).
-  const recent = new Set(recentlyCompleted.map((row) => row.id));
+  const recent = new Set(recentlyCompleted);
   const tasks = allTasks.filter(
     (task) => task.status !== "completed" || recent.has(task.id),
   );

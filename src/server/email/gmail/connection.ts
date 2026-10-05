@@ -1,6 +1,15 @@
 import "server-only";
 import { z } from "zod";
-import { queryOne, transaction } from "@/server/db";
+import { db } from "@/server/db";
+import { randomUUID } from "node:crypto";
+import {
+  findOwnedGmailConnection,
+  insertOauthAttempt,
+  findOwnedOauthAttempt,
+  insertGmailConnection,
+  rotateOwnedGmailToken,
+  deleteOwnedGmailAccess,
+} from "@/server/db/queries/email";
 import {
   gmailConfig,
   gmailConfigured,
@@ -11,16 +20,8 @@ import { digest, nonce, seal, unseal } from "./crypto";
 import { authorizationUrl, gmailGet, tokenRequest } from "./google";
 import type { GmailStatus } from "@/lib/contract/email";
 
-type Connection = {
-  connection_id: string;
-  email: string;
-  refresh_token_encrypted: string;
-};
 export async function connectionFor(userId: string) {
-  return queryOne<Connection>(
-    "SELECT connection_id, email, refresh_token_encrypted FROM gmail_connections WHERE user_id = $1",
-    [userId],
-  );
+  return findOwnedGmailConnection(db(), userId);
 }
 export async function connectionStatus(userId: string): Promise<GmailStatus> {
   if (!gmailConfigured())
@@ -32,13 +33,12 @@ export async function beginConnection(userId: string) {
   const state = nonce(),
     browser = nonce(),
     verifier = nonce();
-  await queryOne(
-    `INSERT INTO gmail_oauth_attempts (user_id, state_hash, browser_hash, verifier_encrypted, expires_at)
-    VALUES ($1, $2, $3, $4, now() + interval '10 minutes')
-    ON CONFLICT (user_id) DO UPDATE SET state_hash = EXCLUDED.state_hash, browser_hash = EXCLUDED.browser_hash,
-    verifier_encrypted = EXCLUDED.verifier_encrypted, expires_at = EXCLUDED.expires_at`,
-    [userId, digest(state), digest(browser), seal(verifier, `oauth:${userId}`)],
-  );
+  await insertOauthAttempt(db(), userId, {
+    state_hash: digest(state),
+    browser_hash: digest(browser),
+    verifier_encrypted: seal(verifier, `oauth:${userId}`),
+    expires_at: new Date(Date.now() + 10 * 60_000),
+  });
   return { browser, url: authorizationUrl(state, digest(verifier)) };
 }
 export async function finishConnection(
@@ -48,11 +48,7 @@ export async function finishConnection(
   code: string,
 ) {
   const args = [userId, digest(state), digest(browser)];
-  const attempt = await queryOne<{ verifier_encrypted: string }>(
-    `SELECT verifier_encrypted FROM gmail_oauth_attempts
-    WHERE user_id = $1 AND state_hash = $2 AND browser_hash = $3 AND expires_at > now()`,
-    args,
-  );
+  const attempt = await findOwnedOauthAttempt(db(), userId, args[1], args[2]);
   if (!attempt)
     throw new GmailError(
       "The connection request expired. Please try connecting again.",
@@ -69,21 +65,22 @@ export async function finishConnection(
     .object({ emailAddress: z.email() })
     .parse(await gmailGet("profile", tokens.access_token));
   const encrypted = seal(tokens.refresh_token, `gmail:${userId}`);
-  await transaction(async (db) => {
-    // Consuming inside the same transaction as storing tokens also prevents a
-    // disconnect during Google's response from being undone by a late callback.
-    const consumed = await db.query(
-      `DELETE FROM gmail_oauth_attempts WHERE user_id = $1 AND state_hash = $2
-      AND browser_hash = $3 AND expires_at > now() RETURNING user_id`,
-      args,
+  await db().transaction(async (tx) => {
+    const consumed = await findOwnedOauthAttempt(
+      tx,
+      userId,
+      args[1],
+      args[2],
+      true,
     );
-    if (!consumed.rowCount)
+    if (!consumed)
       throw new GmailError("This connection request is no longer active.");
-    await db.query(
-      `INSERT INTO gmail_connections (user_id, email, refresh_token_encrypted) VALUES ($1, $2, $3)
-      ON CONFLICT (user_id) DO UPDATE SET email = EXCLUDED.email, refresh_token_encrypted = EXCLUDED.refresh_token_encrypted,
-      connection_id = gen_random_uuid(), connected_at = now()`,
-      [userId, profile.emailAddress, encrypted],
+    await insertGmailConnection(
+      tx,
+      userId,
+      profile.emailAddress,
+      encrypted,
+      randomUUID(),
     );
   });
 }
@@ -98,23 +95,18 @@ export async function mailboxAccess(userId: string) {
     ),
   });
   if (tokens.refresh_token) {
-    await queryOne(
-      `UPDATE gmail_connections SET refresh_token_encrypted = $3 WHERE user_id = $1 AND connection_id = $2`,
-      [
-        userId,
-        connection.connection_id,
-        seal(tokens.refresh_token, `gmail:${userId}`),
-      ],
+    await rotateOwnedGmailToken(
+      db(),
+      userId,
+      connection.connection_id,
+      seal(tokens.refresh_token, `gmail:${userId}`),
     );
   }
   await assertConnection(userId, connection.connection_id);
   return { token: tokens.access_token, connectionId: connection.connection_id };
 }
 export async function assertConnection(userId: string, connectionId: string) {
-  const row = await queryOne(
-    "SELECT user_id FROM gmail_connections WHERE user_id = $1 AND connection_id = $2",
-    [userId, connectionId],
-  );
+  const row = await findOwnedGmailConnection(db(), userId, connectionId);
   if (!row)
     throw new GmailError(
       "The Gmail connection changed. Please check again.",
@@ -122,13 +114,5 @@ export async function assertConnection(userId: string, connectionId: string) {
     );
 }
 export async function disconnect(userId: string) {
-  await transaction(async (db) => {
-    // Lock/delete attempts first, matching the callback's lock order.
-    await db.query("DELETE FROM gmail_oauth_attempts WHERE user_id = $1", [
-      userId,
-    ]);
-    await db.query("DELETE FROM gmail_connections WHERE user_id = $1", [
-      userId,
-    ]);
-  });
+  await db().transaction((tx) => deleteOwnedGmailAccess(tx, userId));
 }

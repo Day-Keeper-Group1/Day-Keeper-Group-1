@@ -8,7 +8,8 @@ import {
 } from "@/server/auth/session";
 
 /**
- * POST /api/auth/logout — end the session everywhere, not just in this browser.
+ * POST /api/auth/logout: end the session of this browser. The person's other
+ * devices stay signed in.
  *
  * Spec: docs/api.md, "Sign out".
  */

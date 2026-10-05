@@ -1,7 +1,14 @@
 import "server-only";
-import { transaction } from "@/server/db";
+import { db } from "@/server/db";
+import {
+  findOwnedGmailConnection,
+  findOwnedEmailDocument,
+  saveOwnedEmail,
+} from "@/server/db/queries/email";
+import { insertDocument } from "@/server/db/queries/documents";
+import { insertQueuedRound } from "@/server/db/queries/readings";
+import { randomUUID } from "node:crypto";
 import type { EmailMessage } from "@/lib/contract/email";
-import type { DocumentStatus } from "@/lib/contract/api";
 import { READER } from "@/server/extraction/scheme";
 import { ExtractionFailure } from "@/server/extraction";
 import { readDocument } from "@/server/uploads";
@@ -15,73 +22,47 @@ export async function createEmailDocument(
   mailbox: string,
   message: EmailMessage,
 ) {
-  return transaction(async (db) => {
-    const connection = await db.query<{ email: string }>(
-      "SELECT email FROM gmail_connections WHERE user_id = $1 AND connection_id = $2 FOR UPDATE",
-      [userId, connectionId],
+  return db().transaction(async (tx) => {
+    const connection = await findOwnedGmailConnection(
+      tx,
+      userId,
+      connectionId,
+      true,
     );
-    if (connection.rows[0]?.email.toLowerCase() !== mailbox.toLowerCase()) {
+    if (connection?.email.toLowerCase() !== mailbox.toLowerCase()) {
       throw new GmailError(
         "The Gmail connection changed. Please refresh your inbox.",
         true,
       );
     }
-    const existing = await db.query<{ id: string; status: DocumentStatus }>(
-      `SELECT d.id, d.status FROM documents d JOIN document_emails e ON e.document_id = d.id
-       WHERE e.user_id = $1 AND d.user_id = $1 AND e.mailbox = $2 AND e.provider_message_id = $3 FOR UPDATE OF d`,
-      [userId, mailbox.toLowerCase(), message.providerMessageId],
+    const previous = await findOwnedEmailDocument(
+      tx,
+      userId,
+      mailbox.toLowerCase(),
+      message.providerMessageId,
     );
-    const previous = existing.rows[0];
     if (previous?.status === "failed") {
       const { recoverEmailReading } = await import("./correction");
-      if (await recoverEmailReading(previous.id, userId, db))
+      if (await recoverEmailReading(previous.id, userId, tx))
         return { documentId: previous.id, queued: false };
     }
     if (previous && previous.status !== "failed")
       return { documentId: previous.id, queued: false };
-    let documentId: string;
-    if (previous) {
-      documentId = previous.id;
-      await db.query(
-        "UPDATE documents SET status = 'processing', updated_at = now() WHERE id = $1 AND user_id = $2",
-        [documentId, userId],
-      );
-      await db.query(
-        "UPDATE document_emails SET sender = $2, subject = $3, received_at = $4, text_body = $5 WHERE document_id = $1 AND user_id = $6",
-        [
-          documentId,
-          message.from,
-          message.subject,
-          message.receivedAt,
-          message.textBody,
-          userId,
-        ],
-      );
-    } else {
-      const inserted = await db.query<{ id: string }>(
-        "INSERT INTO documents (user_id) VALUES ($1) RETURNING id",
-        [userId],
-      );
-      documentId = inserted.rows[0].id;
-      await db.query(
-        `INSERT INTO document_emails (document_id, user_id, mailbox, provider_message_id, sender, subject, received_at, text_body)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-        [
-          documentId,
-          userId,
-          mailbox.toLowerCase(),
-          message.providerMessageId,
-          message.from,
-          message.subject,
-          message.receivedAt,
-          message.textBody,
-        ],
-      );
-    }
-    await db.query(
-      "INSERT INTO extraction_runs (document_id, provider, model) VALUES ($1, $2, $3)",
-      [documentId, EMAIL_READER, READER.model],
+    const documentId = previous?.id ?? randomUUID();
+    if (!previous) await insertDocument(tx, { id: documentId, userId });
+    await saveOwnedEmail(
+      tx,
+      userId,
+      documentId,
+      mailbox.toLowerCase(),
+      message,
+      !!previous,
     );
+    await insertQueuedRound(tx, {
+      documentId,
+      provider: EMAIL_READER,
+      model: READER.model,
+    });
     return { documentId, queued: true };
   });
 }

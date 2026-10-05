@@ -21,21 +21,21 @@ Three things, and deliberately only three:
 **The API and the pages follow `docs/api.md`.** Sign in, the letters
 (upload, list, open, confirm, page images, home) and the tasks endpoints exist
 and the screens read them: a photographed letter is read, checked, saved and
-lands on the calendar. Sending the reminders is the next piece. When you add an
+lands on the calendar with its reminders marked. When you add an
 endpoint, add it to that file first: it is the specification, with the
 reasoning for the parts that look arbitrary.
 
 ## Running it
 
-You need Node 20.17 or newer, npm 11 or newer, and Docker Desktop.
+You need Node 24 or newer, npm 11 or newer, and Docker Desktop.
 
 ```bash
 npm ci                    # exactly what package-lock.json says
 cp .env.example .env.local
 docker compose up -d      # Postgres on 15432, MinIO on 19020, viewers on 8080 and 19021
 docker compose ps         # wait until db says "healthy", usually a few seconds
-npm run db:reset          # build the schema, make the bucket, seed both
-npm test                  # the contract tests
+npm run db:reset          # rebuild the database from db/migrations, empty the bucket, then seed both
+npm test                  # every test; the database tests need the Postgres above
 ```
 
 On Windows, run these in PowerShell or Git Bash. In `cmd.exe` there is no `cp`;
@@ -55,6 +55,8 @@ an upload really stored anything.
 **`npm ci` complains about your npm version.** That is the guard working: run
 `npm i -g npm@11`. Different npm versions write `package-lock.json` differently,
 and the resulting churn wastes everyone's time.
+
+**`npm ci` says the engine is unsupported, naming Node.** Your Node is older than 24. Install the current LTS from https://nodejs.org and run it again. The floor is 24 because Node 20 reached end of life in April 2026, CI runs 24, and `pdfjs-dist` (the PDF upload) needs 22.13 or newer in any case; `.npmrc` makes any dependency's floor the whole install's floor.
 
 **`npm run db:reset` cannot connect.** The container is up but Postgres inside
 it is still starting. `docker compose up -d` returns before the health check
@@ -83,8 +85,10 @@ day reminder until a week before its due date.
 So Margaret has three letters whose reminders all fall on today, one on each
 rung of the seven, three and one day ladder, and two tasks she ticked off
 yesterday, which are there only to show the account has been used. Nothing is
-waiting to be checked. `db/seed.ts` is the inventory: what it prints when it
-runs is the list.
+waiting to be checked. Which letters she has is the demonstration list,
+`db/demo/margaret.json`, one entry per letter with the reason beside it; the
+seed plants it, and so does the Refresh Margaret button on the deployed site
+(`docs/deployment.md`, "Changing what an account holds").
 
 The letters are real fixtures. Their photographs are the pages under
 `data/synthetic-letters`, and their fields come from that folder's
@@ -106,10 +110,20 @@ Accounts, all already hashed in the database:
 
 | | |
 |---|---|
-| `npm run db:reset` | rebuild the schema from `db/schema.sql`, empty the bucket, then seed both. In that order: the seed writes photographs, so emptying afterwards would delete them |
+| `npm run db:reset` | rebuild the database from `db/migrations`, empty the bucket, then seed both. In that order: the seed writes photographs, so emptying afterwards would delete them |
+| `npm run db:schema` | rebuild empty tables from the migrations, no seed |
 | `npm run db:seed` | reseed without touching the schema |
+| `npm run db:generate -- --name=<what_changed>` | after editing `src/server/db/schema`: write the migration, then check and rehearse it. When it refuses, the message says what to change |
+| `npm run db:regenerate -- --name=<what_changed>` | throw this branch's migration away and write it again on top of main's: after a check refused it, or after main gained a migration of its own |
+| `npm run db:migrate` | apply pending migrations, keeping the data. A local database built before KAN-92 has no record of applied migrations, so it needs one `npm run db:reset` before this can ever work |
+| `npm run db:check` | answers, with no database, whether the schema files and the migrations agree and whether main's migrations are untouched. It runs at commit when a commit touches either, and in CI |
+| `npm run db:rehearse` | applies this branch's new migrations to a scratch database built as main has it, with the seed's rows in it. A migration that only works on empty tables fails here, before the merge |
 | `npm run storage:reset` | make the bucket exist and empty it, without touching the database. The seeded photographs go with it; `npm run db:reset` puts both sides back |
-| `npm test` | the contract tests |
+| `npm run account:refresh-margaret` | empty Margaret and plant `db/demo/margaret.json` again, dated from today. Nobody else is touched |
+| `npm run account:clear -- <someone>@example.com` | empty one `@example.com` account: its letters, tasks, reminders and photographs. The account stays |
+| `npm test` | every test; the database tests need the Postgres above |
+| `npm run test:unit` | only the tests that need no database |
+| `npm run test:db` | only the database tests |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run dev` | the application |
 | `npm run lint` | eslint |
@@ -145,14 +159,20 @@ hand-built artefacts keep their hand-set shape.
 
 ## Changing the database
 
-There are no migrations. `db/schema.sql` is the truth: edit it and run
-`npm run db:reset`, which drops everything and rebuilds. Everyone's database is
-therefore identical to everyone else's, always.
+The tables are declared in TypeScript, in `src/server/db/schema/`, and that is
+the only definition of them. To change the database, edit a schema file and run
+`npm run db:generate -- --name=<what_changed>`: it writes a migration under
+`db/migrations/`, which you commit with the schema file. `npm run db:migrate`
+applies it to your database and keeps your data; `npm run db:reset` drops
+everything, applies every migration from the first, and seeds. A database built
+before KAN-92 needs that `db:reset` once before `db:migrate` can work (see
+Commands, above).
 
-This works because there is no data worth keeping. It stops working the moment
-there is, and `db/reset.ts` refuses to run against a non-local database so
-nobody finds that out the hard way. The rest of the reasoning is at the top of
-`db/schema.sql`.
+Migrations are generated, a generated one is never edited by hand, and one that
+has been merged is never changed. The checks that run after `db:generate`, at
+commit and in CI say what to do when a migration is wrong. `src/server/db/AGENTS.md` has the rules and the
+reasons. `db/reset.ts` refuses to run against a database that is not local,
+and against one that holds accounts nobody seeded.
 
 ## Where things are
 
@@ -160,8 +180,12 @@ One rule, so you never have to open a file to find out where it may be used:
 **`src/lib` is safe anywhere, `src/server` never reaches the browser.**
 
 ```
-db/schema.sql             the database, and the only definition of it
+db/reset.ts, migrate.ts   rebuild the database, or bring it up to date
 db/seed.ts                Margaret's world, for showing the product
+db/demo/margaret.json     which letters Margaret has: this week's demonstration list
+db/demo-accounts.ts            empty one demonstration account, or refresh Margaret
+db/lib/                   what those scripts share: connecting, the two guards, the seed's rows
+db/migrations/            generated from the schema files; never edited by hand
 
 src/lib/contract/         the agreement. Import from here, do not restate it.
   fields.ts                 the six fields (and the optional due_time), labels, meanings
@@ -170,9 +194,21 @@ src/lib/contract/         the agreement. Import from here, do not restate it.
   dates.ts                  the timezone, and every date rule: today, format, parse
   reminders.ts              the one reminder-scheduling rule
 
-src/server/               server only (password.ts and token.ts excepted: the
-                          seed and the tests need them, and they are pure)
-  db.ts                     query, queryOne, transaction
+src/server/               server only. Among the files that carry no
+                          "server-only" import, these leave it out on purpose,
+                          so that a script can load them outside Next.js:
+                          auth/password.ts and auth/token.ts, which are pure,
+                          the script-safe files of db/ (schema/, client.ts,
+                          errors.ts), and extraction/agreement.ts and
+                          extraction/prices.ts, which the experiments import
+  db/
+    AGENTS.md               the rules of this folder, and the reason for each
+    schema/                 the database, and the only definition of it
+    queries/                every statement the app runs
+    sql.ts                  the named SQL expressions the query builder cannot say
+    index.ts                db(), the handle a query is run with
+    client.ts               how a pool and the handle over it are made
+    errors.ts               dbCause() and isUniqueViolation(), for a failed statement
   storage.ts                the photographs themselves: put, signed link, delete
   env.ts                    environment variables, checked once
   auth/password.ts          hashing and verifying passwords
@@ -201,8 +237,10 @@ they match the shapes the interface pages were written against, down to
 statuses using hyphens. If you find yourself declaring a type that looks like
 one of those, import it instead.
 
-**Query through `src/server/db.ts`.** It has `query`, `queryOne` and
-`transaction`, and it already fixes a trap: by default the driver turns a `date`
+**Statements live in `src/server/db/queries/`.** A service calls a query
+function and passes it `db()`, or `tx` inside a transaction; nothing else in the
+app writes SQL. Dates come back as the string PostgreSQL stored, `'YYYY-MM-DD'`,
+because the schema declares them that way: by default the driver turns a `date`
 column into a timestamp in the local zone, which can move a due date to the day
 before. For a product about deadlines that is the worst available bug.
 
@@ -222,7 +260,9 @@ it.
 
 **Scope every query by user id.** There is no "get this document" that does not
 also ask whose it is. A missing `WHERE user_id` is how one person ends up
-reading another person's mail.
+reading another person's mail. Query functions with `Owned` in their name take
+the person's id as their second argument and filter on it;
+`src/server/db/AGENTS.md` has the rule.
 
 **Dates are strings, and the rules live in `src/lib/contract/dates.ts`.** On
 the wire a date is `'YYYY-MM-DD'` and a time is `'HH:mm'`. Never
@@ -232,8 +272,8 @@ formatting is `formatDueDate()`.
 
 **The reminder schedule has exactly one home, `planReminders()`.** The confirm
 handler creates rows from it and the review screen previews the plan with it.
-If you find yourself typing an offset in days, or the hour they go out, you are
-creating the second copy that lets the promise and the behaviour disagree.
+If you find yourself typing an offset in days, you are creating the second
+copy that lets the promise and the behaviour disagree.
 
 Two things about the document flow that are design decisions rather than
 implementation details:

@@ -41,7 +41,7 @@ const STEPS = [
   {
     icon: CalendarDays,
     title: "It's on your calendar",
-    body: "A red mark on the due date, a gold mark on each morning you'll be reminded: seven, three and one day before, at nine.",
+    body: "A red mark on the due date, and nothing else to decode. Seven, three and one day before it, the task is marked on your home screen.",
   },
   {
     icon: CheckCircle2,
@@ -61,7 +61,7 @@ const MODEL_WORK = [
     icon: CheckCircle2,
     title: "Everything after it",
     when: "Ordinary code, all the way to the reminder.",
-    body: "Whether a task is overdue is a date comparison in Melbourne time. When a reminder goes out is arithmetic on the due date. Whether to send it is reading the tick at the moment the alarm rings.",
+    body: "Whether a task is overdue is a date comparison in Melbourne time. Which days remind you is arithmetic on the due date. Whether today's row is marked is reading the tick when the page is drawn.",
   },
 ] as const;
 
@@ -160,7 +160,7 @@ export default function PublicEntryPage() {
             <div className="w-[54%] overflow-hidden rounded-2xl border border-border shadow-lg">
               <Image
                 src="/screens/home.png"
-                alt="DayKeeper's home screen: a short list of tasks, one overdue, one upcoming."
+                alt="DayKeeper's home screen: the week's tasks, three of them marked with a reminder."
                 width={400}
                 height={800}
                 className="h-auto w-full"
@@ -170,7 +170,7 @@ export default function PublicEntryPage() {
             <div className="mt-10 w-[54%] overflow-hidden rounded-2xl border border-border shadow-lg">
               <Image
                 src="/screens/calendar.png"
-                alt="DayKeeper's calendar: due dates in red, reminder mornings in gold."
+                alt="DayKeeper's calendar: a red dot on each day something is due."
                 width={400}
                 height={800}
                 className="h-auto w-full"

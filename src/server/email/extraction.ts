@@ -2,6 +2,7 @@ import "server-only";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import OpenAI from "openai";
+import { schoolKeyClient, spendSchoolKey } from "@/server/ai/school-key";
 import { env } from "@/server/env";
 import type { EmailMessage } from "@/lib/contract/email";
 import { APP_TIME_ZONE, todayInZone } from "@/lib/contract/dates";
@@ -32,43 +33,42 @@ export async function readEmailCall(
   cell: Cell = READER,
   timeoutMs = 60_000,
 ): Promise<Reading> {
-  const config = requireEmailReader();
-  const client = new OpenAI({
-    baseURL: config.AZURE_OPENAI_ENDPOINT,
-    apiKey: config.AZURE_OPENAI_API_KEY,
-    maxRetries: 0,
-    timeout: timeoutMs,
-  });
+  requireEmailReader();
+  const client = schoolKeyClient();
   const started = Date.now();
   let response;
   try {
-    response = await client.responses.create({
-      model: cell.model,
-      reasoning: { effort: cell.effort as "medium" },
-      input: [
-        {
-          role: "developer",
-          content: readFileSync(
-            resolve(process.cwd(), "src/server/email/prompt.md"),
-            "utf8",
-          ),
-        },
-        {
-          role: "user",
-          content: JSON.stringify({
-            from: message.from,
-            subject: message.subject,
-            receivedAt: message.receivedAt,
-            timeZone: APP_TIME_ZONE,
-            receivedLocalDate: todayInZone(
-              APP_TIME_ZONE,
-              new Date(message.receivedAt),
+    await spendSchoolKey("email");
+    response = await client.responses.create(
+      {
+        model: cell.model,
+        reasoning: { effort: cell.effort as "medium" },
+        input: [
+          {
+            role: "developer",
+            content: readFileSync(
+              resolve(process.cwd(), "src/server/email/prompt.md"),
+              "utf8",
             ),
-            body: message.textBody,
-          }),
-        },
-      ],
-    });
+          },
+          {
+            role: "user",
+            content: JSON.stringify({
+              from: message.from,
+              subject: message.subject,
+              receivedAt: message.receivedAt,
+              timeZone: APP_TIME_ZONE,
+              receivedLocalDate: todayInZone(
+                APP_TIME_ZONE,
+                new Date(message.receivedAt),
+              ),
+              body: message.textBody,
+            }),
+          },
+        ],
+      },
+      { timeout: timeoutMs },
+    );
   } catch (error) {
     // SDK errors can contain request bodies: never log or persist that text.
     const status = error instanceof OpenAI.APIError ? error.status : undefined;

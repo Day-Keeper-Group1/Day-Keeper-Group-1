@@ -56,12 +56,14 @@ worktree's callback port must match both `.env.local` and Google's registration.
 
 ## Database setup
 
-`db/schema.sql` defines `gmail_connections`, `gmail_oauth_attempts` and
-`document_emails` (the source of emails imported for extraction).
-Following the repository's no-migrations convention, the normal setup command is
-`npm run db:reset`. **It deletes existing local data and rebuilds the seed and
-bucket.** Coordinate with anyone using the checkout before running it. This code
-change does not automatically reset the shared development database.
+`src/server/db/schema/email.ts` defines `gmail_connections`, `gmail_oauth_attempts`
+and `document_emails` (the source of emails imported for extraction). Their generated
+migration lives under `db/migrations/`. On a database already managed by the
+repository's migration system, run `npm run db:migrate` to apply pending migrations
+while retaining existing rows. For a clean local setup, use `npm run db:reset`.
+**Reset deletes existing local data and rebuilds the seed and bucket.** Coordinate
+with anyone using the checkout before resetting it. This code change does not
+automatically reset the shared development database.
 
 Restart `npm run dev`, sign in to DayKeeper, and open
 `http://localhost:3000/email`. Select Connect Gmail, select your test account and

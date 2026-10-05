@@ -1,5 +1,9 @@
 import { beforeEach, expect, it, vi } from "vitest";
-vi.mock("@/server/db", () => ({ queryOne: vi.fn() }));
+vi.mock("@/server/db", () => ({ db: () => "handle" }));
+vi.mock("@/server/db/queries/email", () => ({
+  findOwnedEmail: vi.fn(),
+  findOwnedGmailConnection: vi.fn(),
+}));
 vi.mock("@/server/email/gmail/connection", () => ({ mailboxAccess: vi.fn() }));
 vi.mock("@/server/email/gmail/provider", () => ({
   GmailProvider: class {
@@ -7,7 +11,10 @@ vi.mock("@/server/email/gmail/provider", () => ({
   },
 }));
 const { readMessage } = vi.hoisted(() => ({ readMessage: vi.fn() }));
-import { queryOne } from "@/server/db";
+import {
+  findOwnedEmail,
+  findOwnedGmailConnection,
+} from "@/server/db/queries/email";
 import { mailboxAccess } from "@/server/email/gmail/connection";
 import { savedEmailMessage } from "@/server/email/source";
 const source = {
@@ -21,16 +28,13 @@ const source = {
 };
 beforeEach(() => vi.resetAllMocks());
 it("scopes saved email lookup to its document and owner", async () => {
-  vi.mocked(queryOne).mockResolvedValue(null);
+  vi.mocked(findOwnedEmail).mockResolvedValue(null);
   expect(await savedEmailMessage("document", "owner")).toBeNull();
-  expect(queryOne).toHaveBeenCalledWith(
-    expect.stringContaining("e.user_id=$2"),
-    ["document", "owner"],
-  );
+  expect(findOwnedEmail).toHaveBeenCalledWith("handle", "owner", "document");
   expect(mailboxAccess).not.toHaveBeenCalled();
 });
 it("opens the retained email without a matching connected mailbox", async () => {
-  vi.mocked(queryOne).mockResolvedValue(source);
+  vi.mocked(findOwnedEmail).mockResolvedValue(source as never);
   expect(await savedEmailMessage("document", "owner")).toMatchObject({
     mailbox: source.mailbox,
     providerMessageId: "old-message",
@@ -39,7 +43,10 @@ it("opens the retained email without a matching connected mailbox", async () => 
   expect(mailboxAccess).not.toHaveBeenCalled();
 });
 it("fetches the exact saved message even outside the recent inbox", async () => {
-  vi.mocked(queryOne).mockResolvedValue({ ...source, connected: true });
+  vi.mocked(findOwnedEmail).mockResolvedValue(source as never);
+  vi.mocked(findOwnedGmailConnection).mockResolvedValue({
+    email: source.mailbox,
+  } as never);
   vi.mocked(mailboxAccess).mockResolvedValue({
     token: "test",
     connectionId: "connection",
@@ -55,7 +62,10 @@ it("fetches the exact saved message even outside the recent inbox", async () => 
   expect(readMessage).toHaveBeenCalledWith("old-message");
 });
 it("falls back to saved text when Gmail is unavailable", async () => {
-  vi.mocked(queryOne).mockResolvedValue({ ...source, connected: true });
+  vi.mocked(findOwnedEmail).mockResolvedValue(source as never);
+  vi.mocked(findOwnedGmailConnection).mockResolvedValue({
+    email: source.mailbox,
+  } as never);
   vi.mocked(mailboxAccess).mockRejectedValue(new Error("Unavailable"));
   expect(await savedEmailMessage("document", "owner")).toMatchObject({
     textBody: "Saved original",

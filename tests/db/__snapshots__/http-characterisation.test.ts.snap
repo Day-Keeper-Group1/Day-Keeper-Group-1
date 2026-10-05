@@ -1,0 +1,425 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`the API, as it answered before the database layer moved > answers every step the way the recording says 1`] = `
+[
+  {
+    "body": "{"user":null}",
+    "status": 200,
+    "step": "nobody signed in: who am I",
+  },
+  {
+    "body": "{"error":{"code":"unauthenticated","message":"Please sign in."}}",
+    "status": 401,
+    "step": "nobody signed in: home",
+  },
+  {
+    "body": "{"error":{"code":"unauthenticated","message":"Please sign in."}}",
+    "status": 401,
+    "step": "nobody signed in: letters",
+  },
+  {
+    "body": "{"error":{"code":"unauthenticated","message":"Please sign in."}}",
+    "status": 401,
+    "step": "nobody signed in: tasks",
+  },
+  {
+    "body": "{"error":{"code":"invalid_request","message":"Please check the details below.","fields":{"displayName":"Please enter your name.","email":"Please check that email address.","password":"Please use at least 8 characters."}}}",
+    "status": 400,
+    "step": "register with nothing usable",
+  },
+  {
+    "body": "{"id":"<id-1>","email":"Margaret.W@Example.COM","displayName":"Margaret Whitfield","role":"user","timeZone":"Australia/Melbourne"}",
+    "cookies": [
+      "{"set":"dk_session","httpOnly":true,"sameSite":"lax","secure":false,"path":"/","expires":"<instant>"}",
+    ],
+    "status": 201,
+    "step": "register",
+  },
+  {
+    "body": "{"error":{"code":"conflict","message":"There is already an account with that email address."}}",
+    "status": 409,
+    "step": "register the same address in another case",
+  },
+  {
+    "body": "{"error":{"code":"unauthenticated","message":"That email and password do not match."}}",
+    "status": 401,
+    "step": "sign in with the wrong password",
+  },
+  {
+    "body": "{"error":{"code":"unauthenticated","message":"That email and password do not match."}}",
+    "status": 401,
+    "step": "sign in with an address nobody registered",
+  },
+  {
+    "body": "{"id":"<id-1>","email":"Margaret.W@Example.COM","displayName":"Margaret Whitfield","role":"user","timeZone":"Australia/Melbourne"}",
+    "cookies": [
+      "{"set":"dk_session","httpOnly":true,"sameSite":"lax","secure":false,"path":"/","expires":"<instant>"}",
+    ],
+    "status": 200,
+    "step": "sign in with mixed case and spaces",
+  },
+  {
+    "body": "{"user":{"id":"<id-1>","email":"Margaret.W@Example.COM","displayName":"Margaret Whitfield","role":"user","timeZone":"Australia/Melbourne"}}",
+    "status": 200,
+    "step": "who am I",
+  },
+  {
+    "body": "{"documentId":"<id-2>","pages":[{"pageNumber":1,"uploadUrl":"https://storage.test/upload/uploads/<id-1>/<id-2>/1.png","contentType":"image/png"}]}",
+    "status": 200,
+    "step": "letter one: ask to upload",
+  },
+  {
+    "body": "{"id":"<id-2>","issuer":null,"documentType":null,"label":"Photographed <when>, 1 page","status":"processing","uploadedAt":"<instant>","pageCount":1}",
+    "status": 201,
+    "step": "letter one: say the photograph has landed",
+  },
+  {
+    "body": "{"error":{"code":"invalid_request","message":"These photos have already been sent."}}",
+    "status": 400,
+    "step": "letter one: say the photograph has landed, a second time",
+  },
+  {
+    "body": "{"id":"<id-2>","issuer":null,"documentType":null,"label":"Photographed <when>, 1 page","status":"processing","uploadedAt":"<instant>","pageCount":1,"fields":[],"identifiers":[],"pages":[{"id":"<id-3>","pageNumber":1,"url":"/api/documents/<id-2>/pages/1"}]}",
+    "status": 200,
+    "step": "letter one, in full, while it is being read",
+  },
+  {
+    "body": "{"id":"<id-4>","issuer":null,"documentType":null,"label":"Photographed <when>, 2 pages","status":"processing","uploadedAt":"<instant>","pageCount":2}",
+    "status": 201,
+    "step": "letter two: send two photographs as a form",
+  },
+  {
+    "body": "{"documentId":"<id-5>","pages":[{"pageNumber":1,"uploadUrl":"https://storage.test/upload/uploads/<id-1>/<id-5>/1.png","contentType":"image/png"}]}",
+    "status": 200,
+    "step": "letter three: ask to upload",
+  },
+  {
+    "body": "{"id":"<id-5>","issuer":null,"documentType":null,"label":"Photographed <when>, 1 page","status":"processing","uploadedAt":"<instant>","pageCount":1}",
+    "status": 201,
+    "step": "letter three: say the photograph has landed",
+  },
+  {
+    "body": "{"documentId":"<id-6>","pages":[{"pageNumber":1,"uploadUrl":"https://storage.test/upload/uploads/<id-1>/<id-6>/1.png","contentType":"image/png"}]}",
+    "status": 200,
+    "step": "letter four: ask to upload",
+  },
+  {
+    "body": "{"id":"<id-6>","issuer":null,"documentType":null,"label":"Photographed <when>, 1 page","status":"processing","uploadedAt":"<instant>","pageCount":1}",
+    "status": 201,
+    "step": "letter four: say the photograph has landed",
+  },
+  {
+    "body": "{"documentId":"<id-7>","pages":[{"pageNumber":1,"uploadUrl":"https://storage.test/upload/uploads/<id-1>/<id-7>/1.png","contentType":"image/png"}]}",
+    "status": 200,
+    "step": "letter five: ask to upload",
+  },
+  {
+    "body": "{"id":"<id-7>","issuer":null,"documentType":null,"label":"Photographed <when>, 1 page","status":"processing","uploadedAt":"<instant>","pageCount":1}",
+    "status": 201,
+    "step": "letter five: say the photograph has landed",
+  },
+  {
+    "body": "{"counts":{"needsReview":3,"processing":1,"failed":1},"inbox":[{"id":"<id-2>","issuer":"Example Energy","documentType":"Utility bill","label":"Example Energy · Utility bill","status":"needs-review","dueDate":"2099-03-15","dueTime":"10:30","amount":"$347.60","reference":"4417 2290 113","uploadedAt":"<instant>","pageCount":1},{"id":"<id-4>","issuer":"Calderfield Council","documentType":"Information notice","label":"Calderfield Council · Information notice","status":"needs-review","amount":"No payment required","reference":"Not applicable","uploadedAt":"<instant>","pageCount":2},{"id":"<id-5>","issuer":null,"documentType":null,"label":"Photographed <when>, 1 page","status":"failed","uploadedAt":"<instant>","pageCount":1,"failure":{"message":"It wasn't your photo. Something went wrong on our side. Please try again."}},{"id":"<id-6>","issuer":null,"documentType":null,"label":"Photographed <when>, 1 page","status":"processing","uploadedAt":"<instant>","pageCount":1},{"id":"<id-7>","issuer":"Harbour Water","documentType":"Concession form","label":"Harbour Water · Concession form","status":"needs-review","dueDate":"2099-02-03","amount":"No payment required","reference":"Not applicable","uploadedAt":"<instant>","pageCount":1}],"tasks":[]}",
+    "status": 200,
+    "step": "home, while letter four waits for its second round",
+  },
+  {
+    "body": "{"counts":{"needsReview":4,"processing":0,"failed":1},"inbox":[{"id":"<id-2>","issuer":"Example Energy","documentType":"Utility bill","label":"Example Energy · Utility bill","status":"needs-review","dueDate":"2099-03-15","dueTime":"10:30","amount":"$347.60","reference":"4417 2290 113","uploadedAt":"<instant>","pageCount":1},{"id":"<id-4>","issuer":"Calderfield Council","documentType":"Information notice","label":"Calderfield Council · Information notice","status":"needs-review","amount":"No payment required","reference":"Not applicable","uploadedAt":"<instant>","pageCount":2},{"id":"<id-5>","issuer":null,"documentType":null,"label":"Photographed <when>, 1 page","status":"failed","uploadedAt":"<instant>","pageCount":1,"failure":{"message":"It wasn't your photo. Something went wrong on our side. Please try again."}},{"id":"<id-6>","issuer":"My Aged Care","documentType":"Government letter","label":"My Aged Care · Government letter","status":"needs-review","amount":"No payment required","uploadedAt":"<instant>","pageCount":1},{"id":"<id-7>","issuer":"Harbour Water","documentType":"Concession form","label":"Harbour Water · Concession form","status":"needs-review","dueDate":"2099-02-03","amount":"No payment required","reference":"Not applicable","uploadedAt":"<instant>","pageCount":1}],"tasks":[]}",
+    "status": 200,
+    "step": "home",
+  },
+  {
+    "body": "[{"id":"<id-7>","issuer":"Harbour Water","documentType":"Concession form","label":"Harbour Water · Concession form","status":"needs-review","dueDate":"2099-02-03","amount":"No payment required","reference":"Not applicable","uploadedAt":"<instant>","pageCount":1},{"id":"<id-6>","issuer":"My Aged Care","documentType":"Government letter","label":"My Aged Care · Government letter","status":"needs-review","amount":"No payment required","uploadedAt":"<instant>","pageCount":1},{"id":"<id-5>","issuer":null,"documentType":null,"label":"Photographed <when>, 1 page","status":"failed","uploadedAt":"<instant>","pageCount":1,"failure":{"message":"It wasn't your photo. Something went wrong on our side. Please try again."}},{"id":"<id-4>","issuer":"Calderfield Council","documentType":"Information notice","label":"Calderfield Council · Information notice","status":"needs-review","amount":"No payment required","reference":"Not applicable","uploadedAt":"<instant>","pageCount":2},{"id":"<id-2>","issuer":"Example Energy","documentType":"Utility bill","label":"Example Energy · Utility bill","status":"needs-review","dueDate":"2099-03-15","dueTime":"10:30","amount":"$347.60","reference":"4417 2290 113","uploadedAt":"<instant>","pageCount":1}]",
+    "status": 200,
+    "step": "letters",
+  },
+  {
+    "body": "{"id":"<id-2>","issuer":"Example Energy","documentType":"Utility bill","label":"Example Energy · Utility bill","status":"needs-review","dueDate":"2099-03-15","dueTime":"10:30","amount":"$347.60","reference":"4417 2290 113","uploadedAt":"<instant>","pageCount":1,"fields":[{"key":"document_type","label":"Document type","value":"Utility bill","status":"confirmed"},{"key":"issuer","label":"From","value":"Example Energy","status":"confirmed"},{"key":"action_required","label":"What to do","value":"Pay Example Energy","status":"confirmed"},{"key":"due_date","label":"Due date","value":"15 Mar 2099","status":"confirmed"},{"key":"amount","label":"Amount","value":"$347.60","status":"confirmed"},{"key":"reference","label":"Reference","value":"4417 2290 113","status":"confirmed"},{"key":"due_time","label":"Time","value":"10:30","status":"confirmed"},{"key":"bpay_biller_code","label":"Bpay biller code","value":"23796","status":"confirmed"},{"key":"supply_period","label":"Supply period","value":"1 Dec 2098 to 28 Feb 2099","status":"confirmed"}],"identifiers":[{"label":"Account number","value":"4417 2290 113","isReference":true},{"label":"Invoice number","value":"INV-2099-0215","isReference":false},{"label":"Customer number","value":"CN 5512 08","isReference":false}],"pages":[{"id":"<id-3>","pageNumber":1,"url":"/api/documents/<id-2>/pages/1"}]}",
+    "status": 200,
+    "step": "letter one, in full",
+  },
+  {
+    "body": "{"id":"<id-4>","issuer":"Calderfield Council","documentType":"Information notice","label":"Calderfield Council · Information notice","status":"needs-review","amount":"No payment required","reference":"Not applicable","uploadedAt":"<instant>","pageCount":2,"fields":[{"key":"document_type","label":"Document type","value":"Information notice","status":"confirmed"},{"key":"issuer","label":"From","value":"Calderfield Council","status":"confirmed"},{"key":"action_required","label":"What to do","value":"No action","status":"confirmed"},{"key":"due_date","label":"Due date","value":"Not applicable","status":"confirmed"},{"key":"amount","label":"Amount","value":"No payment required","status":"confirmed"},{"key":"reference","label":"Reference","value":"Not applicable","status":"confirmed"}],"identifiers":[],"pages":[{"id":"<id-8>","pageNumber":1,"url":"/api/documents/<id-4>/pages/1"},{"id":"<id-9>","pageNumber":2,"url":"/api/documents/<id-4>/pages/2"}]}",
+    "status": 200,
+    "step": "letter two, in full",
+  },
+  {
+    "body": "{"id":"<id-5>","issuer":null,"documentType":null,"label":"Photographed <when>, 1 page","status":"failed","uploadedAt":"<instant>","pageCount":1,"failure":{"message":"It wasn't your photo. Something went wrong on our side. Please try again."},"fields":[],"identifiers":[],"pages":[{"id":"<id-10>","pageNumber":1,"url":"/api/documents/<id-5>/pages/1"}]}",
+    "status": 200,
+    "step": "letter three, in full",
+  },
+  {
+    "body": "{"id":"<id-6>","issuer":"My Aged Care","documentType":"Government letter","label":"My Aged Care · Government letter","status":"needs-review","amount":"No payment required","uploadedAt":"<instant>","pageCount":1,"fields":[{"key":"document_type","label":"Document type","value":"Government letter","status":"confirmed"},{"key":"issuer","label":"From","value":"My Aged Care","status":"confirmed"},{"key":"action_required","label":"What to do","value":"Contact a Support at Home provider","status":"confirmed"},{"key":"due_date","label":"Due date","value":"Not applicable","status":"confirmed"},{"key":"amount","label":"Amount","value":"No payment required","status":"confirmed"},{"key":"reference","label":"Reference","value":null,"status":"unreadable"}],"identifiers":[{"label":"Letter reference","value":"L-2099-0412","isReference":false}],"pages":[{"id":"<id-11>","pageNumber":1,"url":"/api/documents/<id-6>/pages/1"}]}",
+    "status": 200,
+    "step": "letter four, in full",
+  },
+  {
+    "body": "{"id":"<id-7>","issuer":"Harbour Water","documentType":"Concession form","label":"Harbour Water · Concession form","status":"needs-review","dueDate":"2099-02-03","amount":"No payment required","reference":"Not applicable","uploadedAt":"<instant>","pageCount":1,"fields":[{"key":"document_type","label":"Document type","value":"Concession form","status":"confirmed"},{"key":"issuer","label":"From","value":"Harbour Water","status":"confirmed"},{"key":"action_required","label":"What to do","value":"Return form to Harbour Water","status":"confirmed"},{"key":"due_date","label":"Due date","value":"3 Feb 2099","status":"confirmed"},{"key":"amount","label":"Amount","value":"No payment required","status":"confirmed"},{"key":"reference","label":"Reference","value":"Not applicable","status":"confirmed"}],"identifiers":[],"pages":[{"id":"<id-12>","pageNumber":1,"url":"/api/documents/<id-7>/pages/1"}]}",
+    "status": 200,
+    "step": "letter five, in full",
+  },
+  {
+    "body": "",
+    "location": "https://storage.test/read/uploads/<id-1>/<id-2>/1.png",
+    "status": 302,
+    "step": "letter one, page 1",
+  },
+  {
+    "body": "{"error":{"code":"not_found","message":"Page not found."}}",
+    "status": 404,
+    "step": "letter one, page 99",
+  },
+  {
+    "body": "",
+    "location": "https://storage.test/read/uploads/<id-1>/<id-4>/2.png",
+    "status": 302,
+    "step": "letter two, page 2",
+  },
+  {
+    "body": "{"error":{"code":"not_found","message":"Page not found."}}",
+    "status": 404,
+    "step": "a page of a letter nobody has",
+  },
+  {
+    "body": "{"error":{"code":"not_found","message":"Page not found."}}",
+    "status": 404,
+    "step": "a page of a letter id that is not an id",
+  },
+  {
+    "body": "{"error":{"code":"not_found","message":"Letter not found."}}",
+    "status": 404,
+    "step": "a letter nobody has",
+  },
+  {
+    "body": "{"error":{"code":"not_found","message":"Letter not found."}}",
+    "status": 404,
+    "step": "a letter id that is not an id",
+  },
+  {
+    "body": "{"documentId":"<id-2>","task":{"id":"<id-13>","title":"Pay Example Energy","documentId":"<id-2>","issuer":"Example Energy","dueDate":"2099-03-15","dueTime":"10:30","status":"upcoming","reminders":[{"id":"<id-14>","localDate":"2099-03-08"},{"id":"<id-15>","localDate":"2099-03-12"},{"id":"<id-16>","localDate":"2099-03-14"}]}}",
+    "status": 200,
+    "step": "confirm letter one",
+  },
+  {
+    "body": "{"documentId":"<id-4>","task":null}",
+    "status": 200,
+    "step": "confirm letter two",
+  },
+  {
+    "body": "{"documentId":"<id-6>","task":{"id":"<id-17>","title":"Contact a Support at Home provider (My Aged Care)","documentId":"<id-6>","issuer":"My Aged Care","dueDate":null,"status":"upcoming","reminders":[]}}",
+    "status": 200,
+    "step": "confirm letter four",
+  },
+  {
+    "body": "{"documentId":"<id-7>","task":{"id":"<id-18>","title":"Return form to Harbour Water","documentId":"<id-7>","issuer":"Harbour Water","dueDate":"2099-02-03","status":"upcoming","reminders":[{"id":"<id-19>","localDate":"2099-01-27"},{"id":"<id-20>","localDate":"2099-01-31"},{"id":"<id-21>","localDate":"2099-02-02"}]}}",
+    "status": 200,
+    "step": "confirm letter five",
+  },
+  {
+    "body": "{"error":{"code":"conflict","message":"This letter is already saved."}}",
+    "status": 409,
+    "step": "confirm letter one again",
+  },
+  {
+    "body": "{"error":{"code":"conflict","message":"This letter could not be read, so there is nothing to save."}}",
+    "status": 409,
+    "step": "confirm letter three, which failed",
+  },
+  {
+    "body": "{"error":{"code":"not_found","message":"Letter not found."}}",
+    "status": 404,
+    "step": "confirm a letter nobody has",
+  },
+  {
+    "body": "{"error":{"code":"not_found","message":"Letter not found."}}",
+    "status": 404,
+    "step": "confirm a letter id that is not an id",
+  },
+  {
+    "body": "{"counts":{"needsReview":0,"processing":0,"failed":1},"inbox":[{"id":"<id-5>","issuer":null,"documentType":null,"label":"Photographed <when>, 1 page","status":"failed","uploadedAt":"<instant>","pageCount":1,"failure":{"message":"It wasn't your photo. Something went wrong on our side. Please try again."}}],"tasks":[{"id":"<id-18>","title":"Return form to Harbour Water","documentId":"<id-7>","issuer":"Harbour Water","dueDate":"2099-02-03","status":"upcoming","reminders":[{"id":"<id-19>","localDate":"2099-01-27"},{"id":"<id-20>","localDate":"2099-01-31"},{"id":"<id-21>","localDate":"2099-02-02"}]},{"id":"<id-13>","title":"Pay Example Energy","documentId":"<id-2>","issuer":"Example Energy","dueDate":"2099-03-15","dueTime":"10:30","status":"upcoming","reminders":[{"id":"<id-14>","localDate":"2099-03-08"},{"id":"<id-15>","localDate":"2099-03-12"},{"id":"<id-16>","localDate":"2099-03-14"}]},{"id":"<id-17>","title":"Contact a Support at Home provider (My Aged Care)","documentId":"<id-6>","issuer":"My Aged Care","dueDate":null,"status":"upcoming","reminders":[]}]}",
+    "status": 200,
+    "step": "home, after confirming",
+  },
+  {
+    "body": "[{"id":"<id-7>","issuer":"Harbour Water","documentType":"Concession form","label":"Harbour Water · Concession form","status":"confirmed","dueDate":"2099-02-03","amount":"No payment required","reference":"Not applicable","uploadedAt":"<instant>","pageCount":1},{"id":"<id-6>","issuer":"My Aged Care","documentType":"Government letter","label":"My Aged Care · Government letter","status":"confirmed","amount":"No payment required","uploadedAt":"<instant>","pageCount":1},{"id":"<id-5>","issuer":null,"documentType":null,"label":"Photographed <when>, 1 page","status":"failed","uploadedAt":"<instant>","pageCount":1,"failure":{"message":"It wasn't your photo. Something went wrong on our side. Please try again."}},{"id":"<id-4>","issuer":"Calderfield Council","documentType":"Information notice","label":"Calderfield Council · Information notice","status":"confirmed","amount":"No payment required","reference":"Not applicable","uploadedAt":"<instant>","pageCount":2},{"id":"<id-2>","issuer":"Example Energy","documentType":"Utility bill","label":"Example Energy · Utility bill","status":"confirmed","dueDate":"2099-03-15","dueTime":"10:30","amount":"$347.60","reference":"4417 2290 113","uploadedAt":"<instant>","pageCount":1}]",
+    "status": 200,
+    "step": "letters, after confirming",
+  },
+  {
+    "body": "{"id":"<id-2>","issuer":"Example Energy","documentType":"Utility bill","label":"Example Energy · Utility bill","status":"confirmed","dueDate":"2099-03-15","dueTime":"10:30","amount":"$347.60","reference":"4417 2290 113","uploadedAt":"<instant>","pageCount":1,"fields":[{"key":"document_type","label":"Document type","value":"Utility bill","status":"confirmed"},{"key":"issuer","label":"From","value":"Example Energy","status":"confirmed"},{"key":"action_required","label":"What to do","value":"Pay Example Energy","status":"confirmed"},{"key":"due_date","label":"Due date","value":"15 Mar 2099","status":"confirmed"},{"key":"amount","label":"Amount","value":"$347.60","status":"confirmed"},{"key":"reference","label":"Reference","value":"4417 2290 113","status":"confirmed"},{"key":"due_time","label":"Time","value":"10:30","status":"confirmed"},{"key":"bpay_biller_code","label":"Bpay biller code","value":"23796","status":"confirmed"},{"key":"supply_period","label":"Supply period","value":"1 Dec 2098 to 28 Feb 2099","status":"confirmed"}],"identifiers":[{"label":"Account number","value":"4417 2290 113","isReference":true},{"label":"Invoice number","value":"INV-2099-0215","isReference":false},{"label":"Customer number","value":"CN 5512 08","isReference":false}],"pages":[{"id":"<id-3>","pageNumber":1,"url":"/api/documents/<id-2>/pages/1"}]}",
+    "status": 200,
+    "step": "letter one, in full, after confirming",
+  },
+  {
+    "body": "{"id":"<id-4>","issuer":"Calderfield Council","documentType":"Information notice","label":"Calderfield Council · Information notice","status":"confirmed","amount":"No payment required","reference":"Not applicable","uploadedAt":"<instant>","pageCount":2,"fields":[{"key":"document_type","label":"Document type","value":"Information notice","status":"confirmed"},{"key":"issuer","label":"From","value":"Calderfield Council","status":"confirmed"},{"key":"action_required","label":"What to do","value":"No action","status":"confirmed"},{"key":"due_date","label":"Due date","value":"Not applicable","status":"confirmed"},{"key":"amount","label":"Amount","value":"No payment required","status":"confirmed"},{"key":"reference","label":"Reference","value":"Not applicable","status":"confirmed"}],"identifiers":[],"pages":[{"id":"<id-8>","pageNumber":1,"url":"/api/documents/<id-4>/pages/1"},{"id":"<id-9>","pageNumber":2,"url":"/api/documents/<id-4>/pages/2"}]}",
+    "status": 200,
+    "step": "letter two, in full, after confirming",
+  },
+  {
+    "body": "{"id":"<id-5>","issuer":null,"documentType":null,"label":"Photographed <when>, 1 page","status":"failed","uploadedAt":"<instant>","pageCount":1,"failure":{"message":"It wasn't your photo. Something went wrong on our side. Please try again."},"fields":[],"identifiers":[],"pages":[{"id":"<id-10>","pageNumber":1,"url":"/api/documents/<id-5>/pages/1"}]}",
+    "status": 200,
+    "step": "letter three, in full, after confirming",
+  },
+  {
+    "body": "{"id":"<id-6>","issuer":"My Aged Care","documentType":"Government letter","label":"My Aged Care · Government letter","status":"confirmed","amount":"No payment required","uploadedAt":"<instant>","pageCount":1,"fields":[{"key":"document_type","label":"Document type","value":"Government letter","status":"confirmed"},{"key":"issuer","label":"From","value":"My Aged Care","status":"confirmed"},{"key":"action_required","label":"What to do","value":"Contact a Support at Home provider","status":"confirmed"},{"key":"due_date","label":"Due date","value":"Not applicable","status":"confirmed"},{"key":"amount","label":"Amount","value":"No payment required","status":"confirmed"},{"key":"reference","label":"Reference","value":null,"status":"unreadable"}],"identifiers":[{"label":"Letter reference","value":"L-2099-0412","isReference":false}],"pages":[{"id":"<id-11>","pageNumber":1,"url":"/api/documents/<id-6>/pages/1"}]}",
+    "status": 200,
+    "step": "letter four, in full, after confirming",
+  },
+  {
+    "body": "{"id":"<id-7>","issuer":"Harbour Water","documentType":"Concession form","label":"Harbour Water · Concession form","status":"confirmed","dueDate":"2099-02-03","amount":"No payment required","reference":"Not applicable","uploadedAt":"<instant>","pageCount":1,"fields":[{"key":"document_type","label":"Document type","value":"Concession form","status":"confirmed"},{"key":"issuer","label":"From","value":"Harbour Water","status":"confirmed"},{"key":"action_required","label":"What to do","value":"Return form to Harbour Water","status":"confirmed"},{"key":"due_date","label":"Due date","value":"3 Feb 2099","status":"confirmed"},{"key":"amount","label":"Amount","value":"No payment required","status":"confirmed"},{"key":"reference","label":"Reference","value":"Not applicable","status":"confirmed"}],"identifiers":[],"pages":[{"id":"<id-12>","pageNumber":1,"url":"/api/documents/<id-7>/pages/1"}]}",
+    "status": 200,
+    "step": "letter five, in full, after confirming",
+  },
+  {
+    "body": "[{"id":"<id-18>","title":"Return form to Harbour Water","documentId":"<id-7>","issuer":"Harbour Water","dueDate":"2099-02-03","status":"upcoming","reminders":[{"id":"<id-19>","localDate":"2099-01-27"},{"id":"<id-20>","localDate":"2099-01-31"},{"id":"<id-21>","localDate":"2099-02-02"}]},{"id":"<id-13>","title":"Pay Example Energy","documentId":"<id-2>","issuer":"Example Energy","dueDate":"2099-03-15","dueTime":"10:30","status":"upcoming","reminders":[{"id":"<id-14>","localDate":"2099-03-08"},{"id":"<id-15>","localDate":"2099-03-12"},{"id":"<id-16>","localDate":"2099-03-14"}]},{"id":"<id-17>","title":"Contact a Support at Home provider (My Aged Care)","documentId":"<id-6>","issuer":"My Aged Care","dueDate":null,"status":"upcoming","reminders":[]}]",
+    "status": 200,
+    "step": "tasks",
+  },
+  {
+    "body": "{"id":"<id-13>","title":"Pay Example Energy","documentId":"<id-2>","issuer":"Example Energy","dueDate":"2099-03-15","dueTime":"10:30","status":"upcoming","reminders":[{"id":"<id-14>","localDate":"2099-03-08"},{"id":"<id-15>","localDate":"2099-03-12"},{"id":"<id-16>","localDate":"2099-03-14"}],"fields":[{"key":"document_type","label":"Document type","value":"Utility bill","status":"confirmed"},{"key":"issuer","label":"From","value":"Example Energy","status":"confirmed"},{"key":"action_required","label":"What to do","value":"Pay Example Energy","status":"confirmed"},{"key":"due_date","label":"Due date","value":"15 Mar 2099","status":"confirmed"},{"key":"due_time","label":"Time","value":"10:30","status":"confirmed"},{"key":"amount","label":"Amount","value":"$347.60","status":"confirmed"},{"key":"reference","label":"Reference","value":"4417 2290 113","status":"confirmed"},{"key":"bpay_biller_code","label":"Bpay biller code","value":"23796","status":"confirmed"},{"key":"supply_period","label":"Supply period","value":"1 Dec 2098 to 28 Feb 2099","status":"confirmed"}],"identifiers":[{"label":"Account number","value":"4417 2290 113","isReference":true},{"label":"Invoice number","value":"INV-2099-0215","isReference":false},{"label":"Customer number","value":"CN 5512 08","isReference":false}],"pageCount":1}",
+    "status": 200,
+    "step": "the task of letter one, in full",
+  },
+  {
+    "body": "{"id":"<id-17>","title":"Contact a Support at Home provider (My Aged Care)","documentId":"<id-6>","issuer":"My Aged Care","dueDate":null,"status":"upcoming","reminders":[],"fields":[{"key":"document_type","label":"Document type","value":"Government letter","status":"confirmed"},{"key":"issuer","label":"From","value":"My Aged Care","status":"confirmed"},{"key":"action_required","label":"What to do","value":"Contact a Support at Home provider","status":"confirmed"},{"key":"due_date","label":"Due date","value":"Not applicable","status":"confirmed"},{"key":"amount","label":"Amount","value":"No payment required","status":"confirmed"},{"key":"reference","label":"Reference","value":null,"status":"unreadable"}],"identifiers":[{"label":"Letter reference","value":"L-2099-0412","isReference":false}],"pageCount":1}",
+    "status": 200,
+    "step": "the task of letter four, in full",
+  },
+  {
+    "body": "{"id":"<id-13>","title":"Pay Example Energy","documentId":"<id-2>","issuer":"Example Energy","dueDate":"2099-03-15","dueTime":"10:30","status":"completed","reminders":[{"id":"<id-14>","localDate":"2099-03-08"},{"id":"<id-15>","localDate":"2099-03-12"},{"id":"<id-16>","localDate":"2099-03-14"}]}",
+    "status": 200,
+    "step": "tick the task",
+  },
+  {
+    "body": "{"id":"<id-13>","title":"Pay Example Energy","documentId":"<id-2>","issuer":"Example Energy","dueDate":"2099-03-15","dueTime":"10:30","status":"completed","reminders":[{"id":"<id-14>","localDate":"2099-03-08"},{"id":"<id-15>","localDate":"2099-03-12"},{"id":"<id-16>","localDate":"2099-03-14"}]}",
+    "status": 200,
+    "step": "tick it again",
+  },
+  {
+    "body": "{"counts":{"needsReview":0,"processing":0,"failed":1},"inbox":[{"id":"<id-5>","issuer":null,"documentType":null,"label":"Photographed <when>, 1 page","status":"failed","uploadedAt":"<instant>","pageCount":1,"failure":{"message":"It wasn't your photo. Something went wrong on our side. Please try again."}}],"tasks":[{"id":"<id-18>","title":"Return form to Harbour Water","documentId":"<id-7>","issuer":"Harbour Water","dueDate":"2099-02-03","status":"upcoming","reminders":[{"id":"<id-19>","localDate":"2099-01-27"},{"id":"<id-20>","localDate":"2099-01-31"},{"id":"<id-21>","localDate":"2099-02-02"}]},{"id":"<id-13>","title":"Pay Example Energy","documentId":"<id-2>","issuer":"Example Energy","dueDate":"2099-03-15","dueTime":"10:30","status":"completed","reminders":[{"id":"<id-14>","localDate":"2099-03-08"},{"id":"<id-15>","localDate":"2099-03-12"},{"id":"<id-16>","localDate":"2099-03-14"}]},{"id":"<id-17>","title":"Contact a Support at Home provider (My Aged Care)","documentId":"<id-6>","issuer":"My Aged Care","dueDate":null,"status":"upcoming","reminders":[]}]}",
+    "status": 200,
+    "step": "home, with a task just ticked",
+  },
+  {
+    "body": "{"id":"<id-13>","title":"Pay Example Energy","documentId":"<id-2>","issuer":"Example Energy","dueDate":"2099-03-15","dueTime":"10:30","status":"upcoming","reminders":[{"id":"<id-14>","localDate":"2099-03-08"},{"id":"<id-15>","localDate":"2099-03-12"},{"id":"<id-16>","localDate":"2099-03-14"}]}",
+    "status": 200,
+    "step": "untick the task",
+  },
+  {
+    "body": "{"id":"<id-13>","title":"Pay Example Energy","documentId":"<id-2>","issuer":"Example Energy","dueDate":"2099-03-15","dueTime":"10:30","status":"upcoming","reminders":[{"id":"<id-14>","localDate":"2099-03-08"},{"id":"<id-15>","localDate":"2099-03-12"},{"id":"<id-16>","localDate":"2099-03-14"}]}",
+    "status": 200,
+    "step": "untick it again",
+  },
+  {
+    "body": "{"error":{"code":"not_found","message":"Task not found."}}",
+    "status": 404,
+    "step": "a task nobody has",
+  },
+  {
+    "body": "{"error":{"code":"not_found","message":"Task not found."}}",
+    "status": 404,
+    "step": "tick a task nobody has",
+  },
+  {
+    "body": "{"error":{"code":"not_found","message":"Task not found."}}",
+    "status": 404,
+    "step": "untick a task nobody has",
+  },
+  {
+    "body": "{"error":{"code":"not_found","message":"Task not found."}}",
+    "status": 404,
+    "step": "a task id that is not an id",
+  },
+  {
+    "body": "{"error":{"code":"not_found","message":"Task not found."}}",
+    "status": 404,
+    "step": "tick a task id that is not an id",
+  },
+  {
+    "body": "{"error":{"code":"not_found","message":"Task not found."}}",
+    "status": 404,
+    "step": "untick a task id that is not an id",
+  },
+  {
+    "body": "{"id":"<id-22>","email":"dorothy@example.com","displayName":"Dorothy Ng","role":"user","timeZone":"Australia/Melbourne"}",
+    "cookies": [
+      "{"set":"dk_session","httpOnly":true,"sameSite":"lax","secure":false,"path":"/","expires":"<instant>"}",
+    ],
+    "status": 201,
+    "step": "a second person registers",
+  },
+  {
+    "body": "{"counts":{"needsReview":0,"processing":0,"failed":0},"inbox":[],"tasks":[]}",
+    "status": 200,
+    "step": "the second person: home",
+  },
+  {
+    "body": "[]",
+    "status": 200,
+    "step": "the second person: letters",
+  },
+  {
+    "body": "[]",
+    "status": 200,
+    "step": "the second person: tasks",
+  },
+  {
+    "body": "{"error":{"code":"not_found","message":"Letter not found."}}",
+    "status": 404,
+    "step": "the second person reads the first one's letter",
+  },
+  {
+    "body": "{"error":{"code":"not_found","message":"Page not found."}}",
+    "status": 404,
+    "step": "the second person opens its photograph",
+  },
+  {
+    "body": "{"error":{"code":"invalid_request","message":"These photos have already been sent."}}",
+    "status": 400,
+    "step": "the second person says its photograph has landed",
+  },
+  {
+    "body": "{"error":{"code":"not_found","message":"Letter not found."}}",
+    "status": 404,
+    "step": "the second person confirms it",
+  },
+  {
+    "body": "{"error":{"code":"not_found","message":"Task not found."}}",
+    "status": 404,
+    "step": "the second person reads the first one's task",
+  },
+  {
+    "body": "{"error":{"code":"not_found","message":"Task not found."}}",
+    "status": 404,
+    "step": "the second person ticks it",
+  },
+  {
+    "body": "{"error":{"code":"not_found","message":"Task not found."}}",
+    "status": 404,
+    "step": "the second person unticks it",
+  },
+  {
+    "body": "{"signedOut":true}",
+    "cookies": [
+      "{"deleted":"dk_session"}",
+    ],
+    "status": 200,
+    "step": "sign out",
+  },
+  {
+    "body": "{"user":null}",
+    "status": 200,
+    "step": "who am I, signed out",
+  },
+  {
+    "body": "{"user":null}",
+    "status": 200,
+    "step": "who am I, from a browser that kept the cookie",
+  },
+  {
+    "body": "{"error":{"code":"unauthenticated","message":"Please sign in."}}",
+    "status": 401,
+    "step": "sign out again",
+  },
+]
+`;

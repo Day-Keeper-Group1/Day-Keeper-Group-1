@@ -2,9 +2,9 @@ import { cookies } from "next/headers";
 
 import type { SessionUser } from "@/lib/contract/api";
 import { fail, json, route } from "@/server/api/respond";
+import { EmailTaken, registerAccount } from "@/server/auth/accounts";
 import { hashPassword, validatePasswordStrength } from "@/server/auth/password";
 import { SESSION_COOKIE_NAME, createSession } from "@/server/auth/session";
-import { transaction } from "@/server/db";
 
 /**
  * POST /api/auth/register — create a person, and sign them in.
@@ -18,24 +18,6 @@ const LOOKS_LIKE_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 /** The longest address the standard allows. */
 const MAX_EMAIL = 254;
 const MAX_DISPLAY_NAME = 100;
-
-/** Postgres unique-violation. Here it means the email is already registered. */
-function isUniqueViolation(error: unknown): boolean {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    (error as { code?: unknown }).code === "23505"
-  );
-}
-
-type NewUserRow = {
-  id: string;
-  email: string;
-  display_name: string;
-  role: SessionUser["role"];
-  timezone: string;
-};
 
 export const POST = route(async (request: Request) => {
   const body = (await request.json().catch(() => null)) as {
@@ -84,30 +66,11 @@ export const POST = route(async (request: Request) => {
   // email_canonical, a generated lower(btrim(email)) column with a unique index
   // on it, so " Margaret.W@Example.COM " and "margaret.w@example.com" are the
   // same account while the capitals she chose survive on her own screen.
-  let user: NewUserRow;
+  let user: SessionUser;
   try {
-    user = await transaction(async (client) => {
-      const inserted = await client.query<NewUserRow>(
-        `INSERT INTO users (email, display_name, password_hash)
-              VALUES ($1, $2, $3)
-           RETURNING id, email, display_name, role, timezone`,
-        [email, displayName, passwordHash],
-      );
-      const row = inserted.rows[0];
-
-      await client.query(
-        `INSERT INTO audit_logs (actor_id, action, target_type, target_id)
-              VALUES ($1, 'user.register', 'user', $1)`,
-        [row.id],
-      );
-
-      return row;
-    });
+    user = await registerAccount({ email, displayName, passwordHash });
   } catch (error) {
-    // Asking first and inserting second reads more naturally and is wrong: two
-    // registrations racing on the same address both pass the check, and one
-    // then fails here anyway with nobody having written a message for it.
-    if (isUniqueViolation(error)) {
+    if (error instanceof EmailTaken) {
       return fail(
         "conflict",
         "There is already an account with that email address.",
@@ -133,12 +96,5 @@ export const POST = route(async (request: Request) => {
     expires: expiresAt,
   });
 
-  const session: SessionUser = {
-    id: user.id,
-    email: user.email,
-    displayName: user.display_name,
-    role: user.role,
-    timeZone: user.timezone,
-  };
-  return json(session, 201);
+  return json(user, 201);
 });

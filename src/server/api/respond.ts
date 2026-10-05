@@ -1,5 +1,6 @@
 import type { ApiError } from "@/lib/contract/api";
 import { UnauthenticatedError } from "@/server/auth/session";
+import { dbCause } from "@/server/db/errors";
 
 /**
  * The one place an HTTP response is built.
@@ -19,6 +20,7 @@ const STATUS: Record<ErrorCode, number> = {
   forbidden: 403,
   not_found: 404,
   conflict: 409,
+  too_many_requests: 429,
   server_error: 500,
 };
 
@@ -65,7 +67,9 @@ export function route<A extends unknown[]>(handler: Handler<A>): Handler<A> {
       if (error instanceof UnauthenticatedError) {
         return fail("unauthenticated", error.message);
       }
-      console.error("[api] unhandled error", error);
+      // A failed statement is logged as dbCause(error), never as it was
+      // thrown: src/server/db/errors.ts says what that keeps out of the log.
+      console.error("[api] unhandled error", dbCause(error));
       return fail(
         "server_error",
         "Something went wrong at our end. Please try again in a moment.",

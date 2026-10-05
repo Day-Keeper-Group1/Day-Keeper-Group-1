@@ -3,21 +3,14 @@
 // KAN-57: the calendar, drawn to the prototype: a month of dots, a day sheet, and the task list.
 
 import { useMemo, useState } from "react";
-import { Bell, BellOff } from "lucide-react";
 
 import { BottomSheet } from "@/components/bottom-sheet";
 import { Panel, PillButton, ScreenHeader } from "@/components/screen";
 import { TaskRow } from "@/components/task-row";
 import { TaskEntry, TaskSheet, useTaskDetail } from "@/components/task-sheet";
-import {
-  marksByDay,
-  monthCells,
-  sheetLine,
-  tasksForMonth,
-  type CalendarMark,
-} from "@/lib/calendar";
+import { monthCells, tasksByDueDay, tasksForMonth } from "@/lib/calendar";
 import { deriveTaskStatus, type TaskSummary } from "@/lib/contract/api";
-import { formatDueDate, formatDueTime } from "@/lib/contract/dates";
+import { formatDueDate } from "@/lib/contract/dates";
 import { toggleTaskDone } from "@/lib/task-actions";
 import { cn } from "@/lib/utils";
 
@@ -49,23 +42,6 @@ const WEEKDAY_INITIALS = ["M", "T", "W", "T", "F", "S", "S"];
 
 const SAVE_FAILED =
   "We couldn't save that just now. Please try again in a moment.";
-
-/**
- * The date under a title in the day sheet.
- *
- * Always "due <date>", whatever has happened since. The prototype writes this
- * line as `'due ' + t.when` with no condition on it, and it is describing the
- * date the letter named rather than reporting on lateness; the row in the list
- * beside it is where "was due" belongs. A task with no date has no reminders
- * and never reaches this line, so the null case simply draws nothing.
- */
-function dueCaption(task: TaskSummary): string | null {
-  if (!task.dueDate) return null;
-  const date = formatDueDate(task.dueDate, "short");
-  return task.dueTime
-    ? `due ${date}, ${formatDueTime(task.dueTime)}`
-    : `due ${date}`;
-}
 
 /**
  * One heading inside the Tasks panel. Drawn empty only when told what to say
@@ -139,14 +115,14 @@ export function CalendarScreen({
   /** The open day, 'YYYY-MM-DD', or null when the sheet is shut. */
   const [selected, setSelected] = useState<string | null>(null);
 
-  const byDay = useMemo(() => marksByDay(tasks), [tasks]);
+  const byDay = useMemo(() => tasksByDueDay(tasks), [tasks]);
   const cells = useMemo(() => monthCells(year, month), [year, month]);
   const listed = useMemo(
     () => tasksForMonth(tasks, year, month),
     [tasks, year, month],
   );
   const onTodaysMonth = year === todayYear && month === todayMonth;
-  const selectedMarks = useMemo(
+  const selectedTasks = useMemo(
     () => (selected ? (byDay.get(selected) ?? []) : []),
     [selected, byDay],
   );
@@ -272,7 +248,7 @@ export function CalendarScreen({
                 <DayCell
                   key={iso}
                   iso={iso}
-                  marks={byDay.get(iso) ?? []}
+                  tasks={byDay.get(iso) ?? []}
                   selected={iso === selected}
                   onSelect={() => setSelected(iso)}
                 />
@@ -314,16 +290,12 @@ export function CalendarScreen({
         onClose={() => setSelected(null)}
         heading={selected ? formatDueDate(selected, "long") : ""}
       >
-        {selectedMarks.map((mark, index) => (
+        {selectedTasks.map((task, index) => (
           <div
-            key={`${mark.kind}-${mark.reminder?.id ?? mark.task.id}`}
+            key={task.id}
             className={cn(index > 0 && "mt-3 border-t border-line pt-3")}
           >
-            {mark.kind === "reminder" ? (
-              <ReminderEntry mark={mark} today={today} />
-            ) : (
-              <DueEntry mark={mark} onToggle={onToggle} />
-            )}
+            <DueEntry task={task} onToggle={onToggle} />
           </div>
         ))}
       </BottomSheet>
@@ -349,12 +321,12 @@ export function CalendarScreen({
  */
 function DayCell({
   iso,
-  marks,
+  tasks,
   selected,
   onSelect,
 }: {
   iso: string;
-  marks: CalendarMark[];
+  tasks: TaskSummary[];
   selected: boolean;
   onSelect: () => void;
 }) {
@@ -370,7 +342,7 @@ function DayCell({
   const shell =
     "flex min-h-[34px] flex-col items-center rounded-[8px] pt-[7px] pb-1 text-day";
 
-  if (marks.length === 0) {
+  if (tasks.length === 0) {
     return (
       <div className={cn(shell, "text-foreground")}>
         <span className="leading-none">{day}</span>
@@ -384,8 +356,8 @@ function DayCell({
       type="button"
       onClick={onSelect}
       aria-pressed={selected}
-      aria-label={`${day} ${monthName}, ${marks.length} ${
-        marks.length === 1 ? "item" : "items"
+      aria-label={`${day} ${monthName}, ${tasks.length} ${
+        tasks.length === 1 ? "item" : "items"
       }`}
       className={cn(
         shell,
@@ -397,47 +369,18 @@ function DayCell({
     >
       <span className="leading-none">{day}</span>
       <span className="mt-0.5 flex h-1.5 items-center gap-[3px]">
-        {marks.slice(0, 3).map((mark, index) => (
+        {tasks.slice(0, 3).map((task) => (
           <span
-            key={index}
+            key={task.id}
             aria-hidden="true"
             className={cn(
               "size-[5px] rounded-full",
-              selected
-                ? "bg-primary-foreground"
-                : mark.kind === "due"
-                  ? "bg-dot-due"
-                  : "bg-dot-rem",
+              selected ? "bg-primary-foreground" : "bg-dot-due",
             )}
           />
         ))}
       </span>
     </button>
-  );
-}
-
-/**
- * A reminder morning, in the day sheet.
- *
- * There is no tick here on purpose. A reminder is not a thing to be done, it is
- * the system saying what it will do, so this entry says it and stops. The task
- * it belongs to is named underneath so the sentence is about something, and the
- * date under the name is the date the letter gave.
- */
-function ReminderEntry({ mark, today }: { mark: CalendarMark; today: string }) {
-  const Icon = mark.task.status === "completed" ? BellOff : Bell;
-  const caption = dueCaption(mark.task);
-
-  return (
-    <div>
-      {/* `.sheet .remind` over `.sheet .t`. */}
-      <p className="mb-[3px] flex items-center gap-1.5 text-sub text-ink-dim">
-        <Icon className="size-4 shrink-0" aria-hidden="true" strokeWidth={2} />
-        {sheetLine(mark, today)}
-      </p>
-      <p className="text-button font-bold text-foreground">{mark.task.title}</p>
-      {caption ? <p className="text-caption text-ink-dim">{caption}</p> : null}
-    </div>
   );
 }
 
@@ -449,12 +392,12 @@ function ReminderEntry({ mark, today }: { mark: CalendarMark; today: string }) {
  * product forgetting why it asked for a photograph.
  */
 function DueEntry({
-  mark,
+  task,
   onToggle,
 }: {
-  mark: CalendarMark;
+  task: TaskSummary;
   onToggle: (task: TaskSummary) => void;
 }) {
-  const detail = useTaskDetail(mark.task.documentId ? mark.task.id : null);
-  return <TaskEntry task={mark.task} detail={detail} onToggle={onToggle} />;
+  const detail = useTaskDetail(task.documentId ? task.id : null);
+  return <TaskEntry task={task} detail={detail} onToggle={onToggle} />;
 }

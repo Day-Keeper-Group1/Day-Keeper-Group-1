@@ -7,6 +7,9 @@
 // `daykeeper-wt-*`, so it is incapable of touching the shared main database or
 // the shared main bucket no matter how it is invoked.
 //
+// KAN-92: it also drops the test databases `npm test` left beside this
+// worktree's database, if a run was killed before it could drop them itself.
+//
 // Removing the worktree directory itself has to happen from another checkout
 // (git will not remove the tree you are standing in); the closing message
 // says exactly how.
@@ -16,6 +19,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { killByPort } from "./lib/port-utils.mjs";
+import { testDatabasePrefix } from "./lib/worktree-naming.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const worktreeRoot = resolve(here, "..");
@@ -42,6 +46,25 @@ function isMainCheckout() {
   } catch {
     return false;
   }
+}
+
+/** Send one statement to the shared Postgres container, and answer what it printed. */
+function psql(statement) {
+  return execFileSync(
+    "docker",
+    [
+      "exec",
+      "daykeeper-db",
+      "psql",
+      "-U",
+      "daykeeper",
+      "-d",
+      "postgres",
+      "-tAc",
+      statement,
+    ],
+    { encoding: "utf8", timeout: 15_000 },
+  );
 }
 
 function readEnvField(envPath, field) {
@@ -88,26 +111,42 @@ function main() {
 
   // 2. The database. FORCE closes any connections the dead server still held.
   try {
-    execFileSync(
-      "docker",
-      [
-        "exec",
-        "daykeeper-db",
-        "psql",
-        "-U",
-        "daykeeper",
-        "-d",
-        "postgres",
-        "-tAc",
-        `DROP DATABASE IF EXISTS "${dbName}" WITH (FORCE)`,
-      ],
-      { encoding: "utf8", timeout: 15_000 },
-    );
+    psql(`DROP DATABASE IF EXISTS "${dbName}" WITH (FORCE)`);
     console.log(`  database ${dbName}: dropped`);
   } catch {
     die(
       `could not drop ${dbName} (is the daykeeper-db container running?)`,
       "docker compose up -d, then rerun; or drop it in Adminer",
+    );
+  }
+
+  // 2b. KAN-92: the test databases. `npm test` builds its own beside this
+  //     worktree's database and drops them when it finishes, but a run that
+  //     was killed leaves some behind, and once this worktree is gone no run
+  //     will come along to clear them. Their names all start with a hash of
+  //     this worktree's database name (testDatabasePrefix), so no other
+  //     checkout's are touched. The worktree's own database is already gone,
+  //     so a failure here reports rather than dies.
+  const testPrefix = testDatabasePrefix(dbName);
+  try {
+    const leftBehind = psql(
+      `SELECT datname FROM pg_database WHERE starts_with(datname, '${testPrefix}') ORDER BY datname`,
+    )
+      .split(/\r?\n/)
+      .map((name) => name.trim())
+      .filter(Boolean);
+    for (const name of leftBehind) {
+      psql(`DROP DATABASE IF EXISTS "${name}" WITH (FORCE)`);
+    }
+    console.log(
+      leftBehind.length > 0
+        ? `  test databases ${testPrefix}*: ${leftBehind.length} dropped`
+        : `  test databases ${testPrefix}*: none left behind`,
+    );
+  } catch {
+    console.log(
+      `  test databases ${testPrefix}*: could not look for them or drop them.` +
+        `\n    if any are still there later: http://localhost:8080 (Adminer)`,
     );
   }
 

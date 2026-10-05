@@ -1,7 +1,6 @@
 /** Disposable local PostgreSQL integration check; never resets the application's database. */
 import { config } from "dotenv";
-import { Client } from "pg";
-import { readFileSync } from "node:fs";
+import { Client, Pool, type QueryResultRow } from "pg";
 import { randomUUID } from "node:crypto";
 import assert from "node:assert/strict";
 import { hostIsLocal } from "../src/lib/local-host";
@@ -21,9 +20,29 @@ async function main() {
   let closePool: (() => Promise<void>) | undefined;
   try {
     process.env.DATABASE_URL = testUrl.toString();
-    const { pool, query, queryOne } = await import("../src/server/db");
-    closePool = () => pool().end();
-    await query(readFileSync("db/schema.sql", "utf8"));
+    const { createDb } = await import("../src/server/db/client");
+    const { applyMigrations } = await import("../db/lib/admin");
+    const migration = createDb(testUrl.toString());
+    try {
+      await applyMigrations(migration.db);
+    } finally {
+      await migration.pool.end();
+    }
+    const pool = new Pool({ connectionString: testUrl.toString() });
+    closePool = async () => {
+      await pool.end();
+      await (
+        globalThis as unknown as { __daykeeperDb?: { pool: Pool } }
+      ).__daykeeperDb?.pool.end();
+    };
+    const query = async <T extends QueryResultRow>(
+      text: string,
+      values?: unknown[],
+    ): Promise<T[]> => (await pool.query<T>(text, values)).rows;
+    const queryOne = async <T extends QueryResultRow>(
+      text: string,
+      values?: unknown[],
+    ): Promise<T | null> => (await query<T>(text, values))[0] ?? null;
     const { createEmailDocument } = await import("../src/server/email/import");
     const { readDocument } = await import("../src/server/uploads");
     const { getDocument } = await import("../src/server/documents");

@@ -11,11 +11,25 @@ import {
   disconnect,
 } from "@/server/email/gmail/connection";
 import { gmailRoute } from "@/server/email/gmail/http";
-import { queryOne, transaction } from "@/server/db";
+import {
+  insertOauthAttempt,
+  findOwnedOauthAttempt,
+  insertGmailConnection,
+  deleteOwnedGmailAccess,
+} from "@/server/db/queries/email";
 import { requireUser, UnauthenticatedError } from "@/server/auth/session";
 import { readEmailPage } from "@/server/email/read";
 
-vi.mock("@/server/db", () => ({ queryOne: vi.fn(), transaction: vi.fn() }));
+const { transaction } = vi.hoisted(() => ({ transaction: vi.fn() }));
+vi.mock("@/server/db", () => ({ db: () => ({ transaction }) }));
+vi.mock("@/server/db/queries/email", () => ({
+  insertOauthAttempt: vi.fn(),
+  findOwnedOauthAttempt: vi.fn(),
+  insertGmailConnection: vi.fn(),
+  deleteOwnedGmailAccess: vi.fn(),
+  findOwnedGmailConnection: vi.fn(),
+  rotateOwnedGmailToken: vi.fn(),
+}));
 vi.mock("@/server/auth/session", () => ({
   requireUser: vi.fn(),
   UnauthenticatedError: class extends Error {},
@@ -147,32 +161,35 @@ describe("Gmail OAuth and access checks", () => {
     expect(url.origin).toBe("https://accounts.google.com");
     expect(url.searchParams.get("scope")).toBe(GMAIL_SCOPE);
     expect(url.searchParams.get("access_type")).toBe("offline");
-    const parameters = vi.mocked(queryOne).mock.calls[0][1]!;
-    expect(parameters[0]).toBe("user-a");
-    expect(parameters[1]).toBe(digest(url.searchParams.get("state")!));
-    expect(parameters[2]).toBe(digest(started.browser));
+    const parameters = vi.mocked(insertOauthAttempt).mock.calls[0];
+    expect(parameters[1]).toBe("user-a");
+    expect(parameters[2].state_hash).toBe(
+      digest(url.searchParams.get("state")!),
+    );
+    expect(parameters[2].browser_hash).toBe(digest(started.browser));
     expect(url.searchParams.get("code_challenge")).toBe(
-      digest(unseal(parameters[3] as string, "oauth:user-a")),
+      digest(unseal(parameters[2].verifier_encrypted, "oauth:user-a")),
     );
   });
   it("rejects an expired, mismatched or consumed attempt before contacting Google", async () => {
-    vi.mocked(queryOne).mockResolvedValue(null);
+    vi.mocked(findOwnedOauthAttempt).mockResolvedValue(null);
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
     await expect(
       finishConnection("user-b", "bad-state", "wrong-browser", "code"),
     ).rejects.toThrow("expired");
     expect(fetchMock).not.toHaveBeenCalled();
-    expect(vi.mocked(queryOne).mock.calls[0][1]).toEqual([
+    expect(findOwnedOauthAttempt).toHaveBeenCalledWith(
+      expect.anything(),
       "user-b",
       digest("bad-state"),
       digest("wrong-browser"),
-    ]);
+    );
   });
   it("stores only an encrypted refresh token after consuming valid state", async () => {
-    vi.mocked(queryOne).mockResolvedValue({
+    vi.mocked(findOwnedOauthAttempt).mockResolvedValue({
       verifier_encrypted: seal("verifier", "oauth:user-a"),
-    });
+    } as never);
     const dbQuery = vi.fn().mockResolvedValue({ rowCount: 1 });
     vi.mocked(transaction).mockImplementation(async (fn) =>
       fn({ query: dbQuery } as never),
@@ -191,20 +208,29 @@ describe("Gmail OAuth and access checks", () => {
       );
     vi.stubGlobal("fetch", fetchMock);
     await finishConnection("user-a", "state", "browser", "code");
-    expect(dbQuery.mock.calls[0][0]).toContain(
-      "DELETE FROM gmail_oauth_attempts",
+    expect(findOwnedOauthAttempt).toHaveBeenLastCalledWith(
+      expect.anything(),
+      "user-a",
+      digest("state"),
+      digest("browser"),
+      true,
     );
-    const stored = dbQuery.mock.calls[1][1];
-    expect(stored.slice(0, 2)).toEqual(["user-a", "mailbox@example.com"]);
-    expect(unseal(stored[2], "gmail:user-a")).toBe("refresh");
+    const stored = vi.mocked(insertGmailConnection).mock.calls[0];
+    expect(stored.slice(1, 3)).toEqual(["user-a", "mailbox@example.com"]);
+    expect(unseal(stored[3], "gmail:user-a")).toBe("refresh");
     expect(fetchMock.mock.calls[0][1].body.get("code_verifier")).toBe(
       "verifier",
     );
   });
   it("does not save a connection cancelled while Google was responding", async () => {
-    vi.mocked(queryOne).mockResolvedValue({
+    vi.mocked(findOwnedOauthAttempt).mockResolvedValue({
       verifier_encrypted: seal("verifier", "oauth:user-a"),
-    });
+    } as never);
+    vi.mocked(findOwnedOauthAttempt)
+      .mockResolvedValueOnce({
+        verifier_encrypted: seal("verifier", "oauth:user-a"),
+      } as never)
+      .mockResolvedValueOnce(null);
     const dbQuery = vi.fn().mockResolvedValue({ rowCount: 0 });
     vi.mocked(transaction).mockImplementation(async (fn) =>
       fn({ query: dbQuery } as never),
@@ -227,7 +253,7 @@ describe("Gmail OAuth and access checks", () => {
     await expect(
       finishConnection("user-a", "state", "browser", "code"),
     ).rejects.toThrow("no longer active");
-    expect(dbQuery).toHaveBeenCalledTimes(1);
+    expect(insertGmailConnection).not.toHaveBeenCalled();
   });
   it("disconnects only the requesting user's connection and pending consent", async () => {
     const dbQuery = vi.fn();
@@ -235,10 +261,10 @@ describe("Gmail OAuth and access checks", () => {
       fn({ query: dbQuery } as never),
     );
     await disconnect("user-b");
-    for (const call of dbQuery.mock.calls) {
-      expect(call[0]).toContain("WHERE user_id = $1");
-      expect(call[1]).toEqual(["user-b"]);
-    }
+    expect(deleteOwnedGmailAccess).toHaveBeenCalledWith(
+      expect.anything(),
+      "user-b",
+    );
   });
   it("blocks anonymous and cross-origin requests and disables response caching", async () => {
     const handler = vi.fn().mockResolvedValue(Response.json({ ok: true }));

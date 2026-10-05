@@ -134,16 +134,18 @@ doing its job.
   columns: (42mm, 6mm, 1fr),
   gutter: 0pt,
   align: horizon,
-  piece("A clock")[
-    Wakes up, sees which reminders are due, and decides one thing about each.
+  piece("The reminder ladder")[
+    Seven, three and one day before the due date, planned once, the moment
+    she confirms the letter.
   ],
   arrow,
   [
     #set text(size: 9.5pt)
     #set par(justify: false, leading: 0.55em)
-    The clock sits apart from everything above. It is the only part that acts
-    when nobody has tapped anything. That is why the reminder step spends a
-    page on what it is allowed to decide.
+    Nothing wakes up to use it. Whether today is one of those days is read
+    fresh, alongside the tick, whenever Home draws a row. That is why the
+    reminder step spends a page on what a reminder is now that nothing sends
+    it.
   ],
 )
 ]

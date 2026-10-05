@@ -74,9 +74,9 @@
   --text-row: 1rem; /* 16px    .row, .cal-title */
   --text-plan: 0.96875rem; /* 15.5px  .plan-row, .all-letters */
   --text-item: 0.9375rem; /* 15px    .item */
-  --text-sub: 0.90625rem; /* 14.5px  .sub, .btn.ghost, .sheet .remind */
+  --text-sub: 0.90625rem; /* 14.5px  .sub, .btn.ghost */
   --text-day: 0.875rem; /* 14px    .cal .d */
-  --text-caption: 0.84375rem; /* 13.5px  .row .when, .review-cta .small, .cam .d, .plan-hold, .folder-h */
+  --text-caption: 0.84375rem; /* 13.5px  .row .when, .row .rem, .review-cta .small, .cam .d, .plan-hold, .folder-h */
   --text-key: 0.8125rem; /* 13px    .fact .k, .tiny, .item .go, .today-btn, .dd-day */
   --text-label: 0.78125rem; /* 12.5px  .card h2, .item .st, .pg, .cap2 */
   --text-nav: 0.75rem; /* 12px    .nav button */

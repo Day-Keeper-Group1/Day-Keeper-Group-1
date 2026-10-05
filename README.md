@@ -10,7 +10,7 @@ no API key and no permission from anybody.
 
 ## Getting it running
 
-You need [Node](https://nodejs.org) 20.17 or newer and
+You need [Node](https://nodejs.org) 24 or newer and
 [Docker Desktop](https://www.docker.com/products/docker-desktop/). Install them
 first if you have not; Docker needs to be running, not just installed.
 
@@ -41,7 +41,7 @@ or `.env.local` was never created. `docs/start-here.md` has the full list.
 Two more things worth doing once:
 
 ```bash
-npm test                  # about half a second, should be all green
+npm test                  # every test, about twenty seconds; the database tests need Docker running
 ```
 
 and open [`docs/prototype/user/daykeeper-sketch-live.html`](docs/prototype/user/daykeeper-sketch-live.html)

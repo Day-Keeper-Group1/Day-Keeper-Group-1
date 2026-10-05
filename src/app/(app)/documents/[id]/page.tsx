@@ -22,7 +22,7 @@ import { getDocument } from "@/server/documents";
 function statusSentence(document: DocumentDetail): string {
   const sentences: Record<DocumentStatus, string> = {
     processing:
-      "Still being read. You can close the app; we'll tell you when it's ready.",
+      "Still being read. You can close the app; it will be here when you come back.",
     "needs-review": "Read, and waiting for your OK.",
     confirmed: "Saved, and kept in your letters.",
     // The one sentence src/lib/contract/api.ts words for every surface. It

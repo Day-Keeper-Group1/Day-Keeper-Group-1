@@ -2,29 +2,29 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>The clock</title>
+<title>Reading the tick fresh</title>
 <link rel="stylesheet" href="_style.css">
 <style>
   .sheet { width: 1460px; }
 
   /* ---------- the timeline ---------- */
-  .tl { display: grid; grid-template-columns: 140px 1fr; }
+  .tl { display: grid; grid-template-columns: 150px 1fr; }
 
   .lanes { position: relative; }
-  .lane { position: absolute; left: 0; width: 130px; }
+  .lane { position: absolute; left: 0; width: 140px; }
   .lane b { display: block; font-size: 14.5px; font-weight: 700; color: var(--green); }
   .lane span { display: block; font-size: 12.5px; color: var(--dim); line-height: 1.3; margin-top: 3px; }
 
   .track { position: relative; height: 468px; }
   .at { position: absolute; left: var(--x); transform: translateX(-50%); }
 
-  /* an alarm going off */
-  .alarm { top: 0; width: 232px; padding: 11px 13px; display: flex; gap: 11px; align-items: flex-start; }
-  .alarm .bell { font-size: 25px; line-height: 1.05; }
-  .alarm .when { font-size: 15.5px; font-weight: 700; color: var(--green); }
-  .alarm .what { font-size: 13px; color: var(--dim); margin-top: 2px; }
+  /* Home, opened on a day that happens to be one of the task's reminder days */
+  .look { top: 0; width: 236px; padding: 11px 13px; display: flex; gap: 11px; align-items: flex-start; }
+  .look .bell { font-size: 25px; line-height: 1.05; }
+  .look .when { font-size: 15.5px; font-weight: 700; color: var(--green); }
+  .look .what { font-size: 13px; color: var(--dim); margin-top: 2px; }
 
-  /* the look it takes at the task, drawn dashed because it writes nothing */
+  /* the read that answers the question, drawn dashed because it writes nothing */
   .drop {
     position: absolute; left: var(--x); top: 70px; width: 2px; height: 38px;
     border-left: 2px dashed var(--line); margin-left: -1px;
@@ -35,8 +35,8 @@
     border-top: 10px solid var(--line);
   }
 
-  /* what the look found, resting on the timeline at that moment */
-  .chip { bottom: 272px; width: 232px; padding: 10px 13px; }
+  /* what the read found, resting on the timeline at that moment */
+  .chip { bottom: 272px; width: 236px; padding: 10px 13px; }
   .chip .r1 { font-size: 13.5px; color: var(--dim); }
   .chip .r2 { display: flex; align-items: center; gap: 9px; margin-top: 7px; }
   .chip .r2 .n { font-size: 12.5px; color: var(--dim); }
@@ -72,7 +72,6 @@
   /* what she does */
   .conn { position: absolute; left: var(--x); top: 246px; width: 2px; background: var(--line); margin-left: -1px; }
   .act { top: 272px; width: 225px; padding: 11px 13px; display: flex; gap: 11px; align-items: flex-start; }
-  .act.r2 { top: 378px; width: 312px; }
   .act .when { font-size: 15.5px; font-weight: 700; color: var(--green); }
   .act .what { font-size: 13px; color: var(--dim); margin-top: 2px; line-height: 1.35; }
   .act .wrote { font-family: var(--mono); font-size: 12.5px; color: var(--green); margin-top: 7px; }
@@ -90,10 +89,8 @@
   }
   .strap b { color: var(--green); }
 
-  /* ---------- the two blocks underneath ---------- */
-  .pair { display: flex; gap: 24px; align-items: flex-start; }
-  .pair > * { flex: none; }
-  .rem { width: 1000px; margin: 0 auto; }
+  /* ---------- the table underneath ---------- */
+  .rem { width: 760px; margin: 0 auto; }
 
   .rem .hd { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 9px; }
   .rem .hd .tname { font-family: var(--mono); font-size: 15px; font-weight: 700; color: var(--green); }
@@ -104,65 +101,63 @@
     color: var(--dim); padding: 0 0 5px; border-bottom: 2px solid var(--line);
   }
   .rem td { font-family: var(--mono); font-size: 14px; color: var(--ink); padding: 7px 0; border-bottom: 1px solid var(--soft); }
-  .rem td.st { width: 130px; }
-  .rem td.by { width: 260px; font-family: var(--sans); font-size: 12.5px; color: var(--dim); }
   .rem .cap { font-size: 13.5px; color: var(--dim); line-height: 1.5; margin-top: 11px; }
 
 </style>
 </head>
 <body>
 <div class="sheet">
-  <h1>The clock checks the tick at the moment it rings</h1>
+  <h1>Whether a row is marked is read fresh, never stored</h1>
 
   <div class="tl">
     <div class="lanes">
-      <div class="lane" style="top: 16px"><b>The clock</b><span>three alarms, planned at confirm</span></div>
+      <div class="lane" style="top: 16px"><b>Home, opened</b><span>on each of the task's three reminder days</span></div>
       <div class="lane" style="top: 204px"><b>September 2026</b><span>tasks.state, painted along the days</span></div>
       <div class="lane" style="top: 278px"><b>Margaret</b><span>ticking and unticking</span></div>
     </div>
 
     <div class="track">
 
-      <!-- alarm 1 -->
-      <div class="at alarm box" style="--x: 116px">
+      <!-- reminder day 1: task is open -->
+      <div class="at look box" style="--x: 116px">
         <div class="bell">&#128276;</div>
         <div>
-          <div class="when">11 Sep, 9 am</div>
-          <div class="what">reminder 1 rings</div>
+          <div class="when">11 Sep</div>
+          <div class="what">a reminder day for this task</div>
         </div>
       </div>
       <div class="drop" style="--x: 116px"></div>
       <div class="at chip box" style="--x: 116px">
-        <div class="r1">it reads the task: <span class="code open">open</span></div>
-        <div class="r2"><span class="tag">sent</span><span class="n">the reminder goes out</span></div>
+        <div class="r1">reminders has today, task is <span class="code open">open</span></div>
+        <div class="r2"><span class="tag">marked</span><span class="n">the row is tinted, on this draw</span></div>
       </div>
 
-      <!-- alarm 2 -->
-      <div class="at alarm box" style="--x: 648px">
+      <!-- reminder day 2: task is completed -->
+      <div class="at look box" style="--x: 648px">
         <div class="bell">&#128276;</div>
         <div>
-          <div class="when">15 Sep, 9 am</div>
-          <div class="what">reminder 2 rings</div>
+          <div class="when">15 Sep</div>
+          <div class="what">a reminder day for this task</div>
         </div>
       </div>
       <div class="drop" style="--x: 648px"></div>
       <div class="at chip box" style="--x: 648px">
-        <div class="r1">it reads the task: <span class="code open">open</span></div>
-        <div class="r2"><span class="tag">sent</span><span class="n">the reminder goes out</span></div>
+        <div class="r1">reminders has today, task is <span class="code done">completed</span></div>
+        <div class="r2"><span class="tag warn">not marked</span><span class="n">the row draws like any other done row</span></div>
       </div>
 
-      <!-- alarm 3 -->
-      <div class="at alarm box" style="--x: 914px">
-        <div class="bell">&#128277;</div>
+      <!-- reminder day 3: task is open again -->
+      <div class="at look box" style="--x: 914px">
+        <div class="bell">&#128276;</div>
         <div>
-          <div class="when">17 Sep, 9 am</div>
-          <div class="what">reminder 3 rings</div>
+          <div class="when">17 Sep</div>
+          <div class="what">a reminder day for this task</div>
         </div>
       </div>
       <div class="drop" style="--x: 914px"></div>
       <div class="at chip box" style="--x: 914px">
-        <div class="r1">it reads the task: <span class="code done">completed</span></div>
-        <div class="r2"><span class="tag warn">skipped</span><span class="n">nothing is sent</span></div>
+        <div class="r1">reminders has today, task is <span class="code open">open</span></div>
+        <div class="r2"><span class="tag">marked</span><span class="n">the row is tinted again, on this draw</span></div>
       </div>
 
       <!-- the days, and the task's one column along them -->
@@ -176,9 +171,8 @@
         <div class="day" style="--x: 912px">17</div>
 
         <div class="seg open" style="left: 114px; width: 133px">open</div>
-        <div class="seg done" style="left: 247px; width: 133px">completed</div>
-        <div class="seg open" style="left: 380px; width: 399px">open</div>
-        <div class="seg done" style="left: 779px; width: 266px">completed</div>
+        <div class="seg done" style="left: 247px; width: 532px">completed</div>
+        <div class="seg open" style="left: 779px; width: 266px">open</div>
 
         <div class="due"><b>18 Sep,</b> the bill is due</div>
       </div>
@@ -194,23 +188,13 @@
         </div>
       </div>
 
-      <div class="conn" style="--x: 380px; height: 132px"></div>
-      <div class="at act r2 box" style="--x: 380px">
-        <div class="cb">&#10003;</div>
-        <div>
-          <div class="when">13 Sep</div>
-          <div class="what">she changes her mind and unticks it</div>
-          <div class="wrote">tasks.state = open</div>
-        </div>
-      </div>
-
       <div class="conn" style="--x: 779px; height: 26px"></div>
       <div class="at act box" style="--x: 779px">
-        <div class="cb on">&#10003;</div>
+        <div class="cb">&#10003;</div>
         <div>
           <div class="when">16 Sep</div>
-          <div class="what">she ticks it off again</div>
-          <div class="wrote">tasks.state = completed</div>
+          <div class="what">she changes her mind and unticks it</div>
+          <div class="wrote">tasks.state = open</div>
         </div>
       </div>
 
@@ -218,29 +202,28 @@
   </div>
 
   <div class="strap">
-    All three of her actions write to the same column of the same row, <b>tasks.state</b>. None of them
-    reads the reminders table, and none of them writes to it.
+    Every visit reads the same two facts and nothing else: does <b>reminders</b> have a row for today, and
+    is <b>tasks.state</b> still open. Neither the 12th's tick nor the 16th's untick touches the reminders
+    table, so there is nothing to get out of step.
   </div>
 
-  <div class="pair">
-    <div class="rem box">
-      <div class="hd">
-        <span class="tname">reminders</span>
-        <span class="note">written once, at confirm</span>
-      </div>
-      <table>
-        <tr><th>scheduled_for</th><th>status</th><th class="by">who wrote the status</th></tr>
-        <tr><td>2026-09-11 09:00</td><td class="st"><span class="tag">sent</span></td><td class="by">the clock, at 9 am on the 11th</td></tr>
-        <tr><td>2026-09-15 09:00</td><td class="st"><span class="tag">sent</span></td><td class="by">the clock, at 9 am on the 15th</td></tr>
-        <tr><td>2026-09-17 09:00</td><td class="st"><span class="tag warn">skipped</span></td><td class="by">the clock, at 9 am on the 17th</td></tr>
-      </table>
-      <div class="cap">
-        Three rows, planned when she confirmed the letter. Ticking wrote none of them. The clock
-        wrote the last column, each row at its own moment.
-      </div>
+  <div class="rem box">
+    <div class="hd">
+      <span class="tname">reminders</span>
+      <span class="note">written once, at confirm, and never again</span>
     </div>
-
+    <table>
+      <tr><th>id</th><th>task_id</th><th>remind_on</th><th>created_at</th></tr>
+      <tr><td>&hellip;a1</td><td>t-9201</td><td>2026-09-11</td><td>4 Sep, at confirm</td></tr>
+      <tr><td>&hellip;a2</td><td>t-9201</td><td>2026-09-15</td><td>4 Sep, at confirm</td></tr>
+      <tr><td>&hellip;a3</td><td>t-9201</td><td>2026-09-17</td><td>4 Sep, at confirm</td></tr>
+    </table>
+    <div class="cap">
+      Three rows, planned when she confirmed the letter and unchanged since. Whether the 11th, the 15th
+      or the 17th put a mark on her screen was decided each time Home drew, by reading this table
+      alongside the tick, not by writing to it.
     </div>
   </div>
+</div>
 </body>
 </html>

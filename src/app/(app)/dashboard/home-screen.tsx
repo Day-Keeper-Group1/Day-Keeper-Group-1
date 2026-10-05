@@ -18,7 +18,14 @@ import {
   type SessionUser,
   type TaskSummary,
 } from "@/lib/contract/api";
-import { ctaFor, foldLater, greeting, groupTasks, moreLabel } from "@/lib/home";
+import {
+  ctaFor,
+  foldLater,
+  greeting,
+  groupTasks,
+  moreLabel,
+  reminderToday,
+} from "@/lib/home";
 import { toggleTaskDone } from "@/lib/task-actions";
 import { cn } from "@/lib/utils";
 
@@ -206,12 +213,14 @@ export function HomeScreen({
                     : "Today"
                 }
                 tasks={groups.today}
+                today={today}
                 onToggle={handleToggle}
                 onOpen={setOpenTaskId}
               />
               <TaskGroup
                 heading="Next seven days"
                 tasks={groups.week}
+                today={today}
                 onToggle={handleToggle}
                 onOpen={setOpenTaskId}
               />
@@ -219,6 +228,7 @@ export function HomeScreen({
                 heading="Later"
                 tasks={later.shown}
                 more={later.more}
+                today={today}
                 onToggle={handleToggle}
                 onOpen={setOpenTaskId}
               />
@@ -259,6 +269,7 @@ function TaskGroup({
   heading,
   tasks,
   more = 0,
+  today,
   onToggle,
   onOpen,
 }: {
@@ -266,6 +277,8 @@ function TaskGroup({
   tasks: TaskSummary[];
   /** Tasks in this group that are not drawn here, counted on a calendar link. */
   more?: number;
+  /** 'YYYY-MM-DD' in her zone, for the reminder marks. */
+  today: string;
   onToggle: (task: TaskSummary) => void;
   onOpen: (taskId: string) => void;
 }) {
@@ -279,6 +292,7 @@ function TaskGroup({
           <TaskRow
             key={task.id}
             task={task}
+            reminder={reminderToday(task, today)}
             onToggle={onToggle}
             onOpen={() => onOpen(task.id)}
           />

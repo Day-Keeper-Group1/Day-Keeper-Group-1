@@ -1,0 +1,29 @@
+{
+  "version": "1.0",
+  "commitments": [
+    {
+      "id": "multiple-1",
+      "title": "Collect the prescription",
+      "dueDate": "2026-10-03",
+      "dueTime": null,
+      "status": "confirmed",
+      "evidence": [0]
+    },
+    {
+      "id": "multiple-2",
+      "title": "Call the clinic",
+      "dueDate": "2026-10-05",
+      "dueTime": null,
+      "status": "confirmed",
+      "evidence": [1]
+    },
+    {
+      "id": "multiple-3",
+      "title": "Bring the groceries",
+      "dueDate": "2026-10-03",
+      "dueTime": null,
+      "status": "confirmed",
+      "evidence": [2]
+    }
+  ]
+}

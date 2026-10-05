@@ -1,7 +1,7 @@
 // KAN-57: the decisions Home makes before it draws anything, kept pure.
 
 import type { HomeCounts, TaskSummary } from "@/lib/contract/api";
-import { addDays } from "@/lib/contract/dates";
+import { addDays, daysBetween } from "@/lib/contract/dates";
 
 /**
  * What the call to action says.
@@ -10,6 +10,10 @@ import { addDays } from "@/lib/contract/dates";
  * does it: something read and waiting wins, otherwise something still being
  * read wins, otherwise the panel goes inert. The middle case is the waiting
  * state, and it says out loud that she does not have to stay and watch.
+ *
+ * KAN-62: neither quiet line promises to tell her anything. Nothing is sent
+ * while the app is closed, so "we'll tell you" would be a promise of a push
+ * that does not exist. They say where the thing will be instead.
  *
  * `counts.failed` is deliberately not tested. A failed reading is not something
  * she can act on from here, so it stays in the "To check" list and never takes
@@ -41,16 +45,39 @@ export function ctaFor(counts: HomeCounts): {
         counts.processing === 1
           ? "Reading your letter…"
           : `Reading ${counts.processing} letters…`,
-      small: "You can close the app. We'll tell you when it's ready.",
+      small: "You can close the app. It will be here when you come back.",
       inert: false,
     };
   }
 
   return {
     big: "Nothing to check right now",
-    small: "We'll tell you when something's ready.",
+    small: "Photograph a letter and it will show up here.",
     inert: true,
   };
+}
+
+/**
+ * KAN-62: what a task's row on Home says when today is one of its reminder days.
+ *
+ * A reminder is not a message and not a second list. It is a mark on the row
+ * the task already has: a tint, a bell, and this line. Null when there is
+ * nothing to say, which is most days: today is not one of the task's reminder
+ * days, or the task is ticked and has nothing left to remind her of. Reminder
+ * days all fall before the due date (src/lib/contract/reminders.ts), so the
+ * count is always at least one.
+ *
+ * "Appointment" rather than "due" when the letter named a time of day, because
+ * nobody says a doctor's appointment is due. The wording is the prototype's.
+ */
+export function reminderToday(task: TaskSummary, today: string): string | null {
+  if (task.status === "completed" || !task.dueDate) return null;
+  if (!task.reminders.some((reminder) => reminder.localDate === today)) {
+    return null;
+  }
+  const days = daysBetween(today, task.dueDate);
+  const what = task.dueTime ? "appointment" : "due";
+  return `Reminder: ${what} ${days === 1 ? "tomorrow" : `in ${days} days`}`;
 }
 
 /**

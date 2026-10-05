@@ -6,7 +6,8 @@
  * compared field, that is the answer. When they differ, the judge cell reads the
  * letter once and each field that differed takes the reading it matches. When
  * it matches neither, the round is undecided and the whole letter is read again
- * from the start (src/server/uploads.ts runs the rounds; this file decides one).
+ * from the start (src/server/uploads/reading.ts runs the rounds; this file
+ * decides one).
  *
  * No reading sees another. "Judge" names the third reading, not a model told
  * to referee: it gets the same prompt and the same photographs as the other
