@@ -169,7 +169,8 @@ export function GmailMailbox({
           {status?.connected && status.email && (
             <span className="text-sub font-normal italic text-ink-dim">
               {" "}
-              - connected to <span className="break-all">{status.email}</span>
+              <br />
+              Connected to <span className="break-all">{status.email}</span>
             </span>
           )}
         </h1>

@@ -139,11 +139,14 @@ export function Topbar({ user }: { user: SessionUser }) {
               </Button>
             }
           />
-          <DropdownMenuContent align="end" className="w-64">
+          <DropdownMenuContent
+            align="end"
+            className="w-64 max-w-[calc(100vw-2rem)]"
+          >
             <DropdownMenuGroup>
               <DropdownMenuLabel className="text-foreground">
                 {user.displayName}
-                <span className="block text-sm font-normal text-muted-foreground">
+                <span className="block break-all text-sm font-normal text-muted-foreground">
                   {user.email}
                 </span>
               </DropdownMenuLabel>

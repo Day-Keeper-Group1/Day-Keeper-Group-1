@@ -150,8 +150,10 @@ export function ReviewForm({
         <h1 className="text-title font-bold tracking-[-0.2px] text-foreground">
           Check what we found
         </h1>
-        <div className="mt-[3px] flex items-baseline justify-between gap-3">
-          <p className="min-w-0 text-sub text-ink-dim">{document.label}</p>
+        <div className="mt-[3px] flex flex-wrap items-baseline justify-between gap-3">
+          <p className="min-w-0 break-words text-sub text-ink-dim">
+            {document.label}
+          </p>
           <span className="shrink-0 text-key font-bold text-ink-dim">
             {left}
           </span>

@@ -29,5 +29,6 @@ export function emailPreviewDocument(
     img:not([src]) { display: inline-block; }
     pre { white-space: pre-wrap; }
     a { overflow-wrap: anywhere; }
-  </style></head><body>${body}</body></html>`;
+    #daykeeper-email-content { display: flow-root; transform-origin: top left; }
+  </style></head><body><div id="daykeeper-email-content">${body}</div></body></html>`;
 }

@@ -13,20 +13,31 @@ export function EmailBody({ message }: { message: EmailMessage }) {
 
   function fitEmail(frame: HTMLIFrameElement) {
     stopSizing.current?.();
-    const body = frame.contentDocument?.body;
+    const body = frame.contentDocument?.getElementById(
+      "daykeeper-email-content",
+    );
     if (!body) return;
     let pending = 0;
     const resize = () => {
       cancelAnimationFrame(pending);
       pending = requestAnimationFrame(() => {
-        const height = Math.ceil(
-          Math.max(body.scrollHeight, body.getBoundingClientRect().height),
-        );
-        frame.style.height = `${height + 2}px`;
+        const availableWidth = frame.clientWidth;
+        if (!availableWidth) return;
+        // Keep the sender's desktop layout intact, as Gmail does, and fit the
+        // entire email to the phone rather than rearranging its nested tables.
+        body.style.width = `${Math.max(640, availableWidth)}px`;
+        const layoutWidth = Math.max(body.scrollWidth, 640, availableWidth);
+        body.style.width = `${layoutWidth}px`;
+        const scale = Math.min(1, availableWidth / layoutWidth);
+        body.style.transform = `scale(${scale})`;
+        const height = Math.ceil(body.scrollHeight * scale) + 2;
+        if (frame.style.height !== `${height}px`)
+          frame.style.height = `${height}px`;
       });
     };
     const observer = new ResizeObserver(resize);
     observer.observe(body);
+    observer.observe(frame);
     // Image loads can change the content height after the initial layout.
     body.addEventListener("load", resize, true);
     resize();

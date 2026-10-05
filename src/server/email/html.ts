@@ -1,7 +1,7 @@
 import "server-only";
 import sanitizeHtml from "sanitize-html";
 
-/** Render ONLY inside the opaque-origin, CSP-restricted email iframe.
+/** Render ONLY inside the script-disabled, CSP-restricted email iframe.
  * Sender CSS is preserved and must never be inserted into the application DOM. */
 export function sanitizeEmailHtml(html: string): string {
   return sanitizeHtml(html, {
@@ -71,7 +71,7 @@ export function sanitizeEmailHtml(html: string): string {
       table: ["cellpadding", "cellspacing", "border", "role"],
       img: ["alt", "title", "data-email-src", "data-email-cid"],
     },
-    // CSS stays inside an opaque sandbox. CSP blocks CSS imports, fonts, and
+    // CSS stays inside a script-disabled sandbox. CSP blocks CSS imports, fonts, and
     // external images until the reader explicitly enables images.
     allowVulnerableTags: true,
     allowedSchemes: ["https", "http", "mailto"],

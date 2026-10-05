@@ -83,8 +83,24 @@ describe("formatted email boundary", () => {
     expect(clean).toContain('class="bill"');
     expect(clean).toContain('class="amount"');
     expect(clean).not.toContain("<link");
-    expect(emailPreviewDocument(clean)).not.toContain(
-      "height: auto !important",
+    const preview = emailPreviewDocument(clean);
+    expect(preview).toContain("transform-origin: top left");
+    expect(preview).not.toContain("display: block !important");
+    // Keep sender formatting inside a container that can scale as one unit.
+    expect(preview).toContain(
+      `<div id="daykeeper-email-content">${clean}</div>`,
+    );
+  });
+
+  it("preserves sender visibility rules for duplicate mobile and desktop sections", () => {
+    const clean = sanitizeEmailHtml(
+      '<style>@media(max-width:600px){.desktop{display:none!important}.mobile{display:table!important}}</style><table class="desktop"><tr><td>Desktop copy</td></tr></table><table class="mobile" style="display:none"><tr><td>Mobile copy</td></tr></table>',
+    );
+    const preview = emailPreviewDocument(clean);
+    expect(preview).toContain(".desktop{display:none!important}");
+    expect(preview).toContain('class="mobile" style="display:none"');
+    expect(preview).not.toMatch(
+      /body (?:table|td|th|tr)[^{]*\{[^}]*display: block/,
     );
   });
 

@@ -147,3 +147,5 @@ The correction page uses the inbox email renderer, fetching the original formatt
 Formatted email previews expand to their full content height, including images loaded later. They scroll with the main page rather than within a separate scrolling frame. The parent measures the script-disabled frame and updates its height when the content or available width changes.
 
 Opening an email letter from Your letters links to `/email?document=<id>` and displays that exact saved message inside DayKeeper, including messages outside the recent inbox window. The lookup checks document ownership and the original mailbox; saved text remains available if Gmail cannot provide the formatted message.
+
+On narrow screens, formatted emails keep the sender's desktop layout and scale as a whole to fit the available width, matching Gmail's fit-to-width presentation. The frame height follows the scaled content so scrolling stays on the main page.

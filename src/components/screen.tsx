@@ -24,14 +24,14 @@ export function ScreenHeader({
 }) {
   return (
     <div className="mb-[18px]">
-      <div className="flex items-center justify-between gap-3">
-        <h1 className="text-title font-bold tracking-[-0.2px] text-foreground">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="min-w-0 break-words text-title font-bold tracking-[-0.2px] text-foreground">
           {title}
         </h1>
         {action ? <div className="shrink-0">{action}</div> : null}
       </div>
       {subtitle ? (
-        <p className="mt-[3px] text-sub text-ink-dim">{subtitle}</p>
+        <p className="mt-[3px] break-words text-sub text-ink-dim">{subtitle}</p>
       ) : null}
     </div>
   );
@@ -63,7 +63,7 @@ export function Panel({
   return (
     <section
       className={cn(
-        "rounded-[10px] border-2 border-line bg-card p-4 shadow-[var(--shadow-card)]",
+        "min-w-0 rounded-[10px] border-2 border-line bg-card p-4 shadow-[var(--shadow-card)]",
         className,
       )}
     >
