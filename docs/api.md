@@ -4,8 +4,9 @@
 
 These authenticated endpoints support the separate Module 2 prototype at `/email`.
 All replies use `Cache-Control: no-store`. POST requests require an Origin matching
-the configured Gmail callback origin. Browsing is read-only. Selecting Create task
-explicitly saves that email and sends its plain-text body to the project Azure reader.
+the configured Gmail callback origin. Browsing Gmail messages is read-only and does
+not run extraction. Selecting Create Task saves that email and sends its plain-text
+body to the project Azure reader. Only confirmation creates tasks and reminders.
 
 | Method / URL | Result |
 |---|---|
@@ -13,6 +14,7 @@ explicitly saves that email and sends its plain-text body to the project Azure r
 | GET `/api/email/gmail/callback` | Consumes state, exchanges code, verifies read scope, stores encrypted refresh token; 303 to `/email?connection=connected` or `failed` |
 | GET `/api/email/gmail/status` | `{ configured, connected, email }`; no tokens |
 | POST `/api/email/gmail/messages` | `{ messages, skipped, hasMore }`; first 20 inbox messages within 30 days, plain-text bodies with optional server-sanitized `sanitizedHtmlBody` for formatted display; unsupported messages counted in `skipped` |
+| POST `/api/email/gmail/images` | JSON `{ messageId }`; returns `{ images, skipped }` for referenced embedded raster images from the signed-in user's current Gmail mailbox. Keys are URI-encoded Content-IDs and values are validated raster data URLs. Up to 8 images, 1 MB each and 4 MB total. Private, uncached, read-only; requires the configured Origin. External URLs are never fetched by this endpoint. |
 | POST `/api/email/gmail/extract` | JSON `{ messageId, mailbox }`; fetches the message from the current user's Gmail connection, saves its source, queues extraction, and returns `{ documentId }` with 202. Repeated requests for the same user/mailbox/message reuse the document. The existing document detail, review and confirm endpoints complete the flow. |
 | POST `/api/email/gmail/disconnect` | Deletes this user's token and pending connection attempts; `{ disconnected: true }`. Google grant can also be removed in Google account settings. |
 

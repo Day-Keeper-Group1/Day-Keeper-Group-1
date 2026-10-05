@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Panel, ScreenHeader } from "@/components/screen";
 import type { GmailMessages, GmailStatus } from "@/lib/contract/email";
 import { APP_TIME_ZONE } from "@/lib/contract/dates";
-import styles from "./email-body.module.css";
+import { EmailBody } from "./email-body";
 
 async function request<T>(
   path: string,
@@ -131,6 +131,7 @@ export function GmailMailbox({
       setSelectedId(null);
       setStatus({ configured: true, connected: false, email: null });
     } catch (err) {
+      setReload((value) => value + 1);
       setError(
         err instanceof Error ? err.message : "Could not disconnect Gmail.",
       );
@@ -164,8 +165,8 @@ export function GmailMailbox({
         }
       />
       <p className="text-sub text-ink-dim">
-        Choose an email, then Create task to read its details. You can review
-        them before saving.
+        Choose an email to read it here. Create Task extracts the six key fields
+        and opens the review page before you save a task.
       </p>
       {connectionFailed && !status?.connected && (
         <p role="alert" className="rounded-lg bg-warn-bg p-4 text-warn">
@@ -205,12 +206,12 @@ export function GmailMailbox({
       <p className="text-sub leading-relaxed text-ink-dim">
         Up to 20 inbox messages from the last 30 days appear automatically when
         you open this page with Gmail connected. Only emails you choose for
-        Create task are saved. Attachments and HTML-only messages are not
-        supported yet.
+        Create Task are saved and extracted. Document attachments and HTML-only
+        messages are not supported yet.
       </p>
       {reading && <p role="status">Loading your inbox...</p>}
       {result && (
-        <div className="grid items-start gap-5 lg:grid-cols-[minmax(260px,1fr)_minmax(0,2fr)]">
+        <div className="grid items-start gap-5 lg:grid-cols-[280px_minmax(0,1fr)]">
           <Panel title="Recent inbox" className="min-w-0">
             <p role="status" className="mb-4 text-sub text-ink-dim">
               {result.messages.length} emails · Choose one to open
@@ -277,14 +278,35 @@ export function GmailMailbox({
             {selected ? (
               <Panel>
                 <div className="mb-5 space-y-2">
-                  <Button
-                    disabled={creating || busy}
-                    onClick={() => void createTask()}
-                  >
-                    {creating ? "Starting reading..." : "Create task"}
-                  </Button>
+                  <div className="flex flex-wrap gap-3">
+                    <Button
+                      disabled={creating || busy}
+                      onClick={() => void createTask()}
+                    >
+                      {creating ? "Starting reading..." : "Create Task"}
+                    </Button>
+                    {status?.email && (
+                      <Button
+                        variant="outline"
+                        nativeButton={false}
+                        render={
+                          <a
+                            href={`https://mail.google.com/mail/?authuser=${encodeURIComponent(status.email)}#all/${encodeURIComponent(selected.providerMessageId)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            Open in Gmail
+                            <span className="sr-only">
+                              {" "}
+                              (opens in a new tab)
+                            </span>
+                          </a>
+                        }
+                      />
+                    )}
+                  </div>
                   <p className="text-sub text-ink-dim">
-                    Read the six key fields, then review before saving a task.
+                    Review the six key fields before saving a task.
                   </p>
                   {createError && (
                     <p
@@ -326,19 +348,10 @@ export function GmailMailbox({
                     </dd>
                   </div>
                 </dl>
-                {selected.sanitizedHtmlBody ? (
-                  <div
-                    className={`${styles.body} text-row leading-relaxed`}
-                    // Only the server-sanitized field may be rendered as HTML.
-                    dangerouslySetInnerHTML={{
-                      __html: selected.sanitizedHtmlBody,
-                    }}
-                  />
-                ) : (
-                  <p className="whitespace-pre-wrap break-words text-row leading-relaxed">
-                    {selected.textBody}
-                  </p>
-                )}
+                <EmailBody
+                  key={selected.providerMessageId}
+                  message={selected}
+                />
               </Panel>
             ) : (
               <Panel>

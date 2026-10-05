@@ -178,6 +178,54 @@ const paths = {
       },
     },
   },
+  "/api/email/gmail/images": {
+    post: {
+      tags: ["Gmail"],
+      summary: "Read embedded email images",
+      description:
+        "Requires the configured Origin and a signed-in Gmail connection. Returns up to 8 referenced PNG/JPEG/GIF/WebP images, limited to 1 MB each and 4 MB total. External URLs are never fetched. No-store response; a disconnected or replaced connection cannot return images.",
+      security: [{ session: [] }],
+      requestBody: {
+        required: true,
+        content: {
+          "application/json": {
+            schema: {
+              type: "object",
+              required: ["messageId"],
+              additionalProperties: false,
+              properties: {
+                messageId: {
+                  type: "string",
+                  pattern: "^[a-zA-Z0-9_-]{1,200}$",
+                },
+              },
+            },
+          },
+        },
+      },
+      responses: {
+        200: answer(
+          "Embedded images keyed by URI-encoded Content-ID.",
+          {
+            type: "object",
+            properties: {
+              images: {
+                type: "object",
+                additionalProperties: { type: "string" },
+              },
+              skipped: { type: "integer" },
+            },
+          },
+          { images: {}, skipped: 0 },
+        ),
+        400: { description: "Invalid message ID." },
+        401: NOT_SIGNED_IN,
+        403: { description: "Foreign Origin." },
+        409: { description: "Reconnect Gmail." },
+        500: { description: "Configuration or provider failure." },
+      },
+    },
+  },
   "/api/email/gmail/extract": {
     post: {
       tags: ["Gmail"],

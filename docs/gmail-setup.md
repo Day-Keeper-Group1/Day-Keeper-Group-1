@@ -1,8 +1,11 @@
 # Connect a test Gmail mailbox
 
 The authenticated `/email` page connects one Gmail mailbox per DayKeeper user.
-It reads up to 20 inbox messages from the last 30 days automatically when the page opens with Gmail connected. It does not send or alter Gmail messages. Create task explicitly saves the selected
-email and runs the project Azure reader, then opens the existing review page.
+It reads up to 20 inbox messages from the last 30 days automatically when the page opens with Gmail connected. It does not send or alter Gmail messages.
+The original formatted email and images are displayed without extraction.
+Create Task saves the selected email and runs the project Azure reader, then opens
+the existing review page. Open in Gmail opens a new tab targeting the selected
+message ID and connected mailbox (`authuser`), using Gmail's `#all` message route.
 Only confirming creates a task and reminders; No action creates neither.
 
 ## Server configuration
@@ -38,7 +41,7 @@ worktree's callback port must match both `.env.local` and Google's registration.
 ## Database setup
 
 `db/schema.sql` defines `gmail_connections`, `gmail_oauth_attempts` and
-`document_emails` (the source of emails explicitly selected for extraction).
+`document_emails` (the source of emails imported for extraction).
 Following the repository's no-migrations convention, the normal setup command is
 `npm run db:reset`. **It deletes existing local data and rebuilds the seed and
 bucket.** Coordinate with anyone using the checkout before running it. This code
@@ -66,17 +69,32 @@ echoing codes, tokens or Google error details.
   requests check connection identity before returning. Disconnect does not revoke
   the Google-side grant; remove it through Google account third-party connections
   if required. Already displayed/downloaded content cannot be recalled.
-- HTML alternatives are sanitized on the server before display. Emphasis, lists,
-  tables and safe links are retained; scripts, images, forms, embedded content and
-  arbitrary styles are removed. Links open without opener access or a referrer.
-  Plain text is the fallback when HTML is absent, empty or oversized. Attachments
-  are not processed. Messages lacking a valid plain-text body or exceeding the schema's
-  limits are counted as unsupported, not classified as `no-action`.
-- There is no background mailbox polling, pagination UI or automatic import.
-  The reading screen polls the selected document until extraction finishes.
-  Each inbox visit loads a fresh batch. Create task imports
-  only the selected message; a user/mailbox/message unique key prevents duplicate
-  readings and tasks. Failed readings may be retried with Create task.
+- HTML alternatives are sanitized on the server and displayed in an opaque-origin
+  sandboxed frame with scripts, forms and embedded documents blocked. Original
+  inline CSS, embedded stylesheets, responsive media queries, class names, fonts,
+  spacing and image dimensions survive. Email content uses a neutral mail canvas;
+  DayKeeper's theme applies to the surrounding controls. External stylesheets and
+  web fonts are blocked by CSP; HTTP(S) background graphics and other CSS images
+  load when the email is opened. Never insert this HTML into DayKeeper's
+  application DOM: the iframe sandbox and CSP are part of its rendering boundary.
+  Messages without HTML show their plain text. Wide layouts scroll within the preview.
+- Embedded CID images load when a message is opened, through the signed-in user's
+  Gmail connection. Only referenced PNG/JPEG/GIF/WebP parts with matching file
+  signatures are accepted: up to 8 images, 1 MB each and 4 MB total. Disconnecting
+  or replacing a connection prevents pending image responses from being returned.
+  Images are not persisted. External HTTP(S) images load when the email is opened;
+  this may reveal an open to the sender. Scheme-relative image URLs are normalized
+  to HTTPS. Browsers may block insecure HTTP images on an
+  HTTPS deployment; expired or sender-protected image URLs can also fail.
+  No server endpoint fetches sender-supplied external URLs.
+- Plain text remains the extraction input. HTML-only messages and document
+  attachments remain unsupported; oversized or unsupported messages are counted
+  rather than classified as no-action.
+- There is no background mailbox polling, pagination UI or automatic extraction.
+  Each inbox visit loads a fresh batch. Create Task imports only the selected email;
+  a user/mailbox/message unique key reuses successful readings and prevents duplicate
+  tasks. Failed readings can be retried with Create Task. The reading screen polls
+  the document until the review page is ready.
 - Google Testing refresh tokens expire after seven days for this scope. Reconnect
   when prompted. Broader deployment requires reviewing Google's verification rules.
 - Do not log callback query strings at a reverse proxy: they contain temporary
@@ -97,3 +115,13 @@ Gmail is disconnected so a saved task can still be understood.
 Live OAuth still needs the private configuration, initialized database and a human
 granting consent. Verify connect, automatic inbox loading, disconnect, reconnect, sign-out and a second
 DayKeeper account before demonstrating real mailbox access.
+
+### Legacy Yarra Valley artwork
+
+Older Yarra Valley bills reference static images under
+`http://www.yvw.com.au/yvw/groups/public/documents/images/`. On 5 October 2026,
+the header, payment buttons and supporting artwork were verified to redirect to
+`https://comms.yvw.com.au/comms/OLD/`. The sanitizer normalizes simple image
+filenames from that exact legacy directory to the HTTPS archive. Query-bearing
+URLs, other hosts, and payment/account links are unchanged. Artwork still loads
+when the email is opened; no bill content or artwork is stored locally.

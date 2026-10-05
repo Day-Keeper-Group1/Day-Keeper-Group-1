@@ -15,7 +15,7 @@ const partSchema: z.ZodType<Part> = z.lazy(() =>
   z.object({
     mimeType: z.string().optional(),
     filename: z.string().optional(),
-    body: z.object({ data: z.string().max(200_000).optional() }).optional(),
+    body: z.object({ data: z.string().optional() }).optional(),
     parts: z.array(partSchema).max(100).optional(),
   }),
 );
@@ -23,6 +23,7 @@ const partSchema: z.ZodType<Part> = z.lazy(() =>
 function bodyParts(part: Part, mimeType: string, depth = 0): string[] {
   if (depth > 15 || part.filename) return [];
   if (part.mimeType === mimeType && part.body?.data) {
+    if (part.body.data.length > 200_000) return [];
     return [Buffer.from(part.body.data, "base64url").toString("utf8")];
   }
   // Ignore attached/forwarded message/rfc822 bodies.

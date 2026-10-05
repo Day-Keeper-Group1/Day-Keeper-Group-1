@@ -8,7 +8,7 @@ export default async function EmailPage({
 }) {
   const { connection } = await searchParams;
   return (
-    <div className="mx-auto max-w-6xl space-y-5">
+    <div className="mx-auto max-w-7xl space-y-5">
       <GmailMailbox connectionFailed={connection === "failed"} />
     </div>
   );

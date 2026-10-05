@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-/** Mailbox boundary. HTML is optional and must be sanitized by the server adapter. */
+/** Mailbox boundary. Server-sanitized HTML is only safe in the restricted email iframe, never the app DOM. */
 export const emailMessageSchema = z.object({
   providerMessageId: z.string().min(1),
   from: z.email(),
