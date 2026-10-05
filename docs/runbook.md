@@ -59,4 +59,4 @@ The free Supabase plan keeps no backups. Everything there is synthetic and comes
 
 ## Keys
 
-Which value lives where (GitHub, Netlify, the keys document in Teams) is in [`deployment.md`, "Where the keys are"](deployment.md#where-the-keys-are). A key that changes in one place changes in every place listed there, or the next merge or the next press of a button stops at the step that uses it.
+Which value lives where (GitHub, Netlify, the keys file in Teams) is in [`deployment.md`, "Where the keys are"](deployment.md#where-the-keys-are). A key that changes in one place changes in every place listed there, or the next merge or the next press of a button stops at the step that uses it.
