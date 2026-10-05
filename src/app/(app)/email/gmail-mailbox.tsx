@@ -2,10 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Mail } from "lucide-react";
+import { ArrowLeft, ArrowRight, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Panel, ScreenHeader } from "@/components/screen";
-import type { GmailMessages, GmailStatus } from "@/lib/contract/email";
+import { Panel } from "@/components/screen";
+import type {
+  EmailMessage,
+  GmailMessages,
+  GmailStatus,
+} from "@/lib/contract/email";
 import { APP_TIME_ZONE } from "@/lib/contract/dates";
 import { EmailBody } from "./email-body";
 
@@ -29,18 +33,35 @@ async function request<T>(
 
 export function GmailMailbox({
   connectionFailed = false,
+  initialEmail,
 }: {
   connectionFailed?: boolean;
+  initialEmail?: EmailMessage & { mailbox: string };
 }) {
   const router = useRouter();
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState("");
   const [status, setStatus] = useState<GmailStatus | null>(null);
   const [result, setResult] = useState<GmailMessages | null>(null);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const selected = result?.messages.find(
-    (message) => message.providerMessageId === selectedId,
+  const [selectedId, setSelectedId] = useState<string | null>(
+    initialEmail?.providerMessageId ?? null,
   );
+  const selected =
+    (selectedId === initialEmail?.providerMessageId
+      ? initialEmail
+      : undefined) ??
+    result?.messages.find(
+      (message) => message.providerMessageId === selectedId,
+    );
+  const lastOpened = useRef<HTMLButtonElement | null>(null);
+  const selectedMailbox =
+    selectedId === initialEmail?.providerMessageId
+      ? initialEmail.mailbox
+      : status?.email;
+  const canCreate =
+    !!status?.connected &&
+    !!selectedMailbox &&
+    selectedMailbox.toLowerCase() === status.email?.toLowerCase();
   const detailHeading = useRef<HTMLHeadingElement | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -91,7 +112,7 @@ export function GmailMailbox({
   }, [reload]);
 
   async function createTask() {
-    if (!selected || !status?.email || creating) return;
+    if (!selected || !status?.email || !canCreate || creating) return;
     setCreating(true);
     setCreateError("");
     try {
@@ -142,31 +163,40 @@ export function GmailMailbox({
 
   return (
     <div className="space-y-5" aria-busy={busy || loading || reading}>
-      <ScreenHeader
-        title="Inbox"
-        subtitle="Read your recent Gmail inbox messages."
-        action={
-          status?.configured &&
-          (status.connected ? (
-            <Button
-              variant="outline"
-              disabled={busy || creating}
-              onClick={disconnect}
-            >
-              {busy ? "Disconnecting..." : "Disconnect Gmail"}
-            </Button>
-          ) : (
-            <form action="/api/email/gmail/connect" method="post">
-              <Button type="submit" disabled={busy || creating}>
-                Connect Gmail
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <h1 className="min-w-0 text-title font-bold tracking-[-0.2px] text-foreground">
+          Inbox
+          {status?.connected && status.email && (
+            <span className="text-sub font-normal italic text-ink-dim">
+              {" "}
+              - connected to <span className="break-all">{status.email}</span>
+            </span>
+          )}
+        </h1>
+        <div className="shrink-0">
+          {status?.configured &&
+            (status.connected ? (
+              <Button
+                variant="outline"
+                disabled={busy || creating}
+                onClick={disconnect}
+              >
+                {busy ? "Disconnecting..." : "Disconnect Gmail"}
               </Button>
-            </form>
-          ))
-        }
-      />
+            ) : (
+              <form action="/api/email/gmail/connect" method="post">
+                <Button type="submit" disabled={busy || creating}>
+                  Connect Gmail
+                </Button>
+              </form>
+            ))}
+        </div>
+      </div>
       <p className="text-sub text-ink-dim">
-        Choose an email to read it here. Create Task extracts the six key fields
-        and opens the review page before you save a task.
+        Choose an email to read it here.
+        <br />
+        <strong>Create Task</strong> extracts the six key fields and opens the
+        review page before you save a task.
       </p>
       {connectionFailed && !status?.connected && (
         <p role="alert" className="rounded-lg bg-warn-bg p-4 text-warn">
@@ -196,102 +226,122 @@ export function GmailMailbox({
           Gmail setup is incomplete. Configure the server credentials and
           encryption key using the project Gmail setup guide.
         </p>
-      ) : (
-        <p className="break-words text-row" role="status">
-          {status.connected
-            ? `Connected to ${status.email}`
-            : "Choose Connect Gmail to read your inbox."}
+      ) : !status.connected ? (
+        <p className="text-row" role="status">
+          Choose Connect Gmail to read your inbox.
         </p>
-      )}
-      <p className="text-sub leading-relaxed text-ink-dim">
+      ) : null}
+      <p className="text-sub leading-relaxed italic text-ink-dim">
         Up to 20 inbox messages from the last 30 days appear automatically when
         you open this page with Gmail connected. Only emails you choose for
-        Create Task are saved and extracted. Document attachments and HTML-only
-        messages are not supported yet.
+        Create Task are saved and extracted.
       </p>
       {reading && <p role="status">Loading your inbox...</p>}
-      {result && (
-        <div className="grid items-start gap-5 lg:grid-cols-[280px_minmax(0,1fr)]">
-          <Panel title="Recent inbox" className="min-w-0">
-            <p role="status" className="mb-4 text-sub text-ink-dim">
-              {result.messages.length} emails · Choose one to open
-              {result.skipped > 0
-                ? ` ${result.skipped} messages could not be displayed because their format or size is not supported.`
-                : ""}
-              {result.hasMore
-                ? " More messages are available in Gmail; this preview shows only the first batch."
-                : ""}
-            </p>
-            {result.messages.length === 0 && (
-              <p>
-                {result.skipped
-                  ? "No supported plain-text messages were found in this batch."
-                  : "No inbox messages were found from the last 30 days."}
+      {(result || selected) && (
+        <div className="min-w-0">
+          {!selected && result && (
+            <Panel title="Recent inbox" className="min-w-0">
+              <p role="status" className="mb-4 text-sub text-ink-dim">
+                {result.messages.length} emails · Choose one to open
+                {result.skipped > 0
+                  ? ` ${result.skipped} messages could not be displayed because their format or size is not supported.`
+                  : ""}
+                {result.hasMore
+                  ? " More messages are available in Gmail; this preview shows only the first batch."
+                  : ""}
               </p>
-            )}
-            <ul className="divide-y divide-line">
-              {result.messages.map((message) => (
-                <li key={message.providerMessageId}>
-                  <button
-                    type="button"
-                    disabled={creating}
-                    aria-current={
-                      selectedId === message.providerMessageId
-                        ? "true"
-                        : undefined
-                    }
-                    aria-controls="email-detail"
-                    onClick={() => {
-                      setCreateError("");
-                      setSelectedId(message.providerMessageId);
-                      requestAnimationFrame(() =>
-                        detailHeading.current?.focus(),
-                      );
-                    }}
-                    className="block min-h-12 w-full cursor-pointer rounded-md border-l-4 border-transparent px-3 py-4 text-left hover:bg-primary-soft aria-[current=true]:border-primary aria-[current=true]:bg-primary-soft"
-                  >
-                    <span className="flex items-start gap-3">
-                      <Mail
-                        className="mt-1 shrink-0 text-primary"
-                        size={20}
-                        aria-hidden="true"
-                      />
-                      <span className="min-w-0">
-                        <span className="block break-words text-row font-bold">
-                          {message.subject || "(No subject)"}
-                        </span>
-                        <span className="mt-1 block break-all text-caption text-ink-dim">
-                          {message.from}
+              {result.messages.length === 0 && (
+                <p>
+                  {result.skipped
+                    ? "No supported plain-text messages were found in this batch."
+                    : "No inbox messages were found from the last 30 days."}
+                </p>
+              )}
+              <ul className="divide-y divide-line">
+                {result.messages.map((message) => (
+                  <li key={message.providerMessageId}>
+                    <button
+                      type="button"
+                      ref={(element) => {
+                        if (
+                          element &&
+                          element.dataset.messageId ===
+                            lastOpened.current?.dataset.messageId
+                        )
+                          lastOpened.current = element;
+                      }}
+                      data-message-id={message.providerMessageId}
+                      disabled={creating}
+                      aria-current={
+                        selectedId === message.providerMessageId
+                          ? "true"
+                          : undefined
+                      }
+                      onClick={(event) => {
+                        lastOpened.current = event.currentTarget;
+                        setCreateError("");
+                        setSelectedId(message.providerMessageId);
+                        requestAnimationFrame(() =>
+                          detailHeading.current?.focus(),
+                        );
+                      }}
+                      className="block min-h-12 w-full cursor-pointer rounded-md border-l-4 border-transparent px-3 py-4 text-left hover:bg-primary-soft aria-[current=true]:border-primary aria-[current=true]:bg-primary-soft"
+                    >
+                      <span className="flex items-start gap-3">
+                        <Mail
+                          className="mt-1 shrink-0 text-primary"
+                          size={20}
+                          aria-hidden="true"
+                        />
+                        <span className="min-w-0">
+                          <span className="block break-words text-row font-bold">
+                            {message.subject || "(No subject)"}
+                          </span>
+                          <span className="mt-1 block break-all text-caption text-ink-dim">
+                            {message.from}
+                          </span>
                         </span>
                       </span>
-                    </span>
-                    <span className="mt-3 flex items-center justify-between gap-2 text-caption font-semibold text-primary">
-                      <span>Open email</span>
-                      <ArrowRight size={18} aria-hidden="true" />
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </Panel>
-          <div id="email-detail" className="min-w-0 scroll-mt-6 space-y-5">
-            {selected ? (
+                      <span className="mt-3 flex items-center justify-between gap-2 text-caption font-semibold text-primary">
+                        <span>Open email</span>
+                        <ArrowRight size={18} aria-hidden="true" />
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </Panel>
+          )}
+          {selected && (
+            <div id="email-detail" className="min-w-0 scroll-mt-6 space-y-5">
+              <Button
+                variant="ghost"
+                className="mb-3"
+                disabled={creating}
+                onClick={() => {
+                  setSelectedId(null);
+                  setCreateError("");
+                  requestAnimationFrame(() => lastOpened.current?.focus());
+                }}
+              >
+                <ArrowLeft size={20} aria-hidden="true" /> Back to inbox
+              </Button>
               <Panel>
                 <div className="mb-5 space-y-2">
                   <div className="flex flex-wrap gap-3">
                     <Button
-                      disabled={creating || busy}
+                      disabled={creating || busy || !canCreate}
                       onClick={() => void createTask()}
                     >
                       {creating ? "Starting reading..." : "Create Task"}
                     </Button>
-                    {status?.email && (
+                    {selectedMailbox && (
                       <Button
                         variant="outline"
                         nativeButton={false}
                         render={
                           <a
-                            href={`https://mail.google.com/mail/?authuser=${encodeURIComponent(status.email)}#all/${encodeURIComponent(selected.providerMessageId)}`}
+                            href={`https://mail.google.com/mail/?authuser=${encodeURIComponent(selectedMailbox)}#all/${encodeURIComponent(selected.providerMessageId)}`}
                             target="_blank"
                             rel="noopener noreferrer"
                           >
@@ -331,7 +381,7 @@ export function GmailMailbox({
                   </div>
                   <div>
                     <dt className="inline font-semibold">Mailbox: </dt>
-                    <dd className="inline break-all">{status?.email}</dd>
+                    <dd className="inline break-all">{selectedMailbox}</dd>
                   </div>
                   <div>
                     <dt className="inline font-semibold">Received: </dt>
@@ -353,26 +403,8 @@ export function GmailMailbox({
                   message={selected}
                 />
               </Panel>
-            ) : (
-              <Panel>
-                <Mail
-                  className="mb-4 text-primary"
-                  size={32}
-                  aria-hidden="true"
-                />
-                <h2 className="text-cta font-bold">
-                  {result.messages.length
-                    ? "Open an email"
-                    : "Your inbox is empty"}
-                </h2>
-                <p className="mt-2 text-row leading-relaxed">
-                  {result.messages.length
-                    ? "Choose an email from your inbox to read it here."
-                    : "Recent supported emails will appear here when you next open this page."}
-                </p>
-              </Panel>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       )}
     </div>

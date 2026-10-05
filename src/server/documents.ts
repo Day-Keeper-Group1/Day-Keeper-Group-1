@@ -19,6 +19,7 @@ import "server-only";
 
 import {
   FAILURE_MESSAGE,
+  EMAIL_FAILURE_MESSAGES,
   type DocumentDetail,
   type DocumentPageView,
   type DocumentStatus,
@@ -59,7 +60,21 @@ type DocumentRow = {
   uploaded_at: Date;
   page_count: number;
   email_subject?: string | null;
+  email_failure_reason?: keyof typeof EMAIL_FAILURE_MESSAGES | null;
 };
+
+// Classify only known reading failures in SQL. Never select raw failure details
+// into a browser-facing result, and keep the query correlated to the owned row.
+const EMAIL_FAILURE_REASON_SQL = `CASE WHEN d.status = 'failed' THEN (
+  SELECT CASE
+    WHEN r.failure_detail = 'UnsureOfWhatMatters: the decided reading''s due_date and amount is not confirmed' THEN 'due-date-and-amount'
+    WHEN r.failure_detail = 'UnsureOfWhatMatters: the decided reading''s due_date is not confirmed' THEN 'due-date'
+    WHEN r.failure_detail = 'UnsureOfWhatMatters: the decided reading''s amount is not confirmed' THEN 'amount'
+    ELSE 'other'
+  END
+  FROM extraction_runs r WHERE r.document_id = d.id
+  ORDER BY r.started_at DESC, r.id DESC LIMIT 1
+) END AS email_failure_reason`;
 
 /**
  * The shape of an id these tables will accept.
@@ -182,7 +197,7 @@ function mapDocument(row: DocumentRow, timeZone: string): DocumentSummary {
       failure: {
         message:
           row.email_subject != null
-            ? "Something went wrong reading this email. Open your inbox and try Create task again."
+            ? EMAIL_FAILURE_MESSAGES[row.email_failure_reason ?? "other"]
             : FAILURE_MESSAGE,
       },
     }),
@@ -252,7 +267,8 @@ export async function listDocuments(
             (SELECT count(*)::integer
                FROM document_pages p
               WHERE p.document_id = d.id) AS page_count,
-            (SELECT e.subject FROM document_emails e WHERE e.document_id = d.id AND e.user_id = d.user_id) AS email_subject
+            (SELECT e.subject FROM document_emails e WHERE e.document_id = d.id AND e.user_id = d.user_id) AS email_subject,
+            ${EMAIL_FAILURE_REASON_SQL}
        FROM documents d
       WHERE d.user_id = $1
       ORDER BY d.uploaded_at DESC, d.id DESC`,
@@ -292,7 +308,8 @@ export async function getDocument(
             (SELECT count(*)::integer
                FROM document_pages p
               WHERE p.document_id = d.id) AS page_count,
-            (SELECT e.subject FROM document_emails e WHERE e.document_id = d.id AND e.user_id = d.user_id) AS email_subject
+            (SELECT e.subject FROM document_emails e WHERE e.document_id = d.id AND e.user_id = d.user_id) AS email_subject,
+            ${EMAIL_FAILURE_REASON_SQL}
        FROM documents d
       WHERE d.id = $1
         AND d.user_id = $2`,
@@ -341,17 +358,33 @@ export async function getDocument(
           subject: string;
           received_at: Date;
           text_body: string;
+          mailbox: string;
+          provider_message_id: string;
         }>(
-          "SELECT sender, subject, received_at, text_body FROM document_emails WHERE document_id = $1 AND user_id = $2",
+          "SELECT sender, subject, received_at, text_body, mailbox, provider_message_id FROM document_emails WHERE document_id = $1 AND user_id = $2",
           [documentId, userId],
         )
       : null;
   const views = row.status === "processing" ? [] : fieldViews(fields);
+  const recovered =
+    row.status === "failed" && email
+      ? await (
+          await import("@/server/email/correction")
+        ).recoverEmailReading(documentId, userId)
+      : null;
+  const repairFields = recovered?.result.fields.map((field) =>
+    mapField({
+      field_key: field.key,
+      extracted_value: field.value,
+      status: field.status,
+    }),
+  );
 
   return {
     ...mapDocument(row, timeZone),
     ...(email && {
       sourceEmail: {
+        gmailUrl: `https://mail.google.com/mail/?authuser=${encodeURIComponent(email.mailbox)}#all/${encodeURIComponent(email.provider_message_id)}`,
         from: email.sender,
         subject: email.subject,
         receivedAt: email.received_at.toISOString(),
@@ -362,8 +395,27 @@ export async function getDocument(
     // reading ever succeeded for. The second case falls out of the query, which
     // finds nothing; the first is stated here as a rule rather than left to be
     // inferred from a run that has not finished yet.
-    fields: views,
-    identifiers: views.length === 0 ? [] : identifierViews(identifiers, views),
+    ...(recovered && {
+      correction: {
+        runId: recovered.runId,
+        fieldKeys: recovered.result.fields
+          .filter(
+            (field) =>
+              field.status !== "confirmed" &&
+              (CONTRACT_FIELD_KEYS as readonly string[]).includes(field.key),
+          )
+          .map((field) => field.key as (typeof CONTRACT_FIELD_KEYS)[number]),
+      },
+    }),
+    fields: repairFields ?? views,
+    identifiers: recovered
+      ? identifierViews(
+          recovered.result.identifiers.map((item) => ({ ...item })),
+          repairFields ?? [],
+        )
+      : views.length === 0
+        ? []
+        : identifierViews(identifiers, views),
     pages: pages.map((page): DocumentPageView => ({
       id: page.id,
       pageNumber: page.page_number,
@@ -459,7 +511,8 @@ export async function getHome(
               (SELECT count(*)::integer
                  FROM document_pages p
                 WHERE p.document_id = d.id) AS page_count,
-            (SELECT e.subject FROM document_emails e WHERE e.document_id = d.id AND e.user_id = d.user_id) AS email_subject
+            (SELECT e.subject FROM document_emails e WHERE e.document_id = d.id AND e.user_id = d.user_id) AS email_subject,
+            ${EMAIL_FAILURE_REASON_SQL}
          FROM documents d
         WHERE d.user_id = $1
           AND d.status IN ('processing', 'needs-review', 'failed')

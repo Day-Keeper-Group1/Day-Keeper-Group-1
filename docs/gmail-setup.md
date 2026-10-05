@@ -8,6 +8,22 @@ the existing review page. Open in Gmail opens a new tab targeting the selected
 message ID and connected mailbox (`authuser`), using Gmail's `#all` message route.
 Only confirming creates a task and reminders; No action creates neither.
 
+An email whose due date or amount is uncertain still fails the AI reading, as photo
+uploads do. A decided reading can now be recovered by its owner: Create Task
+opens correction inputs for unconfirmed six-field values, with edit icons for all six fields and a document-type dropdown, then Continue to review
+shows the updated plan before the ordinary save/confirm step. Valid full dates
+and amounts are checked server-side, confirmed fields may also be edited, and
+the failed reading and model calls remain intact beside a separate user-corrected
+reading and an audit event containing field keys only. Existing failed emails
+are supported without rerunning the reader. Provider failures and unresolved
+voting results retain the failure screen. For example, a forwarded bill
+showing only `25 MAY` without any printed year cannot supply a confident full
+date; the forwarding timestamp does not establish the original bill's year.
+The user can enter the known full date to continue and save the task.
+Embedded graphics do not themselves cause a reading failure. The current reader
+uses the plain-text body, including its bill table and payment instructions when
+supplied by the sender. Image-only text and document attachments are not read.
+
 ## Server configuration
 
 Enable Gmail API, configure External/Testing OAuth, add your mailbox as a test
@@ -125,3 +141,9 @@ the header, payment buttons and supporting artwork were verified to redirect to
 filenames from that exact legacy directory to the HTTPS archive. Query-bearing
 URLs, other hosts, and payment/account links are unchanged. Artwork still loads
 when the email is opened; no bill content or artwork is stored locally.
+
+The correction page uses the inbox email renderer, fetching the original formatted message from the matching connected mailbox. If Gmail is unavailable, the retained plain text is shown instead. Reference help identifies the matching printed identifier when available and otherwise explains which number to quote.
+
+Formatted email previews expand to their full content height, including images loaded later. They scroll with the main page rather than within a separate scrolling frame. The parent measures the script-disabled frame and updates its height when the content or available width changes.
+
+Opening an email letter from Your letters links to `/email?document=<id>` and displays that exact saved message inside DayKeeper, including messages outside the recent inbox window. The lookup checks document ownership and the original mailbox; saved text remains available if Gmail cannot provide the formatted message.

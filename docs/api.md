@@ -20,7 +20,21 @@ body to the project Azure reader. Only confirmation creates tasks and reminders.
 
 Errors use the existing envelope: 401 without sign-in, 403 for a foreign Origin,
 409 when reconnection is needed, and 500 for configuration/provider failures.
+Email document detail includes `sourceEmail.gmailUrl`, linking to the imported message in Gmail with its original mailbox selected.
 Messages use the `EmailMessage` schema in `src/lib/contract/email.ts`.
+Failed email documents expose fixed, plain-language messages for an uncertain
+due date, amount, or both. Internal extraction error text is never returned.
+When a failed email has a recoverable decided reading, document detail also
+returns `correction: { runId, fieldKeys }` and confident fields; uncertain values
+remain hidden. POST `/api/documents/:id/correct` requires sign-in and the same
+Origin, and accepts `{ runId, fields: [{ key, value }] }`. Every unconfirmed
+six-field key must appear once; confirmed keys may also be edited, without duplicates. Dates must
+be real ISO calendar dates (or `Not applicable`); amounts must be valid AUD amounts
+(or `No payment required`). It returns `{ documentId }`, moves the document to
+needs-review, and records a separate user-corrected reading. It creates no tasks
+or reminders; the existing empty-body confirm endpoint does that afterward.
+Missing or foreign documents return 404; stale, saved, non-email or unrecoverable
+readings and invalid corrections return 409; malformed requests return 400.
 
 **Every endpoint here is built.** This document was written before any of them,
 because the interface, the reader and the database were going to be built by

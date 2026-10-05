@@ -4,12 +4,19 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Panel, ScreenHeader } from "@/components/screen";
 import { Button } from "@/components/ui/button";
-import type { DocumentSummary } from "@/lib/contract/api";
+import {
+  EMAIL_FAILURE_MESSAGES,
+  type DocumentDetail,
+  type DocumentSummary,
+} from "@/lib/contract/api";
 
 export function ReadingStatus({ document }: { document: DocumentSummary }) {
   const router = useRouter();
   const [failed, setFailed] = useState(document.status === "failed");
   const [problem, setProblem] = useState("");
+  const [failureMessage, setFailureMessage] = useState(
+    document.failure?.message ?? EMAIL_FAILURE_MESSAGES.other,
+  );
   useEffect(() => {
     if (failed) return;
     const controller = new AbortController();
@@ -31,7 +38,7 @@ export function ReadingStatus({ document }: { document: DocumentSummary }) {
           }
           throw new Error("Could not check the reading. Retrying...");
         }
-        const current: DocumentSummary = await response.json();
+        const current: DocumentDetail = await response.json();
         if (controller.signal.aborted) return;
         setProblem("");
         if (current.status === "needs-review") {
@@ -43,6 +50,13 @@ export function ReadingStatus({ document }: { document: DocumentSummary }) {
           return;
         }
         if (current.status === "failed") {
+          if (current.correction) {
+            router.replace(`/documents/${document.id}/review`);
+            return;
+          }
+          setFailureMessage(
+            current.failure?.message ?? EMAIL_FAILURE_MESSAGES.other,
+          );
           setFailed(true);
           return;
         }
@@ -68,7 +82,7 @@ export function ReadingStatus({ document }: { document: DocumentSummary }) {
       <Panel>
         <p role="status" className="text-row leading-relaxed">
           {failed
-            ? "Something went wrong on our side. Return to your inbox and choose Create task to try again."
+            ? failureMessage
             : "We are reading the six key fields. The review page will open when they are ready. No task has been saved yet."}
         </p>
         {problem && (

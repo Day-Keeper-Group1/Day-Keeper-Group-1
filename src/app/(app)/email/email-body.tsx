@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { EmailMessage } from "@/lib/contract/email";
 import { emailPreviewDocument } from "@/lib/email-preview";
 
@@ -8,6 +8,35 @@ import { emailPreviewDocument } from "@/lib/email-preview";
 export function EmailBody({ message }: { message: EmailMessage }) {
   const [images, setImages] = useState<Record<string, string>>({});
   const [imageError, setImageError] = useState("");
+  const stopSizing = useRef<(() => void) | null>(null);
+  useEffect(() => () => stopSizing.current?.(), []);
+
+  function fitEmail(frame: HTMLIFrameElement) {
+    stopSizing.current?.();
+    const body = frame.contentDocument?.body;
+    if (!body) return;
+    let pending = 0;
+    const resize = () => {
+      cancelAnimationFrame(pending);
+      pending = requestAnimationFrame(() => {
+        const height = Math.ceil(
+          Math.max(body.scrollHeight, body.getBoundingClientRect().height),
+        );
+        frame.style.height = `${height + 2}px`;
+      });
+    };
+    const observer = new ResizeObserver(resize);
+    observer.observe(body);
+    // Image loads can change the content height after the initial layout.
+    body.addEventListener("load", resize, true);
+    resize();
+    stopSizing.current = () => {
+      observer.disconnect();
+      body.removeEventListener("load", resize, true);
+      cancelAnimationFrame(pending);
+    };
+  }
+
   const html = message.sanitizedHtmlBody;
   const hasEmbedded = !!html?.includes("data-email-cid=");
   useEffect(() => {
@@ -50,9 +79,12 @@ export function EmailBody({ message }: { message: EmailMessage }) {
       {html ? (
         <iframe
           title={`Email: ${message.subject || "No subject"}`}
-          sandbox="allow-popups allow-popups-to-escape-sandbox"
+          // Same-origin access lets the parent measure content; scripts remain
+          // forbidden by both the sandbox and the preview's CSP.
+          sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+          onLoad={(event) => fitEmail(event.currentTarget)}
           referrerPolicy="no-referrer"
-          className="h-[65vh] min-h-96 w-full rounded-md border border-line bg-card"
+          className="block min-h-96 w-full rounded-md border border-line bg-card"
           srcDoc={emailPreviewDocument(html, images, true)}
         />
       ) : (

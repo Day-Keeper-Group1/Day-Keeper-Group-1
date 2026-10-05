@@ -12,6 +12,7 @@ export default async function ReadingPage({
   const user = await requireUser();
   const document = await getDocument(id, user.id, user.timeZone);
   if (!document) notFound();
+  if (document.correction) redirect(`/documents/${id}/review`);
   if (document.status === "needs-review") redirect(`/documents/${id}/review`);
   if (document.status === "confirmed" || document.status === "archived")
     redirect(`/documents/${id}`);

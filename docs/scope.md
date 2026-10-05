@@ -54,6 +54,11 @@ in the connected account. Create Task saves only the selected email, extracts
 the six fields with the project Azure reader, and opens the same
 read-only review and confirmation flow as photo uploads. Confirmation creates
 the task and reminders; a No action reading creates neither. It does not monitor mail. See [`gmail-setup.md`](gmail-setup.md).
+Email exception: when the voting scheme reaches a reading but its date or amount
+is uncertain, the user may edit all six fields, with unconfirmed fields open by default, review the
+resulting plan, and confirm. The original failed reading remains in history;
+corrections are recorded as a separate user-corrected reading. Photo review remains
+read-only. Provider failures and unresolved voting results cannot be corrected.
 [`email-integration.md`](email-integration.md) records the proposed delivery tickets.
 
 ## Why this shape

@@ -59,6 +59,12 @@ export const CONTRACT_VERSION = "2.0" as const;
  *   hesitation; the argument for a screen that never asks is in ./api.ts.
  *   Enforced in mapField() in src/server/field-views.ts.
  *
+ * Email exception: a decided email reading that failed on date or amount may
+ * be corrected explicitly by its owner. Only unconfirmed six-field values are
+ * editable. The server records a separate user-corrected reading, preserves the
+ * original model calls and requires the ordinary review/confirm step afterward.
+ * Uncertain model guesses are never used to prefill correction inputs.
+ *
  * The two are kept apart in STORAGE because how often the model hedges, and what
  * it guesses when it does, is the evaluation data. Collapsing them in the
  * database would throw that away, and the synthetic evaluation line is now the

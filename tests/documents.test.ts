@@ -11,7 +11,7 @@ import {
   getPageStoragePath,
   listDocuments,
 } from "@/server/documents";
-import { FAILURE_MESSAGE } from "@/lib/contract/api";
+import { EMAIL_FAILURE_MESSAGES, FAILURE_MESSAGE } from "@/lib/contract/api";
 import { CONTRACT_FIELD_KEYS } from "@/lib/contract/fields";
 
 const queryMock = vi.mocked(query);
@@ -109,6 +109,33 @@ describe("what a letter is called", () => {
 });
 
 describe("the letters list", () => {
+  it.each(["due-date", "amount", "due-date-and-amount", "other"] as const)(
+    "explains the email reading failure %s without exposing internal errors",
+    async (reason) => {
+      queryMock.mockResolvedValue([
+        {
+          id: DOCUMENT_ID,
+          issuer: null,
+          document_type: null,
+          status: "failed",
+          due_date: null,
+          due_time: null,
+          amount_text: null,
+          reference: null,
+          uploaded_at: new Date(UPLOADED_AT),
+          page_count: 0,
+          email_subject: "Bill",
+          email_failure_reason: reason,
+        },
+      ]);
+      const [row] = await listDocuments(USER_ID, MELBOURNE);
+      expect(row.failure?.message).toBe(EMAIL_FAILURE_MESSAGES[reason]);
+      expect(JSON.stringify(row)).not.toContain("UnsureOfWhatMatters");
+      expect(row.dueDate).toBeUndefined();
+      expect(queryMock.mock.calls[0][0]).toContain("r.document_id = d.id");
+    },
+  );
+
   it("is scoped to its owner, newest upload first, and holds every status", async () => {
     queryMock.mockResolvedValue([]);
 

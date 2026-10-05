@@ -6,7 +6,13 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Bell, CalendarDays, FileText, type LucideIcon } from "lucide-react";
+import {
+  Bell,
+  CalendarDays,
+  ExternalLink,
+  FileText,
+  type LucideIcon,
+} from "lucide-react";
 import { FactRow } from "@/components/fact-row";
 import { useActivity } from "@/components/layout/activity";
 import { PhotoStrip } from "@/components/photo-strip";
@@ -169,17 +175,18 @@ export function ReviewForm({
             </div>
           ) : null}
           {document.sourceEmail && (
-            <details className="mt-4 border-t border-line pt-3">
-              <summary className="min-h-12 cursor-pointer py-3 font-semibold text-primary">
-                Read the original email
-              </summary>
-              <p className="mb-3 break-words text-sub text-ink-dim">
-                {document.sourceEmail.subject} — {document.sourceEmail.from}
-              </p>
-              <p className="whitespace-pre-wrap break-words text-row leading-relaxed">
-                {document.sourceEmail.textBody}
-              </p>
-            </details>
+            <div className="mt-4 border-t border-line pt-3">
+              <a
+                href={document.sourceEmail.gmailUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex min-h-12 items-center gap-2 py-3 font-semibold text-primary"
+              >
+                <ExternalLink className="size-4" aria-hidden="true" />
+                Open in Gmail
+                <span className="sr-only"> (opens in a new tab)</span>
+              </a>
+            </div>
           )}
           <PhotoStrip
             documentId={document.id}

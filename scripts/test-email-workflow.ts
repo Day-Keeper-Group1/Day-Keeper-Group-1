@@ -194,6 +194,92 @@ async function main() {
     );
     assert.equal(retry.documentId, failed.documentId);
     assert.equal(retry.queued, true);
+    const uncertain = await createEmailDocument(
+      user!.id,
+      connection!.connection_id,
+      "mailbox@example.com",
+      { ...message, providerMessageId: "uncertain-date" },
+    );
+    await readDocument(uncertain.documentId, user!.id, [], {
+      pauseMs: 0,
+      read: async () => {
+        const answer = reading(values);
+        answer.result.fields.find((field) => field.key === "due_date")!.status =
+          "uncertain";
+        return answer;
+      },
+    });
+    const repair = await getDocument(
+      uncertain.documentId,
+      user!.id,
+      "Australia/Melbourne",
+    );
+    assert.equal(repair?.status, "failed");
+    assert.deepEqual(repair?.correction?.fieldKeys, ["due_date"]);
+    assert.equal(
+      repair?.fields.find((field) => field.key === "due_date")?.value,
+      null,
+    );
+    assert.equal(
+      (
+        await createEmailDocument(
+          user!.id,
+          connection!.connection_id,
+          "mailbox@example.com",
+          { ...message, providerMessageId: "uncertain-date" },
+        )
+      ).queued,
+      false,
+    );
+    const { correctEmailReading } =
+      await import("../src/server/email/correction");
+    const correction = {
+      runId: repair!.correction!.runId,
+      fields: [{ key: "due_date" as const, value: "2026-12-25" }],
+    };
+    assert.equal(
+      await correctEmailReading(uncertain.documentId, other!.id, correction),
+      null,
+    );
+    await assert.rejects(
+      correctEmailReading(uncertain.documentId, user!.id, {
+        ...correction,
+        fields: [{ key: "due_date", value: "25 MAY" }],
+      }),
+    );
+    const corrected = await correctEmailReading(
+      uncertain.documentId,
+      user!.id,
+      correction,
+    );
+    assert.equal(corrected?.documentId, uncertain.documentId);
+    const reviewed = await getDocument(
+      uncertain.documentId,
+      user!.id,
+      "Australia/Melbourne",
+    );
+    assert.equal(reviewed?.status, "needs-review");
+    assert.equal(reviewed?.dueDate, "2026-12-25");
+    const repairedTask = await confirmDocument(
+      uncertain.documentId,
+      user!.id,
+      "Australia/Melbourne",
+      new Date("2026-10-05T00:00:00Z"),
+    );
+    assert.equal(repairedTask?.task?.dueDate, "2026-12-25");
+    assert.equal(repairedTask?.task?.reminders.length, 3);
+    await assert.rejects(
+      correctEmailReading(uncertain.documentId, user!.id, correction),
+    );
+    assert.equal(
+      (
+        await queryOne<{ count: string }>(
+          "SELECT count(*) FROM extraction_runs WHERE document_id=$1 AND status='failed'",
+          [uncertain.documentId],
+        )
+      )?.count,
+      "1",
+    );
     await query("DELETE FROM gmail_connections WHERE user_id = $1", [user!.id]);
     assert.equal(
       (await getDocument(id, user!.id, "Australia/Melbourne"))?.sourceEmail
@@ -202,7 +288,7 @@ async function main() {
     );
     await assert.rejects(createEmailDocument(...args));
     console.log(
-      "Email workflow passed: ownership, concurrent deduplication, six-field review, confirmation/reminders, no-action, failed retry and disconnect.",
+      "Email workflow passed: ownership, concurrent deduplication, review, corrections with preserved history, confirmation/reminders, no-action, failed retry and disconnect.",
     );
   } finally {
     await closePool?.();

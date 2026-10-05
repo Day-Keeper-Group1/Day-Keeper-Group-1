@@ -57,6 +57,18 @@ export type TaskStatus = "upcoming" | "overdue" | "completed";
 export const FAILURE_MESSAGE =
   "It wasn't your photo. Something went wrong on our side. Please try again.";
 
+/** Email diagnostics expose fixed explanations, never internal error details. */
+export const EMAIL_FAILURE_MESSAGES = {
+  "due-date":
+    "We could not read a complete due date with confidence. Check the original bill for the full date, including the year. No task or reminder was saved.",
+  amount:
+    "We could not read the amount due with confidence. Check the original bill for the amount payable. No task or reminder was saved.",
+  "due-date-and-amount":
+    "We could not read the due date and amount due with confidence. Check the original bill for the full date and amount payable. No task or reminder was saved.",
+  other:
+    "Something went wrong reading this email. Open your inbox and try Create Task again.",
+} as const;
+
 /**
  * A failed reading, as a list row needs it.
  *
@@ -216,7 +228,13 @@ export type ExtractedFieldView = {
 };
 
 export type DocumentDetail = DocumentSummary & {
+  /** Email-only repair of a decided reading with unconfirmed fields. */
+  correction?: {
+    runId: string;
+    fieldKeys: import("./fields").ContractFieldKey[];
+  };
   sourceEmail?: {
+    gmailUrl: string;
     from: string;
     subject: string;
     receivedAt: string;
@@ -271,6 +289,11 @@ export const MAX_PAGE_BYTES = 10 * 1024 * 1024;
 /*
  * There is deliberately no ConfirmDocumentRequest, and deliberately no endpoint
  * anywhere that corrects a reading.
+ *
+ * The text below describes photo review. Email review now has an explicit
+ * exception: DocumentDetail.correction opens editable unconfirmed fields, and
+ * POST /api/documents/:id/correct records a separate user-corrected reading.
+ * Confirmation itself still takes an empty body and creates the task afterward.
  *
  * Confirming sends an empty body. The person looked, the person nodded, that is
  * the entire message. Nothing is edited, because nothing on the screen is

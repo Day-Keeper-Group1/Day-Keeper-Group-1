@@ -520,6 +520,73 @@ const paths = {
       },
     },
   },
+  "/api/documents/{id}/correct": {
+    post: {
+      tags: ["Letters"],
+      summary: "Correct unconfirmed fields in a recoverable email reading",
+      description:
+        "Requires the same Origin and an owned failed email whose voting result was decided. Provide every unconfirmed six-field key once, optionally include edits to confirmed keys, and provide the runId from document detail. Records a separate user-corrected reading and returns to review; does not create tasks or reminders.",
+      security: [{ session: [] }],
+      parameters: [ID("The owned email document id.")],
+      requestBody: {
+        required: true,
+        content: {
+          "application/json": {
+            schema: {
+              type: "object",
+              additionalProperties: false,
+              required: ["runId", "fields"],
+              properties: {
+                runId: { type: "string", format: "uuid" },
+                fields: {
+                  type: "array",
+                  minItems: 1,
+                  maxItems: 6,
+                  items: {
+                    type: "object",
+                    additionalProperties: false,
+                    required: ["key", "value"],
+                    properties: {
+                      key: {
+                        type: "string",
+                        enum: [
+                          "document_type",
+                          "issuer",
+                          "action_required",
+                          "due_date",
+                          "amount",
+                          "reference",
+                        ],
+                      },
+                      value: { type: "string", minLength: 1, maxLength: 2000 },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      responses: {
+        "200": answer(
+          "Corrections saved; continue to review.",
+          {
+            type: "object",
+            properties: { documentId: { type: "string", format: "uuid" } },
+          },
+          { documentId: "11111111-1111-4111-8111-111111111111" },
+        ),
+        "400": { description: "Malformed correction request." },
+        "401": NOT_SIGNED_IN,
+        "403": { description: "Foreign or missing Origin." },
+        "404": { description: "Missing or foreign document." },
+        "409": {
+          description:
+            "Invalid corrections, stale reading, saved document or unrecoverable reading.",
+        },
+      },
+    },
+  },
   "/api/documents/{id}/confirm": {
     post: {
       tags: ["Letters"],

@@ -1,5 +1,8 @@
 // KAN-57: the review screen's server half: the letter, and the plan worked out against her day.
 
+import { queryOne } from "@/server/db";
+import { mailboxAccess } from "@/server/email/gmail/connection";
+import { GmailProvider } from "@/server/email/gmail/provider";
 import { notFound, redirect } from "next/navigation";
 import { todayInZone } from "@/lib/contract/dates";
 import { leftToCheck } from "@/lib/confirm-flow";
@@ -7,6 +10,7 @@ import { planLinesFor } from "@/lib/review-plan";
 import { requireUser } from "@/server/auth/session";
 import { countLettersToCheck, getDocument } from "@/server/documents";
 import { ReviewForm } from "./review-form";
+import { EmailCorrectionForm } from "./email-correction-form";
 
 /**
  * The review screen.
@@ -41,6 +45,29 @@ export default async function DocumentReviewPage({
   // A letter belonging to somebody else is absent, not forbidden: see
   // docs/api.md on why this is a 404 and never a 403.
   if (!document) notFound();
+  if (document.status === "failed" && document.correction) {
+    let originalEmail;
+    const source = await queryOne<{ provider_message_id: string }>(
+      `SELECT e.provider_message_id FROM document_emails e
+       JOIN gmail_connections c ON c.user_id=e.user_id AND lower(c.email)=lower(e.mailbox)
+       WHERE e.document_id=$1 AND e.user_id=$2`,
+      [id, user.id],
+    );
+    if (source) {
+      try {
+        const access = await mailboxAccess(user.id);
+        originalEmail =
+          (await new GmailProvider(access.token).readMessage(
+            source.provider_message_id,
+          )) ?? undefined;
+      } catch {
+        // The retained text remains readable when Gmail is disconnected or unavailable.
+      }
+    }
+    return (
+      <EmailCorrectionForm document={document} originalEmail={originalEmail} />
+    );
+  }
 
   // KAN-59: a letter that is not waiting to be checked has nothing to check.
   // Reached by the back button after saving it, or from an old tab, so she is

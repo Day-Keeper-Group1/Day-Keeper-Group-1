@@ -5,7 +5,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Folder } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Folder, Mail } from "lucide-react";
 import { LetterSheet } from "@/components/letter-sheet";
 import { PillButton, ScreenHeader } from "@/components/screen";
 import type { DocumentSummary } from "@/lib/contract/api";
@@ -36,20 +37,26 @@ function LetterRow({
         className="flex min-h-12 w-full items-center gap-[11px] px-0.5 py-[11px] text-left"
       >
         {/* The first page, at thumbnail size. */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={`/api/documents/${doc.id}/pages/1`}
-          alt=""
-          loading="lazy"
-          width={34}
-          height={44}
-          className="h-11 w-[34px] shrink-0 rounded-[5px] border border-line bg-primary-soft object-cover"
-          onError={(event) => {
-            // No photograph in the bucket for this row: show the blank box the
-            // prototype draws, not the browser's broken-image glyph.
-            event.currentTarget.style.color = "transparent";
-          }}
-        />
+        {doc.source === "email" ? (
+          <span className="flex h-11 w-[34px] shrink-0 items-center justify-center rounded-[5px] border border-line bg-primary-soft">
+            <Mail size={20} className="text-primary" aria-hidden="true" />
+          </span>
+        ) : (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            src={`/api/documents/${doc.id}/pages/1`}
+            alt=""
+            loading="lazy"
+            width={34}
+            height={44}
+            className="h-11 w-[34px] shrink-0 rounded-[5px] border border-line bg-primary-soft object-cover"
+            onError={(event) => {
+              // No photograph in the bucket for this row: show the blank box the
+              // prototype draws, not the browser's broken-image glyph.
+              event.currentTarget.style.color = "transparent";
+            }}
+          />
+        )}
 
         {/* The name at 15px with its due date under it at 12.5px, and
             "open →" beside them at 13px, never shrinking. */}
@@ -87,6 +94,7 @@ function LetterRow({
  * so there is nothing to poll for.
  */
 export function LettersScreen({ letters }: { letters: DocumentSummary[] }) {
+  const router = useRouter();
   const [open, setOpen] = useState<DocumentSummary | null>(null);
   const folders = groupLetters(letters);
 
@@ -119,7 +127,15 @@ export function LettersScreen({ letters }: { letters: DocumentSummary[] }) {
             </h2>
             <ul>
               {folder.letters.map((doc) => (
-                <LetterRow key={doc.id} doc={doc} onOpen={setOpen} />
+                <LetterRow
+                  key={doc.id}
+                  doc={doc}
+                  onOpen={(letter) => {
+                    if (letter.source === "email")
+                      router.push(`/email?document=${letter.id}`);
+                    else setOpen(letter);
+                  }}
+                />
               ))}
             </ul>
           </section>

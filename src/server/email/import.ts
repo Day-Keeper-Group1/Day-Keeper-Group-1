@@ -28,10 +28,15 @@ export async function createEmailDocument(
     }
     const existing = await db.query<{ id: string; status: DocumentStatus }>(
       `SELECT d.id, d.status FROM documents d JOIN document_emails e ON e.document_id = d.id
-       WHERE e.user_id = $1 AND d.user_id = $1 AND e.mailbox = $2 AND e.provider_message_id = $3`,
+       WHERE e.user_id = $1 AND d.user_id = $1 AND e.mailbox = $2 AND e.provider_message_id = $3 FOR UPDATE OF d`,
       [userId, mailbox.toLowerCase(), message.providerMessageId],
     );
     const previous = existing.rows[0];
+    if (previous?.status === "failed") {
+      const { recoverEmailReading } = await import("./correction");
+      if (await recoverEmailReading(previous.id, userId, db))
+        return { documentId: previous.id, queued: false };
+    }
     if (previous && previous.status !== "failed")
       return { documentId: previous.id, queued: false };
     let documentId: string;
