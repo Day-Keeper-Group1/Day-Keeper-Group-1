@@ -6,30 +6,32 @@ This file holds no passwords, keys or connection strings with a password in them
 
 ## Where the keys are
 
-In Microsoft Teams: the team **P000473SE-G1-DayKeeper**, its private channel **Internal Documents** (only Group 1 can open it), the post **"Deployment accounts and keys (KAN-75)"** by Junchun Zhang on 26 September 2026. It carries one attachment, `DayKeeper-deployment-keys-2026-09-26.zip`, which is also in the channel's Shared tab. Inside:
+In Microsoft Teams: the team **P000473SE-G1-DayKeeper**, its private channel **Internal Documents** (only Group 1 can open it), the **Shared** tab. There:
 
 | File | What it holds |
 |---|---|
-| `DayKeeper-deployment-keys.md` | The project mailbox and its password (Supabase and Netlify use the same one); the Supabase project ref, database password and full `DATABASE_URL`; the storage values `STORAGE_ENDPOINT`, `STORAGE_REGION`, `STORAGE_BUCKET`, `STORAGE_ACCESS_KEY`, `STORAGE_SECRET_KEY`; the Netlify team, project id and URLs; which deploy contexts hold `AZURE_OPENAI_API_KEY` |
+| `Shared accounts and keys.md` | One section per platform, one line per account, password or key: the project mailbox and its password (Supabase and Netlify use the same one); the Supabase database password and full `DATABASE_URL`; the storage values `STORAGE_ENDPOINT`, `STORAGE_REGION`, `STORAGE_BUCKET`, `STORAGE_ACCESS_KEY`, `STORAGE_SECRET_KEY`; the Netlify site id; what GitHub holds. Teams edits it in place, so a new platform is a new section in it |
 | `proton-recovery-phrase.pdf` | Recovers the project mailbox if its password is lost |
 | `supabase-prod-ca-2021.crt` | Supabase's root certificate for `DATABASE_CA_CERT`. Public, not a secret |
 
+That file is the only copy of the values. When a key changes on its platform, change it there, and in GitHub too if it is in the table below.
+
 Not in it: `AZURE_OPENAI_API_KEY`. That is the school's key, issued to the team by RACE and handed round separately; ask Jason for it.
 
-On GitHub, the CI/CD pipeline holds four values, copied from the zip by Jason (Settings of the repository; names only here):
+On GitHub, the CI/CD pipeline holds four values, copied from the keys file by Jason (Settings of the repository; names only here):
 
 | Where | Name | What it is |
 |---|---|---|
 | Repository secret | `NETLIFY_AUTH_TOKEN` | Lets the pipeline deploy to Netlify, for pull request previews and for main |
 | Repository variable | `NETLIFY_SITE_ID` | Which Netlify site |
 | Environment `staging`, secret | `DATABASE_URL` | The Supabase database, through the **session pooler** (port 5432) |
-| Environment `staging`, variable | `DATABASE_CA_CERT` | Supabase's root certificate, the same as in the zip |
+| Environment `staging`, variable | `DATABASE_CA_CERT` | Supabase's root certificate, the same as in Teams |
 | Environment `staging`, variables | `STORAGE_ENDPOINT`, `STORAGE_REGION`, `STORAGE_BUCKET` | The photograph bucket, for the Demo accounts button |
 | Environment `staging`, secrets | `STORAGE_ACCESS_KEY`, `STORAGE_SECRET_KEY` | The bucket's access key, for the Demo accounts button |
 
 The `staging` environment (Settings, Environments) opens only for a run on `main`: its deployment branch rule lists `main` alone. A pull request's run cannot read it, whatever that pull request's copy of the workflow says. That is why the database's address is there and not a repository secret: a run on a pull request happens before anyone has reviewed it. Set up by Jason on 2026-10-03 (KAN-86).
 
-**For agents.** You cannot open Teams. When a task needs one of the values above, name the variable and ask the person to copy it from that file into their own `.env.local` (or into the Netlify dashboard) themselves. Never write a value into the repository, a commit message, a pull request, a Jira ticket, a group chat or a log; the repository is public. If the zip and this file disagree, the platforms are the truth, then the zip, then this file, and the person should be told so this file gets fixed.
+**For agents.** You cannot open Teams. When a task needs one of the values above, name the variable and ask the person to copy it from that file into their own `.env.local` (or into the Netlify dashboard) themselves. Never write a value into the repository, a commit message, a pull request, a Jira ticket, a group chat or a log; the repository is public. If the keys file and this file disagree, the platforms are the truth, then the keys file, then this file, and the person should be told so this file gets fixed.
 
 ## For agents: this file is a snapshot, the platforms are the truth
 
@@ -325,7 +327,7 @@ Same page, **New access key**. The only field is a description, a label for reco
 - **Access key ID**, the shorter one, goes into `STORAGE_ACCESS_KEY`. It says who is asking.
 - **Secret access key**, the longer one, goes into `STORAGE_SECRET_KEY`. It proves it.
 
-The secret is shown once. Copy it into the keys document before pressing Done; if it is lost, delete the key and create a new one. The dialog warns that an S3 access key can do anything to every bucket and bypasses all policies, so it is as sensitive as the database password and belongs only in the keys document in Teams.
+The secret is shown once. Copy it into the keys file before pressing Done; if it is lost, delete the key and create a new one. The dialog warns that an S3 access key can do anything to every bucket and bypasses all policies, so it is as sensitive as the database password and belongs only in the keys file in Teams.
 
 ## Environment variables for the deployed app
 
