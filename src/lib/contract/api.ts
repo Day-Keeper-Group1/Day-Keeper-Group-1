@@ -8,7 +8,8 @@
  * name does not line up.
  *
  * Statuses keep the database's spellings, hyphens and all, so that a value read
- * out of Postgres is the value a component compares against. See db/schema.sql.
+ * out of Postgres is the value a component compares against. See
+ * src/server/db/schema/enums.ts.
  *
  * Wire formats: a date is 'YYYY-MM-DD', a time of day is 'HH:mm' on a 24-hour
  * clock, an instant is ISO 8601 with a zone. The rule and its helpers live in
@@ -17,10 +18,13 @@
 
 import type { ContractFieldKey } from "./fields";
 import { APP_TIME_ZONE, todayInZone } from "./dates";
+import type { DocumentStatus, TaskState, UserRole } from "./enums";
 
-/** Where a document is in its life. Mirrors document_status in db/schema.sql. */
-export type DocumentStatus =
-  "processing" | "needs-review" | "confirmed" | "failed" | "archived";
+/**
+ * Where a document is in its life. Mirrors document_status in
+ * src/server/db/schema/enums.ts.
+ */
+export type { DocumentStatus };
 
 /**
  * A task's state as the interface shows it.
@@ -248,6 +252,47 @@ export const MAX_PAGE_BYTES = 10 * 1024 * 1024;
  */
 export const TOO_MANY_PAGES_MESSAGE = `Please send one letter at a time, up to ${MAX_PAGES} photos.`;
 
+/**
+ * KAN-75: a letter whose photographs go straight into the bucket.
+ *
+ * The capture screen does not send the photographs to the app. A host that
+ * runs the app as functions refuses a request much over four megabytes, and a
+ * letter of a few phone photographs is more than that, so the bytes go from
+ * the phone to storage and the app only ever sees a few lines of JSON. Three
+ * steps (docs/api.md, "Ask to upload a letter"):
+ *
+ *   1. POST /api/documents/uploads with an UploadRequest, answered with
+ *      UploadSlots: a letter id and one upload link per page;
+ *   2. PUT each photograph to its link, with the content type it declared;
+ *   3. POST /api/documents with a StoredUploadRequest, answered with the
+ *      DocumentSummary an ordinary upload gets.
+ *
+ * The same limits hold as for a photograph sent through the app: MAX_PAGES,
+ * MAX_PAGE_BYTES, images only.
+ */
+export type UploadRequest = {
+  /** One entry per photograph, in page order. */
+  pages: Array<{ contentType: string; byteSize: number }>;
+};
+
+export type UploadSlots = {
+  /** The letter these photographs will become. Send it back in step 3. */
+  documentId: string;
+  pages: Array<{
+    pageNumber: number;
+    /** Where to PUT this page. Good for a few minutes. */
+    uploadUrl: string;
+    /** The Content-Type header the PUT must carry; the link is signed for it. */
+    contentType: string;
+  }>;
+};
+
+export type StoredUploadRequest = {
+  documentId: string;
+  /** The same content types as step 1, in the same order. */
+  pages: Array<{ contentType: string }>;
+};
+
 /*
  * There is deliberately no ConfirmDocumentRequest, and deliberately no endpoint
  * anywhere that corrects a reading.
@@ -356,6 +401,7 @@ export type ApiError = {
       | "not_found"
       | "invalid_request"
       | "conflict"
+      | "too_many_requests"
       | "server_error";
     message: string;
     /** Field-level problems, keyed by field name, for form errors. */
@@ -366,15 +412,15 @@ export type ApiError = {
 /**
  * The signed-in person.
  *
- * `role` mirrors user_role in db/schema.sql. The operator roles stay in the
- * schema and this release builds no surface for them; docs/scope.md says why
- * that absence is deliberate rather than an oversight.
+ * `role` mirrors user_role in src/server/db/schema/enums.ts. The operator
+ * roles stay in the schema and this release builds no surface for them;
+ * docs/scope.md says why that absence is deliberate rather than an oversight.
  */
 export type SessionUser = {
   id: string;
   email: string;
   displayName: string;
-  role: "user" | "platform_operator" | "org_admin" | "org_worker";
+  role: UserRole;
   /** IANA zone name, defaulted server-side. Her "today" is today here. */
   timeZone: string;
 };
@@ -422,7 +468,7 @@ export function taskTitle(parts: {
 }
 
 export function deriveTaskStatus(
-  state: "open" | "completed" | "dismissed",
+  state: TaskState,
   dueDate: string | null,
   now: Date = new Date(),
   timeZone: string = APP_TIME_ZONE,

@@ -61,6 +61,20 @@ export function deriveWorktreeNames(branch) {
   };
 }
 
+// KAN-92: `npm test` creates its own databases beside a checkout's database
+// (tests/db/support/databases.ts), and teardown has to find the ones a
+// worktree left behind. A worktree's own database name can already be 63
+// bytes, PostgreSQL's limit, so a test database's name is never built by
+// appending to it: it starts with a hash of it instead.
+
+/**
+ * What every test database of the checkout whose own database is `dbName` starts with. Always 17 bytes.
+ * @param {string} dbName
+ */
+export function testDatabasePrefix(dbName) {
+  return `dk_test_${createHash("sha1").update(dbName).digest("hex").slice(0, 8)}_`;
+}
+
 // `node scripts/lib/worktree-naming.mjs [branch]` prints the derived names.
 // No branch argument: reads the current one, so nobody fights shell
 // substitution syntax. pathToFileURL is required on Windows, where

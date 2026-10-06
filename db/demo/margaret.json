@@ -1,0 +1,38 @@
+{
+  "about": "Margaret's letters for this week's demonstration. `npm run db:seed` plants them, and so does the Refresh Margaret button (the Demo accounts workflow on GitHub), with every date counted from the day it runs. One entry per letter: `folder` is a letter under data/synthetic-letters, `documentType` is the words the reader would answer, and then either `dueInDays` with `uploadedDaysAgo` (a letter still to deal with) or `completedDaysAgo` (one already ticked off). `note` is for people and is not read. Changing this file needs Jason's review (.github/CODEOWNERS).",
+  "letters": [
+    {
+      "folder": "23-home-insurance-renewal",
+      "documentType": "Insurance renewal",
+      "dueInDays": 7,
+      "uploadedDaysAgo": 2,
+      "note": "Reminders fall 7, 3 and 1 days before a due date. Due in 7, so its 7 day reminder is today."
+    },
+    {
+      "folder": "03-water-bill",
+      "documentType": "Utility bill",
+      "dueInDays": 3,
+      "uploadedDaysAgo": 6,
+      "note": "Due in 3, so its 3 day reminder is today."
+    },
+    {
+      "folder": "06-parking-infringement-notice",
+      "documentType": "Fine notice",
+      "dueInDays": 1,
+      "uploadedDaysAgo": 8,
+      "note": "Due tomorrow, so its last reminder is today. With the two above, all three rungs are on Home at once. Three issuers that a live demonstration is unlikely to photograph, so an upload never lands beside its twin."
+    },
+    {
+      "folder": "17-vehicle-registration-renewal-notice",
+      "documentType": "Government letter",
+      "completedDaysAgo": 1,
+      "note": "Ticked off yesterday: background, so the account looks lived in. It keeps the date printed on its page."
+    },
+    {
+      "folder": "04-council-rates-notice",
+      "documentType": "Council notice",
+      "completedDaysAgo": 1,
+      "note": "Ticked off yesterday, like the one above."
+    }
+  ]
+}

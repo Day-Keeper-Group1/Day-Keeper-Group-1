@@ -12,8 +12,22 @@ import {
   TOO_MANY_PAGES_MESSAGE,
   type ApiError,
   type DocumentSummary,
+  type StoredUploadRequest,
+  type UploadRequest,
+  type UploadSlots,
 } from "@/lib/contract/api";
 import { isPdf, pdfToPages, PdfTooLong } from "@/lib/pdf-pages";
+import { shrinkPhoto } from "@/lib/photos";
+
+/**
+ * How long a letter may take to send before she is told it did not go. Two
+ * minutes, because a slow mobile connection with several pages is slow but
+ * not broken, and anything still going after that is not coming back.
+ */
+const SEND_TIMEOUT_MS = 2 * 60 * 1000;
+
+/** What she is told when a step fails without a sentence of its own. */
+const NOT_SAVED = "We could not save these photos just now. Please try again.";
 
 type Photo = {
   id: string;
@@ -142,37 +156,79 @@ export default function UploadDocumentPage() {
     });
   }
 
+  /** Show an endpoint's refusal in the sentences it was written in. */
+  async function showRefusal(response: Response) {
+    const body = (await response.json().catch(() => null)) as ApiError | null;
+    setError({
+      message: body?.error?.message ?? NOT_SAVED,
+      pages: body?.error?.fields?.pages,
+    });
+  }
+
   async function handleSubmit() {
     if (photos.length === 0 || submitting) return;
     setSubmitting(true);
     setError(null);
 
-    // Every photograph goes under the same field name, in the order it was
-    // taken, because one upload is one letter and the order they arrive is the
-    // page order (docs/api.md). The Content-Type header is left alone on
-    // purpose: the browser has to write it itself so that it carries the
-    // multipart boundary.
-    const form = new FormData();
-    for (const photo of photos) form.append("pages", photo.file);
-
     try {
-      const response = await fetch("/api/documents", {
-        method: "POST",
-        body: form,
-      });
+      // A photograph over the line is redrawn smaller first; src/lib/photos.ts
+      // says where the line is and why. One at a time, so a phone holds one
+      // decoded page in memory rather than all of them.
+      const files: File[] = [];
+      for (const photo of photos) files.push(await shrinkPhoto(photo.file));
 
-      if (!response.ok) {
-        const body = (await response
-          .json()
-          .catch(() => null)) as ApiError | null;
-        setError({
-          message:
-            body?.error?.message ??
-            "We could not save these photos just now. Please try again.",
-          pages: body?.error?.fields?.pages,
-        });
+      // KAN-75: the photographs go from here straight into the bucket, and
+      // the app is only told about them, in three steps (docs/api.md, "Ask to
+      // upload a letter"). The host the app runs on refuses a request much
+      // over four megabytes, and a bucket does not. Every step has a time
+      // limit, because a request dropped without an answer would otherwise
+      // leave the button on "Sending..." for as long as she is willing to
+      // watch it.
+      const signal = AbortSignal.timeout(SEND_TIMEOUT_MS);
+
+      // 1. Say what is coming, in page order, and get a link for each page.
+      const asked = await fetch("/api/documents/uploads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          pages: files.map((file) => ({
+            contentType: file.type,
+            byteSize: file.size,
+          })),
+        } satisfies UploadRequest),
+        signal,
+      });
+      if (!asked.ok) return showRefusal(asked);
+      const slots = (await asked.json()) as UploadSlots;
+
+      // 2. Put each photograph where its link says. The Content-Type must be
+      // the one the link was signed for, or the bucket refuses it.
+      const puts = await Promise.all(
+        slots.pages.map((slot, index) =>
+          fetch(slot.uploadUrl, {
+            method: "PUT",
+            headers: { "Content-Type": slot.contentType },
+            body: files[index],
+            signal,
+          }),
+        ),
+      );
+      if (puts.some((put) => !put.ok)) {
+        setError({ message: NOT_SAVED });
         return;
       }
+
+      // 3. Tell the app they are there. It answers with the letter.
+      const response = await fetch("/api/documents", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          documentId: slots.documentId,
+          pages: slots.pages.map((slot) => ({ contentType: slot.contentType })),
+        } satisfies StoredUploadRequest),
+        signal,
+      });
+      if (!response.ok) return showRefusal(response);
 
       // The letter exists now and sits at 'processing' while the reading
       // runs. She stays here, as in the prototype: the camera clears for the
@@ -189,9 +245,12 @@ export default function UploadDocumentPage() {
       // for again at once so the app starts watching it being read.
       setSent((prev) => [...prev, letter]);
       void refresh();
-    } catch {
+    } catch (caught) {
       setError({
-        message: "We could not reach the server. Please check your connection.",
+        message:
+          caught instanceof DOMException && caught.name === "TimeoutError"
+            ? "Sending took too long. Please check your connection and try again."
+            : "We could not reach the server. Please check your connection.",
       });
     } finally {
       setSubmitting(false);

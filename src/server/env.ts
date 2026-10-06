@@ -29,7 +29,7 @@ const envSchema = z.object({
    * MinIO in docker-compose.yml; deployed it is whatever bucket the host
    * provides. The protocol is the same either way, which is the whole point of
    * choosing one now rather than writing to the server's disk and rewriting it
-   * later. See db/schema.sql.
+   * later. See src/server/db/schema/index.ts.
    */
   STORAGE_ENDPOINT: z
     .string()
@@ -102,10 +102,12 @@ const envSchema = z.object({
   AZURE_OPENAI_API_KEY: z.string().optional(),
 
   /**
-   * How long a signed-in session lasts. Long, because asking someone with a
-   * failing memory to sign in repeatedly is a way of losing them.
+   * KAN-91: how many times the school's key may be used per day, across every
+   * account and every module, counted from midnight in Melbourne. The deployed
+   * site sets it; a laptop leaves it unset and has no ceiling. The door it
+   * closes is src/server/ai/school-key.ts.
    */
-  SESSION_TTL_DAYS: z.coerce.number().int().positive().default(30),
+  AI_DAILY_CALL_LIMIT: z.coerce.number().int().positive().optional(),
 
   NODE_ENV: z
     .enum(["development", "test", "production"])

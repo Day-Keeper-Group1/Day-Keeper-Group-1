@@ -31,8 +31,9 @@
  * credentials in the browser bundle.
  *
  * One controlled exception: `scripts/storage-reset.ts` speaks to storage
- * without going through here, the same way `db/reset.ts` bypasses `db.ts`. A
- * script that runs outside Next cannot import a `server-only` module.
+ * without going through here, the same way `db/reset.ts` bypasses
+ * `src/server/db/index.ts`. A script that runs outside Next cannot import a
+ * `server-only` module.
  */
 
 import "server-only";
@@ -61,6 +62,12 @@ function clientFor(endpoint: string): S3Client {
     endpoint,
     region: env().STORAGE_REGION,
     forcePathStyle: true,
+    // Left to itself the SDK signs a checksum of the body into every upload
+    // link, and at signing time the body is empty, so the link carries the
+    // checksum of nothing. Supabase and MinIO both ignore it; a bucket that
+    // checked it would refuse every photograph. Checksums are still sent where the
+    // protocol requires one, such as deleting several objects at once.
+    requestChecksumCalculation: "WHEN_REQUIRED",
     credentials: {
       accessKeyId: env().STORAGE_ACCESS_KEY,
       secretAccessKey: env().STORAGE_SECRET_KEY,

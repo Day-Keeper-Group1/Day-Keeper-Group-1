@@ -32,7 +32,7 @@ reasoning attached. This document names them and does not repeat them:
 | dates, times, and whose day it is | `src/lib/contract/dates.ts` |
 | the reminder ladder, and what a reminder is | `src/lib/contract/reminders.ts` |
 | sessions, passwords, and who is asking | `src/server/auth/` |
-| the tables, and why each column exists | `db/schema.sql` |
+| the tables, and why each column exists | `src/server/db/schema/` |
 
 ## How to read an entry
 
@@ -89,6 +89,7 @@ person as-is:
 | `not_found` | 404 | no such thing, **or it belongs to someone else** |
 | `invalid_request` | 400 | the request was malformed; `fields` says where |
 | `conflict` | 409 | the thing is not in a state where this makes sense |
+| `too_many_requests` | 429 | the day's reading is used up; tomorrow it works again (KAN-91) |
 | `server_error` | 500 | our fault |
 
 A letter belonging to another person answers `404`, never `403`. A `403` would
@@ -112,6 +113,7 @@ confirm that a letter with that id exists.
 | Tick a task off | `POST /api/tasks/:id/complete` |
 | Undo that | `DELETE /api/tasks/:id/complete` |
 | Everything the home screen needs | `GET /api/home` |
+| Is the site up | `GET /api/health` |
 
 There is no calendar endpoint, on purpose. See "The calendar".
 
@@ -215,9 +217,9 @@ and towards a note beside the computer, which for this reader is the worse
 outcome. A long plain phrase is what we want and what the rule allows.
 
 **The timezone is not asked for.** `users.timezone` defaults to
-`Australia/Melbourne` in `db/schema.sql`, and registration lets the default
-stand. It is a value she cannot be expected to know she has, and a settings
-screen can expose it later.
+`Australia/Melbourne` in `src/server/db/schema/users.ts`, and registration
+lets the default stand. It is a value she cannot be expected to know she has,
+and a settings screen can expose it later.
 
 **Uniqueness is the index's answer, not a query's.** The insert runs and a
 `23505` becomes the `409` above. Asking first and inserting second reads more
@@ -299,7 +301,7 @@ comparison that keeps the timing equal is in `src/server/auth/password.ts`.
 
 ## Sign out
 
-Ends the session everywhere, not just in this browser.
+Ends the session of this browser. The person's other devices stay signed in.
 
 **URL** : `/api/auth/logout`
 
@@ -319,8 +321,9 @@ Ends the session everywhere, not just in this browser.
 
 ### Notes
 
-Deletes the session row rather than only clearing the cookie, which is what
-makes it true everywhere.
+Deletes the session row rather than only clearing the cookie, so a copy of the
+cookie kept anywhere opens nothing. Each browser a person signs in on has its
+own session, and this ends only the one that asked.
 
 ## Who is signed in
 
@@ -355,6 +358,95 @@ that has not happened.
 ---
 
 # Letters
+
+## Ask to upload a letter
+
+Names a letter and hands out one upload link per page, so the photographs can
+go from the phone straight into storage. (KAN-75)
+
+**URL** : `/api/documents/uploads`
+
+**Method** : `POST`
+
+**Auth required** : YES
+
+**Why it exists.** A host that runs this app as functions refuses a request
+much over 4 MB (Netlify, where the trial deployment runs, and Vercel alike), and
+a letter of a few phone photographs is more than that. So the capture screen
+does not send the photographs to the app. It sends them to the bucket, which
+has no such limit, and tells the app afterwards. Three requests:
+
+1. `POST /api/documents/uploads` with what is about to be sent;
+2. `PUT` each photograph to its link, with the `Content-Type` the link was
+   signed for;
+3. [`POST /api/documents`](#upload-a-letter) with the letter's id, as JSON.
+
+**Data constraints**
+
+```json
+{ "pages": [{ "contentType": "image/jpeg", "byteSize": 842251 }] }
+```
+
+One entry per photograph, in page order. The same rules as an upload through the
+app: at least one, at most `MAX_PAGES`, images only, each within
+`MAX_PAGE_BYTES`. The sizes are checked again in step 3 against what actually
+landed, because what a browser says it will send is not a promise.
+
+### Success Response
+
+**Code** : `200 OK`
+
+```json
+{
+  "documentId": "3a9f1e77-4c02-4f1a-9b3e-5d2c8a11f004",
+  "pages": [
+    {
+      "pageNumber": 1,
+      "uploadUrl": "https://…/daykeeper/uploads/…/1.jpg?X-Amz-Signature=…",
+      "contentType": "image/jpeg"
+    }
+  ]
+}
+```
+
+Each link is good for five minutes (`UPLOAD_URL_TTL_SECONDS` in
+`src/server/storage.ts`) and lets its holder write exactly one object: the key
+is derived from the signed-in person, the letter id and the page number, never
+taken from the request.
+
+### Error Responses
+
+The same `400` bodies as [Upload a letter](#upload-a-letter) for a letter that
+breaks a rule, and `401` when nobody is signed in.
+
+**Condition** : The day's reading is used up (KAN-91). The site as a whole may
+use the school's key `AI_DAILY_CALL_LIMIT` times a day, counted from midnight in
+Melbourne; once it has, no letter is read until tomorrow. Nothing is sent and
+nothing is written. [Upload a letter](#upload-a-letter) answers the same way.
+**Code** : `429 TOO MANY REQUESTS`
+
+**Content example**
+
+```json
+{
+  "error": {
+    "code": "too_many_requests",
+    "message": "Reading letters is paused for today and starts again tomorrow. Your letters are safe; please come back then."
+  }
+}
+```
+
+### Notes
+
+**Nothing is written here.** The id names objects that do not exist yet. The
+letter becomes a row in step 3. A capture screen that asks and never finishes
+leaves nothing, or leaves photographs no row points at; nothing sweeps those
+yet, the same as a failed clean-up after an ordinary upload.
+
+**The bucket has to accept a PUT from the page's origin.** Supabase Storage
+allows any origin, and so does the MinIO in `docker-compose.yml` out of the
+box; both were checked with a real signed PUT on 26 September 2026. A bucket
+set up elsewhere needs a CORS rule allowing `PUT` with a `Content-Type` header.
 
 ## Upload a letter
 
@@ -429,6 +521,28 @@ file that is not an image. The upload is all-or-nothing.
 }
 ```
 
+**The other body: photographs already in the bucket.** With
+`Content-Type: application/json` the body names photographs that the capture
+screen has already put in storage, through the links from
+[Ask to upload a letter](#ask-to-upload-a-letter):
+
+```json
+{
+  "documentId": "3a9f1e77-4c02-4f1a-9b3e-5d2c8a11f004",
+  "pages": [{ "contentType": "image/jpeg" }, { "contentType": "image/jpeg" }]
+}
+```
+
+The server derives each key again from the signed-in person and the id, so a
+request can only ever point at its own sender's photographs. It reads the first
+twelve bytes of each object, and refuses the letter with `400` if a page is
+missing (`"Page 2 is missing."`), empty, over `MAX_PAGE_BYTES`, or not the kind
+of image it was declared as, or if the id already has a letter (`"These photos
+have already been sent."`). A refused letter's photographs are removed from the
+bucket, except in that last case, where they belong to the letter already sent.
+The answer on success is the same `201` as above; the whole photographs are
+fetched for the reader after it has gone.
+
 ### Notes
 
 **The response carries no reading, because at the moment the files are stored
@@ -460,14 +574,15 @@ the Home tab and the message that says a letter is ready all read it.
 | The reader is not configured, or a page reached it without its bytes | Not tried again; the letter fails at once | `failed` | the red row with the failure sentence |
 | The two luna readings agree on every field | That is the reading | `needs-review` | "ready to check" |
 | They differ, and the terra reading matches one of them | The matched reading is taken | `needs-review` | "ready to check" |
-| They differ, and the terra reading matches neither | The letter is read again from the start, up to five rounds | `processing` | "reading…" |
+| They differ, and the terra reading matches neither | The next round is queued, and the next `GET /api/home` poll reads it: the letter is read again from the start, up to five rounds | `processing` | "reading…" |
+| The host stops the request reading a round (KAN-75: Netlify stops a request at 30 seconds, background work included) | Two minutes after the round started, the next poll closes it as a round that decided nothing (`RoundTimedOut`) and queues the next one, or fails the letter if it was the fifth | `processing` | "reading…" |
 | The fifth round still matches neither | The letter fails | `failed` | the red row with the failure sentence |
 | The decided reading's due date or amount is not `confirmed` | The letter fails; a date or amount left empty would read as "no date" or "nothing to pay" (`src/lib/contract/extraction.ts`) | `failed` | the red row with the failure sentence |
 | The decided reading has another field not `confirmed` | That field is stored and not shown; the rest of the reading stands | `needs-review` | "ready to check", without that row |
 | The reading is decided but the database will not store it | Not tried again; the letter fails | `failed` | the red row with the failure sentence |
 | The reading could not even be started in the database | Nothing is read; the letter fails | `failed` | the red row with the failure sentence |
 
-The failure sentence is `FAILURE_MESSAGE` in `src/lib/contract/api.ts`, the same for every row: the person is not told which of these happened, because none of them is something she can do anything about. A failed letter stays failed. Repair is out of scope, so there is no retry endpoint and no retake endpoint. `readDocument()` in `src/server/uploads.ts` has the rules.
+The failure sentence is `FAILURE_MESSAGE` in `src/lib/contract/api.ts`, the same for every row: the person is not told which of these happened, because none of them is something she can do anything about. A failed letter stays failed. Repair is out of scope, so there is no retry endpoint and no retake endpoint. `readDocument()` in `src/server/uploads/reading.ts` has the rules.
 
 ## List letters
 
@@ -1062,6 +1177,49 @@ is still being read, and both sit in `inbox`.
 
 ---
 
+# Deployment
+
+## Is the site up
+
+```
+GET /api/health
+```
+
+Whether the site can reach its database. No session, no body.
+
+The CD pipeline calls it right after every deploy (`.github/workflows/ci-cd.yml`,
+KAN-86): a site that is up but cannot reach its database fails every page, so
+that is what this asks about. It runs `select 1` and reads nothing of anybody's.
+
+### Success Response
+
+**Code:** `200 OK`
+
+```json
+{ "status": "ok" }
+```
+
+### Error Responses
+
+**Code:** `503 Service Unavailable`
+
+```json
+{ "status": "database_unreachable" }
+```
+
+### Notes
+
+- It answers outside the shared error envelope on purpose. Nothing went wrong
+  in the request: the site is up and its database is not, which is what 503
+  says, and no screen ever reads this answer.
+- Why the database did not answer goes to the site's log
+  (`[health] the database did not answer`), never into the answer: a driver
+  error names a host and a user, and this address is public.
+- On the free Supabase plan, a project with no activity for seven days is
+  paused. That is the usual reason for a 503 on a quiet week.
+
+---
+
 # The calendar
 
 **There is no calendar endpoint, on purpose.**
@@ -1105,15 +1263,21 @@ down.
 Not oversights. Each needs a decision nobody has made yet, and guessing now
 would mean building the wrong thing twice.
 
-- **the extraction runner.** Upload answers before the reading happens, and
-  *something* has to perform it: in-process after responding, a sweep over the
-  waiting extraction runs, or a real queue. The schema supports all three;
-  nobody has chosen
-- **what the capture screen does at the limits.** A current phone camera clears
-  `MAX_PAGE_BYTES` per frame routinely. Whether the client downscales to fit or
-  refuses the photograph, and what the screen says at the last page, is
-  undecided. Refusing silently loses a photograph the person deliberately took,
-  which is the failure the limits are exported to prevent
+- **a real queue for readings.** The runner is decided for now (KAN-75): a
+  reading runs one round per request. The upload reads the first round after
+  it has answered; a round that decides nothing queues the next, and
+  `GET /api/home`, which the screen polls every five seconds while anything is
+  being read, reads it after answering (`continueReadings` in
+  `src/server/uploads/reading.ts`). The reason is the host: Netlify stops a
+  request at 30 seconds, background work included, and a round takes 10 to 25.
+  Still open is anything that reads a letter nobody is watching: a letter whose
+  person closes the app mid-reading waits, queued, until they open it again
+- **what the capture screen says at the last page.** The size half is
+  decided (KAN-75): the capture screen redraws any photograph over 1 MB so its
+  long side is 3508 pixels, the size of the pages the reader was measured on,
+  and sends one at or under 1 MB untouched. `src/lib/photos.ts` has the rule
+  and the reasons. A host that runs this app as functions refuses a request
+  much over 4 MB, which is why the line sits well under `MAX_PAGE_BYTES`
 - **rate limiting on sign-in**, before anything is public
 
 ## Development only: try the reader

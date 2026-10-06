@@ -14,6 +14,8 @@ __pycache__/
 
 # node
 node_modules/
+# main's files, unpacked while `npm run db:rehearse` runs, removed when it ends
+.rehearse/
 dist/
 .next/
 out/
@@ -43,3 +45,6 @@ output/
 
 # Local uploads and build output
 .storage/
+
+# Local Netlify folder
+.netlify

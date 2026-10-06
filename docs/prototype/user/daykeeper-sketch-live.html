@@ -889,7 +889,7 @@
   /* Overdue is not stored. It is worked out here while drawing, from the tick
      and today's date, so nothing has to notice midnight and nothing can forget
      to un-write it when she unticks. The tick is the one thing the row keeps;
-     the column is in db/schema.sql. */
+     the column is in src/server/db/schema/tasks.ts. */
   function isLate(t) {
     return !t.done && t.due !== null && t.due < TODAY;
   }

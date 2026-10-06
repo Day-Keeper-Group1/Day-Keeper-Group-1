@@ -41,7 +41,7 @@ or `.env.local` was never created. `docs/start-here.md` has the full list.
 Two more things worth doing once:
 
 ```bash
-npm test                  # about half a second, should be all green
+npm test                  # every test, about twenty seconds; the database tests need Docker running
 ```
 
 and open [`docs/prototype/user/daykeeper-sketch-live.html`](docs/prototype/user/daykeeper-sketch-live.html)

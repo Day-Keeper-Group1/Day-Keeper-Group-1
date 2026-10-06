@@ -151,9 +151,9 @@ export class MockExtractionProvider implements DocumentExtractionProvider {
     // write, so the mock has to produce one often enough to build against.
     //
     // The same document fails every time, so it fails every attempt the
-    // reading is given (src/server/uploads.ts) and then shows as failed, one
-    // run row per attempt. A mock that relented on a later try would never
-    // show the failed state at all.
+    // reading is given (src/server/uploads/reading.ts) and then shows as
+    // failed, one run row per attempt. A mock that relented on a later try
+    // would never show the failed state at all.
     if (hashUnit(`${seed}:fails`) < 0.125) {
       throw new ExtractionFailure(
         "mock provider: simulated failed reading, one document in eight",

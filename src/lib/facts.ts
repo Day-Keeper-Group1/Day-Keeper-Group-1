@@ -1,11 +1,8 @@
 // KAN-58: the rows "What it says" draws, shared by the letter, the review and the calendar's day sheet.
 
 import type { ExtractedFieldView, IdentifierView } from "@/lib/contract/api";
-import { formatDueTime } from "@/lib/contract/dates";
+import { formatDueTime, isWallClock } from "@/lib/contract/dates";
 import { NOT_APPLICABLE, NO_PAYMENT_REQUIRED } from "@/lib/contract/fields";
-
-/** A time of day the way the reading stores one, 'HH:mm'. */
-const HH_MM = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 /** The label of an appointment's date and time, shown as one row. */
 export const WHEN_LABEL = "When";
@@ -58,10 +55,10 @@ export function factLines(
   // KAN-59: an appointment happens at a time on a day, so the two are one row,
   // "When", the way the prototype writes it. A time with no date to hang on
   // is not shown at all, the same rule that keeps it off the document row
-  // (columnsFromReading in src/server/uploads.ts).
+  // (columnsFromReading in src/server/uploads/reading-columns.ts).
   const date = shown.find((field) => field.key === "due_date");
   const time = shown.find(
-    (field) => field.key === "due_time" && HH_MM.test(field.value as string),
+    (field) => field.key === "due_time" && isWallClock(field.value as string),
   );
 
   const lines: FactLine[] = shown
