@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FileAudio, MessageSquareText, Quote } from "lucide-react";
 import { Panel, ScreenHeader } from "@/components/screen";
 import { Button } from "@/components/ui/button";
@@ -33,6 +33,11 @@ type Scenario = {
 };
 
 export function ConversationScreen({ scenarios }: { scenarios: Scenario[] }) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedAudio, setSelectedAudio] = useState<{
+    file: File;
+    url: string;
+  } | null>(null);
   const [scenarioId, setScenarioId] = useState(scenarios[0].id);
   const { transcript, extraction } =
     scenarios.find((item) => item.id === scenarioId) ?? scenarios[0];
@@ -41,6 +46,23 @@ export function ConversationScreen({ scenarios }: { scenarios: Scenario[] }) {
   const selected = extraction.commitments.find(
     (item) => item.id === selectedId,
   );
+
+  useEffect(() => {
+    if (!selectedAudio) return;
+    return () => URL.revokeObjectURL(selectedAudio.url);
+  }, [selectedAudio]);
+
+  function chooseAudio(file: File | undefined) {
+    if (!file) return;
+    setSelectedAudio({ file, url: URL.createObjectURL(file) });
+    // Allow selecting the same file again after removing or replacing it.
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
+  function removeAudio() {
+    setSelectedAudio(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
 
   return (
     <div>
@@ -60,18 +82,49 @@ export function ConversationScreen({ scenarios }: { scenarios: Scenario[] }) {
           <FileAudio className="mb-3 size-8 text-primary" aria-hidden="true" />
           <p className="text-row font-bold">Add a conversation recording</p>
           <p className="mt-1 text-caption text-ink-dim">
-            Planned formats: MP3, M4A, WAV or WebM. Up to 50 MiB and 30 minutes.
+            Choose an MP3, M4A, WAV or WebM file to play on this device.
           </p>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".mp3,.m4a,.wav,.webm,audio/mpeg,audio/mp4,audio/wav,audio/webm"
+            aria-label="Choose a conversation recording"
+            className="sr-only"
+            onChange={(event) => chooseAudio(event.target.files?.[0])}
+          />
           <Button
-            disabled
+            type="button"
             className="mt-4"
-            aria-describedby="audio-placeholder-note"
+            onClick={() => fileInputRef.current?.click()}
           >
-            Choose audio file
+            {selectedAudio ? "Replace audio file" : "Choose audio file"}
           </Button>
-          <p id="audio-placeholder-note" className="mt-3 text-sub text-ink-dim">
-            Audio upload is not available yet. Use an example conversation below
-            to try the demo.
+          {selectedAudio && (
+            <div className="mt-5 w-full max-w-xl text-left">
+              <p className="text-row font-bold break-all">
+                {selectedAudio.file.name}
+              </p>
+              <audio
+                key={selectedAudio.url}
+                controls
+                preload="metadata"
+                src={selectedAudio.url}
+                className="mt-3 w-full"
+                aria-label={`Play ${selectedAudio.file.name}`}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                className="mt-3"
+                onClick={removeAudio}
+              >
+                Remove audio
+              </Button>
+            </div>
+          )}
+          <p className="mt-3 text-sub text-ink-dim">
+            Playback stays on this device. The transcript below is a separate
+            prepared example.
           </p>
         </div>
       </Panel>
