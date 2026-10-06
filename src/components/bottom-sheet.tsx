@@ -25,11 +25,13 @@ export function BottomSheet({
   onClose,
   heading,
   children,
+  size = "default",
 }: {
   open: boolean;
   onClose: () => void;
   heading: string;
   children: React.ReactNode;
+  size?: "default" | "wide";
 }) {
   return (
     <Sheet
@@ -41,7 +43,7 @@ export function BottomSheet({
       <SheetContent
         side="bottom"
         showCloseButton={false}
-        className="max-h-[76vh] gap-0 overflow-y-auto rounded-t-[14px] bg-card px-[18px] pt-[18px] pb-6 md:mx-auto md:max-w-2xl"
+        className={`max-h-[76vh] gap-0 overflow-y-auto rounded-t-[14px] bg-card px-[18px] pt-[18px] pb-6 md:mx-auto ${size === "wide" ? "md:max-w-5xl" : "md:max-w-2xl"}`}
       >
         {/* `.dd-day`: 13px, semibold, dim. */}
         <SheetHeader className="p-0">

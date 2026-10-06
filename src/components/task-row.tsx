@@ -4,10 +4,84 @@
 
 import Link from "next/link";
 import { Bell, Check } from "lucide-react";
+import { useEffect, useState } from "react";
 
 import type { TaskSummary } from "@/lib/contract/api";
 import { formatDueDate, formatDueTime } from "@/lib/contract/dates";
+import {
+  matchingSenderRuleForIssuer,
+  parseStoredSenderRules,
+  SENDER_RULES_STORAGE_KEY,
+  SENDER_RULES_UPDATED_EVENT,
+} from "@/lib/sender-rules";
 import { cn } from "@/lib/utils";
+
+type SenderRuleMatch =
+  | { status: "loading" }
+  | { status: "none"; issuer: string }
+  | { status: "unavailable"; issuer: string }
+  | { status: "matched"; issuer: string; ruleId: string };
+
+function SenderRuleMatchLink({ issuer }: { issuer: string | null }) {
+  const [match, setMatch] = useState<SenderRuleMatch>({ status: "loading" });
+
+  useEffect(() => {
+    if (!issuer) return;
+    const taskIssuer = issuer;
+
+    function refreshMatch() {
+      try {
+        const rules = parseStoredSenderRules(
+          window.localStorage.getItem(SENDER_RULES_STORAGE_KEY),
+        );
+        const rule = matchingSenderRuleForIssuer(taskIssuer, rules);
+        setMatch(
+          rule
+            ? { status: "matched", issuer: taskIssuer, ruleId: rule.id }
+            : { status: "none", issuer: taskIssuer },
+        );
+      } catch {
+        setMatch({ status: "unavailable", issuer: taskIssuer });
+      }
+    }
+
+    function onStorage(event: StorageEvent) {
+      if (event.key === SENDER_RULES_STORAGE_KEY || event.key === null) {
+        refreshMatch();
+      }
+    }
+
+    refreshMatch();
+    window.addEventListener("storage", onStorage);
+    window.addEventListener(SENDER_RULES_UPDATED_EVENT, refreshMatch);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener(SENDER_RULES_UPDATED_EVENT, refreshMatch);
+    };
+  }, [issuer]);
+
+  if (!issuer || match.status === "loading" || match.issuer !== issuer) {
+    return null;
+  }
+  if (match.status === "matched") {
+    return (
+      <Link
+        href={`/customization/sender-rules?editRule=${encodeURIComponent(match.ruleId)}`}
+        className="mt-1 block text-caption font-semibold text-primary underline underline-offset-2"
+      >
+        Matching sender rule. Change rule.
+      </Link>
+    );
+  }
+  if (match.status === "unavailable") {
+    return (
+      <span role="status" className="mt-1 block text-caption text-danger">
+        Sender rule match could not be checked in this browser.
+      </span>
+    );
+  }
+  return null;
+}
 
 /**
  * The first line of a row: what to do, without who asked.
@@ -138,19 +212,19 @@ export function TaskRow({
   );
 
   const opened = href ? (
-    <Link href={href} className="flex min-w-0 flex-1 items-center">
+    <Link href={href} className="flex min-w-0 items-center">
       {text}
     </Link>
   ) : onOpen ? (
     <button
       type="button"
       onClick={onOpen}
-      className="flex min-w-0 flex-1 items-center text-left"
+      className="flex min-w-0 items-center text-left"
     >
       {text}
     </button>
   ) : (
-    <span className="flex min-w-0 flex-1 items-center">{text}</span>
+    <span className="flex min-w-0 items-center">{text}</span>
   );
 
   // The prototype's `.row`: 12px above and below, 12px between the tick and
@@ -196,7 +270,10 @@ export function TaskRow({
         </span>
       </button>
 
-      {opened}
+      <span className="block min-w-0 flex-1">
+        {opened}
+        <SenderRuleMatchLink issuer={task.issuer} />
+      </span>
     </div>
   );
 }

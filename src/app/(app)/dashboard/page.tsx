@@ -2,7 +2,7 @@
 
 import { todayInZone } from "@/lib/contract/dates";
 import { requireUser } from "@/server/auth/session";
-import { getHome } from "@/server/documents";
+import { getHome, listDocuments } from "@/server/documents";
 
 import { HomeScreen } from "./home-screen";
 
@@ -22,10 +22,12 @@ import { HomeScreen } from "./home-screen";
 export default async function DashboardPage() {
   const user = await requireUser();
   const payload = await getHome(user.id, user.timeZone);
+  const recentDocuments = await listDocuments(user.id, user.timeZone);
 
   return (
     <HomeScreen
       initial={payload}
+      recentDocuments={recentDocuments.slice(0, 3)}
       user={user}
       today={todayInZone(user.timeZone)}
     />

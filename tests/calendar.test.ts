@@ -9,7 +9,13 @@
 
 import { describe, expect, it } from "vitest";
 import type { ReminderView, TaskSummary } from "@/lib/contract/api";
-import { monthCells, tasksByDueDay, tasksForMonth } from "@/lib/calendar";
+import {
+  monthCells,
+  tasksByDueDay,
+  tasksForMonth,
+  tasksForWeek,
+  weekCells,
+} from "@/lib/calendar";
 
 function reminder(localDate: string): ReminderView {
   return { id: `rem_${localDate}`, localDate };
@@ -36,11 +42,43 @@ describe("monthCells", () => {
     expect(august[5]).toBe("2026-08-01");
   });
 
+  it("starts a month grid on Sunday when configured", () => {
+    const august = monthCells(2026, 8, "sunday");
+    expect(august[6]).toBe("2026-08-01");
+    expect(august.slice(37)).toEqual([null, null, null, null, null]);
+  });
+
   it("gives all 31 days of August, in order", () => {
     const days = august.filter((cell): cell is string => cell !== null);
     expect(days).toHaveLength(31);
     expect(days[0]).toBe("2026-08-01");
     expect(days[30]).toBe("2026-08-31");
+  });
+
+  describe("weekCells", () => {
+    it("returns the Monday-to-Sunday week containing the given day", () => {
+      expect(weekCells("2026-10-07")).toEqual([
+        "2026-10-05",
+        "2026-10-06",
+        "2026-10-07",
+        "2026-10-08",
+        "2026-10-09",
+        "2026-10-10",
+        "2026-10-11",
+      ]);
+    });
+
+    it("returns the Sunday-to-Saturday week when configured", () => {
+      expect(weekCells("2026-10-07", "sunday")).toEqual([
+        "2026-10-04",
+        "2026-10-05",
+        "2026-10-06",
+        "2026-10-07",
+        "2026-10-08",
+        "2026-10-09",
+        "2026-10-10",
+      ]);
+    });
   });
 
   it("fills the last row of August, six trailing nulls for six whole weeks", () => {
@@ -109,6 +147,24 @@ describe("tasksForMonth", () => {
       "sep-2",
       "sep-done",
     ]);
+  });
+
+  describe("tasksForWeek", () => {
+    const all = [
+      task({ id: "overdue", dueDate: "2026-08-25", status: "overdue" }),
+      task({ id: "before", dueDate: "2026-10-04" }),
+      task({ id: "first", dueDate: "2026-10-05" }),
+      task({ id: "last", dueDate: "2026-10-11" }),
+      task({ id: "after", dueDate: "2026-10-12" }),
+      task({ id: "none", dueDate: null }),
+    ];
+
+    it("lists tasks in the week and pins overdue and undated tasks separately", () => {
+      const week = tasksForWeek(all, "2026-10-05");
+      expect(week.overdue.map((item) => item.id)).toEqual(["overdue"]);
+      expect(week.inWeek.map((item) => item.id)).toEqual(["first", "last"]);
+      expect(week.undated.map((item) => item.id)).toEqual(["none"]);
+    });
   });
 
   it("pins the overdue and the dateless whatever month is showing", () => {

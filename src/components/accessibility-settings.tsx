@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { KeyboardEvent } from "react";
 
 import {
   Card,
@@ -9,42 +10,109 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import {
+  ACCESSIBILITY_PREFERENCES_STORAGE_KEY,
+  ACCESSIBILITY_PREFERENCES_UPDATED_EVENT,
+  DEFAULT_ACCESSIBILITY_PREFERENCES,
+  parseAccessibilityPreferences,
+  type AccessibilityPreferences,
+} from "@/lib/accessibility-preferences";
 import { cn } from "@/lib/utils";
 
-type FontScale = "default" | "large" | "largest";
-type ColourVisionMode =
-  "none" | "protanopia" | "deuteranopia" | "tritanopia" | "monochromacy";
-
-const STORAGE_KEY = "daykeeper-accessibility";
-
-type AccessibilityPreferences = {
-  fontScale: FontScale;
-  colourVision: ColourVisionMode;
-  highContrast: boolean;
-  reduceMotion: boolean;
-};
-
-const DEFAULT_PREFERENCES: AccessibilityPreferences = {
-  fontScale: "default",
-  colourVision: "none",
-  highContrast: false,
-  reduceMotion: false,
-};
-
 export function AccessibilitySettings() {
-  const [preferences, setPreferences] =
-    useState<AccessibilityPreferences>(readPreferences);
+  const [initial] = useState(readPreferences);
+  const [preferences, setPreferences] = useState<AccessibilityPreferences>(
+    initial.preferences,
+  );
+  const [storageError, setStorageError] = useState<string | null>(
+    initial.error,
+  );
+  const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
     applyPreferences(preferences);
   }, [preferences]);
 
+  useEffect(() => {
+    function refreshPreferences() {
+      const saved = readPreferences();
+      setPreferences(saved.preferences);
+      setStorageError(saved.error);
+    }
+
+    function onStorage(event: StorageEvent) {
+      if (
+        event.key === ACCESSIBILITY_PREFERENCES_STORAGE_KEY ||
+        event.key === null
+      ) {
+        refreshPreferences();
+      }
+    }
+
+    window.addEventListener("storage", onStorage);
+    window.addEventListener(
+      ACCESSIBILITY_PREFERENCES_UPDATED_EVENT,
+      refreshPreferences,
+    );
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener(
+        ACCESSIBILITY_PREFERENCES_UPDATED_EVENT,
+        refreshPreferences,
+      );
+    };
+  }, []);
+
   function updatePreferences(patch: Partial<AccessibilityPreferences>) {
     const next = { ...preferences, ...patch };
     setPreferences(next);
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    setNotice(null);
+    try {
+      window.localStorage.setItem(
+        ACCESSIBILITY_PREFERENCES_STORAGE_KEY,
+        JSON.stringify(next),
+      );
+      window.dispatchEvent(new Event(ACCESSIBILITY_PREFERENCES_UPDATED_EVENT));
+      setStorageError(null);
+    } catch {
+      setStorageError(
+        "These accessibility choices apply for now, but could not be saved in this browser.",
+      );
+    }
+  }
+
+  function resetToDefaults() {
+    updatePreferences(DEFAULT_ACCESSIBILITY_PREFERENCES);
+    setNotice("Accessibility settings reset to defaults.");
+  }
+
+  function handleRadioKeyDown<Value extends string>(
+    event: KeyboardEvent<HTMLButtonElement>,
+    values: readonly Value[],
+    selected: Value,
+    onSelect: (value: Value) => void,
+  ) {
+    const direction =
+      event.key === "ArrowRight" || event.key === "ArrowDown"
+        ? 1
+        : event.key === "ArrowLeft" || event.key === "ArrowUp"
+          ? -1
+          : 0;
+    if (direction === 0) return;
+    event.preventDefault();
+    const currentIndex = values.indexOf(selected);
+    const nextIndex =
+      (currentIndex + direction + values.length) % values.length;
+    const nextValue = values[nextIndex];
+    if (nextValue === undefined) return;
+    onSelect(nextValue);
+    event.currentTarget.parentElement
+      ?.querySelectorAll<HTMLButtonElement>('[role="radio"]')
+      .item(nextIndex)
+      ?.focus();
   }
 
   return (
@@ -55,9 +123,21 @@ export function AccessibilitySettings() {
         </h2>
         <p className="mt-1 text-base text-muted-foreground">
           These choices apply across the app on this device. You can change them
-          whenever you need.
+          whenever you need. Defaults are standard text, the DayKeeper palette,
+          extra contrast off, and reduced motion off.
         </p>
       </div>
+
+      {storageError ? (
+        <p role="alert" className="text-base font-medium text-danger">
+          {storageError}
+        </p>
+      ) : null}
+      {notice ? (
+        <p role="status" className="text-base font-medium text-success">
+          {notice}
+        </p>
+      ) : null}
 
       <Card>
         <CardHeader>
@@ -84,7 +164,16 @@ export function AccessibilitySettings() {
                 type="button"
                 role="radio"
                 aria-checked={preferences.fontScale === value}
+                tabIndex={preferences.fontScale === value ? 0 : -1}
                 onClick={() => updatePreferences({ fontScale: value })}
+                onKeyDown={(event) =>
+                  handleRadioKeyDown(
+                    event,
+                    ["default", "large", "largest"],
+                    preferences.fontScale,
+                    (fontScale) => updatePreferences({ fontScale }),
+                  )
+                }
                 className={cn(
                   "min-h-14 rounded-lg border px-4 py-3 text-left transition-colors",
                   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
@@ -131,7 +220,22 @@ export function AccessibilitySettings() {
                 type="button"
                 role="radio"
                 aria-checked={preferences.colourVision === value}
+                tabIndex={preferences.colourVision === value ? 0 : -1}
                 onClick={() => updatePreferences({ colourVision: value })}
+                onKeyDown={(event) =>
+                  handleRadioKeyDown(
+                    event,
+                    [
+                      "none",
+                      "protanopia",
+                      "deuteranopia",
+                      "tritanopia",
+                      "monochromacy",
+                    ],
+                    preferences.colourVision,
+                    (colourVision) => updatePreferences({ colourVision }),
+                  )
+                }
                 className={cn(
                   "min-h-14 rounded-lg border px-4 py-3 text-left transition-colors",
                   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
@@ -189,6 +293,9 @@ export function AccessibilitySettings() {
           />
         </CardContent>
       </Card>
+      <Button variant="outline" onClick={resetToDefaults}>
+        Reset to defaults
+      </Button>
     </div>
   );
 }
@@ -227,26 +334,28 @@ function applyPreferences(preferences: AccessibilityPreferences) {
   root.dataset.reduceMotion = String(preferences.reduceMotion);
 }
 
-function readPreferences(): AccessibilityPreferences {
-  if (typeof window === "undefined") return DEFAULT_PREFERENCES;
-
-  const stored = window.localStorage.getItem(STORAGE_KEY);
-  if (!stored) return DEFAULT_PREFERENCES;
-
-  try {
-    const parsed = JSON.parse(stored) as Partial<AccessibilityPreferences> & {
-      colourSafe?: boolean;
-    };
-    const legacyColourSafe =
-      "colourSafe" in parsed && parsed.colourSafe === true
-        ? "deuteranopia"
-        : DEFAULT_PREFERENCES.colourVision;
+function readPreferences(): {
+  preferences: AccessibilityPreferences;
+  error: string | null;
+} {
+  if (typeof window === "undefined") {
     return {
-      ...DEFAULT_PREFERENCES,
-      ...parsed,
-      colourVision: parsed.colourVision ?? legacyColourSafe,
+      preferences: DEFAULT_ACCESSIBILITY_PREFERENCES,
+      error: null,
+    };
+  }
+  try {
+    return {
+      preferences: parseAccessibilityPreferences(
+        window.localStorage.getItem(ACCESSIBILITY_PREFERENCES_STORAGE_KEY),
+      ),
+      error: null,
     };
   } catch {
-    return DEFAULT_PREFERENCES;
+    return {
+      preferences: DEFAULT_ACCESSIBILITY_PREFERENCES,
+      error:
+        "Saved accessibility settings could not be read. DayKeeper is using its defaults for now.",
+    };
   }
 }

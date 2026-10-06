@@ -10,6 +10,7 @@ import { Bell, CalendarDays, FileText, type LucideIcon } from "lucide-react";
 import { FactRow } from "@/components/fact-row";
 import { useActivity } from "@/components/layout/activity";
 import { PhotoStrip } from "@/components/photo-strip";
+import { SenderRulePreferences } from "@/components/sender-rule-preferences";
 import { Panel } from "@/components/screen";
 import { Button } from "@/components/ui/button";
 import type {
@@ -196,6 +197,7 @@ export function ReviewForm({
                   </div>
                 );
               })}
+              <SenderRulePreferences issuer={document.issuer} />
             </div>
             <p className="mt-2.5 rounded-[10px] bg-warn-bg px-3 py-[11px] text-caption leading-[1.45] text-warn">
               {PLAN_HOLD}
