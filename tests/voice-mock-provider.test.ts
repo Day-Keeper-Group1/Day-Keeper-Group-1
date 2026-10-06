@@ -29,6 +29,7 @@ describe("mock voice commitment provider", () => {
     ["missing-date", 1],
     ["no-commitment", 0],
     ["cancelled-plan", 0],
+    ["unclear-agreement", 1],
   ])("returns the approved %s result", async (name, count) => {
     const transcript = fixtureTranscript(name);
     const provider = new MockCommitmentExtractionProvider();

@@ -93,7 +93,7 @@ describe("voice commitment contract", () => {
     title: "Call the clinic",
     dueDate: "2026-10-05",
     dueTime: "10:30",
-    status: "confirmed",
+    status: "clear",
     evidence: [0],
   };
 
@@ -110,6 +110,21 @@ describe("voice commitment contract", () => {
         commitments: [],
       }).success,
     ).toBe(true);
+  });
+
+  it("accepts unclear evidence but rejects the old approval-like status", () => {
+    expect(
+      safeParseCommitmentExtraction({
+        version: "1.0",
+        commitments: [{ ...validCommitment, status: "uncertain" }],
+      }).success,
+    ).toBe(true);
+    expect(
+      safeParseCommitmentExtraction({
+        version: "1.0",
+        commitments: [{ ...validCommitment, status: "confirmed" }],
+      }).success,
+    ).toBe(false);
   });
 
   it("rejects guessed formats, duplicate ids and duplicate evidence", () => {
@@ -160,13 +175,14 @@ describe("voice commitment contract", () => {
 });
 
 describe("synthetic voice conversations", () => {
-  it("contains exactly the five approved scenarios", () => {
+  it("contains the six approved scenarios", () => {
     expect(scenarios.map((scenario) => scenario.name).sort()).toEqual([
       "cancelled-plan",
       "clear-commitment",
       "missing-date",
       "multiple-commitments",
       "no-commitment",
+      "unclear-agreement",
     ]);
   });
 
@@ -188,7 +204,7 @@ describe("synthetic voice conversations", () => {
         title: "Book the doctor appointment",
         dueDate: "2026-10-02",
         dueTime: "10:30",
-        status: "confirmed",
+        status: "clear",
         evidence: [0, 1],
       },
     ]);
@@ -218,8 +234,22 @@ describe("synthetic voice conversations", () => {
         title: "Mow the lawn",
         dueDate: null,
         dueTime: null,
-        status: "confirmed",
+        status: "clear",
         evidence: [1],
+      },
+    ]);
+  });
+
+  it("marks an unaccepted request uncertain, using both relevant lines", () => {
+    const scenario = scenarios.find(({ name }) => name === "unclear-agreement");
+    expect(scenario?.expected.commitments).toEqual([
+      {
+        id: "unclear-1",
+        title: "Call the clinic to book an appointment",
+        dueDate: null,
+        dueTime: null,
+        status: "uncertain",
+        evidence: [0, 1],
       },
     ]);
   });

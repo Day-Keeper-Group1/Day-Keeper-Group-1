@@ -18,7 +18,7 @@ A commitment is a promised, agreed or directly requested future action. It is no
 - `title`: a short standalone action beginning with an action word, such as `Call the clinic` or `Book the doctor appointment`.
 - `dueDate`: an explicitly supported calendar date in `YYYY-MM-DD` format, or `null`. Never invent or guess a date. A relative phrase such as "tomorrow" is insufficient unless the transcript also states the calendar date.
 - `dueTime`: an explicitly supported time in 24-hour `HH:mm` format, or `null`. Never invent or guess a time.
-- `status`: `confirmed` when the action and its details are clear; otherwise `uncertain`.
+- `status`: `clear` when the action is unambiguous and every included detail is supported by the transcript; otherwise `uncertain`. This describes the evidence, not user approval. A date that was never stated can be `null` while the action remains `clear`.
 - `evidence`: one or more transcript utterance indexes that directly support the action. Include every line needed to support the title, date and time. Never cite an index absent from the transcript.
 
 The title, date and time must all be supported by the cited evidence. If dates conflict and the final date is unclear, use `null` and mark the proposal `uncertain` rather than choosing one.
@@ -36,7 +36,7 @@ Use contract version `1.0`. An empty `commitments` array is a successful answer 
       "title": "Call the clinic",
       "dueDate": "2026-10-05",
       "dueTime": "10:30",
-      "status": "confirmed",
+      "status": "clear",
       "evidence": [0]
     }
   ]

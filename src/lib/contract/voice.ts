@@ -83,7 +83,7 @@ export const commitmentProposalSchema = z
     title: z.string().trim().min(1),
     dueDate: isoDateSchema.nullable(),
     dueTime: localTimeSchema.nullable(),
-    status: z.enum(["confirmed", "uncertain"]),
+    status: z.enum(["clear", "uncertain"]),
     evidence: z.array(z.number().int().nonnegative()).min(1),
   })
   .superRefine((commitment, ctx) => {

@@ -1,0 +1,13 @@
+{
+  "version": "1.0",
+  "commitments": [
+    {
+      "id": "unclear-1",
+      "title": "Call the clinic to book an appointment",
+      "dueDate": null,
+      "dueTime": null,
+      "status": "uncertain",
+      "evidence": [0, 1]
+    }
+  ]
+}

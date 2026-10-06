@@ -6,7 +6,7 @@
       "title": "Mow the lawn",
       "dueDate": null,
       "dueTime": null,
-      "status": "confirmed",
+      "status": "clear",
       "evidence": [1]
     }
   ]

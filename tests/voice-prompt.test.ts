@@ -26,6 +26,13 @@ describe("voice commitment extraction prompt", () => {
     expect(instructions).toContain("relative phrase");
   });
 
+  it("distinguishes evidence clarity from user approval", () => {
+    expect(instructions).toContain("`clear`");
+    expect(instructions).toContain("`uncertain`");
+    expect(instructions).toContain("not user approval");
+    expect(instructions).toContain("date that was never stated");
+  });
+
   it("removes cancelled plans and keeps only the final changed action", () => {
     expect(instructions).toContain("return only the final active version");
     expect(instructions).toContain("do not return that action");

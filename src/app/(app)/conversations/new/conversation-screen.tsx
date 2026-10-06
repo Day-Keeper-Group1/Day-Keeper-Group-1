@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { FileAudio, MessageSquareText, Quote } from "lucide-react";
+import {
+  FileAudio,
+  MessageSquareText,
+  Quote,
+  TriangleAlert,
+} from "lucide-react";
 import { Panel, ScreenHeader } from "@/components/screen";
 import { Button } from "@/components/ui/button";
 import type {
@@ -286,6 +291,15 @@ export function ConversationScreen({ scenarios }: { scenarios: Scenario[] }) {
                         <span className="block text-row font-bold">
                           {item.title}
                         </span>
+                        {item.status === "uncertain" && (
+                          <span className="mt-2 flex items-center gap-2 rounded-md bg-warn-bg px-3 py-2 text-caption font-bold text-warn">
+                            <TriangleAlert
+                              className="size-4"
+                              aria-hidden="true"
+                            />
+                            Needs checking: the conversation is unclear
+                          </span>
+                        )}
                         <span className="mt-2 block text-sub text-ink-dim">
                           {dateLabel(item.dueDate)}
                           {item.dueTime ? ` at ${item.dueTime}` : ""}

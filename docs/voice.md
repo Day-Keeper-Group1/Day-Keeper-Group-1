@@ -79,11 +79,15 @@ transcripts.
   DayKeeper displays those values inside its own components; Azure cannot send
   page layout, links or executable markup.
 - A missing date is shown neutrally as **No date found**.
+- Proposal `status` describes how clearly the transcript supports the action.
+  `clear` does not mean the user approved it. An unstated date alone does not
+  make an otherwise clear action uncertain.
 - An uncertain proposal is shown as **Needs checking**, using warning colour,
   text and an icon. Colour is never its only signal.
 - Uncertain proposals are excluded by default from any later task-creation
-  flow.
-- This milestone has no save or create-task action.
+  flow. Whether a future review screen lets the user confirm, correct or dismiss
+  them is a later design decision.
+- This milestone has no confirm, edit, save or create-task action.
 
 ### Acceptance criteria
 
@@ -132,7 +136,9 @@ fixed result without making an external call.
 - Every proposal cites at least one transcript utterance.
 - The cited evidence must support the action and any returned date or time.
 - Changed or cancelled plans must not be returned as active commitments.
-- Unclear proposals use `status: "uncertain"`.
+- Clear proposals use `status: "clear"`; unclear actions or conflicting details
+  use `status: "uncertain"`. This is evidence clarity, not model confidence or
+  user approval.
 - The model returns data only. It never returns interface markup.
 
 ### Evidence and attribution
@@ -159,9 +165,12 @@ Milestone 1 needs these core examples:
 3. No commitment.
 4. A commitment without a date.
 5. A changed or cancelled plan that must not become an active commitment.
+6. A request with unclear acceptance, returned as `uncertain`.
 
 An additional conflicting-date fixture can be added while refining the prompt
-to check that the result is marked uncertain rather than guessed.
+to check that the result is marked uncertain rather than guessed. The current
+fixtures test contract and mock behaviour; Azure's ability to identify
+uncertainty must be evaluated separately.
 
 Each fixture includes a transcript and the commitments expected from it. Model
 answers are compared with those expected results rather than judged only by
@@ -222,7 +231,7 @@ type CommitmentProposal = {
   title: string;
   dueDate: string | null; // YYYY-MM-DD
   dueTime: string | null; // HH:mm in the user's timezone
-  status: "confirmed" | "uncertain";
+  status: "clear" | "uncertain"; // clarity of transcript evidence, not user approval
   evidence: number[]; // indexes into transcript.utterances
 };
 
