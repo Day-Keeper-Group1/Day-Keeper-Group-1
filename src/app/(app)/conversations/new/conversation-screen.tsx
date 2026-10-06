@@ -9,6 +9,7 @@ import type {
   CommitmentExtraction,
 } from "@/lib/contract/voice";
 import { cn } from "@/lib/utils";
+import { audioDurationIssue, audioFileIssue } from "@/lib/voice/audio";
 
 function timestamp(ms: number) {
   const seconds = Math.floor(ms / 1000);
@@ -37,7 +38,9 @@ export function ConversationScreen({ scenarios }: { scenarios: Scenario[] }) {
   const [selectedAudio, setSelectedAudio] = useState<{
     file: File;
     url: string;
+    ready: boolean;
   } | null>(null);
+  const [audioError, setAudioError] = useState<string | null>(null);
   const [scenarioId, setScenarioId] = useState(scenarios[0].id);
   const { transcript, extraction } =
     scenarios.find((item) => item.id === scenarioId) ?? scenarios[0];
@@ -48,20 +51,41 @@ export function ConversationScreen({ scenarios }: { scenarios: Scenario[] }) {
   );
 
   useEffect(() => {
-    if (!selectedAudio) return;
-    return () => URL.revokeObjectURL(selectedAudio.url);
-  }, [selectedAudio]);
+    const url = selectedAudio?.url;
+    if (!url) return;
+    return () => URL.revokeObjectURL(url);
+  }, [selectedAudio?.url]);
 
   function chooseAudio(file: File | undefined) {
     if (!file) return;
-    setSelectedAudio({ file, url: URL.createObjectURL(file) });
     // Allow selecting the same file again after removing or replacing it.
     if (fileInputRef.current) fileInputRef.current.value = "";
+    const issue = audioFileIssue(file);
+    if (issue) {
+      setAudioError(issue);
+      return;
+    }
+    setAudioError(null);
+    setSelectedAudio({ file, url: URL.createObjectURL(file), ready: false });
   }
 
   function removeAudio() {
     setSelectedAudio(null);
+    setAudioError(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
+  function finishAudioCheck(url: string, seconds: number) {
+    if (selectedAudio?.url !== url) return;
+    const issue = audioDurationIssue(seconds);
+    if (issue) {
+      setAudioError(issue);
+      setSelectedAudio(null);
+      return;
+    }
+    setSelectedAudio((current) =>
+      current?.url === url ? { ...current, ready: true } : current,
+    );
   }
 
   return (
@@ -82,7 +106,7 @@ export function ConversationScreen({ scenarios }: { scenarios: Scenario[] }) {
           <FileAudio className="mb-3 size-8 text-primary" aria-hidden="true" />
           <p className="text-row font-bold">Add a conversation recording</p>
           <p className="mt-1 text-caption text-ink-dim">
-            Choose an MP3, M4A, WAV or WebM file to play on this device.
+            MP3, M4A, WAV or WebM. Up to 50 MiB and 30 minutes.
           </p>
           <input
             ref={fileInputRef}
@@ -99,18 +123,35 @@ export function ConversationScreen({ scenarios }: { scenarios: Scenario[] }) {
           >
             {selectedAudio ? "Replace audio file" : "Choose audio file"}
           </Button>
+          {audioError && (
+            <p role="alert" className="mt-3 text-sub text-danger">
+              {audioError}
+            </p>
+          )}
           {selectedAudio && (
             <div className="mt-5 w-full max-w-xl text-left">
               <p className="text-row font-bold break-all">
                 {selectedAudio.file.name}
               </p>
+              {!selectedAudio.ready && (
+                <p role="status" className="mt-2 text-sub text-ink-dim">
+                  Checking recording length…
+                </p>
+              )}
               <audio
                 key={selectedAudio.url}
                 controls
                 preload="metadata"
                 src={selectedAudio.url}
-                className="mt-3 w-full"
+                className={cn("mt-3 w-full", !selectedAudio.ready && "hidden")}
                 aria-label={`Play ${selectedAudio.file.name}`}
+                onLoadedMetadata={(event) =>
+                  finishAudioCheck(
+                    selectedAudio.url,
+                    event.currentTarget.duration,
+                  )
+                }
+                onError={() => finishAudioCheck(selectedAudio.url, Number.NaN)}
               />
               <Button
                 type="button"
