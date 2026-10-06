@@ -6,7 +6,7 @@
  * away from the transcript or expected extraction used by later tickets.
  */
 
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
@@ -29,7 +29,11 @@ type Scenario = {
 };
 
 const scenarios = readdirSync(DATA_ROOT, { withFileTypes: true })
-  .filter((entry) => entry.isDirectory())
+  .filter(
+    (entry) =>
+      entry.isDirectory() &&
+      existsSync(join(DATA_ROOT, entry.name, "expected-commitments.json")),
+  )
   .map((entry): Scenario => {
     const directory = join(DATA_ROOT, entry.name);
     return {
@@ -184,6 +188,21 @@ describe("synthetic voice conversations", () => {
       "no-commitment",
       "unclear-agreement",
     ]);
+  });
+
+  it("keeps the unscored Azure demo's script and transcript aligned, without an expected answer", () => {
+    const directory = join(DATA_ROOT, "complex-demo");
+    const script = readFileSync(join(directory, "script.md"), "utf8");
+    const transcript = conversationTranscriptSchema.parse(
+      JSON.parse(readFileSync(join(directory, "transcript.json"), "utf8")),
+    );
+    expect(transcript.utterances.length).toBeGreaterThanOrEqual(15);
+    for (const utterance of transcript.utterances) {
+      expect(script).toContain(`**${utterance.speaker}:** ${utterance.text}`);
+    }
+    expect(existsSync(join(directory, "expected-commitments.json"))).toBe(
+      false,
+    );
   });
 
   it.each(scenarios)(

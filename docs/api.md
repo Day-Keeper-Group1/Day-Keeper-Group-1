@@ -11,15 +11,17 @@ Sign in there with `POST /api/auth/login` and every other call carries the
 session. That page is described in `src/server/api/openapi.ts`, and
 `tests/openapi.test.ts` fails when a route handler is missing from it.
 
-The surface below is the one in [`scope.md`](scope.md). That file says what this
-release builds; this one says what each request and each response looks like. If
+The released surface below is the one in [`scope.md`](scope.md). The isolated
+voice-prototype endpoint is future-scope Milestone 1 work described in
+[`voice.md`](voice.md); it does not change the current release boundary. This
+file says what each request and each response looks like. If
 you are looking for an endpoint that is not in the table, read `scope.md` before
 adding it: most of what is missing is missing deliberately.
 
-The types are already in `src/lib/contract/api.ts`, and that file is the
-authority on the exact shape of every body here. **Import them rather than
-restating them.** The examples below are real bodies, so you can see what an
-endpoint feels like to call without reading TypeScript.
+The released API types are in `src/lib/contract/api.ts`; the prototype voice
+extraction type is in `src/lib/contract/voice.ts`. **Import them rather than
+restating them.** The examples below show concrete bodies, so you can see what
+an endpoint feels like to call without reading TypeScript.
 
 Rules that are not about the wire live in the code that enforces them, with the
 reasoning attached. This document names them and does not repeat them:
@@ -114,8 +116,78 @@ confirm that a letter with that id exists.
 | Undo that | `DELETE /api/tasks/:id/complete` |
 | Everything the home screen needs | `GET /api/home` |
 | Is the site up | `GET /api/health` |
+| Extract from a fictional voice fixture (prototype) | `POST /api/conversations/extract` |
 
 There is no calendar endpoint, on purpose. See "The calendar".
+
+## Extract commitments from a fictional conversation (prototype)
+
+**URL** : `/api/conversations/extract`
+
+**Method** : `POST`
+
+**Auth required** : YES
+
+**Data constraints** : `scenarioId` is one of `multiple`, `clear`, `missing`,
+`none`, `cancelled`, `unclear`, or `complex`. Other fields are refused. The
+request never contains audio or arbitrary conversation text.
+
+**Data example**
+
+```json
+{ "scenarioId": "clear" }
+```
+
+### Success Response
+
+**Code** : `200 OK`
+
+**Content example**
+
+```json
+{
+  "provider": "mock",
+  "model": null,
+  "seconds": 0.8,
+  "extraction": {
+    "version": "1.0",
+    "commitments": [
+      {
+        "id": "clear-1",
+        "title": "Book the doctor appointment",
+        "dueDate": "2026-10-02",
+        "dueTime": "10:30",
+        "status": "clear",
+        "evidence": [0, 1]
+      }
+    ]
+  }
+}
+```
+
+`extraction` is the validated voice contract in
+`src/lib/contract/voice.ts`. `provider` is `mock` or `azure`; Azure mode is
+selected server-side with `AI_VOICE_EXTRACTION_PROVIDER=azure` for the six
+reviewed fixtures. `complex` always uses Azure and has no prepared answer; it
+needs the team RACE key configured. This example is the mock answer for
+`clear`; Azure may use different wording while satisfying the same contract.
+
+### Error Responses
+
+- `400 invalid_request`: missing or unknown scenario.
+- `401 unauthenticated`: sign-in required.
+- `429 too_many_requests`: the shared school's-key daily budget is used up.
+- `500 server_error`: extraction or validation failed; model details are not
+  exposed to the browser.
+
+### Notes
+
+The server loads the fictional transcript, sends it to the chosen provider,
+checks the returned JSON and evidence indexes, then returns only the safe result
+and call metadata. No audio is sent or stored; no transcript or commitment is
+persisted. The page loads expected answers for the first six scenarios only.
+The seventh is an unscored live Azure demo. This is a prototype outside the
+current release scope.
 
 A person can now create their own account. The seed still plants Margaret, an
 operator account and one empty account per teammate, so a checkout has somebody

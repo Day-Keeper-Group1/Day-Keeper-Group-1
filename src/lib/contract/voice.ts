@@ -119,6 +119,18 @@ export const commitmentExtractionSchema = z
 
 export type CommitmentExtraction = z.infer<typeof commitmentExtractionSchema>;
 
+/** One validated prototype extraction returned by the protected API. */
+export const voiceExtractionResponseSchema = z.object({
+  provider: z.enum(["mock", "azure"]),
+  model: z.string().nullable(),
+  seconds: z.number().finite().nonnegative(),
+  extraction: commitmentExtractionSchema,
+});
+
+export type VoiceExtractionResponse = z.infer<
+  typeof voiceExtractionResponseSchema
+>;
+
 export function parseConversationTranscript(
   input: unknown,
 ): ConversationTranscript {

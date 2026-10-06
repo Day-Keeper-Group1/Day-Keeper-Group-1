@@ -1,0 +1,131 @@
+{
+  "version": "1.0",
+  "utterances": [
+    {
+      "index": 0,
+      "speaker": "Speaker 1",
+      "text": "The community garden open day is on Saturday, 17 October 2026. We need to sort out the volunteers.",
+      "startMs": 0,
+      "endMs": 5300
+    },
+    {
+      "index": 1,
+      "speaker": "Speaker 2",
+      "text": "Last year's open day was busy, but the photos looked great.",
+      "startMs": 5800,
+      "endMs": 10000
+    },
+    {
+      "index": 2,
+      "speaker": "Speaker 1",
+      "text": "I will print twenty sign-in sheets by Thursday, 15 October 2026.",
+      "startMs": 10500,
+      "endMs": 15100
+    },
+    {
+      "index": 3,
+      "speaker": "Speaker 2",
+      "text": "Could you email the volunteer coordinator a copy as well?",
+      "startMs": 15600,
+      "endMs": 19500
+    },
+    {
+      "index": 4,
+      "speaker": "Speaker 1",
+      "text": "Yes, I will email the sheets on Thursday afternoon.",
+      "startMs": 20000,
+      "endMs": 23900
+    },
+    {
+      "index": 5,
+      "speaker": "Speaker 2",
+      "text": "I was going to order new name badges tomorrow, 14 October 2026.",
+      "startMs": 24400,
+      "endMs": 29100
+    },
+    {
+      "index": 6,
+      "speaker": "Speaker 1",
+      "text": "Please don't order badges. I found a full box in the cupboard.",
+      "startMs": 29600,
+      "endMs": 34000
+    },
+    {
+      "index": 7,
+      "speaker": "Speaker 2",
+      "text": "Good, I won't order any.",
+      "startMs": 34500,
+      "endMs": 36600
+    },
+    {
+      "index": 8,
+      "speaker": "Speaker 2",
+      "text": "I will collect the folding tables from the library on Friday, 16 October 2026, at 3 pm.",
+      "startMs": 37100,
+      "endMs": 43300
+    },
+    {
+      "index": 9,
+      "speaker": "Speaker 1",
+      "text": "The library just changed pickup to Saturday, 17 October 2026, at 9:30 am.",
+      "startMs": 43800,
+      "endMs": 49200
+    },
+    {
+      "index": 10,
+      "speaker": "Speaker 2",
+      "text": "All right, I will collect the tables at the new time instead.",
+      "startMs": 49700,
+      "endMs": 53900
+    },
+    {
+      "index": 11,
+      "speaker": "Speaker 1",
+      "text": "Could you bring two watering cans too?",
+      "startMs": 54400,
+      "endMs": 57300
+    },
+    {
+      "index": 12,
+      "speaker": "Speaker 2",
+      "text": "Maybe. I need to check whether they fit in my bag.",
+      "startMs": 57800,
+      "endMs": 61900
+    },
+    {
+      "index": 13,
+      "speaker": "Speaker 1",
+      "text": "Let's decide about the watering cans after you check.",
+      "startMs": 62400,
+      "endMs": 66300
+    },
+    {
+      "index": 14,
+      "speaker": "Speaker 2",
+      "text": "I will call the site manager on Wednesday, 14 October 2026, to confirm the gate code.",
+      "startMs": 66800,
+      "endMs": 73000
+    },
+    {
+      "index": 15,
+      "speaker": "Speaker 1",
+      "text": "I'll send directions to the volunteers before the open day, but I don't know the exact day yet.",
+      "startMs": 73500,
+      "endMs": 80200
+    },
+    {
+      "index": 16,
+      "speaker": "Speaker 2",
+      "text": "We could paint the fence one day, but let's leave that for another meeting.",
+      "startMs": 80700,
+      "endMs": 86000
+    },
+    {
+      "index": 17,
+      "speaker": "Speaker 1",
+      "text": "Thanks. The meeting notes from last month are already in the shared folder.",
+      "startMs": 86500,
+      "endMs": 91900
+    }
+  ]
+}

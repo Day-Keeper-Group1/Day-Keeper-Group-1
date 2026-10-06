@@ -2,6 +2,7 @@
 
 import "server-only";
 import { env } from "@/server/env";
+import { AzureCommitmentExtractionProvider } from "./azure-provider";
 import { MockCommitmentExtractionProvider } from "./mock-provider";
 import type { CommitmentExtractionProvider } from "./provider";
 
@@ -12,9 +13,7 @@ export function commitmentExtractionProvider(
     case "mock":
       return new MockCommitmentExtractionProvider();
     case "azure":
-      throw new Error(
-        "AI_VOICE_EXTRACTION_PROVIDER=azure is not implemented yet. Use mock.",
-      );
+      return new AzureCommitmentExtractionProvider();
   }
 }
 

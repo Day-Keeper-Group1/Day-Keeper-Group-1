@@ -1,6 +1,6 @@
 # Module 3: Voice and Conversation Intelligence
 
-**Status:** proposed Milestone 1 plan for team review.
+**Status:** Milestone 1 prototype implemented for review; later milestones remain proposed.
 
 The official project description defines Module 3 as consent-based call
 transcription and extraction of commitments and follow-ups. Module 3 remains
@@ -70,6 +70,9 @@ states. A saved-conversations list is not needed yet.
 
 Development and demonstration use only fictional or synthetic recordings and
 transcripts.
+
+The six-fixture RACE check and raw outcomes are recorded in
+[`experiments/module-03-voice/`](../experiments/module-03-voice/README.md).
 
 ### Interface behaviour
 
@@ -175,6 +178,12 @@ uncertainty must be evaluated separately.
 Each fixture includes a transcript and the commitments expected from it. Model
 answers are compared with those expected results rather than judged only by
 appearance.
+
+A seventh, longer fictional conversation in
+`data/synthetic-conversations/complex-demo/` is for presenting live Azure
+extraction. It has a script and transcript but deliberately has no expected
+commitments. The interface shows only Azure's returned proposals and evidence;
+this demo is not part of the six-fixture score.
 
 Each scenario also keeps a human-readable script as its source material:
 

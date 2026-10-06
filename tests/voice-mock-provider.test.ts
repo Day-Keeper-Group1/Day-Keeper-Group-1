@@ -9,6 +9,7 @@ import {
 } from "@/lib/contract/voice";
 import { commitmentExtractionProvider } from "@/server/voice";
 import { MockCommitmentExtractionProvider } from "@/server/voice/mock-provider";
+import { AzureCommitmentExtractionProvider } from "@/server/voice/azure-provider";
 import {
   CommitmentProviderFailure,
   validateCommitmentOutcome,
@@ -70,9 +71,9 @@ describe("mock voice commitment provider", () => {
     );
   });
 
-  it("does not silently substitute mock when Azure is selected", () => {
-    expect(() => commitmentExtractionProvider("azure")).toThrow(
-      /azure is not implemented yet/,
+  it("selects the real Azure provider when requested", () => {
+    expect(commitmentExtractionProvider("azure")).toBeInstanceOf(
+      AzureCommitmentExtractionProvider,
     );
   });
 

@@ -1,0 +1,103 @@
+{
+  "date": "2026-10-07",
+  "provider": "azure",
+  "model": "gpt-5.6-luna",
+  "effort": "medium",
+  "promptSha256": "d7f135c7fd8780cb2291fc106aef18252db0173034464b521652a7ba739156ab",
+  "results": [
+    {
+      "scenarioId": "multiple",
+      "seconds": 3.0174667499999996,
+      "extraction": {
+        "version": "1.0",
+        "commitments": [
+          {
+            "id": "commitment-1",
+            "title": "Collect the prescription",
+            "dueDate": "2026-10-03",
+            "dueTime": null,
+            "status": "clear",
+            "evidence": [0]
+          },
+          {
+            "id": "commitment-2",
+            "title": "Call the clinic",
+            "dueDate": "2026-10-05",
+            "dueTime": null,
+            "status": "clear",
+            "evidence": [1]
+          },
+          {
+            "id": "commitment-3",
+            "title": "Bring the groceries",
+            "dueDate": "2026-10-03",
+            "dueTime": null,
+            "status": "clear",
+            "evidence": [0, 2]
+          }
+        ]
+      }
+    },
+    {
+      "scenarioId": "clear",
+      "seconds": 1.659389124999998,
+      "extraction": {
+        "version": "1.0",
+        "commitments": [
+          {
+            "id": "commitment-1",
+            "title": "Book the doctor appointment",
+            "dueDate": "2026-10-02",
+            "dueTime": "10:30",
+            "status": "clear",
+            "evidence": [0, 1]
+          }
+        ]
+      }
+    },
+    {
+      "scenarioId": "missing",
+      "seconds": 1.561698708,
+      "extraction": {
+        "version": "1.0",
+        "commitments": [
+          {
+            "id": "commitment-1",
+            "title": "Mow the lawn",
+            "dueDate": null,
+            "dueTime": null,
+            "status": "clear",
+            "evidence": [1]
+          }
+        ]
+      }
+    },
+    {
+      "scenarioId": "none",
+      "seconds": 2.2029301250000026,
+      "extraction": { "version": "1.0", "commitments": [] }
+    },
+    {
+      "scenarioId": "cancelled",
+      "seconds": 1.426456457999997,
+      "extraction": { "version": "1.0", "commitments": [] }
+    },
+    {
+      "scenarioId": "unclear",
+      "seconds": 1.8316857919999965,
+      "extraction": {
+        "version": "1.0",
+        "commitments": [
+          {
+            "id": "commitment-1",
+            "title": "Call the clinic to book the appointment",
+            "dueDate": null,
+            "dueTime": null,
+            "status": "uncertain",
+            "evidence": [0, 1]
+          }
+        ]
+      }
+    }
+  ]
+}

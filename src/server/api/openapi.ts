@@ -58,6 +58,99 @@ const specified = (text: string, anchor: string) =>
   `${text}\n\nSpecified in [docs/api.md](${API_MD}#${anchor}).`;
 
 const paths = {
+  "/api/conversations/extract": {
+    post: {
+      tags: ["Voice prototype"],
+      summary: "Extract commitments from a fictional conversation",
+      description: specified(
+        "Milestone 1 prototype only. Uses one of six reviewed fictional transcripts or a seventh unscored Azure demo; no audio is uploaded, transcribed or stored. The server validates evidence before answering.",
+        "extract-commitments-from-a-fictional-conversation-prototype",
+      ),
+      requestBody: {
+        required: true,
+        content: {
+          "application/json": {
+            schema: {
+              type: "object",
+              required: ["scenarioId"],
+              additionalProperties: false,
+              properties: {
+                scenarioId: {
+                  type: "string",
+                  enum: [
+                    "multiple",
+                    "clear",
+                    "missing",
+                    "none",
+                    "cancelled",
+                    "unclear",
+                    "complex",
+                  ],
+                },
+              },
+            },
+            example: { scenarioId: "clear" },
+          },
+        },
+      },
+      responses: {
+        "200": answer(
+          "Validated commitments and provider metadata.",
+          {
+            type: "object",
+            properties: {
+              provider: { type: "string", enum: ["mock", "azure"] },
+              model: { type: "string", nullable: true },
+              seconds: { type: "number" },
+              extraction: { type: "object" },
+            },
+          },
+          {
+            provider: "mock",
+            model: null,
+            seconds: 0.8,
+            extraction: {
+              version: "1.0",
+              commitments: [
+                {
+                  id: "clear-1",
+                  title: "Book the doctor appointment",
+                  dueDate: "2026-10-02",
+                  dueTime: "10:30",
+                  status: "clear",
+                  evidence: [0, 1],
+                },
+              ],
+            },
+          },
+        ),
+        "400": refusal("Unknown or missing scenario.", {
+          error: {
+            code: "invalid_request",
+            message: "Choose an example conversation first.",
+          },
+        }),
+        "401": NOT_SIGNED_IN,
+        "429": refusal("The shared school's-key budget is used up for today.", {
+          error: {
+            code: "too_many_requests",
+            message:
+              "Conversation extraction is paused for today. Please try again tomorrow.",
+          },
+        }),
+        "500": refusal(
+          "Extraction failed; provider details stay on the server.",
+          {
+            error: {
+              code: "server_error",
+              message:
+                "We could not extract commitments from this example. Please try again.",
+            },
+          },
+        ),
+      },
+    },
+  },
   "/api/auth/register": {
     post: {
       tags: ["Signing in"],
@@ -954,6 +1047,10 @@ export const openApiDocument = {
     description: `Every endpoint the product has. To try the ones that need a session, open **Signing in**, run POST /api/auth/login with the example body (margaret@example.com / daykeeper), and the browser keeps the cookie for every call after.\n\nThe specification, with the rules and the reasons, is [docs/api.md](${API_MD}). Development only: this page answers 404 in production.`,
   },
   tags: [
+    {
+      name: "Voice prototype",
+      description: "Future-scope, fictional conversations only.",
+    },
     {
       name: "Signing in",
       description: "Accounts and sessions. Start here.",
