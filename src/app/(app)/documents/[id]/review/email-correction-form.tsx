@@ -113,7 +113,7 @@ export function EmailCorrectionForm({
                     className="font-bold"
                   >
                     {FIELD_LABELS[key]}
-                    {needsCorrection ? " � correction needed" : ""}
+                    {needsCorrection ? " — correction needed" : ""}
                   </label>
                   {key === "reference" && (
                     <span
