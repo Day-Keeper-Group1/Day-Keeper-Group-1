@@ -94,6 +94,14 @@ export function GmailMailbox({
           if (!controller.signal.aborted) setResult(messages);
         }
       } catch (err) {
+        if (connectionLoaded && !controller.signal.aborted) {
+          const current = await request<GmailStatus>(
+            "status",
+            "GET",
+            controller.signal,
+          ).catch(() => null);
+          if (current && !controller.signal.aborted) setStatus(current);
+        }
         if (!controller.signal.aborted)
           setError(
             connectionLoaded && err instanceof Error
@@ -132,6 +140,8 @@ export function GmailMailbox({
         );
       router.push(`/documents/${body.documentId}/reading`);
     } catch (error) {
+      const current = await request<GmailStatus>("status").catch(() => null);
+      if (current) setStatus(current);
       setCreateError(
         error instanceof Error
           ? error.message

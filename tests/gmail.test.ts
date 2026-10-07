@@ -9,6 +9,8 @@ import {
   beginConnection,
   finishConnection,
   disconnect,
+  mailboxAccess,
+  connectionStatus,
 } from "@/server/email/gmail/connection";
 import { gmailRoute } from "@/server/email/gmail/http";
 import {
@@ -16,6 +18,7 @@ import {
   findOwnedOauthAttempt,
   insertGmailConnection,
   deleteOwnedGmailAccess,
+  findOwnedGmailConnection,
 } from "@/server/db/queries/email";
 import { requireUser, UnauthenticatedError } from "@/server/auth/session";
 import { readEmailPage } from "@/server/email/read";
@@ -155,6 +158,63 @@ describe("Gmail boundaries", () => {
 });
 
 describe("Gmail OAuth and access checks", () => {
+  it("removes expired authorisation so status offers Connect again", async () => {
+    vi.mocked(findOwnedGmailConnection)
+      .mockResolvedValueOnce({
+        connection_id: "connection",
+        refresh_token_encrypted: seal("expired", "gmail:user-a"),
+      } as never)
+      .mockResolvedValue(null);
+    transaction.mockImplementation(async (fn) => fn({}));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        Response.json(
+          {
+            error: "invalid_grant",
+            error_description: "private upstream detail",
+          },
+          { status: 400 },
+        ),
+      ),
+    );
+    await expect(mailboxAccess("user-a")).rejects.toMatchObject({
+      reconnect: true,
+    });
+    expect(deleteOwnedGmailAccess).toHaveBeenCalledWith(
+      expect.anything(),
+      "user-a",
+    );
+    expect(await connectionStatus("user-a")).toMatchObject({
+      connected: false,
+      email: null,
+    });
+  });
+  it.each([429, 500, 503])(
+    "keeps the connection for transient Google HTTP %s failures",
+    async (status) => {
+      vi.mocked(findOwnedGmailConnection).mockResolvedValue({
+        connection_id: "connection",
+        refresh_token_encrypted: seal("refresh", "gmail:user-a"),
+      } as never);
+      vi.stubGlobal(
+        "fetch",
+        vi
+          .fn()
+          .mockResolvedValue(
+            new Response("private upstream detail", { status }),
+          ),
+      );
+      await expect(mailboxAccess("user-a")).rejects.toMatchObject({
+        reconnect: false,
+        message: "Gmail is busy. Please try again in a moment.",
+      });
+      expect(deleteOwnedGmailAccess).not.toHaveBeenCalled();
+      expect(await connectionStatus("user-a")).toMatchObject({
+        connected: true,
+      });
+    },
+  );
   it("starts consent with a user/browser-bound state and matching PKCE verifier", async () => {
     const started = await beginConnection("user-a");
     const url = new URL(started.url);

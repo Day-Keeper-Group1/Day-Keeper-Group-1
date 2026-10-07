@@ -87,13 +87,20 @@ export async function finishConnection(
 export async function mailboxAccess(userId: string) {
   const connection = await connectionFor(userId);
   if (!connection) throw new GmailError("Please connect Gmail first.", true);
-  const tokens = await tokenRequest({
-    grant_type: "refresh_token",
-    refresh_token: unseal(
-      connection.refresh_token_encrypted,
-      `gmail:${userId}`,
-    ),
-  });
+  let tokens;
+  try {
+    tokens = await tokenRequest({
+      grant_type: "refresh_token",
+      refresh_token: unseal(
+        connection.refresh_token_encrypted,
+        `gmail:${userId}`,
+      ),
+    });
+  } catch (error) {
+    if (error instanceof GmailError && error.reconnect)
+      await disconnect(userId);
+    throw error;
+  }
   if (tokens.refresh_token) {
     await rotateOwnedGmailToken(
       db(),

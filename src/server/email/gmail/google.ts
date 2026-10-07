@@ -41,10 +41,19 @@ export async function tokenRequest(parameters: Record<string, string>) {
     redirect: "error",
   });
   if (!response.ok) {
-    // Do not log upstream bodies: they may contain OAuth material.
+    // Inspect only the error code; never log or persist OAuth response bodies.
+    const error = z
+      .object({ error: z.string() })
+      .safeParse(await response.json().catch(() => null));
+    if (error.success && error.data.error === "invalid_grant")
+      throw new GmailError(
+        "Gmail authorisation expired or was revoked. Please reconnect Gmail.",
+        true,
+      );
     throw new GmailError(
-      "Gmail authorisation failed. Please reconnect Gmail.",
-      true,
+      response.status === 429 || response.status >= 500
+        ? "Gmail is busy. Please try again in a moment."
+        : "Google could not complete authorisation. Please try again.",
     );
   }
   const token = tokenSchema.parse(await response.json());
