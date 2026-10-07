@@ -10,6 +10,15 @@ import { TaskRow } from "@/components/task-row";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { ApiError, TaskSummary } from "@/lib/contract/api";
+import {
+  DEFAULT_TASK_LIST_PREFERENCES,
+  groupTaskList,
+  parseTaskListPreferences,
+  TASK_LIST_PREFERENCES_STORAGE_KEY,
+  TASK_LIST_PREFERENCES_UPDATED_EVENT,
+  type TaskFilter,
+  type TaskListPreferences,
+} from "@/lib/task-list-preferences";
 import { toggleTaskDone } from "@/lib/task-actions";
 
 /**
@@ -23,8 +32,6 @@ import { toggleTaskDone } from "@/lib/task-actions";
  * fixtures. It is deliberately plain.
  */
 
-type TaskFilter = "all" | "overdue" | "upcoming" | "no-date" | "completed";
-
 const FILTERS: { label: string; value: TaskFilter }[] = [
   { label: "All", value: "all" },
   { label: "Overdue", value: "overdue" },
@@ -33,25 +40,14 @@ const FILTERS: { label: string; value: TaskFilter }[] = [
   { label: "Completed", value: "completed" },
 ];
 
-const SECTIONS: { title: string; value: Exclude<TaskFilter, "all"> }[] = [
-  { title: "Overdue", value: "overdue" },
-  { title: "Upcoming", value: "upcoming" },
-  { title: "No date", value: "no-date" },
-  { title: "Completed", value: "completed" },
-];
-
-/** Which section a task belongs in. `status` is the server's, never guessed. */
-function sectionOf(task: TaskSummary): Exclude<TaskFilter, "all"> {
-  if (task.status === "completed") return "completed";
-  if (task.status === "overdue") return "overdue";
-  return task.dueDate ? "upcoming" : "no-date";
-}
-
 export default function TasksPage() {
   const [tasks, setTasks] = useState<TaskSummary[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [filter, setFilter] = useState<TaskFilter>("all");
   const [query, setQuery] = useState("");
+  const [preferences, setPreferences] = useState<TaskListPreferences>(
+    DEFAULT_TASK_LIST_PREFERENCES,
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -78,6 +74,47 @@ export default function TasksPage() {
     void load();
     return () => {
       cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    function refreshPreferences() {
+      try {
+        const saved = parseTaskListPreferences(
+          window.localStorage.getItem(TASK_LIST_PREFERENCES_STORAGE_KEY),
+        );
+        setPreferences(saved);
+        setFilter(saved.defaultFilter);
+      } catch (error) {
+        setLoadError(
+          error instanceof Error
+            ? error.message
+            : "Task list preferences could not be read.",
+        );
+      }
+    }
+
+    function onStorage(event: StorageEvent) {
+      if (
+        event.key === TASK_LIST_PREFERENCES_STORAGE_KEY ||
+        event.key === null
+      ) {
+        refreshPreferences();
+      }
+    }
+
+    refreshPreferences();
+    window.addEventListener("storage", onStorage);
+    window.addEventListener(
+      TASK_LIST_PREFERENCES_UPDATED_EVENT,
+      refreshPreferences,
+    );
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener(
+        TASK_LIST_PREFERENCES_UPDATED_EVENT,
+        refreshPreferences,
+      );
     };
   }, []);
 
@@ -113,15 +150,13 @@ export default function TasksPage() {
         ),
     );
 
-    return SECTIONS.filter(
-      (section) => filter === "all" || filter === section.value,
-    ).map((section) => ({
-      ...section,
-      tasks: matching.filter((task) => sectionOf(task) === section.value),
-    }));
-  }, [tasks, needle, filter]);
+    return groupTaskList(matching, {
+      ...preferences,
+      defaultFilter: filter,
+    });
+  }, [tasks, needle, filter, preferences]);
 
-  const hasAnyTask = sections.some((section) => section.tasks.length > 0);
+  const hasAnyTask = sections.length > 0;
 
   return (
     <div className="space-y-6">
@@ -138,7 +173,10 @@ export default function TasksPage() {
 
       <Tabs
         value={filter}
-        onValueChange={(value) => setFilter(value as TaskFilter)}
+        onValueChange={(value) => {
+          const selected = FILTERS.find((item) => item.value === value);
+          if (selected) setFilter(selected.value);
+        }}
       >
         <TabsList className="flex-wrap">
           {FILTERS.map((item) => (
@@ -169,22 +207,24 @@ export default function TasksPage() {
         <EmptyState icon={ListChecks} title="No tasks here" />
       ) : (
         <div className="space-y-8">
-          {sections.map((section) =>
-            section.tasks.length === 0 ? null : (
-              <section key={section.value} className="space-y-2">
+          {sections.map((section) => (
+            <section key={section.key} className="space-y-2">
+              {preferences.groupBy !== "none" ||
+              filter === "all" ||
+              section.label !== "Tasks" ? (
                 <h2 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
-                  {section.title}
+                  {section.label}
                 </h2>
-                <ul className="space-y-2">
-                  {section.tasks.map((task) => (
-                    <li key={task.id}>
-                      <TaskRow task={task} onToggle={onToggle} />
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            ),
-          )}
+              ) : null}
+              <ul className="space-y-2">
+                {section.tasks.map((task) => (
+                  <li key={task.id}>
+                    <TaskRow task={task} onToggle={onToggle} />
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
         </div>
       )}
     </div>
