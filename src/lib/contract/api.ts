@@ -320,12 +320,15 @@ export type StoredUploadRequest = {
 };
 
 /*
- * There is deliberately no ConfirmDocumentRequest, and deliberately no endpoint
- * anywhere that corrects a reading.
+ * There is deliberately no ConfirmDocumentRequest: confirmation takes an empty
+ * body. Photo readings have no correction endpoint.
  *
  * The text below describes photo review. Email review now has an explicit
- * exception: DocumentDetail.correction opens editable unconfirmed fields, and
- * POST /api/documents/:id/correct records a separate user-corrected reading.
+ * exception when a decided reading fails on an uncertain or unreadable date or
+ * amount: DocumentDetail.correction opens unconfirmed fields automatically and
+ * allows editing all six fields. POST /api/documents/:id/correct records a
+ * separate user-corrected reading and keeps the original reading and model calls.
+ * Provider failures and unresolved voting cannot be corrected.
  * Confirmation itself still takes an empty body and creates the task afterward.
  *
  * Confirming sends an empty body. The person looked, the person nodded, that is
@@ -348,7 +351,7 @@ export type StoredUploadRequest = {
  * work from typing a date into a box on a phone. The exam demanded the hard
  * kind, at the worst moment, about the values least likely to be right.
  *
- * So the screen shows and it never asks. Rows the model read confidently are
+ * So photo review shows and it never asks. Rows the model read confidently are
  * displayed, read-only. A row with no value is not drawn at all, because an
  * empty box invites an answer nobody is asking for. A date or an amount the
  * model was not sure of never reaches this screen as an empty row: the reading
@@ -367,7 +370,7 @@ export type StoredUploadRequest = {
  * accuracy signal, the value a person typed against the value the model read;
  * with editing gone that signal is gone, and accuracy now rests entirely on the
  * synthetic evaluation line, where ground truth is known by construction. And
- * this release has no correction path at all: joining a later upload to a letter
+ * photo uploads have no correction path: joining a later upload to a letter
  * already in the system is not in it (docs/scope.md), so photographing a letter
  * again makes a second letter rather than mending the first.
  *

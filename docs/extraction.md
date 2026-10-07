@@ -4,6 +4,32 @@ What the reading step calls, and why. Newest decision on top. Each entry says wh
 
 The code in `src/server/extraction/` follows this file, not the other way round. To change the prompt, the model or the effort there: run an experiment under `experiments/module-01-extraction/`, add an entry here that cites its report, then change the code to match.
 
+## 2026-10-07 · Email correction exception, confirmed
+
+**What was chosen.** Photo letters remain show-only: a decided reading whose due
+date or amount is uncertain or unreadable fails as a whole. Email has an explicit
+exception at that same point: its owner may correct all six fields, with
+unconfirmed fields open by default and required, and confirmed fields also
+editable. Uncertain model guesses stay hidden and never prefill inputs. The
+correction is saved as a separate user-corrected reading; the original reading
+and model calls are kept. Ordinary review and empty-body confirmation follow
+before tasks or reminders are created. Provider failures and unresolved voting
+cannot be corrected.
+
+**Scheme, prompt, model and effort.** Unchanged for both photo and email reading.
+This is a workflow decision, not a new extraction accuracy claim.
+
+**Basis.** Jason's [PR #37 review](https://github.com/Day-Keeper-Group1/Day-Keeper-Group-1/pull/37#discussion_r4202625927)
+accepts the email exception after end-to-end testing and asks for consistent
+documentation. [`tests/email-correction.test.ts`](../tests/email-correction.test.ts)
+checks required corrections, optional confirmed-field edits and validation;
+[`tests/db/email.test.ts`](../tests/db/email.test.ts) checks ownership, one-time
+correction and the return to needs-review. The separate reading and task boundary
+are implemented in [`src/server/email/correction.ts`](../src/server/email/correction.ts).
+
+**Status: confirmed**, 7 October 2026, for the Module 2 development extension in
+[`scope.md`](scope.md). The photo release boundary is unchanged.
+
 ## 2026-09-24 · Contact has a due date, and the letters are re-dated, confirmed
 
 **What changed.** Two things, measured one at a time. The fifteen letters in scope were replaced by their re-dated versions, with deadlines in November 2026 (experiment 08, letters only). Then one sentence of the prompt: Contact joins Pay, Attend, Return form and Collect as an action that has a due date, so a letter that asks her to phone before a date keeps the date (experiment 09, prompt only). No action, Take medicine and Stop using still have none. Letter 08's answer key takes Contact as its action and also accepts Return form; its README says why.

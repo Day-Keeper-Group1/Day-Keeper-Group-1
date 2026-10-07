@@ -99,7 +99,7 @@ Sign in with a seeded account (`margaret@example.com` or `operator@example.com`,
 Two rules that are easy to break by accident. Both are written where they are enforced, with the reasoning attached, so read them there rather than trusting a summary:
 
 - **The six fields are a floor, not a ceiling**, and a field the reader could not read says so rather than going missing. [`src/lib/contract/fields.ts`](src/lib/contract/fields.ts) and [`src/lib/contract/extraction.ts`](src/lib/contract/extraction.ts).
-- **The review screen shows, it never asks.** [`src/lib/contract/api.ts`](src/lib/contract/api.ts).
+- **Photo review shows, it never asks.** An email whose decided reading has an uncertain or unreadable due date or amount has an explicit exception: its owner can edit all six fields before review. Corrections are saved as a separate user-corrected reading, preserving the original; provider failures and unresolved voting cannot be corrected. [`src/lib/contract/api.ts`](src/lib/contract/api.ts).
 
 ## Changing the database, and what the accounts hold
 

@@ -31,7 +31,10 @@ Origin, and accepts `{ runId, fields: [{ key, value }] }`. Every unconfirmed
 six-field key must appear once; confirmed keys may also be edited, without duplicates. Dates must
 be real ISO calendar dates (or `Not applicable`); amounts must be valid AUD amounts
 (or `No payment required`). It returns `{ documentId }`, moves the document to
-needs-review, and records a separate user-corrected reading. It creates no tasks
+needs-review, and records a separate user-corrected reading, preserving the original
+reading and model calls. This exception applies only when a decided email reading
+failed because its due date or amount was uncertain or unreadable. Provider failures
+and unresolved voting cannot be corrected. It creates no tasks
 or reminders; the existing empty-body confirm endpoint does that afterward.
 Missing or foreign documents return 404; stale, saved, non-email or unrecoverable
 readings and invalid corrections return 409; malformed requests return 400.
@@ -794,9 +797,14 @@ one when there is more than one (`factLines()` in `src/lib/facts.ts`).
 `unreadable`, and `src/lib/contract/extraction.ts` says what each status means
 and why a value the model was unsure of never reaches this response.
 
-**The screen shows, it never asks.** Nothing in this payload is editable and
-nothing in it is a question, which is why there is no correction endpoint
-anywhere in this document. The reasoning is in `src/lib/contract/api.ts`.
+**Photo review shows, it never asks.** Photo fields are read-only. Email has an
+explicit exception: when a decided reading fails because its due date or amount
+is uncertain or unreadable, its owner may edit all six fields through
+`POST /api/documents/:id/correct` before ordinary review and confirmation.
+Unconfirmed fields require correction; confirmed fields may also be edited.
+The correction is a separate user-corrected reading and the original is kept.
+Provider failures and unresolved voting cannot be corrected. The reasoning is
+in `src/lib/contract/api.ts`.
 
 ## Confirm a letter
 

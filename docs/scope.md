@@ -57,7 +57,7 @@ the six fields with the project Azure reader, and opens the same
 read-only review and confirmation flow as photo uploads. Confirmation creates
 the task and reminders; a No action reading creates neither. It does not monitor mail. See [`gmail-setup.md`](gmail-setup.md).
 Email exception: when the voting scheme reaches a reading but its date or amount
-is uncertain, the user may edit all six fields, with unconfirmed fields open by default, review the
+is uncertain or unreadable, the user may edit all six fields, with unconfirmed fields open by default, review the
 resulting plan, and confirm. The original failed reading remains in history;
 corrections are recorded as a separate user-corrected reading. Photo review remains
 read-only. Provider failures and unresolved voting results cannot be corrected.
@@ -74,7 +74,8 @@ can be shown, measured and corrected, and a half-covered one can only be describ
 
 Postgres holds the data and an object store holds the photographs. The reading returns
 six fields and may return more, with the extra kept in `open_payload`. A value the model
-was not sure of never reaches a screen, and nobody is offered an empty box to fill in;
+was not sure of never reaches a screen. Photo review offers no correction inputs;
+email has the explicit correction exception above, without showing uncertain model guesses.
 [`src/lib/contract/extraction.ts`](../src/lib/contract/extraction.ts) says what happens
 to it instead. A task's tick is its only state, and whether a task is
 overdue is worked out from the clock rather than stored. The theme
