@@ -150,19 +150,29 @@ export type TaskSummary = {
  * of the letter it came from, and enough to show the photographs. Served by
  * GET /api/tasks/:id.
  */
-export type TaskDetail = TaskSummary & {
-  /**
-   * The task's letter. Required here, though `tasks.document_id` is nullable:
-   * confirming a document is the only thing that creates a task this semester,
-   * so every task has one. The column is nullable for the day someone adds a
-   * task by hand, and that day this type gains a second shape.
-   */
-  documentId: string;
-  fields: ExtractedFieldView[];
-  identifiers: IdentifierView[];
-  /** How many photographs the letter has. */
-  pageCount: number;
-};
+export type TaskDetail = TaskSummary &
+  (
+    | {
+        source: "document";
+        /**
+         * The task's letter. Required here, though `tasks.document_id` is nullable:
+         * confirming a document is the only thing that creates a task this semester,
+         * so every task has one. The column is nullable for the day someone adds a
+         * task by hand, and that day this type gains a second shape.
+         */
+        documentId: string;
+        fields: ExtractedFieldView[];
+        identifiers: IdentifierView[];
+        /** How many photographs the letter has. */
+        pageCount: number;
+      }
+    | {
+        source: "voice";
+        conversationId: string;
+        transcript: import("./voice").ConversationTranscript;
+        evidence: number[];
+      }
+  );
 
 /**
  * KAN-58: one number the letter prints, as a screen shows it.
@@ -384,6 +394,15 @@ export type HomeCounts = {
 export type HomePayload = {
   counts: HomeCounts;
   inbox: DocumentSummary[];
+  voiceToCheck: Array<{
+    id: string;
+    conversationId: string;
+    title: string;
+    dueDate: string | null;
+    dueTime: string | null;
+    createdAt: string;
+  }>;
+  voiceProcessing: number;
   tasks: TaskSummary[];
 };
 

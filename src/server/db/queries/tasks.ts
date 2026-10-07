@@ -24,7 +24,7 @@
  */
 
 import "server-only";
-import { and, asc, eq, gte, isNotNull, ne, type SQL } from "drizzle-orm";
+import { and, asc, eq, gte, ne, type SQL } from "drizzle-orm";
 import type { Db } from "../client";
 import { reminders, tasks } from "../schema";
 import { daysBefore, keepOrNow } from "../sql";
@@ -101,7 +101,6 @@ export async function findOwnedTaskRows(
       and(
         eq(tasks.id, taskId),
         ownedTask(userId),
-        isNotNull(tasks.documentId),
         ne(tasks.state, "dismissed"),
       ),
     )
@@ -225,7 +224,7 @@ export async function insertTask(
   db: Db,
   task: {
     userId: string;
-    documentId: string;
+    documentId: string | null;
     title: string;
     issuer: string | null;
     dueDate: string | null;

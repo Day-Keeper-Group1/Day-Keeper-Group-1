@@ -242,7 +242,11 @@ describe("the app on one connection", () => {
       `uploads/${margaret.id}/${letter}/1.png`,
     );
     expect(await listTasks(margaret.id, MELBOURNE)).toHaveLength(1);
-    expect((await getTask(task, margaret.id, MELBOURNE))?.pageCount).toBe(1);
+    const taskDetail = await getTask(task, margaret.id, MELBOURNE);
+    expect(taskDetail?.source).toBe("document");
+    if (taskDetail?.source !== "document")
+      throw new Error("Expected a letter task.");
+    expect(taskDetail.pageCount).toBe(1);
 
     // Nothing waited for a connection it could not have, and every scripted
     // answer was asked for.
