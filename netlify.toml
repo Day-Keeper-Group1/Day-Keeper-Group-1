@@ -12,3 +12,6 @@
 [build]
   command = "next build --webpack"
   publish = ".next"
+
+[functions."voice-cleanup"]
+  schedule = "*/15 * * * *"

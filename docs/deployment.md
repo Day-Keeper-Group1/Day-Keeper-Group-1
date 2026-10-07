@@ -113,6 +113,26 @@ Mistakes made on the way, so nobody repeats them:
 
 The code does not know where any of these are. It reads their addresses and credentials from environment variables, so the same code runs against Docker on a laptop and against the hosted services, and deploying means filling in a second set of variables rather than changing code.
 
+### Voice milestone deployment check
+
+The Voice branch adds browser transcription and server-side commitment
+extraction. The speech model downloads to the browser; Netlify does not run it
+and never receives audio. Before a Voice preview or production demonstration,
+set `AI_VOICE_EXTRACTION_PROVIDER=azure` in the corresponding Netlify deploy
+context and use the existing team Azure configuration and daily key limit.
+The default `mock` provider accepts only the six reviewed fixture transcripts;
+an arbitrary recording will fail extraction under that default. Confirm that
+the database migration has run before the new app is deployed, as the CD
+pipeline already orders those steps.
+
+`netlify.toml` schedules `voice-cleanup` every 15 minutes on a published
+production deploy. It clears transcript data in queued or processing records
+older than two minutes after an interrupted function. The Voice page also
+performs this cleanup when someone opens a conversation, so a preview deploy
+does not rely on the schedule. Check a preview with one fictional recording
+through upload, extraction, To check, Confirm and task detail before the team
+uses the new path in a demonstration.
+
 Docker is only for local development. Nothing in the cloud runs a container: Netlify takes the built app and runs Next.js itself, and Supabase runs Postgres for us.
 
 ## What a merge to main does (KAN-86)
