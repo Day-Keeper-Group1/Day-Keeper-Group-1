@@ -130,7 +130,7 @@ export function EmailCorrectionForm({
                         aria-expanded={showReferenceHelp}
                         onFocus={() => setShowReferenceHelp(true)}
                         onBlur={() => setShowReferenceHelp(false)}
-                        onClick={() => setShowReferenceHelp((shown) => !shown)}
+                        onClick={() => setShowReferenceHelp(true)}
                         onKeyDown={(event) => {
                           if (event.key === "Escape")
                             setShowReferenceHelp(false);
