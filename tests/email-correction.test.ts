@@ -24,6 +24,26 @@ const request = {
   fields: [{ key: "due_date" as const, value: "2027-05-25" }],
 };
 describe("email corrections", () => {
+  it("explains invalid action words in plain language", () => {
+    expect(() =>
+      applyEmailCorrections(result, {
+        ...request,
+        fields: [
+          ...request.fields,
+          { key: "action_required", value: "Payment to AGL" },
+        ],
+      }),
+    ).toThrow("Start with what to do, for example Pay, Contact or Attend.");
+    expect(
+      applyEmailCorrections(result, {
+        ...request,
+        fields: [
+          ...request.fields,
+          { key: "action_required", value: "Pay AGL" },
+        ],
+      }).fields.find((field) => field.key === "action_required")?.value,
+    ).toBe("Pay AGL");
+  });
   it("requires a complete date and preserves every confidently read field", () => {
     expect(correctionKeys(result)).toEqual(["due_date"]);
     const corrected = applyEmailCorrections(result, request);

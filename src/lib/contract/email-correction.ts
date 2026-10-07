@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { CONTRACT_FIELD_KEYS, type ContractFieldKey } from "./fields";
+import {
+  actionWordOf,
+  CONTRACT_FIELD_KEYS,
+  type ContractFieldKey,
+} from "./fields";
 import { isIsoDate } from "./dates";
 import { parseExtractionResult, type ExtractionResult } from "./extraction";
 
@@ -42,6 +46,10 @@ export function applyEmailCorrections(
       "Correct each highlighted field and submit each field only once.",
     );
   for (const field of request.fields) {
+    if (field.key === "action_required" && actionWordOf(field.value) === null)
+      throw new Error(
+        "Start with what to do, for example Pay, Contact or Attend.",
+      );
     if (
       field.key === "due_date" &&
       field.value !== "Not applicable" &&

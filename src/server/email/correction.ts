@@ -1,4 +1,5 @@
 import "server-only";
+import { ZodError } from "zod";
 import { db } from "@/server/db";
 import type { Db } from "@/server/db";
 import {
@@ -69,9 +70,11 @@ export async function correctEmailReading(
       result = applyEmailCorrections(recovered.result, request);
     } catch (error) {
       throw new EmailCorrectionRefused(
-        error instanceof Error
-          ? error.message
-          : "Check the highlighted fields.",
+        error instanceof ZodError
+          ? "Check the highlighted fields and try again."
+          : error instanceof Error
+            ? error.message
+            : "Check the highlighted fields.",
       );
     }
     const runId = await insertOwnedCorrectedEmailRound(

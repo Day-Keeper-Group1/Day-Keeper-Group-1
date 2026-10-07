@@ -103,6 +103,20 @@ describe("retained emails after the database merge", () => {
     expect(
       await correctEmailReading(documentId, stranger.id, request),
     ).toBeNull();
+    await expect(
+      correctEmailReading(documentId, owner.id, {
+        ...request,
+        fields: [
+          ...request.fields,
+          { key: "action_required", value: "Payment to AGL" },
+        ],
+      }),
+    ).rejects.toThrow(
+      "Start with what to do, for example Pay, Contact or Attend.",
+    );
+    expect(
+      (await getDocument(documentId, owner.id, owner.timeZone))?.status,
+    ).toBe("failed");
     expect(await correctEmailReading(documentId, owner.id, request)).toEqual({
       documentId,
     });
