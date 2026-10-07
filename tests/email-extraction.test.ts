@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-const mocks = vi.hoisted(() => ({ create: vi.fn(), env: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  create: vi.fn(),
+  env: vi.fn(),
+  spend: vi.fn(),
+}));
 vi.mock("@/server/env", () => ({ env: mocks.env }));
 vi.mock("openai", () => {
   class Client {
@@ -11,9 +15,11 @@ vi.mock("openai", () => {
   return { default: Client };
 });
 vi.mock("@/server/ai/school-key", () => ({
+  SchoolKeyExhausted: class extends Error {},
   schoolKeyClient: () => ({ responses: { create: mocks.create } }),
-  spendSchoolKey: vi.fn(),
+  spendSchoolKey: mocks.spend,
 }));
+import { SchoolKeyExhausted } from "@/server/ai/school-key";
 import { readEmailCall } from "@/server/email/extraction";
 import { READER } from "@/server/extraction/scheme";
 
@@ -45,6 +51,13 @@ beforeEach(() => {
   });
 });
 describe("email extraction", () => {
+  it("does not retry or call the model when the daily budget is exhausted", async () => {
+    mocks.spend.mockRejectedValue(new SchoolKeyExhausted(200));
+    await expect(readEmailCall(message)).rejects.toMatchObject({
+      retryable: false,
+    });
+    expect(mocks.create).not.toHaveBeenCalled();
+  });
   it("keeps instructions separate from untrusted mail and validates/stamps the six fields", async () => {
     mocks.create.mockResolvedValue({ output_text: JSON.stringify(result) });
     const reading = await readEmailCall(message);

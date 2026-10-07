@@ -1,6 +1,10 @@
 import { after } from "next/server";
 import { z } from "zod";
 import { fail } from "@/server/api/respond";
+import {
+  schoolKeyBudget,
+  READING_PAUSED_MESSAGE,
+} from "@/server/ai/school-key";
 import { gmailRoute } from "@/server/email/gmail/http";
 import { mailboxAccess } from "@/server/email/gmail/connection";
 import { GmailProvider } from "@/server/email/gmail/provider";
@@ -23,6 +27,9 @@ export const POST = gmailRoute(async (request, userId) => {
       "Choose an email from your connected inbox.",
     );
   requireEmailReader();
+  const budget = await schoolKeyBudget();
+  if (budget.exhausted)
+    return fail("too_many_requests", READING_PAUSED_MESSAGE);
   const access = await mailboxAccess(userId);
   // Fetch from this user's actual mailbox; never accept a body or extracted fields from the browser.
   const message = await new GmailProvider(access.token).readMessage(

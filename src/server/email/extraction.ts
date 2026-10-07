@@ -2,7 +2,11 @@ import "server-only";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import OpenAI from "openai";
-import { schoolKeyClient, spendSchoolKey } from "@/server/ai/school-key";
+import {
+  SchoolKeyExhausted,
+  schoolKeyClient,
+  spendSchoolKey,
+} from "@/server/ai/school-key";
 import { env } from "@/server/env";
 import type { EmailMessage } from "@/lib/contract/email";
 import { APP_TIME_ZONE, todayInZone } from "@/lib/contract/dates";
@@ -35,10 +39,17 @@ export async function readEmailCall(
 ): Promise<Reading> {
   requireEmailReader();
   const client = schoolKeyClient();
+  try {
+    await spendSchoolKey("email");
+  } catch (error) {
+    if (error instanceof SchoolKeyExhausted) {
+      throw new ExtractionFailure(error.message, { retryable: false });
+    }
+    throw error;
+  }
   const started = Date.now();
   let response;
   try {
-    await spendSchoolKey("email");
     response = await client.responses.create(
       {
         model: cell.model,

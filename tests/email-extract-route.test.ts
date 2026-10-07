@@ -6,6 +6,11 @@ const mocks = vi.hoisted(() => ({
   create: vi.fn(),
   read: vi.fn(),
   requireReader: vi.fn(),
+  budget: vi.fn(),
+}));
+vi.mock("@/server/ai/school-key", () => ({
+  schoolKeyBudget: mocks.budget,
+  READING_PAUSED_MESSAGE: "Reading is paused until tomorrow.",
 }));
 vi.mock("next/server", () => ({ after: mocks.after }));
 vi.mock("@/server/email/gmail/http", () => ({
@@ -39,6 +44,7 @@ const send = (body: unknown) =>
   );
 beforeEach(() => {
   vi.resetAllMocks();
+  mocks.budget.mockResolvedValue({ exhausted: false });
   mocks.access.mockResolvedValue({
     token: "access",
     connectionId: "connection",
@@ -50,6 +56,20 @@ beforeEach(() => {
   mocks.create.mockResolvedValue({ documentId: "document", queued: true });
 });
 describe("selected email endpoint", () => {
+  it("refuses exhausted budgets before fetching or saving mail", async () => {
+    mocks.budget.mockResolvedValue({ exhausted: true });
+    const response = await send({
+      messageId: "abc123",
+      mailbox: "owner@example.com",
+    });
+    expect(response.status).toBe(429);
+    expect(await response.json()).toMatchObject({
+      error: { message: "Reading is paused until tomorrow." },
+    });
+    expect(mocks.access).not.toHaveBeenCalled();
+    expect(mocks.create).not.toHaveBeenCalled();
+    expect(mocks.after).not.toHaveBeenCalled();
+  });
   it("fetches the selected message server-side for the signed-in owner and schedules reading after response", async () => {
     const response = await send({
       messageId: "abc123",
