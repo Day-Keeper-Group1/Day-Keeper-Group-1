@@ -148,7 +148,8 @@ export function ActivityProvider({ children }: { children: React.ReactNode }) {
   }, [pathname, take]);
 
   // Every five seconds while anything is being read, and not otherwise.
-  const processing = home?.counts.processing ?? 0;
+  const processing =
+    (home?.counts.processing ?? 0) + (home?.voiceProcessing ?? 0);
   useEffect(() => {
     if (processing === 0) return;
     const timer = window.setInterval(() => void refresh(), POLL_MS);

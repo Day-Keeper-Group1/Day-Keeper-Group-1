@@ -296,6 +296,8 @@ const SERVICES: Record<string, Case> = {
     answers: {
       counts: { needsReview: 0, processing: 0, failed: 0 },
       inbox: [],
+      voiceToCheck: [],
+      voiceProcessing: 0,
       tasks: [],
     },
     listsTheAskersOwn: true,

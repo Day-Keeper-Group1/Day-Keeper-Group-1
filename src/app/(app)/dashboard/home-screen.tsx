@@ -9,6 +9,7 @@ import { FolderOpen } from "lucide-react";
 
 import { Panel, ScreenHeader } from "@/components/screen";
 import { InboxRow } from "@/components/inbox-row";
+import { VoiceInboxRow } from "@/components/voice-inbox-row";
 import { useActivity } from "@/components/layout/activity";
 import { TaskRow } from "@/components/task-row";
 import { TaskSheet } from "@/components/task-sheet";
@@ -72,7 +73,7 @@ export function HomeScreen({
     if (home) setPayload(home);
   }
 
-  const { counts, inbox, tasks } = payload;
+  const { counts, inbox, voiceToCheck, voiceProcessing, tasks } = payload;
   const openTask = tasks.find((task) => task.id === openTaskId) ?? null;
 
   /**
@@ -117,7 +118,7 @@ export function HomeScreen({
     }
   }
 
-  const cta = ctaFor(counts);
+  const cta = ctaFor(counts, voiceProcessing);
   /*
    * Green is reserved for the one state that is asking her for something.
    *
@@ -128,10 +129,27 @@ export function HomeScreen({
    * "is she being asked for something" as one question with one answer.
    */
   const ctaAsksForSomething = counts.needsReview > 0;
-  const firstToCheck = inbox.find((doc) => doc.status === "needs-review");
-  const ctaHref = firstToCheck
-    ? `/documents/${firstToCheck.id}/review`
-    : "/documents/new";
+  const toCheck = [
+    ...inbox.map((doc) => ({
+      source: "document" as const,
+      at: doc.uploadedAt,
+      doc,
+    })),
+    ...voiceToCheck.map((item) => ({
+      source: "voice" as const,
+      at: item.createdAt,
+      item,
+    })),
+  ].sort((a, b) => a.at.localeCompare(b.at));
+  const firstToCheck = toCheck.find(
+    (row) => row.source === "voice" || row.doc.status === "needs-review",
+  );
+  const ctaHref =
+    firstToCheck?.source === "voice"
+      ? `/conversations/${firstToCheck.item.conversationId}/commitments/${firstToCheck.item.id}/review`
+      : firstToCheck?.source === "document"
+        ? `/documents/${firstToCheck.doc.id}/review`
+        : "/documents/new";
   const groups = groupTasks(tasks, today);
   const later = foldLater(groups.later);
   const firstName = user.displayName.trim().split(/\s+/)[0] || user.displayName;
@@ -174,18 +192,26 @@ export function HomeScreen({
             </span>
           </button>
 
-          {inbox.length > 0 ? (
+          {toCheck.length > 0 ? (
             <Panel title="To check">
               <ul>
-                {inbox.map((doc) => (
+                {toCheck.map((row) => (
                   // The rule between rows sits on the item rather than inside
                   // the row, so that "no rule above the first one" is a fact
                   // about the list and not something each row has to know.
                   <li
-                    key={doc.id}
+                    key={
+                      row.source === "document"
+                        ? `document:${row.doc.id}`
+                        : `voice:${row.item.id}`
+                    }
                     className="border-t border-line first:border-t-0"
                   >
-                    <InboxRow doc={doc} />
+                    {row.source === "document" ? (
+                      <InboxRow doc={row.doc} />
+                    ) : (
+                      <VoiceInboxRow item={row.item} />
+                    )}
                   </li>
                 ))}
               </ul>

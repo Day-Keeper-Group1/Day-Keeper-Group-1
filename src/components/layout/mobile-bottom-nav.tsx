@@ -56,7 +56,7 @@ function NavTab({
         <span className="absolute -top-1 right-3.5 rounded-full bg-primary px-1.5 py-px text-dow font-bold text-primary-foreground">
           {badge}
           <span className="sr-only">
-            {badge === 1 ? " letter to check" : " letters to check"}
+            {badge === 1 ? " item to check" : " items to check"}
           </span>
         </span>
       ) : null}

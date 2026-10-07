@@ -50,6 +50,10 @@ import {
   type FieldRow,
 } from "@/server/db/queries/readings";
 import { listOwnedRecentlyCompletedTaskIds } from "@/server/db/queries/tasks";
+import {
+  countOwnedVoiceProcessing,
+  listOwnedVoiceToCheck,
+} from "@/server/db/queries/voice";
 import { identifierViews, mapField } from "@/server/field-views";
 import { listTasks } from "@/server/tasks";
 
@@ -297,28 +301,33 @@ export async function getHome(
   timeZone: string,
   now: Date = new Date(),
 ): Promise<HomePayload> {
-  const [inboxRows, allTasks, recentlyCompleted] = await Promise.all([
-    // Every letter not yet dealt with, in one merged list, first photographed
-    // first and uncapped. The prototype draws these interleaved in a single
-    // card, so they travel as the one list they are rather than as three the
-    // client has to weave. KAN-59: oldest on top, because checking starts from
-    // the top and the pile is checked in the order it was photographed.
-    listOwnedInboxRows(db(), userId),
-    listTasks(userId, timeZone, now),
-    // Which ticks are recent enough to still be shown. The window is asked for
-    // here rather than read off a task summary, because a summary carries the
-    // tick and not the moment of it.
-    listOwnedRecentlyCompletedTaskIds(
-      db(),
-      userId,
-      now,
-      COMPLETED_TASK_WINDOW_DAYS,
-    ),
-  ]);
+  const [inboxRows, allTasks, recentlyCompleted, voiceRows, voiceProcessing] =
+    await Promise.all([
+      // Every letter not yet dealt with, in one merged list, first photographed
+      // first and uncapped. The prototype draws these interleaved in a single
+      // card, so they travel as the one list they are rather than as three the
+      // client has to weave. KAN-59: oldest on top, because checking starts from
+      // the top and the pile is checked in the order it was photographed.
+      listOwnedInboxRows(db(), userId),
+      listTasks(userId, timeZone, now),
+      // Which ticks are recent enough to still be shown. The window is asked for
+      // here rather than read off a task summary, because a summary carries the
+      // tick and not the moment of it.
+      listOwnedRecentlyCompletedTaskIds(
+        db(),
+        userId,
+        now,
+        COMPLETED_TASK_WINDOW_DAYS,
+      ),
+      listOwnedVoiceToCheck(db(), userId),
+      countOwnedVoiceProcessing(db(), userId),
+    ]);
 
   const inbox = inboxRows.map((row) => mapDocument(row, timeZone));
   const counts: HomeCounts = {
-    needsReview: inbox.filter((row) => row.status === "needs-review").length,
+    needsReview:
+      inbox.filter((row) => row.status === "needs-review").length +
+      voiceRows.length,
     processing: inbox.filter((row) => row.status === "processing").length,
     failed: inbox.filter((row) => row.status === "failed").length,
   };
@@ -333,5 +342,14 @@ export async function getHome(
     (task) => task.status !== "completed" || recent.has(task.id),
   );
 
-  return { counts, inbox, tasks };
+  return {
+    counts,
+    inbox,
+    voiceToCheck: voiceRows.map((row) => ({
+      ...row,
+      createdAt: row.createdAt.toISOString(),
+    })),
+    voiceProcessing,
+    tasks,
+  };
 }

@@ -55,7 +55,7 @@ function SidebarLink({
         <span className="ml-auto rounded-full bg-primary px-2 py-px text-key font-bold text-primary-foreground">
           {badge}
           <span className="sr-only">
-            {badge === 1 ? " letter to check" : " letters to check"}
+            {badge === 1 ? " item to check" : " items to check"}
           </span>
         </span>
       ) : null}
