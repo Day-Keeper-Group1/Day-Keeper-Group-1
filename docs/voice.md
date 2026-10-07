@@ -1,6 +1,47 @@
 # Module 3: Voice and Conversation Intelligence
 
-**Status:** Milestone 1 prototype implemented for review; later milestones remain proposed.
+**Status:** Milestone 1 prototype retained; the short-recording workflow is implemented on the Voice milestone branch and awaits review and deployment.
+
+## Short-recording milestone
+
+The user can record with the microphone or choose an audio file. The browser
+decodes and transcribes at most 45 seconds with `whisper-tiny.en` on WebAssembly.
+The speech model runs on the user's device; no audio is uploaded or stored.
+This is post-recording transcription, not live transcription. The user must keep
+the Voice page open until transcription finishes. Recording needs a secure
+context and microphone permission. Upload and recording are both available on
+desktop; mobile support is deferred until it has been tested separately.
+
+The browser submits only the timestamped transcript to the authenticated
+server. The server saves it, runs the existing commitment extractor, validates
+the cited utterance indexes and stores only `clear` proposals. Those proposals
+appear in the same Home **To check** area as photographed letters. Opening one
+shows its title, date and highlighted transcript evidence. **Confirm** makes
+one ordinary task and its reminders; **Dismiss** removes the proposal without
+making a task. The task detail retains the highlighted transcript as evidence.
+Neither action edits the transcript or the proposal. An empty `clear` result
+shows a neutral completion state; `uncertain` proposals are discarded.
+
+If extraction fails, the server clears that attempt's transcript and records
+only its failed state. A 15-minute Netlify scheduled function clears queued or
+processing transcripts left by an interrupted host after two minutes. The app
+also checks for stale records when the user next opens Voice. Confirmed
+transcripts remain with their tasks; deletion and retention controls are later
+work. The database migration adds `voice_conversations` and
+`voice_commitments`; it does not alter the shared task columns.
+
+The local mock extractor recognizes the six reviewed fixture transcripts only.
+A newly recorded conversation needs `AI_VOICE_EXTRACTION_PROVIDER=azure` and
+the team's configured school key for meaningful extraction. The API uses the
+same daily key budget as document extraction. The recorded transcript has one
+anonymous speaker label, so it does not identify which person made a promise.
+
+The 45-second cap is a smoke-test product limit based on the desktop browser
+experiment, not a claim that every browser or every recording performs equally.
+The experiment and temporary planning material remain under the ignored
+`.storage/voice-temp/` folder until they are reviewed for publication.
+
+## Milestone 1 prototype (historical)
 
 The official project description defines Module 3 as consent-based call
 transcription and extraction of commitments and follow-ups. Module 3 remains

@@ -1,6 +1,5 @@
-import { voiceScenarios } from "@/server/voice/scenarios";
-import { ConversationScreen } from "./conversation-screen";
+import { VoiceCaptureScreen } from "./voice-capture-screen";
 
 export default function NewConversationPage() {
-  return <ConversationScreen scenarios={voiceScenarios} />;
+  return <VoiceCaptureScreen />;
 }

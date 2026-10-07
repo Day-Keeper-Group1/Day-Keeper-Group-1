@@ -42,7 +42,9 @@ tick.
 - The admin dashboard. The baseline names it among the first version deliverables, so
   its absence here is deliberate rather than an oversight. The operator role stays in
   the schema.
-- Modules 2 and 3. Email and voice are the next phase in the baseline's own wording.
+- Module 2 (email). Voice is being developed in a separate milestone and is not
+  part of the photographed-letter release described above until its end-to-end
+  flow has been reviewed and deployed.
 
 ## Why this shape
 
