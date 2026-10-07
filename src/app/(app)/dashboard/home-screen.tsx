@@ -445,7 +445,6 @@ export function HomeScreen({
         task={openTask}
         onClose={() => setOpenTaskId(null)}
         onToggle={handleToggle}
-        showSenderRule
       />
     </div>
   );

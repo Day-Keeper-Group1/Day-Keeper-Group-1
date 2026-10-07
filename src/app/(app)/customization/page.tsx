@@ -1,8 +1,6 @@
 import Link from "next/link";
 import {
   ArrowLeft,
-  Bell,
-  Building2,
   CalendarDays,
   LayoutDashboard,
   ListFilter,
@@ -33,50 +31,8 @@ export default function CustomizationPage() {
       />
       <PageHeader
         title="Customization"
-        description="Set browser-saved preferences for your dashboard, calendar, tasks, and reminders."
+        description="Set browser-saved preferences for your dashboard, calendar, and task list."
       />
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Sender rules</CardTitle>
-          <CardDescription>
-            Save default preferences for tasks from specific organizations.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button
-            variant="outline"
-            nativeButton={false}
-            render={
-              <Link href="/customization/sender-rules">
-                <Building2 className="size-5" strokeWidth={1.75} />
-                Manage sender rules
-              </Link>
-            }
-          />
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Reminders</CardTitle>
-          <CardDescription>
-            Choose your preferred time, quiet hours, and days.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button
-            variant="outline"
-            nativeButton={false}
-            render={
-              <Link href="/customization/reminders">
-                <Bell className="size-5" strokeWidth={1.75} />
-                Reminder preferences
-              </Link>
-            }
-          />
-        </CardContent>
-      </Card>
 
       <Card>
         <CardHeader>

@@ -7,8 +7,6 @@ import { useEffect, useState } from "react";
 import { BottomSheet } from "@/components/bottom-sheet";
 import { FactRow } from "@/components/fact-row";
 import { PhotoStrip } from "@/components/photo-strip";
-import { SenderRulePreferences } from "@/components/sender-rule-preferences";
-import { TaskReminderOverride } from "@/components/task-reminder-override";
 import { TaskRow } from "@/components/task-row";
 import type { TaskDetail, TaskSummary } from "@/lib/contract/api";
 import { factLines } from "@/lib/facts";
@@ -65,16 +63,18 @@ export function TaskEntry({
   task,
   detail,
   onToggle,
-  showSenderRule = false,
 }: {
   task: TaskSummary;
   detail: TaskDetail | null;
   onToggle: (task: TaskSummary) => void;
-  showSenderRule?: boolean;
 }) {
   const facts = factLines(detail?.fields ?? [], detail?.identifiers ?? []);
-  const letterDetails = (
-    <>
+
+  return (
+    <div>
+      {/* `.ent .row`: no rule above, 4px above and 10px below. */}
+      <TaskRow task={task} onToggle={onToggle} className="pt-1 pb-2.5" />
+
       {facts.length > 0 ? (
         <div>
           {facts.map((line) => (
@@ -91,23 +91,6 @@ export function TaskEntry({
           className="mt-3"
         />
       ) : null}
-    </>
-  );
-
-  return (
-    <div>
-      {/* `.ent .row`: no rule above, 4px above and 10px below. */}
-      <TaskRow task={task} onToggle={onToggle} className="pt-1 pb-2.5" />
-      <TaskReminderOverride key={task.id} task={task} />
-
-      {showSenderRule ? (
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.65fr)_minmax(16rem,1fr)]">
-          <div className="min-w-0">{letterDetails}</div>
-          <SenderRulePreferences issuer={task.issuer} showNoMatch />
-        </div>
-      ) : (
-        letterDetails
-      )}
     </div>
   );
 }
@@ -123,12 +106,10 @@ export function TaskSheet({
   task,
   onClose,
   onToggle,
-  showSenderRule = false,
 }: {
   task: TaskSummary | null;
   onClose: () => void;
   onToggle: (task: TaskSummary) => void;
-  showSenderRule?: boolean;
 }) {
   const detail = useTaskDetail(task?.id ?? null);
   const kind = detail?.fields.find(
@@ -138,19 +119,9 @@ export function TaskSheet({
     task?.issuer && kind ? `${task.issuer} · ${kind}` : (task?.title ?? "");
 
   return (
-    <BottomSheet
-      open={task !== null}
-      onClose={onClose}
-      heading={heading}
-      size={showSenderRule ? "wide" : "default"}
-    >
+    <BottomSheet open={task !== null} onClose={onClose} heading={heading}>
       {task ? (
-        <TaskEntry
-          task={task}
-          detail={detail}
-          onToggle={onToggle}
-          showSenderRule={showSenderRule}
-        />
+        <TaskEntry task={task} detail={detail} onToggle={onToggle} />
       ) : null}
     </BottomSheet>
   );
