@@ -13,6 +13,7 @@
 import { z } from "zod";
 
 export const VOICE_CONTRACT_VERSION = "1.0" as const;
+export const MAX_VOICE_DURATION_MS = 45_000;
 
 const isoDateSchema = z.string().refine(
   (value) => {

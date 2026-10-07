@@ -40,7 +40,16 @@ const fixturePairs = [
 ] as const;
 
 function transcriptKey(transcript: ConversationTranscript): string {
-  return JSON.stringify(transcript.utterances);
+  // JSONB does not preserve object key order after a database round trip.
+  return JSON.stringify(
+    transcript.utterances.map((line) => [
+      line.index,
+      line.speaker,
+      line.text,
+      line.startMs,
+      line.endMs,
+    ]),
+  );
 }
 
 const expectedByTranscript = new Map<string, unknown>(
