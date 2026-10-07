@@ -58,6 +58,218 @@ const specified = (text: string, anchor: string) =>
   `${text}\n\nSpecified in [docs/api.md](${API_MD}#${anchor}).`;
 
 const paths = {
+  "/api/conversations": {
+    get: {
+      tags: ["Voice"],
+      summary: "List recent voice processing records",
+      description: specified(
+        "Returns the signed-in person's recent transcription submissions and their processing states.",
+        "voice-conversations",
+      ),
+      responses: {
+        "200": answer(
+          "Recent conversations.",
+          { type: "array", items: { type: "object" } },
+          [],
+        ),
+        "401": NOT_SIGNED_IN,
+      },
+    },
+    post: {
+      tags: ["Voice"],
+      summary: "Save a browser transcript for commitment extraction",
+      description: specified(
+        "Accepts a timestamped transcript of at most 45 seconds. Audio stays in the browser. The response returns immediately and extraction continues after it.",
+        "voice-conversations",
+      ),
+      requestBody: {
+        required: true,
+        content: {
+          "application/json": {
+            schema: {
+              type: "object",
+              required: ["clientSubmissionId", "durationMs", "transcript"],
+              properties: {
+                clientSubmissionId: { type: "string", format: "uuid" },
+                durationMs: { type: "integer", minimum: 1, maximum: 45000 },
+                transcript: { type: "object" },
+              },
+            },
+            example: {
+              clientSubmissionId: "b5a13b10-c412-44c0-9180-3baa701bb99a",
+              durationMs: 4200,
+              transcript: {
+                version: "1.0",
+                utterances: [
+                  {
+                    startMs: 0,
+                    endMs: 4200,
+                    text: "I will call the clinic tomorrow.",
+                  },
+                ],
+              },
+            },
+          },
+        },
+      },
+      responses: {
+        "201": answer(
+          "Transcript saved; extraction queued.",
+          { type: "object" },
+          { id: "82e6cb2c-e092-4dcc-8fa6-c3a61e8a7e77", status: "queued" },
+        ),
+        "200": answer(
+          "Existing submission returned.",
+          { type: "object" },
+          { id: "82e6cb2c-e092-4dcc-8fa6-c3a61e8a7e77", status: "ready" },
+        ),
+        "400": refusal("Invalid or oversized transcript.", {
+          error: {
+            code: "invalid_request",
+            message: "This transcript could not be saved.",
+          },
+        }),
+        "401": NOT_SIGNED_IN,
+      },
+    },
+  },
+  "/api/conversations/{id}": {
+    get: {
+      tags: ["Voice"],
+      summary: "Read a voice processing result",
+      description: specified(
+        "Returns processing state and any clear commitments saved for this conversation.",
+        "voice-conversations",
+      ),
+      parameters: [ID("Conversation id.")],
+      responses: {
+        "200": answer(
+          "Conversation status and commitments.",
+          { type: "object" },
+          {
+            id: "82e6cb2c-e092-4dcc-8fa6-c3a61e8a7e77",
+            status: "ready",
+            commitments: [],
+          },
+        ),
+        "401": NOT_SIGNED_IN,
+        "404": refusal("Conversation not found for this person.", {
+          error: { code: "not_found", message: "Conversation not found." },
+        }),
+      },
+    },
+  },
+  "/api/conversations/{id}/commitments/{commitmentId}": {
+    get: {
+      tags: ["Voice"],
+      summary: "Review one voice commitment and its transcript evidence",
+      description: specified(
+        "Returns the clear commitment and its timestamped transcript.",
+        "voice-commitment-review",
+      ),
+      parameters: [
+        ID("Conversation id."),
+        {
+          name: "commitmentId",
+          in: "path",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+      ],
+      responses: {
+        "200": answer(
+          "Commitment and transcript evidence.",
+          { type: "object" },
+          {
+            status: "needs-review",
+            evidence: [0],
+            transcript: { version: "1.0", utterances: [] },
+          },
+        ),
+        "401": NOT_SIGNED_IN,
+        "404": refusal("Commitment not found for this person.", {
+          error: { code: "not_found", message: "Commitment not found." },
+        }),
+      },
+    },
+  },
+  "/api/conversations/{id}/commitments/{commitmentId}/confirm": {
+    post: {
+      tags: ["Voice"],
+      summary: "Confirm a voice commitment as a calendar task",
+      description: specified(
+        "Creates one shared task and its reminders, and keeps the highlighted transcript as evidence.",
+        "voice-commitment-review",
+      ),
+      parameters: [
+        ID("Conversation id."),
+        {
+          name: "commitmentId",
+          in: "path",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+      ],
+      responses: {
+        "200": answer(
+          "Created task.",
+          { type: "object" },
+          {
+            task: {
+              id: "321cf6d8-7692-45ec-8ea4-4bf74b029aeb",
+              title: "Call the clinic",
+            },
+          },
+        ),
+        "401": NOT_SIGNED_IN,
+        "404": refusal("Commitment not found for this person.", {
+          error: { code: "not_found", message: "Commitment not found." },
+        }),
+        "409": refusal("Already reviewed.", {
+          error: {
+            code: "conflict",
+            message: "This commitment has already been checked.",
+          },
+        }),
+      },
+    },
+  },
+  "/api/conversations/{id}/commitments/{commitmentId}/dismiss": {
+    post: {
+      tags: ["Voice"],
+      summary: "Dismiss a voice commitment",
+      description: specified(
+        "Removes the item from To check without creating a task.",
+        "voice-commitment-review",
+      ),
+      parameters: [
+        ID("Conversation id."),
+        {
+          name: "commitmentId",
+          in: "path",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+      ],
+      responses: {
+        "200": answer(
+          "Dismissed commitment.",
+          { type: "object" },
+          { id: "ed865114-a422-4e8c-8625-93958b7645c4", status: "dismissed" },
+        ),
+        "401": NOT_SIGNED_IN,
+        "404": refusal("Commitment not found for this person.", {
+          error: { code: "not_found", message: "Commitment not found." },
+        }),
+        "409": refusal("Already reviewed.", {
+          error: {
+            code: "conflict",
+            message: "This commitment has already been checked.",
+          },
+        }),
+      },
+    },
+  },
   "/api/conversations/extract": {
     post: {
       tags: ["Voice prototype"],
@@ -1047,6 +1259,10 @@ export const openApiDocument = {
     description: `Every endpoint the product has. To try the ones that need a session, open **Signing in**, run POST /api/auth/login with the example body (margaret@example.com / daykeeper), and the browser keeps the cookie for every call after.\n\nThe specification, with the rules and the reasons, is [docs/api.md](${API_MD}). Development only: this page answers 404 in production.`,
   },
   tags: [
+    {
+      name: "Voice",
+      description: "Browser transcription, processing, and commitment review.",
+    },
     {
       name: "Voice prototype",
       description: "Future-scope, fictional conversations only.",
