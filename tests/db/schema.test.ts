@@ -27,6 +27,8 @@ import {
   RUN_STATUSES,
   TASK_STATES,
   USER_ROLES,
+  VOICE_COMMITMENT_STATUSES,
+  VOICE_CONVERSATION_STATUSES,
 } from "@/lib/contract/enums";
 import { createDb } from "@/server/db/client";
 
@@ -123,6 +125,11 @@ describe("the names the migration gave", () => {
       "users_display_name_present",
       "users_email_present",
       "users_timezone_present",
+      "voice_commitments_review_state",
+      "voice_commitments_time_requires_date",
+      "voice_commitments_title_present",
+      "voice_conversations_duration_range",
+      "voice_conversations_transcript_status",
     ]);
   });
 
@@ -133,6 +140,9 @@ describe("the names the migration gave", () => {
       "extracted_identifiers_unique_position",
       "reminders_task_id_remind_on_key",
       "sessions_token_hash_key",
+      "voice_commitments_conversation_proposal_key",
+      "voice_commitments_task_id_key",
+      "voice_conversations_user_submission_key",
     ]);
   });
 
@@ -149,10 +159,13 @@ describe("the names the migration gave", () => {
       "sessions_user_id_fkey",
       "tasks_document_id_fkey",
       "tasks_user_id_fkey",
+      "voice_commitments_conversation_id_fkey",
+      "voice_commitments_task_id_fkey",
+      "voice_conversations_user_id_fkey",
     ]);
   });
 
-  it("gives each of the eleven tables its primary key", async () => {
+  it("gives each of the thirteen tables its primary key", async () => {
     expect(await names("p")).toEqual([
       "audit_logs_pkey",
       "document_pages_pkey",
@@ -165,10 +178,12 @@ describe("the names the migration gave", () => {
       "sessions_pkey",
       "tasks_pkey",
       "users_pkey",
+      "voice_commitments_pkey",
+      "voice_conversations_pkey",
     ]);
   });
 
-  it("names the sixteen indexes that are not behind a constraint", async () => {
+  it("names the eighteen indexes that are not behind a constraint", async () => {
     const indexes = await rows<{ name: string }>(
       `SELECT i.indexname AS name
          FROM pg_indexes i
@@ -193,6 +208,8 @@ describe("the names the migration gave", () => {
       "tasks_document_idx",
       "tasks_user_state_due_idx",
       "users_email_canonical_key",
+      "voice_commitments_conversation_status_idx",
+      "voice_conversations_user_status_idx",
     ]);
   });
 
@@ -213,6 +230,14 @@ describe("the names the migration gave", () => {
       { name: "run_status", labels: [...RUN_STATUSES] },
       { name: "task_state", labels: [...TASK_STATES] },
       { name: "user_role", labels: [...USER_ROLES] },
+      {
+        name: "voice_commitment_status",
+        labels: [...VOICE_COMMITMENT_STATUSES],
+      },
+      {
+        name: "voice_conversation_status",
+        labels: [...VOICE_CONVERSATION_STATUSES],
+      },
     ]);
   });
 });
@@ -643,7 +668,7 @@ describe("a database emptied and rebuilt, the way db:reset does it", () => {
       expect(await record()).toBeNull();
 
       expect(await applyMigrations(db)).toBe(journal.entries.length);
-      expect(await tables()).toBe(11);
+      expect(await tables()).toBe(13);
       expect(
         await one<number>(
           `SELECT count(*)::integer AS value FROM drizzle.__drizzle_migrations`,
@@ -652,7 +677,7 @@ describe("a database emptied and rebuilt, the way db:reset does it", () => {
 
       // A second run finds nothing pending, and says so.
       expect(await applyMigrations(db)).toBe(0);
-      expect(await tables()).toBe(11);
+      expect(await tables()).toBe(13);
     } finally {
       await pool.end();
     }

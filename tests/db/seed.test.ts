@@ -45,6 +45,8 @@ const SEEDED = {
   sessions: 0,
   tasks: 5,
   users: 7,
+  voice_commitments: 0,
+  voice_conversations: 0,
 };
 
 /** Every page the seed asked to have stored, in the order it asked. */

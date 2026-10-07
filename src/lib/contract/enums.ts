@@ -77,6 +77,24 @@ export type RunStatus = (typeof RUN_STATUSES)[number];
 export const TASK_STATES = ["open", "completed", "dismissed"] as const;
 export type TaskState = (typeof TASK_STATES)[number];
 
+/** A saved transcript's extraction lifecycle. */
+export const VOICE_CONVERSATION_STATUSES = [
+  "queued",
+  "processing",
+  "ready",
+  "failed",
+] as const;
+export type VoiceConversationStatus =
+  (typeof VOICE_CONVERSATION_STATUSES)[number];
+
+/** A clear commitment's human review lifecycle. */
+export const VOICE_COMMITMENT_STATUSES = [
+  "needs-review",
+  "confirmed",
+  "dismissed",
+] as const;
+export type VoiceCommitmentStatus = (typeof VOICE_COMMITMENT_STATUSES)[number];
+
 /**
  * Which part a model call played in its round.
  * What each value means: src/server/db/schema/readings.ts.

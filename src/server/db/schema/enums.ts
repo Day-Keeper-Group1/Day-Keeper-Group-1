@@ -24,6 +24,8 @@ import {
   RUN_STATUSES,
   TASK_STATES,
   USER_ROLES,
+  VOICE_COMMITMENT_STATUSES,
+  VOICE_CONVERSATION_STATUSES,
 } from "@/lib/contract/enums";
 
 /**
@@ -93,6 +95,18 @@ export const runStatus = pgEnum("run_status", RUN_STATUSES);
  * that completes a task.
  */
 export const taskState = pgEnum("task_state", TASK_STATES);
+
+/** Extraction state of one persisted voice transcript. */
+export const voiceConversationStatus = pgEnum(
+  "voice_conversation_status",
+  VOICE_CONVERSATION_STATUSES,
+);
+
+/** Human decision about one clear commitment. */
+export const voiceCommitmentStatus = pgEnum(
+  "voice_commitment_status",
+  VOICE_COMMITMENT_STATUSES,
+);
 
 /**
  * 'a', 'b' for the body of a CHECK ... IN (...), from the same array the
