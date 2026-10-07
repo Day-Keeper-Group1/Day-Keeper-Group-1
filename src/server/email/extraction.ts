@@ -109,6 +109,7 @@ export async function readEmailCall(
   } catch {
     throw new ExtractionFailure("Email reader returned invalid JSON.", {
       usage,
+      answer: text,
       seconds,
     });
   }
@@ -116,7 +117,7 @@ export async function readEmailCall(
   if (!parsed.success) {
     throw new ExtractionFailure(
       "Email reader returned fields outside the extraction contract.",
-      { usage, seconds },
+      { usage, answer: text, seconds },
     );
   }
   return {

@@ -73,11 +73,15 @@ describe("email extraction", () => {
   });
   it("rejects invalid JSON and incomplete contract fields", async () => {
     mocks.create.mockResolvedValueOnce({ output_text: "invalid" });
-    await expect(readEmailCall(message)).rejects.toThrow("invalid JSON");
+    await expect(readEmailCall(message)).rejects.toMatchObject({
+      message: "Email reader returned invalid JSON.",
+      answer: "invalid",
+    });
     mocks.create.mockResolvedValueOnce({ output_text: '{"fields":[]}' });
-    await expect(readEmailCall(message)).rejects.toThrow(
-      "outside the extraction contract",
-    );
+    await expect(readEmailCall(message)).rejects.toMatchObject({
+      message: "Email reader returned fields outside the extraction contract.",
+      answer: '{"fields":[]}',
+    });
   });
   it("does not invent mock tasks for a real email", async () => {
     mocks.env.mockReturnValue({ AI_EXTRACTION_PROVIDER: "mock" });
