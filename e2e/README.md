@@ -12,7 +12,9 @@ Every screen of the app asks `GET /api/home` on arrival and every few seconds wh
 
 How it fails tells you where to look:
 
-- **Not read within N seconds with nobody watching**: the letter is still `processing`. Usually the background reader did not run. On a deployed site whose reading still happens inside the request (a round per request, finished by the Home poll), this is the expected result for a letter that needs a second round, and the reason this test exists.
+- **Not read within N seconds with nobody watching**: the letter is still `processing`. Usually the background reader did not run.
+
+What a green run means depends on where the reading happens. Today the upload request reads the first round itself, after it has answered, and only a second round waits for the Home poll. This letter is decided in its first round, so on today's code the test passes with no background reader at all. Once the reading moves off the request into the background function, the upload request no longer reads, and the test goes red whenever that function does not run. That is the job it is for.
 - **Read and the reading failed**: the reader ran and gave up on the letter. The cause is in that letter's `extraction_runs` and `model_calls` rows.
 
 ## The letter
