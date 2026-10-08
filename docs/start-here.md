@@ -285,8 +285,8 @@ phone down. The waiting state is part of the design, not a gap in it.
 
 **Photo review shows, it never asks.** Nothing on it is editable and
 nothing on it is a question, and a value the reader was unsure of never reaches
-the browser. The rule, and why there is no correction anywhere in the product,
-are in `src/lib/contract/api.ts`. Email has an explicit exception: when a decided
+the browser. The rule, and why photo review offers no correction, are in
+`src/lib/contract/api.ts`. Email has an explicit exception: when a decided
 reading fails on an uncertain or unreadable due date or amount, its owner can
 edit all six fields before ordinary review and confirmation. A correction is
 saved as a separate user-corrected reading and the original is kept. Provider

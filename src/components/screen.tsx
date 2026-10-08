@@ -56,7 +56,7 @@ export function Panel({
   children,
   className,
 }: {
-  title?: string;
+  title?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
 }) {

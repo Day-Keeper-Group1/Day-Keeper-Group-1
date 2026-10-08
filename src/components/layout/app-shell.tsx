@@ -2,6 +2,7 @@
 
 import type { SessionUser } from "@/lib/contract/api";
 
+import { AccessibilityProvider } from "../accessibility-provider";
 import { ActivityProvider } from "./activity";
 import { MobileBottomNav } from "./mobile-bottom-nav";
 import { SidebarNav } from "./sidebar-nav";
@@ -17,24 +18,26 @@ export function AppShell({
   return (
     // KAN-59: one poll, one ready message and one saved note for every screen
     // inside, kept mounted while she moves between them (./activity.tsx).
-    <ActivityProvider>
-      <div className="flex min-h-dvh">
-        <div className="sticky top-0 hidden h-dvh shrink-0 self-start overflow-y-auto md:block">
-          <SidebarNav />
-        </div>
+    <AccessibilityProvider>
+      <ActivityProvider>
+        <div className="flex min-h-dvh">
+          <div className="sticky top-0 hidden h-dvh shrink-0 self-start overflow-y-auto md:block">
+            <SidebarNav />
+          </div>
 
-        <div className="flex min-w-0 flex-1 flex-col">
-          <Topbar user={user} />
-          {/* On a phone, the prototype's `.app` padding: 22px above, 18px at the
+          <div className="flex min-w-0 flex-1 flex-col">
+            <Topbar user={user} />
+            {/* On a phone, the prototype's `.app` padding: 22px above, 18px at the
             sides, 96px below so the last row of a list clears the bottom bar
             and the camera button raised above it. */}
-          <main className="flex-1 px-[18px] pt-[22px] pb-24 md:px-6 md:py-8 md:pb-8">
-            <div className="mx-auto w-full max-w-6xl">{children}</div>
-          </main>
-        </div>
+            <main className="flex-1 px-[18px] pt-[22px] pb-24 md:px-6 md:py-8 md:pb-8">
+              <div className="mx-auto w-full max-w-6xl">{children}</div>
+            </main>
+          </div>
 
-        <MobileBottomNav />
-      </div>
-    </ActivityProvider>
+          <MobileBottomNav />
+        </div>
+      </ActivityProvider>
+    </AccessibilityProvider>
   );
 }

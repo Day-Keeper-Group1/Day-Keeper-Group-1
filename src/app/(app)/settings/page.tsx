@@ -13,6 +13,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Eye, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -85,6 +86,49 @@ export default function SettingsPage() {
             />
           </div>
           <Button size="sm">Update password</Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Accessibility</CardTitle>
+          <CardDescription>
+            Choose text size, colour vision, contrast, and motion preferences
+            for this device.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button
+            variant="outline"
+            nativeButton={false}
+            render={
+              <Link href="/accessibility">
+                <Eye className="size-5" strokeWidth={1.75} />
+                Accessibility options
+              </Link>
+            }
+          />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Customization</CardTitle>
+          <CardDescription>
+            Personalize how DayKeeper works for you.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button
+            variant="outline"
+            nativeButton={false}
+            render={
+              <Link href="/customization">
+                <SlidersHorizontal className="size-5" strokeWidth={1.75} />
+                Customization options
+              </Link>
+            }
+          />
         </CardContent>
       </Card>
 

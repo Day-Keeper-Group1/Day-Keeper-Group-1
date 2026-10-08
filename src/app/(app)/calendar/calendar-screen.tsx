@@ -2,15 +2,29 @@
 
 // KAN-57: the calendar, drawn to the prototype: a month of dots, a day sheet, and the task list.
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { BottomSheet } from "@/components/bottom-sheet";
 import { Panel, PillButton, ScreenHeader } from "@/components/screen";
 import { TaskRow } from "@/components/task-row";
 import { TaskEntry, TaskSheet, useTaskDetail } from "@/components/task-sheet";
-import { monthCells, tasksByDueDay, tasksForMonth } from "@/lib/calendar";
+import {
+  monthCells,
+  tasksByDueDay,
+  tasksForMonth,
+  tasksForWeek,
+  weekCells,
+} from "@/lib/calendar";
 import { deriveTaskStatus, type TaskSummary } from "@/lib/contract/api";
-import { formatDueDate } from "@/lib/contract/dates";
+import { addDays, formatDueDate } from "@/lib/contract/dates";
+import {
+  CALENDAR_PREFERENCES_STORAGE_KEY,
+  CALENDAR_PREFERENCES_UPDATED_EVENT,
+  DEFAULT_CALENDAR_PREFERENCES,
+  parseCalendarPreferences,
+  type CalendarView,
+  type WeekStartDay,
+} from "@/lib/calendar-preferences";
 import { toggleTaskDone } from "@/lib/task-actions";
 import { cn } from "@/lib/utils";
 
@@ -37,8 +51,24 @@ const MONTH_NAMES = [
   "December",
 ];
 
-/** Monday first, the way an Australian wall calendar is printed. */
-const WEEKDAY_INITIALS = ["M", "T", "W", "T", "F", "S", "S"];
+const WEEKDAY_INITIALS: Record<WeekStartDay, string[]> = {
+  monday: ["M", "T", "W", "T", "F", "S", "S"],
+  sunday: ["S", "M", "T", "W", "T", "F", "S"],
+};
+
+function formatWeekHeading(days: string[]): string {
+  const first = days[0];
+  const last = days[6];
+  if (!first || !last) return "";
+
+  const dateLabel = (iso: string) =>
+    `${MONTH_NAMES[Number(iso.slice(5, 7)) - 1]} ${Number(iso.slice(8, 10))}`;
+  const firstYear = first.slice(0, 4);
+  const lastYear = last.slice(0, 4);
+  return firstYear === lastYear
+    ? `${dateLabel(first)} - ${dateLabel(last)}, ${lastYear}`
+    : `${dateLabel(first)}, ${firstYear} - ${dateLabel(last)}, ${lastYear}`;
+}
 
 const SAVE_FAILED =
   "We couldn't save that just now. Please try again in a moment.";
@@ -104,49 +134,131 @@ export function CalendarScreen({
   initialMonth?: string | null;
 }) {
   const [todayYear, todayMonth] = today.split("-").map(Number);
-  const [openYear, openMonth] = (initialMonth ?? today).split("-").map(Number);
 
   const [tasks, setTasks] = useState<TaskSummary[]>(initial);
   const [message, setMessage] = useState<string | null>(null);
-  const [year, setYear] = useState(openYear);
-  const [month, setMonth] = useState(openMonth);
+  const [anchorDate, setAnchorDate] = useState(
+    initialMonth ? `${initialMonth}-01` : today,
+  );
+  const [view, setView] = useState<CalendarView>(
+    DEFAULT_CALENDAR_PREFERENCES.defaultView,
+  );
+  const [weekStartsOn, setWeekStartsOn] = useState<WeekStartDay>(
+    DEFAULT_CALENDAR_PREFERENCES.weekStartsOn,
+  );
+  const [preferencesError, setPreferencesError] = useState<string | null>(null);
   /** The task open in its own sheet, from the list, by id. */
   const [openTaskId, setOpenTaskId] = useState<string | null>(null);
   /** The open day, 'YYYY-MM-DD', or null when the sheet is shut. */
   const [selected, setSelected] = useState<string | null>(null);
 
+  const [year, month] = anchorDate.split("-").map(Number);
   const byDay = useMemo(() => tasksByDueDay(tasks), [tasks]);
-  const cells = useMemo(() => monthCells(year, month), [year, month]);
-  const listed = useMemo(
-    () => tasksForMonth(tasks, year, month),
-    [tasks, year, month],
+  const cells = useMemo(
+    () =>
+      view === "month"
+        ? monthCells(year, month, weekStartsOn)
+        : weekCells(anchorDate, weekStartsOn),
+    [anchorDate, month, view, weekStartsOn, year],
   );
-  const onTodaysMonth = year === todayYear && month === todayMonth;
+  const listed = useMemo(() => {
+    if (view === "month") {
+      const monthTasks = tasksForMonth(tasks, year, month);
+      return {
+        overdue: monthTasks.overdue,
+        inPeriod: monthTasks.inMonth,
+        undated: monthTasks.undated,
+      };
+    }
+    const weekTasks = tasksForWeek(
+      tasks,
+      weekCells(anchorDate, weekStartsOn)[0] ?? anchorDate,
+    );
+    return {
+      overdue: weekTasks.overdue,
+      inPeriod: weekTasks.inWeek,
+      undated: weekTasks.undated,
+    };
+  }, [anchorDate, month, tasks, view, weekStartsOn, year]);
+  const isCurrentPeriod =
+    view === "month"
+      ? year === todayYear && month === todayMonth
+      : weekCells(anchorDate, weekStartsOn).includes(today);
   const selectedTasks = useMemo(
     () => (selected ? (byDay.get(selected) ?? []) : []),
     [selected, byDay],
   );
 
-  function moveMonth(step: number) {
+  useEffect(() => {
+    function refreshPreferences() {
+      try {
+        const preferences = parseCalendarPreferences(
+          window.localStorage.getItem(CALENDAR_PREFERENCES_STORAGE_KEY),
+        );
+        setView(preferences.defaultView);
+        setWeekStartsOn(preferences.weekStartsOn);
+        setPreferencesError(null);
+        setSelected(null);
+      } catch (cause) {
+        setPreferencesError(
+          cause instanceof Error
+            ? cause.message
+            : "Calendar preferences could not be read.",
+        );
+      }
+    }
+
+    function onStorage(event: StorageEvent) {
+      if (
+        event.key === CALENDAR_PREFERENCES_STORAGE_KEY ||
+        event.key === null
+      ) {
+        refreshPreferences();
+      }
+    }
+
+    refreshPreferences();
+    window.addEventListener("storage", onStorage);
+    window.addEventListener(
+      CALENDAR_PREFERENCES_UPDATED_EVENT,
+      refreshPreferences,
+    );
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener(
+        CALENDAR_PREFERENCES_UPDATED_EVENT,
+        refreshPreferences,
+      );
+    };
+  }, []);
+
+  function movePeriod(step: number) {
     setSelected(null);
-    const shifted = month + step;
-    if (shifted < 1) {
-      setMonth(12);
-      setYear(year - 1);
-    } else if (shifted > 12) {
-      setMonth(1);
-      setYear(year + 1);
+    if (view === "week") {
+      setAnchorDate(addDays(anchorDate, step * 7));
     } else {
-      setMonth(shifted);
+      const shifted = new Date(Date.UTC(year, month - 1 + step, 1));
+      setAnchorDate(
+        `${shifted.getUTCFullYear()}-${String(shifted.getUTCMonth() + 1).padStart(2, "0")}-01`,
+      );
     }
   }
 
   function goToday() {
-    if (onTodaysMonth) return;
+    if (isCurrentPeriod) return;
     setSelected(null);
-    setYear(todayYear);
-    setMonth(todayMonth);
+    setAnchorDate(today);
   }
+
+  function changeView(nextView: CalendarView) {
+    setView(nextView);
+    setSelected(null);
+  }
+
+  const periodTitle =
+    view === "month"
+      ? `${MONTH_NAMES[month - 1]} ${year}`
+      : formatWeekHeading(weekCells(anchorDate, weekStartsOn));
 
   /**
    * Tick or untick, on screen first and on the server after.
@@ -183,8 +295,8 @@ export function CalendarScreen({
         action={
           <PillButton
             onClick={goToday}
-            aria-disabled={onTodaysMonth}
-            className={cn(onTodaysMonth && "opacity-40")}
+            aria-disabled={isCurrentPeriod}
+            className={cn(isCurrentPeriod && "opacity-40")}
           >
             Back to today
           </PillButton>
@@ -199,6 +311,11 @@ export function CalendarScreen({
           {message}
         </p>
       ) : null}
+      {preferencesError ? (
+        <p role="alert" className="mb-3.5 text-base font-medium text-danger">
+          {preferencesError}
+        </p>
+      ) : null}
 
       {/* The prototype's two cards: stacked on a phone, side by side once there
           is honestly room for both. Same sections in the same order either way.
@@ -209,30 +326,51 @@ export function CalendarScreen({
         <Panel>
           {/* The prototype's `.cal-head`: two 36px pale green squares either
               side of a 16px bold month. Each answers taps 6px past its edge. */}
-          <div className="mb-2.5 flex items-center justify-between gap-2">
+          <div className="mb-2.5 flex items-center justify-between gap-1">
             <button
               type="button"
-              aria-label="Previous month"
-              onClick={() => moveMonth(-1)}
-              className="relative size-9 rounded-[8px] bg-primary-soft text-[20px] leading-none text-foreground after:absolute after:-inset-1.5"
+              aria-label={`Previous ${view}`}
+              onClick={() => movePeriod(-1)}
+              className="relative size-11 shrink-0 rounded-[8px] bg-primary-soft text-[20px] leading-none text-foreground after:absolute after:-inset-1.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
             >
               &#8249;
             </button>
-            <div className="text-row font-bold" aria-live="polite">
-              {MONTH_NAMES[month - 1]} {year}
+            <div
+              className="min-w-0 flex-1 text-center text-row font-bold"
+              aria-live="polite"
+            >
+              {periodTitle}
             </div>
             <button
               type="button"
-              aria-label="Next month"
-              onClick={() => moveMonth(1)}
-              className="relative size-9 rounded-[8px] bg-primary-soft text-[20px] leading-none text-foreground after:absolute after:-inset-1.5"
+              aria-label={`Next ${view}`}
+              onClick={() => movePeriod(1)}
+              className="relative size-11 shrink-0 rounded-[8px] bg-primary-soft text-[20px] leading-none text-foreground after:absolute after:-inset-1.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
             >
               &#8250;
             </button>
+            <div className="flex shrink-0 gap-1">
+              {(["month", "week"] as const).map((calendarView) => (
+                <button
+                  key={calendarView}
+                  type="button"
+                  aria-pressed={view === calendarView}
+                  onClick={() => changeView(calendarView)}
+                  className={cn(
+                    "min-h-11 rounded-lg px-2 text-caption font-semibold capitalize focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+                    view === calendarView
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-foreground hover:bg-primary-soft",
+                  )}
+                >
+                  {calendarView}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="grid grid-cols-7 gap-[3px]">
-            {WEEKDAY_INITIALS.map((initial, index) => (
+            {WEEKDAY_INITIALS[weekStartsOn].map((initial, index) => (
               <div
                 key={index}
                 aria-hidden="true"
@@ -268,13 +406,23 @@ export function CalendarScreen({
               onToggle={onToggle}
               onOpen={setOpenTaskId}
             />
-            <MonthTaskGroup
-              heading={MONTH_NAMES[month - 1]}
-              tasks={listed.inMonth}
-              empty={`Nothing due in ${MONTH_NAMES[month - 1]}`}
-              onToggle={onToggle}
-              onOpen={setOpenTaskId}
-            />
+            {view === "month" ? (
+              <MonthTaskGroup
+                heading={MONTH_NAMES[month - 1]}
+                tasks={listed.inPeriod}
+                empty={`Nothing due in ${MONTH_NAMES[month - 1]}`}
+                onToggle={onToggle}
+                onOpen={setOpenTaskId}
+              />
+            ) : (
+              <MonthTaskGroup
+                heading="This week"
+                tasks={listed.inPeriod}
+                empty="Nothing due this week"
+                onToggle={onToggle}
+                onOpen={setOpenTaskId}
+              />
+            )}
             <MonthTaskGroup
               heading="No date"
               tasks={listed.undated}
