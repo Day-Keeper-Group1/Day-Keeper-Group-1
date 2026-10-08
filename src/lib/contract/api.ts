@@ -394,7 +394,7 @@ export type HomeCounts = {
 export type HomePayload = {
   counts: HomeCounts;
   inbox: DocumentSummary[];
-  voiceToCheck?: Array<{
+  voiceToCheck: Array<{
     id: string;
     conversationId: string;
     title: string;
@@ -402,7 +402,7 @@ export type HomePayload = {
     dueTime: string | null;
     createdAt: string;
   }>;
-  voiceProcessing?: number;
+  voiceProcessing: number;
   tasks: TaskSummary[];
 };
 
