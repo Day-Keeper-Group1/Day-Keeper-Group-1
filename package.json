@@ -72,6 +72,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/pg": "^8.21.0",
@@ -81,6 +82,7 @@
     "@vitest/coverage-v8": "^4.1.10",
     "dotenv": "^17.4.2",
     "drizzle-kit": "0.31.11",
+    "esbuild": "^0.28.1",
     "eslint": "^9",
     "eslint-config-next": "16.3.0",
     "husky": "^9.1.7",
