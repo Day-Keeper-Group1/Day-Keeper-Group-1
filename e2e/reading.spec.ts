@@ -46,9 +46,9 @@ test("a letter uploaded through the interface is read with nobody watching", asy
 
   // This is what makes "nobody watching" true. Every screen in the app asks
   // GET /api/home on arrival and every few seconds while a letter is being
-  // read (src/components/layout/activity.tsx), and that request is what
-  // carries an unfinished reading forward today (continueReadings in
-  // src/server/uploads/reading.ts). Left alone, the camera screen itself would
+  // read (src/components/layout/activity.tsx), and that request is the safety
+  // net that hands an unfinished reading to a reader again (continueReadings
+  // in src/server/uploads/reading.ts). Left alone, the camera screen itself would
   // ask it the moment the letter was sent, and a reader that never ran in the
   // background would still look as if it had. So for this whole test, no
   // screen gets an answer from it. The app treats a missing answer as nothing
@@ -119,6 +119,16 @@ test("a letter uploaded through the interface is read with nobody watching", asy
   let current: DocumentDetail;
   for (;;) {
     const response = await context.request.get(`/api/documents/${letter.id}`);
+    // A function that is still starting can answer 502 or 504 once. That says
+    // nothing about the reading, so it is asked again; anything else that is
+    // not 200 is a real answer about the letter, and fails here.
+    if (response.status() >= 500 && Date.now() < deadline) {
+      console.log(
+        `GET /api/documents/${letter.id} answered ${response.status()}; asking again`,
+      );
+      await new Promise((resolve) => setTimeout(resolve, POLL_SECONDS * 1000));
+      continue;
+    }
     expect(response.status(), `looking up letter ${letter.id}`).toBe(200);
     current = (await response.json()) as DocumentDetail;
     if (current.status !== "processing" || Date.now() >= deadline) break;
