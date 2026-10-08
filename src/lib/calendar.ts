@@ -15,6 +15,7 @@
 
 import type { TaskSummary } from "@/lib/contract/api";
 import { addDays } from "@/lib/contract/dates";
+import type { WeekStartDay } from "@/lib/calendar-preferences";
 
 /**
  * Every dated task, filed under the day it is due.
@@ -55,7 +56,11 @@ export function tasksByDueDay(
  * 0 to 11. The conversion happens here once instead of at every call site,
  * which is where the off-by-one month usually gets in.
  */
-export function monthCells(year: number, month: number): Array<string | null> {
+export function monthCells(
+  year: number,
+  month: number,
+  weekStartsOn: WeekStartDay = "monday",
+): Array<string | null> {
   if (!Number.isInteger(month) || month < 1 || month > 12) {
     throw new RangeError(`monthCells expects a month of 1 to 12, got ${month}`);
   }
@@ -63,8 +68,10 @@ export function monthCells(year: number, month: number): Array<string | null> {
   const first = `${year}-${String(month).padStart(2, "0")}-01`;
   // Day 0 of the next month is the last day of this one.
   const days = new Date(Date.UTC(year, month, 0)).getUTCDate();
-  // getUTCDay() counts from Sunday; this grid counts from Monday.
-  const lead = (new Date(Date.UTC(year, month - 1, 1)).getUTCDay() + 6) % 7;
+  const firstDayIndex = weekStartsOn === "monday" ? 1 : 0;
+  const lead =
+    (new Date(Date.UTC(year, month - 1, 1)).getUTCDay() - firstDayIndex + 7) %
+    7;
   const trail = (7 - ((lead + days) % 7)) % 7;
 
   const cells: Array<string | null> = [];
@@ -72,6 +79,17 @@ export function monthCells(year: number, month: number): Array<string | null> {
   for (let i = 0; i < days; i++) cells.push(addDays(first, i));
   for (let i = 0; i < trail; i++) cells.push(null);
   return cells;
+}
+
+export function weekCells(
+  date: string,
+  weekStartsOn: WeekStartDay = "monday",
+): string[] {
+  const dayIndex = new Date(`${date}T00:00:00.000Z`).getUTCDay();
+  const firstDayIndex = weekStartsOn === "monday" ? 1 : 0;
+  const daysSinceWeekStart = (dayIndex - firstDayIndex + 7) % 7;
+  const first = addDays(date, -daysSinceWeekStart);
+  return Array.from({ length: 7 }, (_, index) => addDays(first, index));
 }
 
 /**
@@ -105,4 +123,24 @@ export function tasksForMonth(
   }
 
   return { overdue, inMonth, undated };
+}
+
+export function tasksForWeek(
+  tasks: TaskSummary[],
+  firstDay: string,
+): { overdue: TaskSummary[]; inWeek: TaskSummary[]; undated: TaskSummary[] } {
+  const lastDay = addDays(firstDay, 6);
+  const overdue: TaskSummary[] = [];
+  const inWeek: TaskSummary[] = [];
+  const undated: TaskSummary[] = [];
+
+  for (const task of tasks) {
+    if (task.status === "overdue") overdue.push(task);
+    else if (task.dueDate === null) undated.push(task);
+    else if (task.dueDate >= firstDay && task.dueDate <= lastDay) {
+      inWeek.push(task);
+    }
+  }
+
+  return { overdue, inWeek, undated };
 }

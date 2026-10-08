@@ -3,7 +3,7 @@ import type { HomePayload } from "@/lib/contract/api";
 
 type VoiceRow = HomePayload["voiceToCheck"][number];
 
-/** A Voice commitment in the shared To check area. */
+/** A Voice commitment in the shared Needs review area. */
 export function VoiceInboxRow({ item }: { item: VoiceRow }) {
   return (
     <Link

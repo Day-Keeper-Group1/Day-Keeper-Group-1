@@ -15,7 +15,7 @@ desktop; mobile support is deferred until it has been tested separately.
 The browser submits only the timestamped transcript to the authenticated
 server. The server saves it, runs the existing commitment extractor, validates
 the cited utterance indexes and stores only `clear` proposals. Those proposals
-appear in the same Home **To check** area as photographed letters. Opening one
+appear in the same Home **Needs review** area as photographed letters. Opening one
 shows its title, date and highlighted transcript evidence. **Confirm** makes
 one ordinary task and its reminders; **Dismiss** removes the proposal without
 making a task. The task detail retains the highlighted transcript as evidence.

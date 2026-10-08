@@ -2,10 +2,10 @@
 
 // KAN-57: Home, the prototype's HOME screen, on real data.
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FolderOpen } from "lucide-react";
+import { ArrowRight, FolderOpen } from "lucide-react";
 
 import { Panel, ScreenHeader } from "@/components/screen";
 import { InboxRow } from "@/components/inbox-row";
@@ -15,18 +15,27 @@ import { TaskRow } from "@/components/task-row";
 import { TaskSheet } from "@/components/task-sheet";
 import {
   deriveTaskStatus,
+  type DocumentSummary,
   type HomePayload,
   type SessionUser,
   type TaskSummary,
 } from "@/lib/contract/api";
+import { ctaFor, greeting, reminderToday } from "@/lib/home";
 import {
-  ctaFor,
-  foldLater,
-  greeting,
-  groupTasks,
-  moreLabel,
-  reminderToday,
-} from "@/lib/home";
+  DASHBOARD_SECTIONS_STORAGE_KEY,
+  DASHBOARD_SECTIONS_UPDATED_EVENT,
+  DEFAULT_DASHBOARD_SECTIONS,
+  parseDashboardSections,
+  type DashboardSection,
+} from "@/lib/dashboard-sections";
+import {
+  DEFAULT_TASK_LIST_PREFERENCES,
+  groupTaskList,
+  parseTaskListPreferences,
+  TASK_LIST_PREFERENCES_STORAGE_KEY,
+  TASK_LIST_PREFERENCES_UPDATED_EVENT,
+  type TaskListPreferences,
+} from "@/lib/task-list-preferences";
 import { toggleTaskDone } from "@/lib/task-actions";
 import { cn } from "@/lib/utils";
 
@@ -49,18 +58,107 @@ function hourInZone(timeZone: string, now: Date = new Date()): number {
 
 export function HomeScreen({
   initial,
+  recentDocuments,
   user,
   today,
 }: {
   initial: HomePayload;
+  recentDocuments: DocumentSummary[];
   user: SessionUser;
   today: string;
 }) {
   const router = useRouter();
   const [payload, setPayload] = useState<HomePayload>(initial);
   const [tickError, setTickError] = useState<string | null>(null);
+  const [dashboardSections, setDashboardSections] = useState<
+    DashboardSection[]
+  >(DEFAULT_DASHBOARD_SECTIONS);
+  const [sectionsError, setSectionsError] = useState<string | null>(null);
+  const [taskListPreferences, setTaskListPreferences] =
+    useState<TaskListPreferences>(DEFAULT_TASK_LIST_PREFERENCES);
+  const [taskListPreferencesError, setTaskListPreferencesError] = useState<
+    string | null
+  >(null);
   /** The task open in the sheet, by id, so the sheet's tick follows the list. */
   const [openTaskId, setOpenTaskId] = useState<string | null>(null);
+
+  useEffect(() => {
+    function refreshSections() {
+      try {
+        setDashboardSections(
+          parseDashboardSections(
+            window.localStorage.getItem(DASHBOARD_SECTIONS_STORAGE_KEY),
+          ),
+        );
+        setSectionsError(null);
+      } catch (error) {
+        setSectionsError(
+          error instanceof Error
+            ? error.message
+            : "Dashboard sections could not be read.",
+        );
+      }
+    }
+
+    function onStorage(event: StorageEvent) {
+      if (event.key === DASHBOARD_SECTIONS_STORAGE_KEY || event.key === null) {
+        refreshSections();
+      }
+    }
+
+    refreshSections();
+    window.addEventListener("storage", onStorage);
+    window.addEventListener(DASHBOARD_SECTIONS_UPDATED_EVENT, refreshSections);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener(
+        DASHBOARD_SECTIONS_UPDATED_EVENT,
+        refreshSections,
+      );
+    };
+  }, []);
+
+  useEffect(() => {
+    function refreshTaskListPreferences() {
+      try {
+        setTaskListPreferences(
+          parseTaskListPreferences(
+            window.localStorage.getItem(TASK_LIST_PREFERENCES_STORAGE_KEY),
+          ),
+        );
+        setTaskListPreferencesError(null);
+      } catch (error) {
+        setTaskListPreferencesError(
+          error instanceof Error
+            ? error.message
+            : "Task list preferences could not be read.",
+        );
+      }
+    }
+
+    function onStorage(event: StorageEvent) {
+      if (
+        event.key === TASK_LIST_PREFERENCES_STORAGE_KEY ||
+        event.key === null
+      ) {
+        refreshTaskListPreferences();
+      }
+    }
+
+    refreshTaskListPreferences();
+    window.addEventListener("storage", onStorage);
+    window.addEventListener(
+      TASK_LIST_PREFERENCES_UPDATED_EVENT,
+      refreshTaskListPreferences,
+    );
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener(
+        TASK_LIST_PREFERENCES_UPDATED_EVENT,
+        refreshTaskListPreferences,
+      );
+    };
+  }, []);
 
   // KAN-59: the app asks /api/home once for every screen, and again every five
   // seconds while anything is being read (src/components/layout/activity.tsx).
@@ -130,28 +228,178 @@ export function HomeScreen({
    */
   const ctaAsksForSomething = counts.needsReview > 0;
   const toCheck = [
-    ...inbox.map((doc) => ({
-      source: "document" as const,
-      at: doc.uploadedAt,
-      doc,
-    })),
+    ...inbox
+      .filter((doc) => doc.status === "needs-review")
+      .map((doc) => ({
+        source: "document" as const,
+        at: doc.uploadedAt,
+        doc,
+      })),
     ...voiceToCheck.map((item) => ({
       source: "voice" as const,
       at: item.createdAt,
       item,
     })),
   ].sort((a, b) => a.at.localeCompare(b.at));
-  const firstToCheck = toCheck.find(
-    (row) => row.source === "voice" || row.doc.status === "needs-review",
-  );
+  const firstToCheck = toCheck[0];
   const ctaHref =
     firstToCheck?.source === "voice"
       ? `/conversations/${firstToCheck.item.conversationId}/commitments/${firstToCheck.item.id}/review`
       : firstToCheck?.source === "document"
         ? `/documents/${firstToCheck.doc.id}/review`
         : "/documents/new";
-  const groups = groupTasks(tasks, today);
-  const later = foldLater(groups.later);
+  const todayTasks = tasks.filter(
+    (task) => task.status === "upcoming" && task.dueDate === today,
+  );
+  const overdueTasks = tasks.filter((task) => task.status === "overdue");
+  const upcomingTasks = tasks.filter(
+    (task) => task.status === "upcoming" && task.dueDate !== today,
+  );
+  const allTaskGroups = groupTaskList(tasks, taskListPreferences);
+  const sectionContent: Record<DashboardSection, React.ReactNode> = {
+    today: (
+      <DashboardTaskSection
+        key="today"
+        title="Today"
+        emptyMessage="No tasks due today."
+        tasks={todayTasks}
+        today={today}
+        onToggle={handleToggle}
+        onOpen={setOpenTaskId}
+      />
+    ),
+    overdue: (
+      <DashboardTaskSection
+        key="overdue"
+        title="Overdue"
+        emptyMessage="No overdue tasks."
+        tasks={overdueTasks}
+        today={today}
+        onToggle={handleToggle}
+        onOpen={setOpenTaskId}
+      />
+    ),
+    upcoming: (
+      <DashboardTaskSection
+        key="upcoming"
+        title="Upcoming"
+        emptyMessage="No upcoming tasks."
+        tasks={upcomingTasks}
+        today={today}
+        onToggle={handleToggle}
+        onOpen={setOpenTaskId}
+      />
+    ),
+    needsReview: (
+      <DashboardPanel key="needsReview" title="Needs review">
+        {toCheck.length > 0 ? (
+          <ul>
+            {toCheck.map((row) => (
+              <li
+                key={
+                  row.source === "document"
+                    ? `document:${row.doc.id}`
+                    : `voice:${row.item.id}`
+                }
+                className="border-t border-line first:border-t-0"
+              >
+                {row.source === "document" ? (
+                  <InboxRow doc={row.doc} />
+                ) : (
+                  <VoiceInboxRow item={row.item} />
+                )}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="min-h-12 text-row text-ink-dim">
+            Nothing is waiting for your check.
+          </p>
+        )}
+      </DashboardPanel>
+    ),
+    recentDocuments: (
+      <DashboardPanel key="recentDocuments" title="Recent documents">
+        {recentDocuments.length > 0 ? (
+          <ul>
+            {recentDocuments.map((document) => (
+              <li
+                key={document.id}
+                className="border-t border-line first:border-t-0"
+              >
+                <Link
+                  href={`/documents/${document.id}`}
+                  className="flex min-h-12 items-center px-0.5 py-[11px] text-base font-medium text-foreground hover:underline"
+                >
+                  {document.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="min-h-12 text-row text-ink-dim">No recent documents.</p>
+        )}
+      </DashboardPanel>
+    ),
+    allTasks: (
+      <DashboardPanel
+        key="allTasks"
+        title="All tasks"
+        titleAction={
+          <Link
+            href="/tasks"
+            aria-label="View all tasks"
+            className="inline-flex min-h-11 items-center gap-1 rounded-sm px-2 text-caption font-semibold text-primary hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          >
+            View all
+            <ArrowRight aria-hidden="true" className="size-4" />
+          </Link>
+        }
+      >
+        {taskListPreferences.defaultFilter !== "all" ? (
+          <p className="mb-1 text-caption text-muted-foreground">
+            Showing {taskListPreferences.defaultFilter.replace("-", " ")} tasks
+          </p>
+        ) : null}
+        {allTaskGroups.length > 0 ? (
+          <div className="space-y-2">
+            {allTaskGroups.map((group) => (
+              <section key={group.key}>
+                {taskListPreferences.groupBy !== "none" ? (
+                  <h3 className="py-1 text-caption font-semibold text-ink-dim">
+                    {group.label}
+                  </h3>
+                ) : null}
+                <ul>
+                  {group.tasks.map((task) => (
+                    <li
+                      key={task.id}
+                      className="border-t border-line first:border-t-0"
+                    >
+                      <TaskRow
+                        task={task}
+                        onToggle={handleToggle}
+                        onOpen={() => setOpenTaskId(task.id)}
+                      />
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ))}
+          </div>
+        ) : (
+          <p className="min-h-12 text-row text-ink-dim">
+            No tasks match this view.
+          </p>
+        )}
+        {taskListPreferencesError ? (
+          <p role="alert" className="mt-2 text-caption text-danger">
+            {taskListPreferencesError}
+          </p>
+        ) : null}
+      </DashboardPanel>
+    ),
+  };
   const firstName = user.displayName.trim().split(/\s+/)[0] || user.displayName;
 
   return (
@@ -161,106 +409,48 @@ export function HomeScreen({
         subtitle="Here's what needs you today."
       />
 
-      {/* One column on a phone, the same sections side by side once there is
-          honestly room for two. Nothing appears at one width and not the other.
-          The split waits for lg: at md the sidebar has already taken 240px, so
-          two columns of a 768px window are narrower than the phone they were
-          meant to improve on, and the rows inside them wrapped to six lines. */}
-      <div className="grid gap-3.5 lg:grid-cols-2 lg:items-start lg:gap-6">
-        <div className="flex flex-col gap-3.5">
-          {/* The prototype's `.review-cta`: 18px of padding, an 18px bold line
-              and a 13.5px one under it, green when it asks for something and
-              an inert card when it does not. */}
-          <button
-            type="button"
-            onClick={() => router.push(ctaHref)}
+      <div className="space-y-3.5">
+        {/* The prototype's `.review-cta`: green only when it asks for something. */}
+        <button
+          type="button"
+          onClick={() => router.push(ctaHref)}
+          className={cn(
+            "flex w-full flex-col rounded-[10px] border-2 p-[18px] text-left transition-colors",
+            ctaAsksForSomething
+              ? "border-transparent bg-primary text-primary-foreground shadow-[var(--shadow-card)] hover:bg-button-hover"
+              : "border-line bg-card text-ink-dim",
+          )}
+        >
+          <span className="mb-[3px] text-cta font-bold">{cta.big}</span>
+          <span
             className={cn(
-              "flex w-full flex-col rounded-[10px] border-2 p-[18px] text-left transition-colors",
-              ctaAsksForSomething
-                ? "border-transparent bg-primary text-primary-foreground shadow-[var(--shadow-card)] hover:bg-button-hover"
-                : "border-line bg-card text-ink-dim",
+              "text-caption",
+              ctaAsksForSomething ? "opacity-[0.92]" : "text-ink-dim",
             )}
           >
-            <span className="mb-[3px] text-cta font-bold">{cta.big}</span>
-            <span
-              className={cn(
-                "text-caption",
-                ctaAsksForSomething ? "opacity-[0.92]" : "text-ink-dim",
-              )}
-            >
-              {cta.small}
-            </span>
-          </button>
+            {cta.small}
+          </span>
+        </button>
 
-          {toCheck.length > 0 ? (
-            <Panel title="To check">
-              <ul>
-                {toCheck.map((row) => (
-                  // The rule between rows sits on the item rather than inside
-                  // the row, so that "no rule above the first one" is a fact
-                  // about the list and not something each row has to know.
-                  <li
-                    key={
-                      row.source === "document"
-                        ? `document:${row.doc.id}`
-                        : `voice:${row.item.id}`
-                    }
-                    className="border-t border-line first:border-t-0"
-                  >
-                    {row.source === "document" ? (
-                      <InboxRow doc={row.doc} />
-                    ) : (
-                      <VoiceInboxRow item={row.item} />
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </Panel>
-          ) : null}
-        </div>
-
-        <Panel title="Your tasks">
-          {tickError ? (
-            <p role="status" className="mb-3 text-caption text-danger">
-              {tickError}
-            </p>
-          ) : null}
-
-          {tasks.length === 0 ? (
-            <div className="flex min-h-12 items-center text-row text-ink-dim">
-              Nothing yet
-            </div>
-          ) : (
-            <div className="space-y-3">
-              <TaskGroup
-                heading={
-                  groups.today.some((task) => task.status === "overdue")
-                    ? "Needs doing"
-                    : "Today"
-                }
-                tasks={groups.today}
-                today={today}
-                onToggle={handleToggle}
-                onOpen={setOpenTaskId}
-              />
-              <TaskGroup
-                heading="Next seven days"
-                tasks={groups.week}
-                today={today}
-                onToggle={handleToggle}
-                onOpen={setOpenTaskId}
-              />
-              <TaskGroup
-                heading="Later"
-                tasks={later.shown}
-                more={later.more}
-                today={today}
-                onToggle={handleToggle}
-                onOpen={setOpenTaskId}
-              />
-            </div>
-          )}
-        </Panel>
+        {sectionsError ? (
+          <p role="alert" className="text-caption text-danger">
+            {sectionsError}
+          </p>
+        ) : null}
+        {tickError ? (
+          <p role="status" className="text-caption text-danger">
+            {tickError}
+          </p>
+        ) : null}
+        {dashboardSections.length > 0 ? (
+          <div className="grid gap-3.5 lg:grid-cols-2 lg:items-start lg:gap-6">
+            {dashboardSections.map((section) => sectionContent[section])}
+          </div>
+        ) : (
+          <p className="text-row text-ink-dim">
+            No dashboard sections are selected. Change this in Customization.
+          </p>
+        )}
       </div>
 
       {/* The quiet door. She can ignore it for a year and lose nothing. The
@@ -283,55 +473,75 @@ export function HomeScreen({
   );
 }
 
-/**
- * One of the three headings inside Your tasks.
- *
- * Gerry's Today and Next seven days survived the rebuild as sections of the one
- * list rather than as separate cards, so there is still one place a task lives.
- * An empty heading is not drawn: a section saying "nothing due" is a row about
- * an absence, and this screen has enough to say about things that exist.
- */
-function TaskGroup({
-  heading,
+function DashboardTaskSection({
+  title,
+  emptyMessage,
   tasks,
-  more = 0,
   today,
   onToggle,
   onOpen,
 }: {
-  heading: string;
+  title: string;
+  emptyMessage: string;
   tasks: TaskSummary[];
-  /** Tasks in this group that are not drawn here, counted on a calendar link. */
-  more?: number;
   /** 'YYYY-MM-DD' in her zone, for the reminder marks. */
   today: string;
   onToggle: (task: TaskSummary) => void;
   onOpen: (taskId: string) => void;
 }) {
-  if (tasks.length === 0) return null;
-
   return (
-    <section>
-      <h3 className="text-caption font-bold text-ink-dim">{heading}</h3>
-      <div>
-        {tasks.map((task) => (
-          <TaskRow
-            key={task.id}
-            task={task}
-            reminder={reminderToday(task, today)}
-            onToggle={onToggle}
-            onOpen={() => onOpen(task.id)}
-          />
-        ))}
+    <DashboardPanel title={title}>
+      {tasks.length > 0 ? (
+        <ul>
+          {tasks.map((task) => (
+            <li key={task.id} className="border-t border-line first:border-t-0">
+              <TaskRow
+                task={task}
+                reminder={reminderToday(task, today)}
+                onToggle={onToggle}
+                onOpen={() => onOpen(task.id)}
+              />
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="min-h-12 text-row text-ink-dim">{emptyMessage}</p>
+      )}
+    </DashboardPanel>
+  );
+}
+
+function DashboardPanel({
+  title,
+  titleAction,
+  children,
+}: {
+  title: string;
+  titleAction?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <Panel
+      title={
+        titleAction ? (
+          <span className="flex items-center justify-between gap-2">
+            <span>{title}</span>
+            {titleAction}
+          </span>
+        ) : (
+          title
+        )
+      }
+      className="flex h-[160px] flex-col overflow-hidden"
+    >
+      <div
+        role="region"
+        aria-label={`${title} section content`}
+        tabIndex={0}
+        className="min-h-0 flex-1 overflow-y-auto focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+      >
+        {children}
       </div>
-      {more > 0 ? (
-        <Link
-          href="/calendar"
-          className="flex min-h-12 items-center gap-1.5 border-t border-line pl-10 text-caption font-bold text-primary hover:underline"
-        >
-          {moreLabel(more)} <span aria-hidden="true">→</span>
-        </Link>
-      ) : null}
-    </section>
+    </Panel>
   );
 }
