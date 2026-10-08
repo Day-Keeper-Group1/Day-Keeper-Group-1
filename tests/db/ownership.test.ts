@@ -53,6 +53,7 @@ import { db } from "@/server/db";
 import { dbCause } from "@/server/db/errors";
 import * as auditQueries from "@/server/db/queries/audit";
 import * as documentQueries from "@/server/db/queries/documents";
+import * as emailQueries from "@/server/db/queries/email";
 import * as healthQueries from "@/server/db/queries/health";
 import {
   countOwnedDocumentsToCheck,
@@ -523,7 +524,24 @@ const STATEMENTS: Record<string, Case> = {
  * person herself, and insertAuditLog writes down who did something, which
  * for the school key's line is nobody.
  */
+// These statements are exercised as owner and stranger in email.test.ts,
+// which builds the Gmail handshake and failed-email fixtures they require.
+const EMAIL_STATEMENTS = [
+  "findOwnedGmailConnection",
+  "findOwnedOauthAttempt",
+  "rotateOwnedGmailToken",
+  "deleteOwnedGmailAccess",
+  "findOwnedEmail",
+  "findOwnedEmailDocument",
+  "saveOwnedEmail",
+  "findOwnedFailedEmailRound",
+  "listOwnedEmailCalls",
+  "insertOwnedCorrectedEmailRound",
+];
+
 const WRITES_THE_OWNER = [
+  "insertOauthAttempt",
+  "insertGmailConnection",
   "insertUser",
   "insertSession",
   "insertDocument",
@@ -802,6 +820,7 @@ describe("ownership", () => {
       tasks: taskQueries,
       audit: auditQueries,
       health: healthQueries,
+      email: emailQueries,
     };
     const statements = functionsOf(...Object.values(QUERIES));
 
@@ -811,6 +830,7 @@ describe("ownership", () => {
       expect(
         [
           ...Object.keys(STATEMENTS),
+          ...EMAIL_STATEMENTS,
           ...WRITES_THE_OWNER,
           ...UNSCOPED_ON_PURPOSE,
           ...PREDICATES,
@@ -821,7 +841,7 @@ describe("ownership", () => {
     it("has Owned in the name of every owner-scoped statement, and of no other", () => {
       expect(
         statements.filter((name) => name.includes("Owned")).sort(),
-      ).toEqual(Object.keys(STATEMENTS).sort());
+      ).toEqual([...Object.keys(STATEMENTS), ...EMAIL_STATEMENTS].sort());
     });
 
     it("has the reason written above every statement that is unscoped on purpose, and above no other", () => {

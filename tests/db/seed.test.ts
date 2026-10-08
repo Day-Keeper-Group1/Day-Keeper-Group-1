@@ -34,6 +34,9 @@ const PAGE_BYTES = 1234;
 
 /** How many rows the seed leaves in each table. */
 const SEEDED = {
+  document_emails: 0,
+  gmail_connections: 0,
+  gmail_oauth_attempts: 0,
   audit_logs: 6,
   document_pages: 9,
   documents: 5,

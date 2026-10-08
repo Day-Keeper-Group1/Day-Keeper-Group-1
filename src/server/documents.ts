@@ -20,6 +20,7 @@ import "server-only";
 
 import {
   FAILURE_MESSAGE,
+  EMAIL_FAILURE_MESSAGES,
   type DocumentDetail,
   type DocumentPageView,
   type DocumentSummary,
@@ -35,6 +36,10 @@ import {
 } from "@/lib/contract/fields";
 import { isUuid } from "@/lib/uuid";
 import { db } from "@/server/db";
+import {
+  findOwnedEmail,
+  findOwnedFailedEmailRound,
+} from "@/server/db/queries/email";
 import {
   countOwnedDocumentsToCheck,
   findOwnedDocumentRow,
@@ -112,10 +117,14 @@ export function documentLabel(input: {
   uploadedAt: string;
   pageCount: number;
   timeZone: string;
+  emailSubject?: string | null;
 }): string {
   if (input.issuer && input.documentType) {
     return `${input.issuer} · ${input.documentType}`;
   }
+
+  if (input.emailSubject != null)
+    return `Email: ${input.emailSubject || "(No subject)"}`;
 
   const { day, time } = uploadLocalParts(input.uploadedAt, input.timeZone);
   const pages = `${input.pageCount} page${input.pageCount === 1 ? "" : "s"}`;
@@ -131,11 +140,45 @@ export function documentLabel(input: {
  * and its sentence is worded once in src/lib/contract/api.ts so that every
  * surface says it identically.
  */
-function mapDocument(row: DocumentRow, timeZone: string): DocumentSummary {
+type EmailDocumentRow = DocumentRow & {
+  email_subject: string | null;
+  email_failure_reason: keyof typeof EMAIL_FAILURE_MESSAGES | null;
+};
+
+async function emailDocumentRow(
+  row: DocumentRow,
+  userId: string,
+): Promise<EmailDocumentRow> {
+  const email = await findOwnedEmail(db(), userId, row.id);
+  const failed =
+    email && row.status === "failed"
+      ? await findOwnedFailedEmailRound(db(), userId, row.id)
+      : null;
+  const detail = failed?.failure_detail;
+  const reason =
+    detail ===
+    "UnsureOfWhatMatters: the decided reading's due_date and amount is not confirmed"
+      ? "due-date-and-amount"
+      : detail ===
+          "UnsureOfWhatMatters: the decided reading's due_date is not confirmed"
+        ? "due-date"
+        : detail ===
+            "UnsureOfWhatMatters: the decided reading's amount is not confirmed"
+          ? "amount"
+          : "other";
+  return {
+    ...row,
+    email_subject: email?.subject ?? null,
+    email_failure_reason: reason,
+  };
+}
+
+function mapDocument(row: EmailDocumentRow, timeZone: string): DocumentSummary {
   const uploadedAt = row.uploadedAt.toISOString();
 
   return {
     id: row.id,
+    ...(row.email_subject != null && { source: "email" as const }),
     issuer: row.issuer,
     documentType: row.documentType,
     label: documentLabel({
@@ -143,6 +186,7 @@ function mapDocument(row: DocumentRow, timeZone: string): DocumentSummary {
       documentType: row.documentType,
       uploadedAt,
       pageCount: row.pageCount,
+      emailSubject: row.email_subject,
       timeZone,
     }),
     status: row.status,
@@ -152,7 +196,14 @@ function mapDocument(row: DocumentRow, timeZone: string): DocumentSummary {
     ...(row.reference && { reference: row.reference }),
     uploadedAt,
     pageCount: row.pageCount,
-    ...(row.status === "failed" && { failure: { message: FAILURE_MESSAGE } }),
+    ...(row.status === "failed" && {
+      failure: {
+        message:
+          row.email_subject != null
+            ? EMAIL_FAILURE_MESSAGES[row.email_failure_reason ?? "other"]
+            : FAILURE_MESSAGE,
+      },
+    }),
   };
 }
 
@@ -205,7 +256,11 @@ export async function listDocuments(
 ): Promise<DocumentSummary[]> {
   const rows = await listOwnedDocumentRows(db(), userId);
 
-  return rows.map((row) => mapDocument(row, timeZone));
+  return Promise.all(
+    rows.map(async (row) =>
+      mapDocument(await emailDocumentRow(row, userId), timeZone),
+    ),
+  );
 }
 
 /**
@@ -222,8 +277,9 @@ export async function getDocument(
 ): Promise<DocumentDetail | null> {
   if (!isUuid(documentId)) return null;
 
-  const row = await findOwnedDocumentRow(db(), userId, documentId);
-  if (!row) return null;
+  const found = await findOwnedDocumentRow(db(), userId, documentId);
+  if (!found) return null;
+  const row = await emailDocumentRow(found, userId);
 
   const [fields, identifiers, pages] = await Promise.all([
     listOwnedFieldRows(db(), userId, documentId),
@@ -231,16 +287,61 @@ export async function getDocument(
     listOwnedPageRows(db(), userId, documentId),
   ]);
 
+  const email =
+    row.email_subject != null
+      ? await findOwnedEmail(db(), userId, documentId)
+      : null;
   const views = row.status === "processing" ? [] : fieldViews(fields);
+  const recovered =
+    row.status === "failed" && email
+      ? await (
+          await import("@/server/email/correction")
+        ).recoverEmailReading(documentId, userId)
+      : null;
+  const repairFields = recovered?.result.fields.map((field) =>
+    mapField({
+      fieldKey: field.key,
+      extractedValue: field.value,
+      status: field.status,
+    }),
+  );
 
   return {
     ...mapDocument(row, timeZone),
+    ...(email && {
+      sourceEmail: {
+        gmailUrl: `https://mail.google.com/mail/?authuser=${encodeURIComponent(email.mailbox)}#all/${encodeURIComponent(email.provider_message_id)}`,
+        from: email.sender,
+        subject: email.subject,
+        receivedAt: email.received_at.toISOString(),
+        textBody: email.text_body,
+      },
+    }),
     // Empty while the letter is still being read, and empty for a letter no
     // reading ever succeeded for. The second case falls out of the query, which
     // finds nothing; the first is stated here as a rule rather than left to be
     // inferred from a run that has not finished yet.
-    fields: views,
-    identifiers: views.length === 0 ? [] : identifierViews(identifiers, views),
+    ...(recovered && {
+      correction: {
+        runId: recovered.runId,
+        fieldKeys: recovered.result.fields
+          .filter(
+            (field) =>
+              field.status !== "confirmed" &&
+              (CONTRACT_FIELD_KEYS as readonly string[]).includes(field.key),
+          )
+          .map((field) => field.key as (typeof CONTRACT_FIELD_KEYS)[number]),
+      },
+    }),
+    fields: repairFields ?? views,
+    identifiers: recovered
+      ? identifierViews(
+          recovered.result.identifiers.map((item) => ({ ...item })),
+          repairFields ?? [],
+        )
+      : views.length === 0
+        ? []
+        : identifierViews(identifiers, views),
     pages: pages.map((page): DocumentPageView => ({
       id: page.id,
       pageNumber: page.pageNumber,
@@ -316,7 +417,11 @@ export async function getHome(
     ),
   ]);
 
-  const inbox = inboxRows.map((row) => mapDocument(row, timeZone));
+  const inbox = await Promise.all(
+    inboxRows.map(async (row) =>
+      mapDocument(await emailDocumentRow(row, userId), timeZone),
+    ),
+  );
   const counts: HomeCounts = {
     needsReview: inbox.filter((row) => row.status === "needs-review").length,
     processing: inbox.filter((row) => row.status === "processing").length,

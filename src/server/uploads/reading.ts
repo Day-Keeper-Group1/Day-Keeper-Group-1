@@ -152,7 +152,7 @@ export async function readDocument(
   documentId: string,
   userId: string,
   pages: UploadedPage[],
-  options: { pauseMs?: number } = {},
+  options: { pauseMs?: number; read?: typeof readLetter } = {},
 ): Promise<void> {
   const pauseMs = options.pauseMs ?? RETRY_PAUSE_MS;
   // Claiming the run is also the ownership check, so knowing a document id is
@@ -208,7 +208,16 @@ export async function readDocument(
   };
 
   const call = (role: "reader" | "judge", slot: number, cell: Cell) =>
-    callWithAttempts(runId, documentId, input, role, slot, cell, pauseMs);
+    callWithAttempts(
+      runId,
+      documentId,
+      input,
+      role,
+      slot,
+      cell,
+      pauseMs,
+      options.read ?? readLetter,
+    );
 
   // The two reader calls are independent, so they are made at the same time.
   const [first, second] = await Promise.all([
@@ -342,6 +351,19 @@ export async function continueReadings(userId: string): Promise<void> {
     const queued = await listOwnedDocumentIdsWithQueuedRound(db(), userId);
     await Promise.all(
       queued.map(async (documentId) => {
+        const { findOwnedEmail } = await import("@/server/db/queries/email");
+        const email = await findOwnedEmail(db(), userId, documentId);
+        if (email) {
+          const { readEmailDocument } = await import("@/server/email/import");
+          await readEmailDocument(documentId, userId, {
+            providerMessageId: email.provider_message_id,
+            from: email.sender,
+            subject: email.subject,
+            receivedAt: email.received_at.toISOString(),
+            textBody: email.text_body,
+          });
+          return;
+        }
         const stored = await listStoredPages(db(), documentId);
         await readStoredDocument(documentId, userId, stored);
       }),
@@ -370,10 +392,11 @@ async function callWithAttempts(
   slot: number,
   cell: Cell,
   pauseMs: number,
+  read: typeof readLetter,
 ): Promise<CallOutcome> {
   for (let attempt = 1; ; attempt++) {
     try {
-      const reading = await readLetter(input, cell);
+      const reading = await read(input, cell);
       await recordCall(runId, { role, slot, attempt, cell, reading });
       return { ok: true, reading };
     } catch (error) {

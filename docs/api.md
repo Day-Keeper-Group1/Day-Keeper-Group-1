@@ -1,5 +1,44 @@
 # API specification
 
+## Gmail development endpoints
+
+These authenticated endpoints support the separate Module 2 prototype at `/email`.
+All replies use `Cache-Control: no-store`. POST requests require an Origin matching
+the configured Gmail callback origin. Browsing Gmail messages is read-only and does
+not run extraction. Selecting Create Task saves that email and sends its plain-text
+body to the project Azure reader. Only confirmation creates tasks and reminders.
+
+| Method / URL | Result |
+|---|---|
+| POST `/api/email/gmail/connect` | 303 to Google consent; ten-minute, single-use state bound to the browser and DayKeeper user, with PKCE |
+| GET `/api/email/gmail/callback` | Consumes state, exchanges code, verifies read scope, stores encrypted refresh token; 303 to `/email?connection=connected` or `failed` |
+| GET `/api/email/gmail/status` | `{ configured, connected, email }`; no tokens |
+| POST `/api/email/gmail/messages` | `{ messages, skipped, hasMore }`; first 20 inbox messages within 30 days, plain-text bodies with optional server-sanitized `sanitizedHtmlBody` for formatted display; unsupported messages counted in `skipped` |
+| POST `/api/email/gmail/images` | JSON `{ messageId }`; returns `{ images, skipped }` for referenced embedded raster images from the signed-in user's current Gmail mailbox. Keys are URI-encoded Content-IDs and values are validated raster data URLs. Up to 8 images, 1 MB each and 4 MB total. Private, uncached, read-only; requires the configured Origin. External URLs are never fetched by this endpoint. |
+| POST `/api/email/gmail/extract` | JSON `{ messageId, mailbox }`; fetches the message from the current user's Gmail connection, saves its source, queues extraction, and returns `{ documentId }` with 202. Repeated requests for the same user/mailbox/message reuse the document. The existing document detail, review and confirm endpoints complete the flow. |
+| POST `/api/email/gmail/disconnect` | Deletes this user's token and pending connection attempts; `{ disconnected: true }`. Google grant can also be removed in Google account settings. |
+
+Errors use the existing envelope: 401 without sign-in, 403 for a foreign Origin,
+409 when reconnection is needed, and 500 for configuration/provider failures.
+Email document detail includes `sourceEmail.gmailUrl`, linking to the imported message in Gmail with its original mailbox selected.
+Messages use the `EmailMessage` schema in `src/lib/contract/email.ts`.
+Failed email documents expose fixed, plain-language messages for an uncertain
+due date, amount, or both. Internal extraction error text is never returned.
+When a failed email has a recoverable decided reading, document detail also
+returns `correction: { runId, fieldKeys }` and confident fields; uncertain values
+remain hidden. POST `/api/documents/:id/correct` requires sign-in and the same
+Origin, and accepts `{ runId, fields: [{ key, value }] }`. Every unconfirmed
+six-field key must appear once; confirmed keys may also be edited, without duplicates. Dates must
+be real ISO calendar dates (or `Not applicable`); amounts must be valid AUD amounts
+(or `No payment required`). It returns `{ documentId }`, moves the document to
+needs-review, and records a separate user-corrected reading, preserving the original
+reading and model calls. This exception applies only when a decided email reading
+failed because its due date or amount was uncertain or unreadable. Provider failures
+and unresolved voting cannot be corrected. It creates no tasks
+or reminders; the existing empty-body confirm endpoint does that afterward.
+Missing or foreign documents return 404; stale, saved, non-email or unrecoverable
+readings and invalid corrections return 409; malformed requests return 400.
+
 **Every endpoint here is built.** This document was written before any of them,
 because the interface, the reader and the database were going to be built by
 different people, and the only way that ends in something that fits together is
@@ -758,9 +797,14 @@ one when there is more than one (`factLines()` in `src/lib/facts.ts`).
 `unreadable`, and `src/lib/contract/extraction.ts` says what each status means
 and why a value the model was unsure of never reaches this response.
 
-**The screen shows, it never asks.** Nothing in this payload is editable and
-nothing in it is a question, which is why there is no correction endpoint
-anywhere in this document. The reasoning is in `src/lib/contract/api.ts`.
+**Photo review shows, it never asks.** Photo fields are read-only. Email has an
+explicit exception: when a decided reading fails because its due date or amount
+is uncertain or unreadable, its owner may edit all six fields through
+`POST /api/documents/:id/correct` before ordinary review and confirmation.
+Unconfirmed fields require correction; confirmed fields may also be edited.
+The correction is a separate user-corrected reading and the original is kept.
+Provider failures and unresolved voting cannot be corrected. The reasoning is
+in `src/lib/contract/api.ts`.
 
 ## Confirm a letter
 

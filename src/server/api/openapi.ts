@@ -58,6 +58,249 @@ const specified = (text: string, anchor: string) =>
   `${text}\n\nSpecified in [docs/api.md](${API_MD}#${anchor}).`;
 
 const paths = {
+  "/api/email/gmail/connect": {
+    post: {
+      tags: ["Gmail"],
+      summary: "Connect Gmail",
+      description: specified(
+        "Requires the configured callback Origin. Starts a ten-minute, single-use OAuth attempt bound to the browser and signed-in user, with PKCE. Use the controls at /email to follow Google consent.",
+        "gmail-development-endpoints",
+      ),
+      security: [{ session: [] }],
+      responses: {
+        303: {
+          description:
+            "Redirect to Google consent; sets the OAuth browser cookie.",
+        },
+        401: NOT_SIGNED_IN,
+        403: { description: "Foreign Origin." },
+        500: { description: "Configuration or provider failure." },
+      },
+    },
+  },
+  "/api/email/gmail/callback": {
+    get: {
+      tags: ["Gmail"],
+      summary: "Finish Gmail connection",
+      description: specified(
+        "Consumes the OAuth state and browser cookie, verifies read scope and stores the encrypted refresh token. No message bodies are stored.",
+        "gmail-development-endpoints",
+      ),
+      security: [{ session: [] }],
+      parameters: ["state", "code", "error"].map((name) => ({
+        name,
+        in: "query",
+        required: false,
+        schema: { type: "string" },
+      })),
+      responses: {
+        303: {
+          description: "Redirect to /email?connection=connected or failed.",
+        },
+        401: NOT_SIGNED_IN,
+        500: { description: "Configuration or provider failure." },
+      },
+    },
+  },
+  "/api/email/gmail/status": {
+    get: {
+      tags: ["Gmail"],
+      summary: "Get Gmail connection status",
+      security: [{ session: [] }],
+      responses: {
+        200: answer(
+          "Private connection status; never includes tokens.",
+          {
+            type: "object",
+            properties: {
+              configured: { type: "boolean" },
+              connected: { type: "boolean" },
+              email: { type: "string", nullable: true },
+            },
+          },
+          { configured: true, connected: false, email: null },
+        ),
+        401: NOT_SIGNED_IN,
+        500: { description: "Configuration or provider failure." },
+      },
+    },
+  },
+  "/api/email/gmail/messages": {
+    post: {
+      tags: ["Gmail"],
+      summary: "Read recent Gmail messages",
+      description: specified(
+        "Requires the configured callback Origin. Reads the first 20 inbox messages within 30 days, returning plain text with an optional sanitized HTML alternative. Unsupported messages count toward skipped. Bodies are neither persisted nor sent to AI. Replies use Cache-Control: no-store.",
+        "gmail-development-endpoints",
+      ),
+      security: [{ session: [] }],
+      responses: {
+        200: answer(
+          "Recent messages.",
+          {
+            type: "object",
+            properties: {
+              messages: {
+                type: "array",
+                items: {
+                  type: "object",
+                  required: [
+                    "providerMessageId",
+                    "from",
+                    "subject",
+                    "receivedAt",
+                    "textBody",
+                  ],
+                  properties: {
+                    providerMessageId: { type: "string" },
+                    from: { type: "string", format: "email" },
+                    subject: { type: "string", maxLength: 2000 },
+                    receivedAt: { type: "string", format: "date-time" },
+                    sanitizedHtmlBody: { type: "string", maxLength: 100000 },
+                    textBody: {
+                      type: "string",
+                      minLength: 1,
+                      maxLength: 100000,
+                    },
+                  },
+                },
+              },
+              skipped: { type: "integer" },
+              hasMore: { type: "boolean" },
+            },
+          },
+          { messages: [], skipped: 0, hasMore: false },
+        ),
+        401: NOT_SIGNED_IN,
+        403: { description: "Foreign Origin." },
+        409: { description: "Reconnect Gmail." },
+        500: { description: "Configuration or provider failure." },
+      },
+    },
+  },
+  "/api/email/gmail/images": {
+    post: {
+      tags: ["Gmail"],
+      summary: "Read embedded email images",
+      description:
+        "Requires the configured Origin and a signed-in Gmail connection. Returns up to 8 referenced PNG/JPEG/GIF/WebP images, limited to 1 MB each and 4 MB total. External URLs are never fetched. No-store response; a disconnected or replaced connection cannot return images.",
+      security: [{ session: [] }],
+      requestBody: {
+        required: true,
+        content: {
+          "application/json": {
+            schema: {
+              type: "object",
+              required: ["messageId"],
+              additionalProperties: false,
+              properties: {
+                messageId: {
+                  type: "string",
+                  pattern: "^[a-zA-Z0-9_-]{1,200}$",
+                },
+              },
+            },
+          },
+        },
+      },
+      responses: {
+        200: answer(
+          "Embedded images keyed by URI-encoded Content-ID.",
+          {
+            type: "object",
+            properties: {
+              images: {
+                type: "object",
+                additionalProperties: { type: "string" },
+              },
+              skipped: { type: "integer" },
+            },
+          },
+          { images: {}, skipped: 0 },
+        ),
+        400: { description: "Invalid message ID." },
+        401: NOT_SIGNED_IN,
+        403: { description: "Foreign Origin." },
+        409: { description: "Reconnect Gmail." },
+        500: { description: "Configuration or provider failure." },
+      },
+    },
+  },
+  "/api/email/gmail/extract": {
+    post: {
+      tags: ["Gmail"],
+      summary: "Read one email for task review",
+      description: specified(
+        "Fetches the selected message from the signed-in user's connected mailbox, saves its source and queues six-field extraction. Duplicate selections reuse the same document. Confirm through the document review flow to create a task and reminders. Requires the configured callback Origin.",
+        "gmail-development-endpoints",
+      ),
+      security: [{ session: [] }],
+      requestBody: {
+        required: true,
+        content: {
+          "application/json": {
+            schema: {
+              type: "object",
+              additionalProperties: false,
+              required: ["messageId", "mailbox"],
+              properties: {
+                messageId: {
+                  type: "string",
+                  pattern: "^[a-zA-Z0-9_-]{1,200}$",
+                },
+                mailbox: { type: "string", format: "email" },
+              },
+            },
+          },
+        },
+      },
+      responses: {
+        202: {
+          description: "Reading queued or existing document reused.",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["documentId"],
+                properties: { documentId: { type: "string", format: "uuid" } },
+              },
+            },
+          },
+        },
+        400: { description: "Invalid selection or unsupported message body." },
+        401: NOT_SIGNED_IN,
+        403: { description: "Foreign Origin." },
+        409: { description: "Gmail connection changed or needs reconnection." },
+        500: {
+          description: "Reader configuration, provider or database failure.",
+        },
+      },
+    },
+  },
+  "/api/email/gmail/disconnect": {
+    post: {
+      tags: ["Gmail"],
+      summary: "Disconnect Gmail",
+      description: specified(
+        "Requires the configured callback Origin. Deletes the user's token and pending connection attempts. The Google grant can also be removed in Google account settings.",
+        "gmail-development-endpoints",
+      ),
+      security: [{ session: [] }],
+      responses: {
+        200: answer(
+          "Disconnected.",
+          {
+            type: "object",
+            properties: { disconnected: { type: "boolean", enum: [true] } },
+          },
+          { disconnected: true },
+        ),
+        401: NOT_SIGNED_IN,
+        403: { description: "Foreign Origin." },
+        500: { description: "Configuration or provider failure." },
+      },
+    },
+  },
   "/api/auth/register": {
     post: {
       tags: ["Signing in"],
@@ -373,6 +616,73 @@ const paths = {
           "No such letter, or it belongs to somebody else.",
           examples.documentNotFound,
         ),
+      },
+    },
+  },
+  "/api/documents/{id}/correct": {
+    post: {
+      tags: ["Letters"],
+      summary: "Correct unconfirmed fields in a recoverable email reading",
+      description:
+        "Requires the same Origin and an owned failed email whose voting result was decided. Provide every unconfirmed six-field key once, optionally include edits to confirmed keys, and provide the runId from document detail. Records a separate user-corrected reading and returns to review; does not create tasks or reminders.",
+      security: [{ session: [] }],
+      parameters: [ID("The owned email document id.")],
+      requestBody: {
+        required: true,
+        content: {
+          "application/json": {
+            schema: {
+              type: "object",
+              additionalProperties: false,
+              required: ["runId", "fields"],
+              properties: {
+                runId: { type: "string", format: "uuid" },
+                fields: {
+                  type: "array",
+                  minItems: 1,
+                  maxItems: 6,
+                  items: {
+                    type: "object",
+                    additionalProperties: false,
+                    required: ["key", "value"],
+                    properties: {
+                      key: {
+                        type: "string",
+                        enum: [
+                          "document_type",
+                          "issuer",
+                          "action_required",
+                          "due_date",
+                          "amount",
+                          "reference",
+                        ],
+                      },
+                      value: { type: "string", minLength: 1, maxLength: 2000 },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      responses: {
+        "200": answer(
+          "Corrections saved; continue to review.",
+          {
+            type: "object",
+            properties: { documentId: { type: "string", format: "uuid" } },
+          },
+          { documentId: "11111111-1111-4111-8111-111111111111" },
+        ),
+        "400": { description: "Malformed correction request." },
+        "401": NOT_SIGNED_IN,
+        "403": { description: "Foreign or missing Origin." },
+        "404": { description: "Missing or foreign document." },
+        "409": {
+          description:
+            "Invalid corrections, stale reading, saved document or unrecoverable reading.",
+        },
       },
     },
   },
@@ -954,6 +1264,11 @@ export const openApiDocument = {
     description: `Every endpoint the product has. To try the ones that need a session, open **Signing in**, run POST /api/auth/login with the example body (margaret@example.com / daykeeper), and the browser keeps the cookie for every call after.\n\nThe specification, with the rules and the reasons, is [docs/api.md](${API_MD}). Development only: this page answers 404 in production.`,
   },
   tags: [
+    {
+      name: "Gmail",
+      description:
+        "Connect and read Gmail in the Module 2 prototype. All replies are private and use Cache-Control: no-store.",
+    },
     {
       name: "Signing in",
       description: "Accounts and sessions. Start here.",

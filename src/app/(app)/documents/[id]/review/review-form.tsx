@@ -6,7 +6,13 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Bell, CalendarDays, FileText, type LucideIcon } from "lucide-react";
+import {
+  Bell,
+  CalendarDays,
+  ExternalLink,
+  FileText,
+  type LucideIcon,
+} from "lucide-react";
 import { FactRow } from "@/components/fact-row";
 import { useActivity } from "@/components/layout/activity";
 import { PhotoStrip } from "@/components/photo-strip";
@@ -144,8 +150,10 @@ export function ReviewForm({
         <h1 className="text-title font-bold tracking-[-0.2px] text-foreground">
           Check what we found
         </h1>
-        <div className="mt-[3px] flex items-baseline justify-between gap-3">
-          <p className="min-w-0 text-sub text-ink-dim">{document.label}</p>
+        <div className="mt-[3px] flex flex-wrap items-baseline justify-between gap-3">
+          <p className="min-w-0 break-words text-sub text-ink-dim">
+            {document.label}
+          </p>
           <span className="shrink-0 text-key font-bold text-ink-dim">
             {left}
           </span>
@@ -168,6 +176,20 @@ export function ReviewForm({
               ))}
             </div>
           ) : null}
+          {document.sourceEmail && (
+            <div className="mt-4 border-t border-line pt-3">
+              <a
+                href={document.sourceEmail.gmailUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex min-h-12 items-center gap-2 py-3 font-semibold text-primary"
+              >
+                <ExternalLink className="size-4" aria-hidden="true" />
+                Open in Gmail
+                <span className="sr-only"> (opens in a new tab)</span>
+              </a>
+            </div>
+          )}
           <PhotoStrip
             documentId={document.id}
             count={document.pages.length}

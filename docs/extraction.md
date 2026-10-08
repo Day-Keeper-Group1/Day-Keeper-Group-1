@@ -4,6 +4,32 @@ What the reading step calls, and why. Newest decision on top. Each entry says wh
 
 The code in `src/server/extraction/` follows this file, not the other way round. To change the prompt, the model or the effort there: run an experiment under `experiments/module-01-extraction/`, add an entry here that cites its report, then change the code to match.
 
+## 2026-10-07 · Email correction exception, confirmed
+
+**What was chosen.** Photo letters remain show-only: a decided reading whose due
+date or amount is uncertain or unreadable fails as a whole. Email has an explicit
+exception at that same point: its owner may correct all six fields, with
+unconfirmed fields open by default and required, and confirmed fields also
+editable. Uncertain model guesses stay hidden and never prefill inputs. The
+correction is saved as a separate user-corrected reading; the original reading
+and model calls are kept. Ordinary review and empty-body confirmation follow
+before tasks or reminders are created. Provider failures and unresolved voting
+cannot be corrected.
+
+**Scheme, prompt, model and effort.** Unchanged for both photo and email reading.
+This is a workflow decision, not a new extraction accuracy claim.
+
+**Basis.** Jason's [PR #37 review](https://github.com/Day-Keeper-Group1/Day-Keeper-Group-1/pull/37#discussion_r4202625927)
+accepts the email exception after end-to-end testing and asks for consistent
+documentation. [`tests/email-correction.test.ts`](../tests/email-correction.test.ts)
+checks required corrections, optional confirmed-field edits and validation;
+[`tests/db/email.test.ts`](../tests/db/email.test.ts) checks ownership, one-time
+correction and the return to needs-review. The separate reading and task boundary
+are implemented in [`src/server/email/correction.ts`](../src/server/email/correction.ts).
+
+**Status: confirmed**, 7 October 2026, for the Module 2 development extension in
+[`scope.md`](scope.md). The photo release boundary is unchanged.
+
 ## 2026-09-24 · Contact has a due date, and the letters are re-dated, confirmed
 
 **What changed.** Two things, measured one at a time. The fifteen letters in scope were replaced by their re-dated versions, with deadlines in November 2026 (experiment 08, letters only). Then one sentence of the prompt: Contact joins Pay, Attend, Return form and Collect as an action that has a due date, so a letter that asks her to phone before a date keeps the date (experiment 09, prompt only). No action, Take medicine and Stop using still have none. Letter 08's answer key takes Contact as its action and also accepts Return form; its README says why.
@@ -67,3 +93,23 @@ The code in `src/server/extraction/` follows this file, not the other way round.
 **Basis** [01-full-grid/REPORT.md](../experiments/module-01-extraction/01-full-grid/REPORT.md). On the fifteen letters in scope, four cells scored full marks: luna `medium`, luna `xhigh`, terra `low`, terra `xhigh`. luna `medium` is the cheapest of the four at about A$0.008 a letter, against A$0.069 for terra `low`.
 
 **Status: provisional.** The report's own verdict is that one read per cell cannot show stability: the full cells are separated from their neighbours by one or two letters, and effort does not order them. This choice is made so the reading step can be built now rather than after the next experiment. Experiment 02 will read the four full cells repeatedly. If luna `medium` holds, this entry is confirmed; if it does not, the entry above this one will say what replaced it.
+
+## 2026-09-28 · Selected email reading, development extension
+
+The email reader in `src/server/email/extraction.ts` uses the same reader, judge,
+agreement rules and retry scheme as photo uploads. The photo prompt, model and
+effort are unchanged. The separate email prompt in `src/server/email/prompt.md`
+adapts the six-field instructions to a sender, subject, received timestamp and
+plain-text body; the email is untrusted source material, never instructions.
+Only a selected email is sent, after Create task. Azure configuration is required;
+real mail never receives invented mock extraction results.
+
+This is a development extension, not a claim that the photo experiment's accuracy
+transfers to email. The reproducible synthetic smoke experiment lives under
+`experiments/module-02-email/01-selected-email/`. Broader email accuracy evaluation
+remains separate from the implementation's contract, security and workflow tests.
+
+Smoke result: the three synthetic fixtures passed the final prompt, including
+the optional appointment time and the newsletter's No action. The first run's
+omitted appointment time is retained in report-initial.json beside report.json.
+This is provisional email behaviour, not the photo benchmark's accuracy claim.
