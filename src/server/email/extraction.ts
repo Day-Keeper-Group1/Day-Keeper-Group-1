@@ -14,6 +14,7 @@ import { safeParseExtractionResult } from "@/lib/contract/extraction";
 import { ExtractionFailure, type Reading } from "@/server/extraction";
 import { READER, type Cell } from "@/server/extraction/scheme";
 import { GmailError } from "./gmail/config";
+import { MODEL_CALL_TIMEOUT_SECONDS } from "@/server/time-limits";
 
 export const EMAIL_READER = "azure-email";
 
@@ -35,7 +36,7 @@ export function requireEmailReader() {
 export async function readEmailCall(
   message: EmailMessage,
   cell: Cell = READER,
-  timeoutMs = 60_000,
+  timeoutMs = MODEL_CALL_TIMEOUT_SECONDS * 1000,
 ): Promise<Reading> {
   requireEmailReader();
   const client = schoolKeyClient();

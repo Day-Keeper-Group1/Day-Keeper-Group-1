@@ -48,3 +48,5 @@ output/
 
 # Local Netlify folder
 .netlify
+# KAN-98: the background reader, bundled at build time by scripts/build-reading-worker.mjs
+netlify/functions/read-letter.mjs

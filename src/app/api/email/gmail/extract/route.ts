@@ -1,4 +1,3 @@
-import { after } from "next/server";
 import { z } from "zod";
 import { fail } from "@/server/api/respond";
 import {
@@ -10,8 +9,7 @@ import { mailboxAccess } from "@/server/email/gmail/connection";
 import { GmailProvider } from "@/server/email/gmail/provider";
 import { requireEmailReader } from "@/server/email/extraction";
 import { createEmailDocument, readEmailDocument } from "@/server/email/import";
-
-export const maxDuration = 300;
+import { readInBackground } from "@/server/background";
 
 export const POST = gmailRoute(async (request, userId) => {
   const parsed = z
@@ -43,7 +41,11 @@ export const POST = gmailRoute(async (request, userId) => {
     parsed.data.mailbox,
     message,
   );
+  // KAN-98: read after the answer, in a background reader on the deployed
+  // site, where nothing slow may run inside a request (src/server/background/).
   if (result.queued)
-    after(() => readEmailDocument(result.documentId, userId, message));
+    readInBackground(request, result.documentId, userId, () =>
+      readEmailDocument(result.documentId, userId, message),
+    );
   return Response.json({ documentId: result.documentId }, { status: 202 });
 });

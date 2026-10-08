@@ -10,7 +10,6 @@ import { insertQueuedRound } from "@/server/db/queries/readings";
 import { randomUUID } from "node:crypto";
 import type { EmailMessage } from "@/lib/contract/email";
 import { READER } from "@/server/extraction/scheme";
-import { ExtractionFailure } from "@/server/extraction";
 import { readDocument } from "@/server/uploads";
 import { GmailError } from "./gmail/config";
 import { EMAIL_READER, readEmailCall } from "./extraction";
@@ -72,16 +71,11 @@ export async function readEmailDocument(
   userId: string,
   message: EmailMessage,
 ) {
-  // Leave time to record a failure before the route's 300-second lifetime ends.
-  const deadline = Date.now() + 240_000;
+  // KAN-98: one round, like a letter's. Each call gives up after
+  // MODEL_CALL_TIMEOUT_SECONDS, and readToTheEnd() in
+  // src/server/uploads/reading.ts reads the rounds in turn where nothing stops
+  // it after thirty seconds (src/server/time-limits.ts).
   await readDocument(documentId, userId, [], {
-    read: (_input, cell) => {
-      const remaining = deadline - Date.now();
-      if (remaining <= 0)
-        throw new ExtractionFailure("Email reading timed out.", {
-          retryable: false,
-        });
-      return readEmailCall(message, cell, Math.min(60_000, remaining));
-    },
+    read: (_input, cell) => readEmailCall(message, cell),
   });
 }

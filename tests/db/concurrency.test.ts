@@ -249,7 +249,10 @@ describe("two requests at once", () => {
       Buffer.from("a photograph of a letter"),
       "image/png",
     );
-    const stopped = await aRoundTheHostStopped(letter, "3 minutes");
+    const stopped = await aRoundTheHostStopped(
+      letter,
+      `${ROUND_DEADLINE_SECONDS + 60} seconds`,
+    );
     // Both polls go on to read whatever round is queued, and there are
     // answers for one.
     readerAnswers(BILL, BILL);
