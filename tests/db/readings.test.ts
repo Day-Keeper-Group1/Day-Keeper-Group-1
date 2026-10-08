@@ -82,6 +82,7 @@ import {
   continueReadings,
   readDocument,
   readStoredDocument,
+  readToTheEnd,
 } from "@/server/uploads";
 
 import {
@@ -382,6 +383,14 @@ async function closedBySomebodyElse(letter: string): Promise<void> {
     [letter],
   );
 }
+
+/**
+ * KAN-98: how old a round is when the host has certainly stopped it: a minute
+ * past the deadline, which src/server/time-limits.ts works out from the longest
+ * a round can take.
+ */
+const PAST_THE_DEADLINE_SECONDS = ROUND_DEADLINE_SECONDS + 60;
+const PAST_THE_DEADLINE = `${PAST_THE_DEADLINE_SECONDS} seconds`;
 
 describe("a letter being read", () => {
   let margaret: Person;
@@ -1513,13 +1522,13 @@ describe("a letter being read", () => {
     it("closes a round the host stopped and queues the next one", async () => {
       const letter = await aQueuedLetter(margaret);
       await photographsInTheBucket(margaret, letter, 1);
-      const stopped = await aRoundTheHostStopped(letter, "3 minutes");
+      const stopped = await aRoundTheHostStopped(letter, PAST_THE_DEADLINE);
       // A round that is slow, not stopped: half a minute old.
       const slow = await aQueuedLetter(margaret);
       const slowRound = await aRoundTheHostStopped(slow, "30 seconds");
       // And somebody else's stopped round, which is theirs to find.
       const theirs = await aQueuedLetter(dorothy);
-      await aRoundTheHostStopped(theirs, "3 minutes");
+      await aRoundTheHostStopped(theirs, PAST_THE_DEADLINE);
 
       // What the statement answers: her one stopped round, and which round of
       // its letter it is, as a number.
@@ -1544,8 +1553,10 @@ describe("a letter being read", () => {
         failureDetail: `RoundTimedOut: round 1 of ${MAX_ROUNDS} was still processing after ${ROUND_DEADLINE_SECONDS} seconds; the request reading it was stopped`,
         finished: true,
       });
-      // By the database's clock, from the round's start: the three minutes.
-      expect(first.durationMs).toBeGreaterThanOrEqual(180_000);
+      // By the database's clock, from the round's start: past the deadline.
+      expect(first.durationMs).toBeGreaterThanOrEqual(
+        PAST_THE_DEADLINE_SECONDS * 1000,
+      );
       expect(next.status).toBe("succeeded");
       expect(await storedLetter(letter)).toMatchObject({
         status: "needs-review",
@@ -1563,12 +1574,12 @@ describe("a letter being read", () => {
 
     it("finds a stopped round only while both the round and its letter say they are being read", async () => {
       const letter = await aQueuedLetter(margaret);
-      const stopped = await aRoundTheHostStopped(letter, "3 minutes");
+      const stopped = await aRoundTheHostStopped(letter, PAST_THE_DEADLINE);
 
       // A failed letter whose round still says it is being read, from just
       // as long ago. Nothing is going to read a failed letter.
       const failed = await aQueuedLetter(margaret);
-      await aRoundTheHostStopped(failed, "3 minutes");
+      await aRoundTheHostStopped(failed, PAST_THE_DEADLINE);
       await rows("UPDATE documents SET status = 'failed' WHERE id = $1", [
         failed,
       ]);
@@ -1579,9 +1590,9 @@ describe("a letter being read", () => {
       const waiting = await aQueuedLetter(margaret);
       await readARound(margaret, waiting, ...neverAgreeing());
       await rows(
-        `UPDATE extraction_runs SET started_at = started_at - interval '3 minutes'
+        `UPDATE extraction_runs SET started_at = started_at - $2::interval
           WHERE document_id = $1`,
-        [waiting],
+        [waiting, PAST_THE_DEADLINE],
       );
       expect(
         (await storedRounds(waiting)).map((round) => round.status),
@@ -1597,7 +1608,7 @@ describe("a letter being read", () => {
       for (let round = 1; round < MAX_ROUNDS; round++) {
         await readARound(margaret, letter, ...neverAgreeing());
       }
-      const last = await aRoundTheHostStopped(letter, "3 minutes");
+      const last = await aRoundTheHostStopped(letter, PAST_THE_DEADLINE);
       vi.mocked(readLetter).mockClear();
 
       await continueReadings(margaret.id);
@@ -1624,6 +1635,98 @@ describe("a letter being read", () => {
       expect(logged).toEqual([
         `[uploads] could not carry on the readings of user ${margaret.id}`,
       ]);
+    });
+
+    it("hands every queued letter to the reader it is given, and reads none itself", async () => {
+      const letter = await aQueuedLetter(margaret);
+      const another = await aQueuedLetter(margaret);
+      await aQueuedLetter(dorothy);
+      const handed: string[] = [];
+
+      await continueReadings(margaret.id, async (documentId) => {
+        handed.push(documentId);
+      });
+
+      expect(handed.sort()).toEqual([letter, another].sort());
+      expect(readLetter).not.toHaveBeenCalled();
+    });
+
+    describe("reading a letter to the end (KAN-98)", () => {
+      it("reads round after round until one decides", async () => {
+        const letter = await aQueuedLetter(margaret);
+        await photographsInTheBucket(margaret, letter, 1);
+
+        readerAnswers(...neverAgreeing(), reading(), reading());
+        const outcome = await readToTheEnd(letter, margaret.id);
+
+        expect(outcome).toBe("done");
+        expect(
+          (await storedRounds(letter)).map((round) => round.status),
+        ).toEqual(["failed", "succeeded"]);
+        expect(await storedLetter(letter)).toMatchObject({
+          status: "needs-review",
+        });
+        expect(answersLeft()).toBe(0);
+      });
+
+      it("stops when the last round decides nothing, and the letter says so", async () => {
+        const letter = await aQueuedLetter(margaret);
+        await photographsInTheBucket(margaret, letter, 1);
+
+        readerAnswers(
+          ...Array.from({ length: MAX_ROUNDS }, neverAgreeing).flat(),
+        );
+        const outcome = await readToTheEnd(letter, margaret.id);
+
+        expect(outcome).toBe("done");
+        const rounds = await storedRounds(letter);
+        expect(rounds).toHaveLength(MAX_ROUNDS);
+        expect(rounds.every((round) => round.status === "failed")).toBe(true);
+        expect(await storedLetter(letter)).toMatchObject({ status: "failed" });
+      });
+
+      it("starts no round it may not have time to finish, and leaves it queued", async () => {
+        const letter = await aQueuedLetter(margaret);
+        await photographsInTheBucket(margaret, letter, 1);
+        // Round one starts on time; by the second, the reader is too old.
+        const clock = [0, 5_000];
+        const now = () => clock.shift() ?? 5_000;
+
+        readerAnswers(...neverAgreeing());
+        const outcome = await readToTheEnd(letter, margaret.id, {
+          startedAt: 0,
+          lastRoundStartsBy: 1,
+          now,
+        });
+
+        expect(outcome).toBe("out-of-time");
+        expect(
+          (await storedRounds(letter)).map((round) => round.status),
+        ).toEqual(["failed", "queued"]);
+        expect(await storedLetter(letter)).toMatchObject({
+          status: "processing",
+        });
+      });
+
+      it("reads nothing for somebody else holding the letter's id", async () => {
+        const letter = await aQueuedLetter(margaret);
+        await photographsInTheBucket(margaret, letter, 1);
+        const before = await snapshot();
+
+        expect(await readToTheEnd(letter, dorothy.id)).toBe("done");
+
+        expect(readLetter).not.toHaveBeenCalled();
+        expect(await snapshot()).toEqual(before);
+      });
+
+      it("never throws", async () => {
+        const letter = await aQueuedLetter(margaret);
+        vi.mocked(claimOwnedQueuedRound).mockRejectedValueOnce(
+          new Error("connection terminated"),
+        );
+
+        await expect(readToTheEnd(letter, margaret.id)).resolves.toBe("done");
+      });
     });
 
     it("fails the letter, without throwing, when its photographs cannot be fetched", async () => {
@@ -1924,7 +2027,7 @@ describe("a letter being read", () => {
 
   /*
    * A round is timed by the database's clock from end to end: it stamps
-   * started_at and finished_at, the two minutes after which a round counts as
+   * started_at and finished_at, the deadline after which a round counts as
    * stopped are counted on it, and so is duration_ms. On one machine the
    * app's clock agrees with it, so every test above would pass with the app's
    * clock in any of the four. Deployed, each copy of the app has a clock of
@@ -1967,9 +2070,9 @@ describe("a letter being read", () => {
       });
     });
 
-    it("finds a round stopped by the database's two minutes", async () => {
+    it("finds a round stopped by the database's clock", async () => {
       const letter = await aQueuedLetter(margaret);
-      const stopped = await aRoundTheHostStopped(letter, "3 minutes");
+      const stopped = await aRoundTheHostStopped(letter, PAST_THE_DEADLINE);
       // And a round that is slow, not stopped: half a minute old.
       const slow = await aQueuedLetter(margaret);
       await aRoundTheHostStopped(slow, "30 seconds");
@@ -1983,18 +2086,22 @@ describe("a letter being read", () => {
 
     it("ends a round at the database's now, and measures it on the same clock", async () => {
       const letter = await aQueuedLetter(margaret);
-      const round = await aRoundTheHostStopped(letter, "3 minutes");
+      const round = await aRoundTheHostStopped(letter, PAST_THE_DEADLINE);
 
       await withTheAppClockIn2001(() =>
         closeRoundAsFailed(db(), round, "RoundTimedOut"),
       );
 
-      // From a start three minutes ago to an end now: the three minutes, and
-      // not the twenty-five years between the two clocks.
+      // From a start past the deadline to an end now: that long, and not the
+      // twenty-five years between the two clocks.
       const closed = await clockOf(round);
       expect(closed.finishedJustNow).toBe(true);
-      expect(closed.durationMs).toBeGreaterThanOrEqual(180_000);
-      expect(closed.durationMs).toBeLessThan(240_000);
+      expect(closed.durationMs).toBeGreaterThanOrEqual(
+        PAST_THE_DEADLINE_SECONDS * 1000,
+      );
+      expect(closed.durationMs).toBeLessThan(
+        (PAST_THE_DEADLINE_SECONDS + 60) * 1000,
+      );
     });
   });
 });

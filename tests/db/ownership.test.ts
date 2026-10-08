@@ -115,6 +115,7 @@ import {
   createStoredDocument,
   readDocument,
   readStoredDocument,
+  readToTheEnd,
   type StoredPage,
 } from "@/server/uploads";
 
@@ -213,7 +214,8 @@ async function aFullWorld(person: Person): Promise<World> {
 
   const queued = await aQueuedLetter(person);
   const stopped = await aQueuedLetter(person);
-  await aRoundTheHostStopped(stopped, "3 minutes");
+  // KAN-98: a minute past the deadline, which time-limits.ts works out.
+  await aRoundTheHostStopped(stopped, `${ROUND_DEADLINE_SECONDS + 60} seconds`);
   for (const letter of [queued, stopped]) {
     const [page] = pageUnder(person, letter);
     await putObject(page.key, Buffer.from("a photograph"), page.mimeType);
@@ -368,6 +370,10 @@ const SERVICES: Record<string, Case> = {
   continueReadings: {
     ask: (asker) => continueReadings(asker.id),
     answers: undefined,
+  },
+  readToTheEnd: {
+    ask: (asker, hers) => readToTheEnd(hers.queued, asker.id),
+    answers: "done",
   },
 };
 

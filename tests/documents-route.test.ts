@@ -13,6 +13,7 @@ const afterMock = vi.hoisted(() => vi.fn());
 const checkStoredUploadMock = vi.hoisted(() => vi.fn());
 const createStoredDocumentMock = vi.hoisted(() => vi.fn());
 const readStoredDocumentMock = vi.hoisted(() => vi.fn());
+const readToTheEndMock = vi.hoisted(() => vi.fn());
 
 vi.mock("@/server/auth/session", () => {
   class UnauthenticatedError extends Error {
@@ -49,6 +50,8 @@ vi.mock("@/server/uploads", () => {
     checkStoredUpload: checkStoredUploadMock,
     createStoredDocument: createStoredDocumentMock,
     readStoredDocument: readStoredDocumentMock,
+    readToTheEnd: readToTheEndMock,
+    continueReadings: vi.fn(),
   };
 });
 
@@ -128,6 +131,7 @@ describe("POST /api/documents", () => {
     validateUploadMock.mockReset();
     createDocumentMock.mockReset();
     readDocumentMock.mockReset();
+    readToTheEndMock.mockReset();
     afterMock.mockReset();
 
     scheduled = [];
@@ -240,10 +244,17 @@ describe("POST /api/documents", () => {
 
     await scheduled[0]();
 
+    // Round one from the bytes already in hand, then the rest of the rounds
+    // in turn (KAN-98). Locally, which is what the tests are: on Netlify a
+    // background reader does both, see tests/background.test.ts.
     expect(readDocumentMock).toHaveBeenCalledWith(
       "document-one",
       "user-one",
       PAGES,
+    );
+    expect(readToTheEndMock).toHaveBeenCalledWith("document-one", "user-one");
+    expect(readDocumentMock.mock.invocationCallOrder[0]).toBeLessThan(
+      readToTheEndMock.mock.invocationCallOrder[0],
     );
   });
 });
@@ -275,6 +286,7 @@ describe("POST /api/documents, photographs already in the bucket (KAN-75)", () =
     checkStoredUploadMock.mockReset();
     createStoredDocumentMock.mockReset();
     readStoredDocumentMock.mockReset();
+    readToTheEndMock.mockReset();
     afterMock.mockReset();
     scheduled = [];
     afterMock.mockImplementation((callback: () => unknown) => {
@@ -315,6 +327,7 @@ describe("POST /api/documents, photographs already in the bucket (KAN-75)", () =
       "user-one",
       STORED,
     );
+    expect(readToTheEndMock).toHaveBeenCalledWith(SUMMARY.id, "user-one");
   });
 
   it("passes a refusal on in the sentences it was written in", async () => {

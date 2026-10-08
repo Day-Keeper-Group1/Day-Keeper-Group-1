@@ -9,6 +9,18 @@
 # touches the database answers 500. Webpack imports `pg` by its real name and
 # the bundle includes it. Local development is unaffected and still uses
 # Turbopack.
+#
+# KAN-98: before the app, scripts/build-reading-worker.mjs bundles the
+# background reader into netlify/functions/read-letter.mjs, which Netlify
+# deploys as a background function beside the app (src/server/background/).
 [build]
-  command = "next build --webpack"
+  command = "node scripts/build-reading-worker.mjs && next build --webpack"
   publish = ".next"
+
+# The readers load their prompts from disk at runtime, by a path relative to
+# where the function runs, so the files go into the function's bundle with it.
+[functions.read-letter]
+  included_files = [
+    "src/server/extraction/prompt.md",
+    "src/server/email/prompt.md",
+  ]

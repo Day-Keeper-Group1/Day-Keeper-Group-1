@@ -32,6 +32,7 @@ import {
 } from "./provider";
 
 import { READER } from "./scheme";
+import { MODEL_CALL_TIMEOUT_SECONDS } from "@/server/time-limits";
 
 /**
  * The prompt, read once from the file beside this one. It is a file rather
@@ -106,23 +107,28 @@ export class AzureExtractionProvider implements DocumentExtractionProvider {
     let text: string;
     let usage: ExtractionOutcome["usage"] = null;
     try {
-      const response = await client.responses.create({
-        model: cell.model,
-        reasoning: { effort: cell.effort as "medium" },
-        input: [
-          {
-            role: "user",
-            content: [
-              { type: "input_text", text: prompt() },
-              ...pages.map((page) => ({
-                type: "input_image" as const,
-                detail: "auto" as const,
-                image_url: `data:${page.mimeType};base64,${page.bytes!.toString("base64")}`,
-              })),
-            ],
-          },
-        ],
-      });
+      const response = await client.responses.create(
+        {
+          model: cell.model,
+          reasoning: { effort: cell.effort as "medium" },
+          input: [
+            {
+              role: "user",
+              content: [
+                { type: "input_text", text: prompt() },
+                ...pages.map((page) => ({
+                  type: "input_image" as const,
+                  detail: "auto" as const,
+                  image_url: `data:${page.mimeType};base64,${page.bytes!.toString("base64")}`,
+                })),
+              ],
+            },
+          ],
+        },
+        // KAN-98: a call that has not answered by now is not going to, and
+        // one left hanging holds up the whole round. src/server/time-limits.ts.
+        { timeout: MODEL_CALL_TIMEOUT_SECONDS * 1000 },
+      );
       text = response.output_text ?? "";
       if (response.usage) {
         usage = {

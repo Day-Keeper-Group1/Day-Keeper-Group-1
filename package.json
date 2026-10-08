@@ -20,6 +20,7 @@
     "db:check": "tsx db/check-migrations.ts && vitest run --project unit tests/migrations.test.ts",
     "db:rehearse": "tsx db/rehearse.ts",
     "db:notice": "tsx db/notice.ts",
+    "db:watch-calls": "tsx db/watch-model-calls.ts",
     "db:reset": "tsx db/reset.ts && tsx scripts/storage-reset.ts && tsx db/seed.ts",
     "db:schema": "tsx db/reset.ts",
     "db:seed": "tsx db/seed.ts",
@@ -30,6 +31,7 @@
     "test:unit": "vitest run --project unit",
     "test:db": "vitest run --project db",
     "test:watch": "vitest",
+    "test:e2e": "playwright test",
     "format": "prettier --write . --log-level warn",
     "format:check": "prettier --check . --log-level warn",
     "prepare": "husky",
@@ -72,6 +74,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/pg": "^8.21.0",
@@ -81,6 +84,7 @@
     "@vitest/coverage-v8": "^4.1.10",
     "dotenv": "^17.4.2",
     "drizzle-kit": "0.31.11",
+    "esbuild": "^0.28.1",
     "eslint": "^9",
     "eslint-config-next": "16.3.0",
     "husky": "^9.1.7",

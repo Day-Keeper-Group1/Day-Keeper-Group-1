@@ -100,6 +100,7 @@ import {
   readerAnswers,
   resetFakes,
   runAfter,
+  takeAfter,
   takeCookieChanges,
 } from "./support/fakes";
 import { aReading } from "./support/world";
@@ -486,26 +487,32 @@ describe("the API, as it answered before the database layer moved", () => {
     );
     await runAfter();
 
-    /* Letter four: two readings differ and the third matches neither. */
+    /* Letter four: sent now, read after letter five. */
     const referral = await sendAsTheCaptureScreenDoes("letter four", margaret);
-    readerAnswers(
-      referralAsking("Contact a Support at Home provider"),
-      referralAsking("Attend an assessment"),
-      referralAsking("Return form to My Aged Care"),
-    );
-    await runAfter();
+    const readingLetterFour = takeAfter();
 
     /* Letter five: sent after letter four, and read before it. */
     const returned = await sendAsTheCaptureScreenDoes("letter five", margaret);
     readerAnswers(FORM, FORM);
     await runAfter();
 
-    /* The poll that shows it still being read is the one that reads it again. */
+    /*
+     * KAN-98: letter four is read to the end in one go: two readings differ
+     * and the third matches neither, so round one decides nothing, and round
+     * two agrees. (Before KAN-98 the second round waited for the next poll.)
+     */
     await record(
-      "home, while letter four waits for its second round",
+      "home, while letter four waits to be read",
       home(get("/api/home")),
     );
-    readerAnswers(REFERRAL, REFERRAL);
+    readerAnswers(
+      referralAsking("Contact a Support at Home provider"),
+      referralAsking("Attend an assessment"),
+      referralAsking("Return form to My Aged Care"),
+      REFERRAL,
+      REFERRAL,
+    );
+    for (const work of readingLetterFour) await work();
     await runAfter();
 
     /* What she sees. */

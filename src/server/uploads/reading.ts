@@ -61,6 +61,12 @@ import {
   decide,
   unsureOfWhatMatters,
 } from "@/server/extraction/scheme";
+import {
+  LAST_ROUND_STARTS_BY_SECONDS,
+  MODEL_CALL_ATTEMPTS,
+  RETRY_PAUSE_SECONDS,
+  ROUND_DEADLINE_SECONDS,
+} from "@/server/time-limits";
 import type { StoredPage, UploadedPage } from "./intake";
 import { columnsFromReading } from "./reading-columns";
 
@@ -109,10 +115,10 @@ export async function readStoredDocument(
  * KAN-63: this counts attempts at one call. A letter read under the scheme
  * makes two or three calls a round, and each call gets this many attempts.
  */
-export const MAX_READING_ATTEMPTS = 3;
+export const MAX_READING_ATTEMPTS = MODEL_CALL_ATTEMPTS;
 
 /** The pause before trying again, so a call that failed for being too early is not repeated at once. */
-const RETRY_PAUSE_MS = 2000;
+const RETRY_PAUSE_MS = RETRY_PAUSE_SECONDS * 1000;
 
 /** What one call came to after its attempts: a reading, or the reason there is none. */
 type CallOutcome =
@@ -140,13 +146,11 @@ type CallOutcome =
  *     letter (src/lib/contract/extraction.ts says why);
  *   - anything else decided is written, and the letter is ready to check.
  *
- * KAN-75: one call of this reads ONE round, never more. A round takes ten to
- * twenty-five seconds, and the host the app is deployed on stops a request at
- * thirty, background work included; two rounds in one request were stopped
- * half way on the first letter that needed them, and the letter said
- * "reading…" for ever. So a round that ends undecided leaves the next one
- * queued and returns, and the next GET /api/home that this person's screen
- * polls picks it up (continueReadings below).
+ * KAN-75: one call of this reads ONE round, never more. A round that ends
+ * undecided leaves the next one queued and returns. KAN-98: readToTheEnd()
+ * below is what reads the rounds one after another, in a Netlify background
+ * function on the deployed site and after the answer locally
+ * (src/server/background/).
  */
 export async function readDocument(
   documentId: string,
@@ -308,30 +312,103 @@ async function endRoundUndecided(
 
 /**
  * KAN-75: how long a round may say 'processing' before it is taken to have
- * been stopped. The host stops a request at thirty seconds, so on it a round
- * this old is certainly dead. Locally nothing stops a request, and a round
- * whose calls are slow and retried can run longer than thirty seconds, so the
- * line is well past both: a round is only ever declared dead when no host
- * could still be running it. The price is that a stopped round is noticed
- * two minutes late.
+ * been stopped. KAN-98: worked out in src/server/time-limits.ts from the
+ * longest a round can take, so a round still being read is never declared
+ * dead.
  */
-export const ROUND_DEADLINE_SECONDS = 120;
+export { ROUND_DEADLINE_SECONDS };
 
 /**
- * KAN-75: carry on reading this person's letters, one round each. Called from
- * GET /api/home, which the screen polls every five seconds while anything is
- * being read, so a round queued by one request is read by the next poll.
+ * KAN-98: read a letter's queued rounds one after another until none is left.
  *
- * Two things, in order. A round still 'processing' long after it could still
- * be running was stopped by the host: it is closed as a round that decided
- * nothing, and the letter is queued again or failed, as for a round whose
- * readings disagreed. Then every queued round of this person's is read, each
- * from its photographs in the bucket; readDocument() claims before reading,
- * so two polls arriving together read a round once.
+ * Runs where nothing stops it after thirty seconds: in the Netlify background
+ * function on the deployed site, after the answer locally
+ * (src/server/background/). Each round is read by readQueuedRound(), which
+ * claims it first, so two of these running for the same letter read every
+ * round once between them.
+ *
+ * "out-of-time" when a round is still queued and starting it could run past
+ * `lastRoundStartsBy` (seconds since `startedAt`): the caller hands the letter
+ * to a fresh background reader. MAX_ROUNDS is also the most this ever loops,
+ * because a letter has at most that many rounds.
  *
  * Never throws, for the same reason readDocument() does not.
  */
-export async function continueReadings(userId: string): Promise<void> {
+export async function readToTheEnd(
+  documentId: string,
+  userId: string,
+  options: {
+    startedAt?: number;
+    lastRoundStartsBy?: number;
+    now?: () => number;
+  } = {},
+): Promise<"done" | "out-of-time"> {
+  const now = options.now ?? Date.now;
+  const startedAt = options.startedAt ?? now();
+  const lastRoundStartsBy =
+    options.lastRoundStartsBy ?? LAST_ROUND_STARTS_BY_SECONDS;
+  try {
+    for (let round = 0; round < MAX_ROUNDS; round++) {
+      const queued = await listOwnedDocumentIdsWithQueuedRound(db(), userId);
+      if (!queued.includes(documentId)) return "done";
+      if ((now() - startedAt) / 1000 > lastRoundStartsBy) return "out-of-time";
+      await readQueuedRound(documentId, userId);
+    }
+  } catch (error) {
+    console.error(
+      `[uploads] could not read document ${documentId} to the end`,
+      dbCause(error),
+    );
+  }
+  return "done";
+}
+
+/**
+ * Read the round a letter has queued, from wherever its words are: an email's
+ * text from its row, a letter's photographs from the bucket.
+ */
+async function readQueuedRound(
+  documentId: string,
+  userId: string,
+): Promise<void> {
+  const { findOwnedEmail } = await import("@/server/db/queries/email");
+  const email = await findOwnedEmail(db(), userId, documentId);
+  if (email) {
+    const { readEmailDocument } = await import("@/server/email/import");
+    await readEmailDocument(documentId, userId, {
+      providerMessageId: email.provider_message_id,
+      from: email.sender,
+      subject: email.subject,
+      receivedAt: email.received_at.toISOString(),
+      textBody: email.text_body,
+    });
+    return;
+  }
+  const stored = await listStoredPages(db(), documentId);
+  await readStoredDocument(documentId, userId, stored);
+}
+
+/**
+ * KAN-75: carry on reading this person's letters. Called from GET /api/home,
+ * which the screen polls every five seconds while anything is being read.
+ * KAN-98: the background reader is what reads a letter to the end now; this is
+ * the safety net for a letter it never reached, or one it left part way.
+ *
+ * Two things, in order. A round still 'processing' long after it could still
+ * be running was stopped: it is closed as a round that decided nothing, and
+ * the letter is queued again or failed, as for a round whose readings
+ * disagreed. Then every letter of this person's with a round queued is handed
+ * to `carryOn`: on the deployed site that asks a background reader to take
+ * it, locally it reads it to the end here (src/server/background/). A round is
+ * claimed before it is read, so a letter handed over twice is read once.
+ *
+ * Never throws, for the same reason readDocument() does not.
+ */
+export async function continueReadings(
+  userId: string,
+  carryOn: (documentId: string) => Promise<unknown> = (documentId) =>
+    readToTheEnd(documentId, userId),
+): Promise<void> {
   try {
     const stopped = await listOwnedStoppedRounds(
       db(),
@@ -349,25 +426,7 @@ export async function continueReadings(userId: string): Promise<void> {
     }
 
     const queued = await listOwnedDocumentIdsWithQueuedRound(db(), userId);
-    await Promise.all(
-      queued.map(async (documentId) => {
-        const { findOwnedEmail } = await import("@/server/db/queries/email");
-        const email = await findOwnedEmail(db(), userId, documentId);
-        if (email) {
-          const { readEmailDocument } = await import("@/server/email/import");
-          await readEmailDocument(documentId, userId, {
-            providerMessageId: email.provider_message_id,
-            from: email.sender,
-            subject: email.subject,
-            receivedAt: email.received_at.toISOString(),
-            textBody: email.text_body,
-          });
-          return;
-        }
-        const stored = await listStoredPages(db(), documentId);
-        await readStoredDocument(documentId, userId, stored);
-      }),
-    );
+    await Promise.all(queued.map((documentId) => carryOn(documentId)));
   } catch (error) {
     console.error(
       `[uploads] could not carry on the readings of user ${userId}`,
@@ -503,8 +562,8 @@ function failureDetail(error: unknown): string {
 /**
  * Close a round that decided nothing and queue the next, as one unit.
  *
- * KAN-75: the next round is queued rather than read here, because it is read
- * by the next request (see readDocument). Closing only a round that is still
+ * KAN-75: the next round is queued rather than read here; readToTheEnd()
+ * reads it next, or the poll hands it on (see readDocument). Closing only a round that is still
  * 'processing' is what keeps this safe when two requests reach the same round
  * at once, say two polls that both find it stopped: the first closes it and
  * queues one successor, the second finds nothing left to close and queues

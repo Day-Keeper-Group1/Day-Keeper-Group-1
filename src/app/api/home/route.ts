@@ -1,11 +1,9 @@
 // KAN-56: everything the home screen draws, gathered into one request.
 
-import { after } from "next/server";
-
 import { json, route } from "@/server/api/respond";
 import { requireUser } from "@/server/auth/session";
+import { carryOnReadings } from "@/server/background";
 import { getHome } from "@/server/documents";
-import { continueReadings } from "@/server/uploads";
 
 /**
  * GET /api/home. The counts, the inbox and the tasks, in one payload.
@@ -17,17 +15,17 @@ import { continueReadings } from "@/server/uploads";
  * person's is still being read the interface asks again every five seconds, and
  * one answer refreshes the count and the row together.
  */
-export const GET = route(async () => {
+export const GET = route(async (request: Request) => {
   const user = await requireUser();
   const home = await getHome(user.id, user.timeZone);
 
-  // KAN-75: the poll is also what carries a reading on. A letter is read one
-  // round per request, and a round that decided nothing leaves the next one
-  // queued; this reads it, after the answer has gone, so the poll is not
-  // slowed by it. Only while something is being read, so an ordinary visit
-  // to Home costs nothing. src/server/uploads/reading.ts, continueReadings.
+  // KAN-75: the poll is also the safety net for a reading. KAN-98: a
+  // background reader reads each letter to the end; this, after the answer
+  // has gone, closes a round that was stopped and hands any letter still
+  // queued to a reader again. Only while something is being read, so an
+  // ordinary visit to Home costs nothing. src/server/background/.
   if (home.counts.processing > 0) {
-    after(() => continueReadings(user.id));
+    carryOnReadings(request, user.id);
   }
 
   return json(home);
