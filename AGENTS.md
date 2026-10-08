@@ -49,7 +49,11 @@ The gain is in [`src/lib/contract/`](src/lib/contract/). Those types are the agr
 
 One dependency set, one deployment, one test run, and one place to look when something is wrong. Four of the five of us have not shipped a web application before, and every one of those is worth more to a beginner than it is to an experienced team.
 
-Extraction runs in route handlers, one round of the scheme per request: the upload answers immediately and reads the first round afterwards, and a round that decides nothing queues the next, which the next `GET /api/home` poll reads. One round per request because a round takes 10 to 25 seconds and Netlify, where the trial deployment runs, stops a request at 30, background work included (KAN-75). If a reading ever has to happen with nobody's screen open, that gets revisited and a real queue appears.
+Extraction does not run in the request. The upload answers at once, and the letter is read round after round until one decides: on the deployed site by a Netlify background function, which may run for fifteen minutes, and locally after the answer. A round takes 10 to 25 seconds, and Netlify stops a request at 30, `after()` work included, so on Netlify nothing slow may run in a route handler (KAN-98; KAN-75 found the limit). The `GET /api/home` poll is the safety net: it hands a letter that is still queued to a reader again.
+
+## Time limits
+
+Netlify stops a request 30 seconds after it starts, and whatever was handed to `after()` with it. Every time limit the app lives under, measured, is in [`src/server/time-limits.ts`](src/server/time-limits.ts), and every other file takes its numbers from there. Slow work goes through [`src/server/background/`](src/server/background/): a route calls `readInBackground()` or `carryOnReadings()` and never `after()` itself, and every model call passes `MODEL_CALL_TIMEOUT_SECONDS`. [`tests/time-limits.test.ts`](tests/time-limits.test.ts) turns red when a route does slow work inside a request, when a model call has no timeout, or when the worst case of a reading no longer fits; its message says what to do. [`src/server/background/AGENTS.md`](src/server/background/AGENTS.md) says how to add a new kind of slow work.
 
 ## The look
 
@@ -84,6 +88,7 @@ npm run account:clear -- <someone>@example.com # empty one @example.com account;
 npm run typecheck
 npm run build
 npm run lint
+E2E_BASE_URL=http://localhost:<port> npm run test:e2e   # upload one letter through a real browser and wait for it to be read (e2e/README.md)
 ```
 
 Use `npm install <pkg>` only to intentionally change dependencies, and commit the resulting `package-lock.json` diff together with that change. If `git diff` shows lockfile churn and you did not change dependencies, revert it (`git checkout -- package-lock.json`). Node >=24 and npm >=11 are enforced through `engines` plus `.npmrc` engine-strict. Node 24 because it is the release line in active long-term support (Node 20 reached end of life on 30 April 2026, and 22 only receives security fixes), CI runs it, and a dependency needs a recent one anyway: `pdfjs-dist` asks for 22.13 or newer, and engine-strict makes any dependency's floor the whole install's floor.

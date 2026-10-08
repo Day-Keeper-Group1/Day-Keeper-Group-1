@@ -12,10 +12,10 @@ Every screen of the app asks `GET /api/home` on arrival and every few seconds wh
 
 How it fails tells you where to look:
 
-- **Not read within N seconds with nobody watching**: the letter is still `processing`. Usually the background reader did not run.
-
-What a green run means depends on where the reading happens. Today the upload request reads the first round itself, after it has answered, and only a second round waits for the Home poll. This letter is decided in its first round, so on today's code the test passes with no background reader at all. Once the reading moves off the request into the background function, the upload request no longer reads, and the test goes red whenever that function does not run. That is the job it is for.
+- **Not read within N seconds with nobody watching**: the letter is still `processing`. Usually the background reader did not run: look at Netlify's function log for `read-letter`.
 - **Read and the reading failed**: the reader ran and gave up on the letter. The cause is in that letter's `extraction_runs` and `model_calls` rows.
+
+On the deployed site the upload request reads nothing (KAN-98): it asks the background reader and answers. So a green run there means the background reader ran. Locally the same code runs after the answer, in the dev server, so a local run proves the test's mechanics and not the background function.
 
 ## The letter
 

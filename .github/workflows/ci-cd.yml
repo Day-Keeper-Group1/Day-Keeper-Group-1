@@ -61,6 +61,11 @@ jobs:
         env:
           DATABASE_URL: postgres://daykeeper:daykeeper_local_dev@localhost:5432/daykeeper
       - run: npm run build
+      # KAN-98: the background reader is bundled apart from the app, only when
+      # Netlify builds. Bundle it here too, so a change that breaks it is red
+      # on the pull request rather than on the deploy.
+      - name: Bundle the background reader
+        run: node scripts/build-reading-worker.mjs
 
   # CD (KAN-86): once build has passed on main, bring the staging database up
   # to date, publish main to the shared preview alias on Netlify, and ask the
@@ -117,6 +122,36 @@ jobs:
       # still starting.
       - name: Ask the deployed site whether it can reach its database
         run: curl --fail --silent --show-error --retry 6 --retry-all-errors --retry-delay 5 --max-time 20 https://preview--daykeeper-group1.netlify.app/api/health
+      # KAN-98: a warning, never a failure, when real model calls of the last
+      # week came close to the time each is given (db/watch-model-calls.ts).
+      - name: Look at how long real model calls take
+        run: npm run -s db:watch-calls
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_CA_CERT: ${{ vars.DATABASE_CA_CERT }}
+
+  # KAN-98: after every deploy of main, upload one letter photo to the preview
+  # site through a real browser and wait for it to be read with nobody's
+  # screen open (e2e/README.md). Red means letters are not being read on the
+  # site everyone demonstrates from. Two model calls on the school's key.
+  read-a-letter:
+    needs: deploy
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - run: git lfs pull --include "data/synthetic-letters/05-animal-registration-overdue-notice/page-01.png"
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Upload a letter and wait for it to be read
+        run: npx playwright test
+        env:
+          E2E_BASE_URL: https://preview--daykeeper-group1.netlify.app
 
   # KAN-86: a red run on main is everybody's problem and nobody's screen, so it
   # opens an issue that says where to look, or adds to the one already open.
@@ -124,8 +159,8 @@ jobs:
   # Cancelled counts: that is how a deploy stopped by its ten-minute limit
   # ends, and a hand-cancelled deploy on main deserves a look too.
   report-failure:
-    needs: [build, deploy]
-    if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main' && (needs.build.result == 'failure' || needs.deploy.result == 'failure' || needs.deploy.result == 'cancelled')
+    needs: [build, deploy, read-a-letter]
+    if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main' && (needs.build.result == 'failure' || needs.deploy.result == 'failure' || needs.deploy.result == 'cancelled' || needs.read-a-letter.result == 'failure' || needs.read-a-letter.result == 'cancelled')
     runs-on: ubuntu-latest
     permissions:
       issues: write
@@ -153,6 +188,7 @@ jobs:
           - **Apply new migrations to the staging database**: nothing was deployed, and the site still runs the version before. PostgreSQL's own message is in the log. A refused connection or a timeout usually means the free Supabase project was paused after seven days with no activity: restore it in the Supabase dashboard, then re-run this workflow.
           - **Deploy to Netlify**: the database already has this commit's migrations and the site still runs the version before. Re-run the workflow.
           - **Ask the deployed site whether it can reach its database**: this commit is live, and GET /api/health did not answer 200. The site's own log on Netlify says why.
+          - **read-a-letter**: this commit is live, and a letter uploaded to the preview site was not read with nobody watching. The test's own message says whether it was never read (the background reader did not run: Netlify's function log for read-letter) or read and failed (the letter's rows in extraction_runs and model_calls). e2e/README.md has more.
 
           Close this issue when main is green again.
           EOF
@@ -217,3 +253,24 @@ jobs:
           gh pr comment "$PR" --edit-last --create-if-none --body-file "$RUNNER_TEMP/comment.md"
         env:
           GH_TOKEN: ${{ github.token }}
+      # KAN-98: when this pull request touches how a letter is read, upload one
+      # to its own preview and wait for it to be read with nobody watching
+      # (e2e/README.md). Only then, because each run spends two model calls of
+      # the school key's daily allowance; main runs it after every deploy.
+      - name: Does this pull request touch how a letter is read?
+        id: reading
+        run: |
+          if git diff --name-only origin/main HEAD | grep -E -q '^(src/server/(uploads|extraction|email|background|ai)/|src/server/time-limits\.ts|src/app/api/(documents|home|email)/|src/app/\(app\)/documents/|netlify\.toml|scripts/build-reading-worker\.mjs|e2e/|playwright\.config\.ts|package-lock\.json|\.github/workflows/ci-cd\.yml)'; then
+            echo "touched=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "It does not: the end-to-end reading test is left for main."
+          fi
+      - if: steps.reading.outputs.touched == 'true'
+        run: git lfs pull --include "data/synthetic-letters/05-animal-registration-overdue-notice/page-01.png"
+      - if: steps.reading.outputs.touched == 'true'
+        run: npx playwright install --with-deps chromium
+      - name: Upload a letter to this preview and wait for it to be read
+        if: steps.reading.outputs.touched == 'true'
+        run: npx playwright test
+        env:
+          E2E_BASE_URL: https://pr-${{ github.event.pull_request.number }}--daykeeper-group1.netlify.app

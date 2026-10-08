@@ -49,6 +49,15 @@ Nothing was applied: everything pending runs in one transaction. Nothing was dep
 
 The site is up and cannot reach its database. Paused project first (above). Otherwise the site's log on Netlify says why (`[health] the database did not answer`): `netlify logs`, or the project's Logs page.
 
+### A letter says "reading…" for minutes
+
+A letter is read by a Netlify background function, `read-letter`, round after round (`src/server/background/AGENTS.md`). A normal letter takes under a minute.
+
+- Look at the function's log: Netlify, the project, Logs, Functions, `read-letter`, or `netlify logs --source functions --function read-letter`. Lines starting `[uploads]` or `[background]` say what went wrong.
+- Open Home on any device signed in as that person. While a letter is being read, Home hands it to a reader again, and closes a round that has been running longer than `ROUND_DEADLINE_SECONDS` (about five and a half minutes) as one that decided nothing.
+- The letter's rows in `extraction_runs` and `model_calls` say which round it is on and what each call answered.
+- The **read-a-letter** job of the last run on main uploads a letter the same way and waits for it. If it is red too, the problem is the deploy, not the letter.
+
 ### Margaret's account looks wrong
 
 Press **Refresh Margaret**. If her letters themselves should be different, change [`db/demo/margaret.json`](../db/demo/margaret.json) in a pull request (Jason reviews it), merge, then press the button.
