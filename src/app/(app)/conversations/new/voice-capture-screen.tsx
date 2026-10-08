@@ -7,6 +7,12 @@ import { useActivity } from "@/components/layout/activity";
 import { Panel, ScreenHeader } from "@/components/screen";
 import { Button } from "@/components/ui/button";
 import { transcribeAudio } from "@/lib/voice/transcribe";
+import type { ConversationTranscript } from "@/lib/contract/voice";
+
+function timeLabel(ms: number) {
+  const seconds = Math.floor(ms / 1000);
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+}
 
 type Phase =
   "idle" | "recording" | "transcribing" | "extracting" | "ready" | "failed";
@@ -28,6 +34,9 @@ export function VoiceCaptureScreen() {
   const [phase, setPhase] = useState<Phase>("idle");
   const [status, setStatus] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [transcript, setTranscript] = useState<ConversationTranscript | null>(
+    null,
+  );
   const [conversation, setConversation] = useState<ConversationView | null>(
     null,
   );
@@ -94,9 +103,11 @@ export function VoiceCaptureScreen() {
   async function processFile(file: File) {
     started.current = true;
     setError(null);
+    setTranscript(null);
     setPhase("transcribing");
     try {
       const result = await transcribeAudio(file, setStatus);
+      setTranscript(result.transcript);
       setStatus("Saving transcript…");
       const response = await fetch("/api/conversations", {
         method: "POST",
@@ -196,6 +207,7 @@ export function VoiceCaptureScreen() {
 
   function reset() {
     setConversation(null);
+    setTranscript(null);
     setError(null);
     setStatus("");
     setPhase("idle");
@@ -258,16 +270,18 @@ export function VoiceCaptureScreen() {
           </div>
         ) : null}
         {phase === "transcribing" || phase === "extracting" ? (
-          <p role="status" className="py-6 text-row">
-            <span
-              className="mr-3 inline-block size-5 animate-spin rounded-full border-2 border-primary border-t-transparent"
-              aria-hidden="true"
-            />
-            {status}
-            {phase === "transcribing"
-              ? " Please keep this page open."
-              : " You may leave this page."}
-          </p>
+          <div className="py-6">
+            <p role="status" className="text-row">
+              <span
+                className="mr-3 inline-block size-5 animate-spin rounded-full border-2 border-primary border-t-transparent"
+                aria-hidden="true"
+              />
+              {status}
+              {phase === "transcribing"
+                ? " Please keep this page open."
+                : " You may leave this page."}
+            </p>
+          </div>
         ) : null}
         {phase === "ready" ? (
           <div className="flex flex-col gap-3">
@@ -304,6 +318,26 @@ export function VoiceCaptureScreen() {
           <p role="alert" className="mt-3 text-sub text-danger">
             {error}
           </p>
+        ) : null}
+        {transcript &&
+        (phase === "transcribing" ||
+          phase === "extracting" ||
+          phase === "ready") ? (
+          <section aria-labelledby="transcript-heading" className="mt-6">
+            <h2 id="transcript-heading" className="text-row font-semibold">
+              Transcript
+            </h2>
+            <div className="mt-3 max-h-80 overflow-y-auto rounded-md border border-border p-4">
+              {transcript.utterances.map((line) => (
+                <p key={line.index} className="mb-3 text-row last:mb-0">
+                  <span className="mr-2 text-label text-ink-dim">
+                    {timeLabel(line.startMs)}
+                  </span>
+                  {line.text}
+                </p>
+              ))}
+            </div>
+          </section>
         ) : null}
       </Panel>
     </div>
