@@ -41,7 +41,8 @@ export const CONTRACT_VERSION = "2.0" as const;
  * silence and "I could not read this" cannot be allowed to look alike.
  *
  * **What the product does with a field that is not `confirmed`.** This is the
- * one place the rule is written; everything else points here.
+ * one place the rule is written; everything else points here. The rules below
+ * describe photo letters, followed by the explicit email exception.
  *
  * - `due_date` or `amount` not `confirmed` in the decided reading: the reading
  *   fails, and the letter shows the failure sentence (FAILURE_MESSAGE in
@@ -59,6 +60,14 @@ export const CONTRACT_VERSION = "2.0" as const;
  *   this product is for is the one least equipped to adjudicate a model's
  *   hesitation; the argument for a screen that never asks is in ./api.ts.
  *   Enforced in mapField() in src/server/field-views.ts.
+ *
+ * Email exception: a decided email reading that failed on date or amount may
+ * be corrected explicitly by its owner. All six fields are editable, including
+ * confirmed ones; unconfirmed fields open by default and must be corrected.
+ * The server records a separate user-corrected reading, preserves the
+ * original model calls and requires the ordinary review/confirm step afterward.
+ * Uncertain model guesses are never used to prefill correction inputs.
+ * Provider failures and unresolved voting cannot be corrected.
  *
  * The two are kept apart in STORAGE because how often the model hedges, and what
  * it guesses when it does, is the evaluation data. Collapsing them in the

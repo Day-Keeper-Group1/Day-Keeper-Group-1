@@ -29,7 +29,7 @@ import { POST } from "@/app/api/conversations/extract/route";
 function request(body: unknown) {
   return new Request("http://localhost/api/conversations/extract", {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: { "content-type": "application/json", origin: "http://localhost" },
     body: JSON.stringify(body),
   });
 }
@@ -63,6 +63,14 @@ describe("fictional conversation extraction API", () => {
     requireUser.mockRejectedValue(new UnauthenticatedError());
     const response = await POST(request({ scenarioId: "clear" }));
     expect(response.status).toBe(401);
+    expect(extract).not.toHaveBeenCalled();
+  });
+
+  it("rejects a cross-origin extraction request before calling a provider", async () => {
+    const foreign = request({ scenarioId: "clear" });
+    foreign.headers.set("origin", "https://other.example");
+    const response = await POST(foreign);
+    expect(response.status).toBe(403);
     expect(extract).not.toHaveBeenCalled();
   });
 

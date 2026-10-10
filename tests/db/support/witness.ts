@@ -91,7 +91,7 @@ export async function snapshot(): Promise<Record<string, unknown[]>> {
   const everything: Record<string, unknown[]> = {};
   for (const { name } of tables) {
     const stored = await rows<{ stored: unknown }>(
-      `SELECT to_jsonb(t) AS stored FROM ${quoted(name)} t ORDER BY t.id`,
+      `SELECT to_jsonb(t) AS stored FROM ${quoted(name)} t ORDER BY to_jsonb(t)::text`,
     );
     everything[name] = stored.map((row) => row.stored);
   }

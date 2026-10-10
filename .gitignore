@@ -46,5 +46,11 @@ output/
 # Local uploads and build output
 .storage/
 
+# What a Playwright run leaves behind (e2e/README.md): traces and screenshots of failures
+/test-results/
+/playwright-report/
+
 # Local Netlify folder
 .netlify
+# KAN-98: the background reader, bundled at build time by scripts/build-reading-worker.mjs
+netlify/functions/read-letter.mjs

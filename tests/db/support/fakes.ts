@@ -259,6 +259,14 @@ export function afterQueue() {
   };
 }
 
+/**
+ * KAN-98: take what the answered requests left to be done, without running it,
+ * so a test can run it later than what is left after it.
+ */
+export function takeAfter(): Array<() => unknown> {
+  return pending.splice(0);
+}
+
 /** Run everything the answered requests left to be done, one after another. */
 export async function runAfter(): Promise<void> {
   while (pending.length > 0) {

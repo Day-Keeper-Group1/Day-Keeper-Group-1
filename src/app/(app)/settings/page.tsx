@@ -34,6 +34,13 @@ export default function SettingsPage() {
         description="Manage your profile and account."
       />
 
+      <Link
+        href="/email"
+        className="inline-flex min-h-12 items-center font-semibold text-primary underline underline-offset-4"
+      >
+        Connect or manage Gmail
+      </Link>
+
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Profile</CardTitle>

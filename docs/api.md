@@ -1,5 +1,44 @@
 # API specification
 
+## Gmail development endpoints
+
+These authenticated endpoints support the separate Module 2 prototype at `/email`.
+All replies use `Cache-Control: no-store`. POST requests require an Origin matching
+the configured Gmail callback origin. Browsing Gmail messages is read-only and does
+not run extraction. Selecting Create Task saves that email and sends its plain-text
+body to the project Azure reader. Only confirmation creates tasks and reminders.
+
+| Method / URL | Result |
+|---|---|
+| POST `/api/email/gmail/connect` | 303 to Google consent; ten-minute, single-use state bound to the browser and DayKeeper user, with PKCE |
+| GET `/api/email/gmail/callback` | Consumes state, exchanges code, verifies read scope, stores encrypted refresh token; 303 to `/email?connection=connected` or `failed` |
+| GET `/api/email/gmail/status` | `{ configured, connected, email }`; no tokens |
+| POST `/api/email/gmail/messages` | `{ messages, skipped, hasMore }`; first 20 inbox messages within 30 days, plain-text bodies with optional server-sanitized `sanitizedHtmlBody` for formatted display; unsupported messages counted in `skipped` |
+| POST `/api/email/gmail/images` | JSON `{ messageId }`; returns `{ images, skipped }` for referenced embedded raster images from the signed-in user's current Gmail mailbox. Keys are URI-encoded Content-IDs and values are validated raster data URLs. Up to 8 images, 1 MB each and 4 MB total. Private, uncached, read-only; requires the configured Origin. External URLs are never fetched by this endpoint. |
+| POST `/api/email/gmail/extract` | JSON `{ messageId, mailbox }`; fetches the message from the current user's Gmail connection, saves its source, queues extraction, and returns `{ documentId }` with 202. Repeated requests for the same user/mailbox/message reuse the document. The existing document detail, review and confirm endpoints complete the flow. |
+| POST `/api/email/gmail/disconnect` | Deletes this user's token and pending connection attempts; `{ disconnected: true }`. Google grant can also be removed in Google account settings. |
+
+Errors use the existing envelope: 401 without sign-in, 403 for a foreign Origin,
+409 when reconnection is needed, and 500 for configuration/provider failures.
+Email document detail includes `sourceEmail.gmailUrl`, linking to the imported message in Gmail with its original mailbox selected.
+Messages use the `EmailMessage` schema in `src/lib/contract/email.ts`.
+Failed email documents expose fixed, plain-language messages for an uncertain
+due date, amount, or both. Internal extraction error text is never returned.
+When a failed email has a recoverable decided reading, document detail also
+returns `correction: { runId, fieldKeys }` and confident fields; uncertain values
+remain hidden. POST `/api/documents/:id/correct` requires sign-in and the same
+Origin, and accepts `{ runId, fields: [{ key, value }] }`. Every unconfirmed
+six-field key must appear once; confirmed keys may also be edited, without duplicates. Dates must
+be real ISO calendar dates (or `Not applicable`); amounts must be valid AUD amounts
+(or `No payment required`). It returns `{ documentId }`, moves the document to
+needs-review, and records a separate user-corrected reading, preserving the original
+reading and model calls. This exception applies only when a decided email reading
+failed because its due date or amount was uncertain or unreadable. Provider failures
+and unresolved voting cannot be corrected. It creates no tasks
+or reminders; the existing empty-body confirm endpoint does that afterward.
+Missing or foreign documents return 404; stale, saved, non-email or unrecoverable
+readings and invalid corrections return 409; malformed requests return 400.
+
 **Every endpoint here is built.** This document was written before any of them,
 because the interface, the reader and the database were going to be built by
 different people, and the only way that ends in something that fits together is
@@ -87,7 +126,7 @@ person as-is:
 | code | status | when |
 |---|---|---|
 | `unauthenticated` | 401 | not signed in, or the wrong password |
-| `forbidden` | 403 | signed in, but not allowed (a deactivated account) |
+| `forbidden` | 403 | signed in but not allowed, or a protected POST has a missing or foreign Origin |
 | `not_found` | 404 | no such thing, **or it belongs to someone else** |
 | `invalid_request` | 400 | the request was malformed; `fields` says where |
 | `conflict` | 409 | the thing is not in a state where this makes sense |
@@ -170,7 +209,11 @@ continues after the response; this endpoint does not wait for it.
 `id`, `status` and `createdAt`. Use the record endpoint below to inspect a
 result. Neither list response contains transcript text.
 
+**POST requests** must carry the same Origin as the application page. A
+missing or foreign Origin returns `403 forbidden` before saving a transcript.
+
 **Error responses** : `400 invalid_request`, `401 unauthenticated` and
+`403 forbidden` for POST, and
 `500 server_error` in the shared envelope.
 
 ### Voice conversation result
@@ -208,7 +251,8 @@ the indexed utterances. The transcript is available only to its owner.
 `500 server_error`.
 
 **Decision URLs** : append `/confirm` or `/dismiss`; both use `POST`, require
-the same session and have no request body. **Confirm** returns `200 OK` with
+the same session and Origin, and have no request body. A missing or foreign
+Origin returns `403 forbidden`. **Confirm** returns `200 OK` with
 `{"task": <TaskSummary>}`, creates exactly one shared task and its date-based
 reminders, and links the evidence to that task. **Dismiss** returns `200 OK`
 with `{"id":"<uuid>","status":"dismissed"}` and creates no task. A second
@@ -224,6 +268,9 @@ their detail response.
 **Method** : `POST`
 
 **Auth required** : YES
+
+**Origin required** : the POST request must come from the application page;
+a missing or foreign Origin returns `403 forbidden`.
 
 **Data constraints** : `scenarioId` is one of `multiple`, `clear`, `missing`,
 `none`, `cancelled`, `unclear`, or `complex`. Other fields are refused. The
@@ -743,13 +790,15 @@ the Home tab and the message that says a letter is ready all read it.
 | The reader is not configured, or a page reached it without its bytes | Not tried again; the letter fails at once | `failed` | the red row with the failure sentence |
 | The two luna readings agree on every field | That is the reading | `needs-review` | "ready to check" |
 | They differ, and the terra reading matches one of them | The matched reading is taken | `needs-review` | "ready to check" |
-| They differ, and the terra reading matches neither | The next round is queued, and the next `GET /api/home` poll reads it: the letter is read again from the start, up to five rounds | `processing` | "reading…" |
-| The host stops the request reading a round (KAN-75: Netlify stops a request at 30 seconds, background work included) | Two minutes after the round started, the next poll closes it as a round that decided nothing (`RoundTimedOut`) and queues the next one, or fails the letter if it was the fifth | `processing` | "reading…" |
+| They differ, and the terra reading matches neither | The next round is queued and read straight after (KAN-98: by the background reader on the deployed site): the letter is read again from the start, up to five rounds | `processing` | "reading…" |
+| Whatever was reading a round stopped before the round ended | `ROUND_DEADLINE_SECONDS` after the round started (about five and a half minutes, `src/server/time-limits.ts`), the next `GET /api/home` poll closes it as a round that decided nothing (`RoundTimedOut`) and hands the letter to a reader again, or fails the letter if it was the fifth | `processing` | "reading…" |
 | The fifth round still matches neither | The letter fails | `failed` | the red row with the failure sentence |
 | The decided reading's due date or amount is not `confirmed` | The letter fails; a date or amount left empty would read as "no date" or "nothing to pay" (`src/lib/contract/extraction.ts`) | `failed` | the red row with the failure sentence |
 | The decided reading has another field not `confirmed` | That field is stored and not shown; the rest of the reading stands | `needs-review` | "ready to check", without that row |
 | The reading is decided but the database will not store it | Not tried again; the letter fails | `failed` | the red row with the failure sentence |
 | The reading could not even be started in the database | Nothing is read; the letter fails | `failed` | the red row with the failure sentence |
+
+**Where the reading runs (KAN-98).** Not in the upload's request: Netlify stops a request at 30 seconds, work after the answer included. On the deployed site the upload asks a Netlify background function to read the letter to the end, round after round, so a letter is read whether or not anybody's screen is open. Locally the same code runs after the answer. While a letter is being read, `GET /api/home` is the safety net: it closes a round whose reader stopped and hands any letter still queued to a reader again. `src/server/background/` has the code, and `src/server/time-limits.ts` the numbers.
 
 The failure sentence is `FAILURE_MESSAGE` in `src/lib/contract/api.ts`, the same for every row: the person is not told which of these happened, because none of them is something she can do anything about. A failed letter stays failed. Repair is out of scope, so there is no retry endpoint and no retake endpoint. `readDocument()` in `src/server/uploads/reading.ts` has the rules.
 
@@ -927,9 +976,14 @@ one when there is more than one (`factLines()` in `src/lib/facts.ts`).
 `unreadable`, and `src/lib/contract/extraction.ts` says what each status means
 and why a value the model was unsure of never reaches this response.
 
-**The screen shows, it never asks.** Nothing in this payload is editable and
-nothing in it is a question, which is why there is no correction endpoint
-anywhere in this document. The reasoning is in `src/lib/contract/api.ts`.
+**Photo review shows, it never asks.** Photo fields are read-only. Email has an
+explicit exception: when a decided reading fails because its due date or amount
+is uncertain or unreadable, its owner may edit all six fields through
+`POST /api/documents/:id/correct` before ordinary review and confirmation.
+Unconfirmed fields require correction; confirmed fields may also be edited.
+The correction is a separate user-corrected reading and the original is kept.
+Provider failures and unresolved voting cannot be corrected. The reasoning is
+in `src/lib/contract/api.ts`.
 
 ## Confirm a letter
 
@@ -1432,15 +1486,6 @@ down.
 Not oversights. Each needs a decision nobody has made yet, and guessing now
 would mean building the wrong thing twice.
 
-- **a real queue for readings.** The runner is decided for now (KAN-75): a
-  reading runs one round per request. The upload reads the first round after
-  it has answered; a round that decides nothing queues the next, and
-  `GET /api/home`, which the screen polls every five seconds while anything is
-  being read, reads it after answering (`continueReadings` in
-  `src/server/uploads/reading.ts`). The reason is the host: Netlify stops a
-  request at 30 seconds, background work included, and a round takes 10 to 25.
-  Still open is anything that reads a letter nobody is watching: a letter whose
-  person closes the app mid-reading waits, queued, until they open it again
 - **what the capture screen says at the last page.** The size half is
   decided (KAN-75): the capture screen redraws any photograph over 1 MB so its
   long side is 3508 pixels, the size of the pages the reader was measured on,

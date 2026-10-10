@@ -135,6 +135,7 @@ describe("the names the migration gave", () => {
 
   it("names every UNIQUE constraint the way PostgreSQL would have", async () => {
     expect(await names("u")).toEqual([
+      "document_emails_user_id_mailbox_provider_message_id_key",
       "document_pages_unique_page",
       "extracted_fields_unique_key",
       "extracted_identifiers_unique_position",
@@ -149,11 +150,15 @@ describe("the names the migration gave", () => {
   it("names every foreign key the way PostgreSQL would have", async () => {
     expect(await names("f")).toEqual([
       "audit_logs_actor_id_fkey",
+      "document_emails_document_id_fkey",
+      "document_emails_user_id_fkey",
       "document_pages_document_id_fkey",
       "documents_user_id_fkey",
       "extracted_fields_extraction_run_id_fkey",
       "extracted_identifiers_extraction_run_id_fkey",
       "extraction_runs_document_id_fkey",
+      "gmail_connections_user_id_fkey",
+      "gmail_oauth_attempts_user_id_fkey",
       "model_calls_extraction_run_id_fkey",
       "reminders_task_id_fkey",
       "sessions_user_id_fkey",
@@ -165,14 +170,17 @@ describe("the names the migration gave", () => {
     ]);
   });
 
-  it("gives each of the thirteen tables its primary key", async () => {
+  it("gives each of the sixteen tables its primary key", async () => {
     expect(await names("p")).toEqual([
       "audit_logs_pkey",
+      "document_emails_pkey",
       "document_pages_pkey",
       "documents_pkey",
       "extracted_fields_pkey",
       "extracted_identifiers_pkey",
       "extraction_runs_pkey",
+      "gmail_connections_pkey",
+      "gmail_oauth_attempts_pkey",
       "model_calls_pkey",
       "reminders_pkey",
       "sessions_pkey",
@@ -651,7 +659,7 @@ describe("a database emptied and rebuilt, the way db:reset does it", () => {
       `SELECT to_regclass('drizzle.__drizzle_migrations')::text AS value`,
     );
 
-  it("has the eleven tables and every migration on record, and nothing is left to apply", async () => {
+  it("has the fourteen tables and every migration on record, and nothing is left to apply", async () => {
     // How many migrations there are: one today. Read off the journal rather
     // than typed here, or every new migration would fail this test.
     const journal = JSON.parse(
@@ -668,7 +676,7 @@ describe("a database emptied and rebuilt, the way db:reset does it", () => {
       expect(await record()).toBeNull();
 
       expect(await applyMigrations(db)).toBe(journal.entries.length);
-      expect(await tables()).toBe(13);
+      expect(await tables()).toBe(16);
       expect(
         await one<number>(
           `SELECT count(*)::integer AS value FROM drizzle.__drizzle_migrations`,
@@ -677,7 +685,7 @@ describe("a database emptied and rebuilt, the way db:reset does it", () => {
 
       // A second run finds nothing pending, and says so.
       expect(await applyMigrations(db)).toBe(0);
-      expect(await tables()).toBe(13);
+      expect(await tables()).toBe(16);
     } finally {
       await pool.end();
     }

@@ -2,6 +2,7 @@
 import { z } from "zod";
 import { SchoolKeyExhausted } from "@/server/ai/school-key";
 import { fail, json, route } from "@/server/api/respond";
+import { rejectCrossOriginWrite } from "@/server/api/origin";
 import { requireUser } from "@/server/auth/session";
 import {
   commitmentExtractionProvider,
@@ -14,6 +15,8 @@ const requestSchema = z.object({ scenarioId: z.string().min(1) }).strict();
 
 export const POST = route(async (request: Request) => {
   await requireUser();
+  const crossOrigin = rejectCrossOriginWrite(request);
+  if (crossOrigin) return crossOrigin;
   const body = await request.json().catch(() => null);
   const parsed = requestSchema.safeParse(body);
   if (!parsed.success) {

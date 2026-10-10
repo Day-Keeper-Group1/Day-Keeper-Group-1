@@ -1,0 +1,38 @@
+[
+  {
+    "id": "bill",
+    "subject": "Your Example Energy bill",
+    "body": "Example Energy asks you to pay $84.50 by 8 November 2026. Your account reference is EE-2048. Quote this reference when paying.",
+    "expected": {
+      "issuer": "Example Energy",
+      "action_required": "Pay",
+      "due_date": "2026-11-08",
+      "amount": "$84.50",
+      "reference": "EE-2048"
+    }
+  },
+  {
+    "id": "appointment",
+    "subject": "Example Community Clinic appointment",
+    "body": "Please attend Example Community Clinic on 12 November 2026 at 10:30 am. No payment is required. Booking reference CL-1030.",
+    "expected": {
+      "issuer": "Example Community Clinic",
+      "action_required": "Attend",
+      "due_date": "2026-11-12",
+      "due_time": "10:30",
+      "amount": "No payment required",
+      "reference": "CL-1030"
+    }
+  },
+  {
+    "id": "newsletter",
+    "subject": "Community news",
+    "body": "Example Community Centre has planted a herb garden. This is just an update. You do not need to reply, attend, book anything or make any payment.",
+    "expected": {
+      "action_required": "No action",
+      "due_date": "Not applicable",
+      "amount": "No payment required",
+      "reference": "Not applicable"
+    }
+  }
+]

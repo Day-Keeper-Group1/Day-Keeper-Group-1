@@ -23,9 +23,9 @@ Neither action edits the transcript or the proposal. An empty `clear` result
 shows a neutral completion state; `uncertain` proposals are discarded.
 
 If extraction fails, the server clears that attempt's transcript and records
-only its failed state. A 15-minute Netlify scheduled function clears queued or
-processing transcripts left by an interrupted host after two minutes. The app
-also checks for stale records when the user next opens Voice. Confirmed
+only its failed state. A daily Netlify scheduled function is a backstop that
+clears queued or processing transcripts left by an interrupted host after two
+minutes. The app also checks for stale records when the user next opens Voice. Confirmed
 transcripts remain with their tasks; deletion and retention controls are later
 work. The database migration adds `voice_conversations` and
 `voice_commitments`; it does not alter the shared task columns.

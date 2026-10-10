@@ -146,6 +146,11 @@ export async function markOwnedVoiceFailed(
     .where(and(eq(voiceConversations.id, id), ownedConversation(userId)));
 }
 
+/**
+ * Unscoped on purpose: commitment rows inherit their owner through the
+ * conversation. The caller first locks that conversation under the owner in
+ * the same transaction, then passes its id here.
+ */
 export async function insertVoiceCommitments(
   db: Db,
   conversationId: string,
@@ -166,6 +171,7 @@ export async function insertVoiceCommitments(
   );
 }
 
+/** List pending commitments through conversations owned by this person. */
 export async function listOwnedVoiceToCheck(db: Db, userId: string) {
   return db
     .select({
@@ -190,6 +196,7 @@ export async function listOwnedVoiceToCheck(db: Db, userId: string) {
     .orderBy(asc(voiceCommitments.createdAt), asc(voiceCommitments.id));
 }
 
+/** List the commitments attached to one owned conversation. */
 export async function listOwnedVoiceCommitments(
   db: Db,
   userId: string,

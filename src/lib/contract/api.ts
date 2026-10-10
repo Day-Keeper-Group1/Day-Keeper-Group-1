@@ -61,6 +61,18 @@ export type TaskStatus = "upcoming" | "overdue" | "completed";
 export const FAILURE_MESSAGE =
   "It wasn't your photo. Something went wrong on our side. Please try again.";
 
+/** Email diagnostics expose fixed explanations, never internal error details. */
+export const EMAIL_FAILURE_MESSAGES = {
+  "due-date":
+    "We could not read a complete due date with confidence. Check the original bill for the full date, including the year. No task or reminder was saved.",
+  amount:
+    "We could not read the amount due with confidence. Check the original bill for the amount payable. No task or reminder was saved.",
+  "due-date-and-amount":
+    "We could not read the due date and amount due with confidence. Check the original bill for the full date and amount payable. No task or reminder was saved.",
+  other:
+    "Something went wrong reading this email. Open your inbox and try Create Task again.",
+} as const;
+
 /**
  * A failed reading, as a list row needs it.
  *
@@ -84,6 +96,8 @@ export type DocumentFailureView = {
  * them.
  */
 export type DocumentSummary = {
+  /** Present for correspondence imported from Gmail. */
+  source?: "email";
   id: string;
   issuer: string | null;
   documentType: string | null;
@@ -209,6 +223,18 @@ export type ExtractedFieldView = {
 };
 
 export type DocumentDetail = DocumentSummary & {
+  /** Email-only repair of a decided reading with unconfirmed fields. */
+  correction?: {
+    runId: string;
+    fieldKeys: import("./fields").ContractFieldKey[];
+  };
+  sourceEmail?: {
+    gmailUrl: string;
+    from: string;
+    subject: string;
+    receivedAt: string;
+    textBody: string;
+  };
   /**
    * Empty while status is 'processing' and for a document that has never been
    * read successfully. Otherwise the most recent successful reading, exactly as
@@ -304,8 +330,16 @@ export type StoredUploadRequest = {
 };
 
 /*
- * There is deliberately no ConfirmDocumentRequest, and deliberately no endpoint
- * anywhere that corrects a reading.
+ * There is deliberately no ConfirmDocumentRequest: confirmation takes an empty
+ * body. Photo readings have no correction endpoint.
+ *
+ * The text below describes photo review. Email review now has an explicit
+ * exception when a decided reading fails on an uncertain or unreadable date or
+ * amount: DocumentDetail.correction opens unconfirmed fields automatically and
+ * allows editing all six fields. POST /api/documents/:id/correct records a
+ * separate user-corrected reading and keeps the original reading and model calls.
+ * Provider failures and unresolved voting cannot be corrected.
+ * Confirmation itself still takes an empty body and creates the task afterward.
  *
  * Confirming sends an empty body. The person looked, the person nodded, that is
  * the entire message. Nothing is edited, because nothing on the screen is
@@ -327,7 +361,7 @@ export type StoredUploadRequest = {
  * work from typing a date into a box on a phone. The exam demanded the hard
  * kind, at the worst moment, about the values least likely to be right.
  *
- * So the screen shows and it never asks. Rows the model read confidently are
+ * So photo review shows and it never asks. Rows the model read confidently are
  * displayed, read-only. A row with no value is not drawn at all, because an
  * empty box invites an answer nobody is asking for. A date or an amount the
  * model was not sure of never reaches this screen as an empty row: the reading
@@ -346,7 +380,7 @@ export type StoredUploadRequest = {
  * accuracy signal, the value a person typed against the value the model read;
  * with editing gone that signal is gone, and accuracy now rests entirely on the
  * synthetic evaluation line, where ground truth is known by construction. And
- * this release has no correction path at all: joining a later upload to a letter
+ * photo uploads have no correction path: joining a later upload to a letter
  * already in the system is not in it (docs/scope.md), so photographing a letter
  * again makes a second letter rather than mending the first.
  *

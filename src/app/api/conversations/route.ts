@@ -1,5 +1,6 @@
 import { after } from "next/server";
 import { fail, json, route } from "@/server/api/respond";
+import { rejectCrossOriginWrite } from "@/server/api/origin";
 import { requireUser } from "@/server/auth/session";
 import {
   extractSavedVoice,
@@ -18,6 +19,8 @@ export const GET = route(async () => {
 /** Save a browser transcript and start one bounded extraction call. */
 export const POST = route(async (request) => {
   const user = await requireUser();
+  const crossOrigin = rejectCrossOriginWrite(request);
+  if (crossOrigin) return crossOrigin;
   const bodyText = await request.text();
   if (Buffer.byteLength(bodyText, "utf8") > MAX_TRANSCRIPT_JSON_BYTES) {
     return fail("invalid_request", "This transcript is too long.");

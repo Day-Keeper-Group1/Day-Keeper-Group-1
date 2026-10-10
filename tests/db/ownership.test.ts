@@ -53,6 +53,7 @@ import { db } from "@/server/db";
 import { dbCause } from "@/server/db/errors";
 import * as auditQueries from "@/server/db/queries/audit";
 import * as documentQueries from "@/server/db/queries/documents";
+import * as emailQueries from "@/server/db/queries/email";
 import * as healthQueries from "@/server/db/queries/health";
 import {
   countOwnedDocumentsToCheck,
@@ -85,6 +86,7 @@ import {
   reopenOwnedTaskRows,
 } from "@/server/db/queries/tasks";
 import * as userQueries from "@/server/db/queries/users";
+import * as voiceQueries from "@/server/db/queries/voice";
 import * as documentService from "@/server/documents";
 import {
   countLettersToCheck,
@@ -114,6 +116,7 @@ import {
   createStoredDocument,
   readDocument,
   readStoredDocument,
+  readToTheEnd,
   type StoredPage,
 } from "@/server/uploads";
 
@@ -212,7 +215,8 @@ async function aFullWorld(person: Person): Promise<World> {
 
   const queued = await aQueuedLetter(person);
   const stopped = await aQueuedLetter(person);
-  await aRoundTheHostStopped(stopped, "3 minutes");
+  // KAN-98: a minute past the deadline, which time-limits.ts works out.
+  await aRoundTheHostStopped(stopped, `${ROUND_DEADLINE_SECONDS + 60} seconds`);
   for (const letter of [queued, stopped]) {
     const [page] = pageUnder(person, letter);
     await putObject(page.key, Buffer.from("a photograph"), page.mimeType);
@@ -370,6 +374,10 @@ const SERVICES: Record<string, Case> = {
     ask: (asker) => continueReadings(asker.id),
     answers: undefined,
   },
+  readToTheEnd: {
+    ask: (asker, hers) => readToTheEnd(hers.queued, asker.id),
+    answers: "done",
+  },
 };
 
 /**
@@ -525,7 +533,44 @@ const STATEMENTS: Record<string, Case> = {
  * person herself, and insertAuditLog writes down who did something, which
  * for the school key's line is nobody.
  */
+// These statements are exercised as owner and stranger in email.test.ts,
+// which builds the Gmail handshake and failed-email fixtures they require.
+const EMAIL_STATEMENTS = [
+  "findOwnedGmailConnection",
+  "findOwnedOauthAttempt",
+  "rotateOwnedGmailToken",
+  "deleteOwnedGmailAccess",
+  "findOwnedEmail",
+  "findOwnedEmailDocument",
+  "saveOwnedEmail",
+  "findOwnedFailedEmailRound",
+  "listOwnedEmailCalls",
+  "insertOwnedCorrectedEmailRound",
+];
+
+/** Voice statements are exercised with owned and foreign records in voice.test.ts. */
+const VOICE_STATEMENTS = [
+  "findOwnedVoiceConversation",
+  "findOwnedVoiceBySubmission",
+  "listOwnedVoiceConversations",
+  "countOwnedVoiceProcessing",
+  "claimOwnedQueuedVoice",
+  "lockOwnedVoiceConversation",
+  "markOwnedVoiceReady",
+  "markOwnedVoiceFailed",
+  "listOwnedVoiceToCheck",
+  "listOwnedVoiceCommitments",
+  "lockOwnedVoiceCommitment",
+  "findOwnedVoiceCommitment",
+  "findOwnedVoiceByTask",
+  "markOwnedVoiceCommitmentConfirmed",
+  "markOwnedVoiceCommitmentDismissed",
+];
+
 const WRITES_THE_OWNER = [
+  "insertVoiceConversation",
+  "insertOauthAttempt",
+  "insertGmailConnection",
   "insertUser",
   "insertSession",
   "insertDocument",
@@ -541,6 +586,8 @@ const WRITES_THE_OWNER = [
  * it does.
  */
 const UNSCOPED_ON_PURPOSE = [
+  // queries/voice.ts
+  "insertVoiceCommitments",
   // queries/users.ts
   "findActiveUserByEmail",
   "touchSessionAndFindUser",
@@ -804,6 +851,8 @@ describe("ownership", () => {
       tasks: taskQueries,
       audit: auditQueries,
       health: healthQueries,
+      email: emailQueries,
+      voice: voiceQueries,
     };
     const statements = functionsOf(...Object.values(QUERIES));
 
@@ -813,6 +862,8 @@ describe("ownership", () => {
       expect(
         [
           ...Object.keys(STATEMENTS),
+          ...EMAIL_STATEMENTS,
+          ...VOICE_STATEMENTS,
           ...WRITES_THE_OWNER,
           ...UNSCOPED_ON_PURPOSE,
           ...PREDICATES,
@@ -823,7 +874,13 @@ describe("ownership", () => {
     it("has Owned in the name of every owner-scoped statement, and of no other", () => {
       expect(
         statements.filter((name) => name.includes("Owned")).sort(),
-      ).toEqual(Object.keys(STATEMENTS).sort());
+      ).toEqual(
+        [
+          ...Object.keys(STATEMENTS),
+          ...EMAIL_STATEMENTS,
+          ...VOICE_STATEMENTS,
+        ].sort(),
+      );
     });
 
     it("has the reason written above every statement that is unscoped on purpose, and above no other", () => {

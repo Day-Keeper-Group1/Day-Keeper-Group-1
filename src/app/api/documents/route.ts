@@ -1,13 +1,12 @@
 // KAN-56: the letters collection, where an upload becomes a letter and where every letter is listed.
 
-import { after } from "next/server";
-
 import {
   READING_PAUSED_MESSAGE,
   schoolKeyBudget,
 } from "@/server/ai/school-key";
 import { fail, json, route } from "@/server/api/respond";
 import { requireUser } from "@/server/auth/session";
+import { readInBackground } from "@/server/background";
 import { listDocuments } from "@/server/documents";
 import {
   UploadRejected,
@@ -79,11 +78,15 @@ export const POST = route(async (request: Request) => {
 
   const summary = await createDocument(user.id, user.timeZone, pages);
 
-  // The person is answered as soon as the photographs are stored, because the
-  // one model call takes about ten seconds and she is holding a phone. after()
-  // runs the reading once this response has gone, so the letter leaves here at
-  // 'processing' and the interface polls GET /api/home for the rest.
-  after(() => readDocument(summary.id, user.id, pages));
+  // The person is answered as soon as the photographs are stored, because a
+  // round takes about ten seconds and she is holding a phone. The reading runs
+  // once this response has gone, so the letter leaves here at 'processing'
+  // and the interface polls GET /api/home for the rest. KAN-98: on the
+  // deployed site a background reader does it, because nothing slow may run
+  // inside a request there (src/server/background/).
+  readInBackground(request, summary.id, user.id, () =>
+    readDocument(summary.id, user.id, pages),
+  );
 
   return json(summary, 201);
 });
@@ -126,7 +129,9 @@ async function photographsAlreadyStored(
     documentId,
     stored,
   );
-  after(() => readStoredDocument(summary.id, user.id, stored));
+  readInBackground(request, summary.id, user.id, () =>
+    readStoredDocument(summary.id, user.id, stored),
+  );
   return json(summary, 201);
 }
 

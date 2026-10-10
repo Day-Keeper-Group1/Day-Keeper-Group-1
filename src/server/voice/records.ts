@@ -7,6 +7,7 @@ import {
   MAX_VOICE_DURATION_MS,
 } from "@/lib/contract/voice";
 import { isUuid } from "@/lib/uuid";
+import { VOICE_STALE_AFTER_MS } from "@/lib/voice/lifecycle";
 import { db } from "@/server/db";
 import { dbCause } from "@/server/db/errors";
 import { clearExpiredVoiceConversations } from "@/server/db/maintenance";
@@ -29,7 +30,6 @@ import {
 } from "@/server/voice";
 
 export const MAX_TRANSCRIPT_JSON_BYTES = 128_000;
-export const VOICE_STALE_AFTER_MS = 2 * 60_000;
 
 export const saveVoiceRequestSchema = z
   .object({

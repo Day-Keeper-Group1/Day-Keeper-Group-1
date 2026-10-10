@@ -49,8 +49,8 @@ describe("a run of checks", () => {
     expect(nextHref(parseRun("task"), null)).toBe("/calendar");
   });
 
-  it("lands on Your letters when none of the letters saved made a task", () => {
-    expect(nextHref(runAfter(START, null), null)).toBe("/documents");
+  it("lands on Home when none of the letters saved made a task", () => {
+    expect(nextHref(runAfter(START, null), null)).toBe("/dashboard");
   });
 
   it("ignores an address that is not a run or a month", () => {

@@ -1,5 +1,6 @@
 // KAN-57: the review screen's server half: the letter, and the plan worked out against her day.
 
+import { savedEmailMessage } from "@/server/email/source";
 import { notFound, redirect } from "next/navigation";
 import { todayInZone } from "@/lib/contract/dates";
 import { leftToCheck } from "@/lib/confirm-flow";
@@ -7,6 +8,7 @@ import { planLinesFor } from "@/lib/review-plan";
 import { requireUser } from "@/server/auth/session";
 import { countLettersToCheck, getDocument } from "@/server/documents";
 import { ReviewForm } from "./review-form";
+import { EmailCorrectionForm } from "./email-correction-form";
 
 /**
  * The review screen.
@@ -41,6 +43,12 @@ export default async function DocumentReviewPage({
   // A letter belonging to somebody else is absent, not forbidden: see
   // docs/api.md on why this is a 404 and never a 403.
   if (!document) notFound();
+  if (document.status === "failed" && document.correction) {
+    const originalEmail = (await savedEmailMessage(id, user.id)) ?? undefined;
+    return (
+      <EmailCorrectionForm document={document} originalEmail={originalEmail} />
+    );
+  }
 
   // KAN-59: a letter that is not waiting to be checked has nothing to check.
   // Reached by the back button after saving it, or from an old tab, so she is

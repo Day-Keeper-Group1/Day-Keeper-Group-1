@@ -6,7 +6,7 @@
  * The saved letter goes, a note says what was kept and where, and she is taken
  * straight to the next letter waiting, first photographed first. When none is
  * left she lands where the letters she just saved went: the calendar, at the
- * month of the last task she saved, or Your letters if none of them made a
+ * month of the last task she saved, or Home if none of them made a
  * task. "Not now", or any other screen, ends the run, and the next one starts
  * from nothing.
  *
@@ -60,7 +60,7 @@ export function nextHref(run: Run, nextLetterId: string | null): string {
     const carried = encodeRun(run);
     return `/documents/${nextLetterId}/review${carried ? `?run=${carried}` : ""}`;
   }
-  if (!run.anyTask) return "/documents";
+  if (!run.anyTask) return "/dashboard";
   return run.month ? `/calendar?month=${run.month}` : "/calendar";
 }
 

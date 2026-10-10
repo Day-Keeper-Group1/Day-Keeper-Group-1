@@ -1,5 +1,5 @@
 {
-  "id": "78b74fc6-69c7-41c2-b8d3-37a0d856c5a4",
+  "id": "8228de90-640c-4457-bda6-3b9358a9de4b",
   "prevId": "377ac4fb-55b9-43cb-a323-7b36c8b07ac2",
   "version": "7",
   "dialect": "postgresql",
@@ -1380,190 +1380,15 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.voice_commitments": {
-      "name": "voice_commitments",
+    "public.document_emails": {
+      "name": "document_emails",
       "schema": "",
       "columns": {
-        "id": {
-          "name": "id",
+        "document_id": {
+          "name": "document_id",
           "type": "uuid",
           "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "conversation_id": {
-          "name": "conversation_id",
-          "type": "uuid",
-          "primaryKey": false,
           "notNull": true
-        },
-        "proposal_key": {
-          "name": "proposal_key",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "title": {
-          "name": "title",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "due_date": {
-          "name": "due_date",
-          "type": "date",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "due_time": {
-          "name": "due_time",
-          "type": "time",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "evidence": {
-          "name": "evidence",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "status": {
-          "name": "status",
-          "type": "voice_commitment_status",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'needs-review'"
-        },
-        "task_id": {
-          "name": "task_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "confirmed_at": {
-          "name": "confirmed_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "dismissed_at": {
-          "name": "dismissed_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "voice_commitments_conversation_status_idx": {
-          "name": "voice_commitments_conversation_status_idx",
-          "columns": [
-            {
-              "expression": "conversation_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "status",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "voice_commitments_conversation_id_fkey": {
-          "name": "voice_commitments_conversation_id_fkey",
-          "tableFrom": "voice_commitments",
-          "tableTo": "voice_conversations",
-          "columnsFrom": [
-            "conversation_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "voice_commitments_task_id_fkey": {
-          "name": "voice_commitments_task_id_fkey",
-          "tableFrom": "voice_commitments",
-          "tableTo": "tasks",
-          "columnsFrom": [
-            "task_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "voice_commitments_conversation_proposal_key": {
-          "name": "voice_commitments_conversation_proposal_key",
-          "nullsNotDistinct": false,
-          "columns": [
-            "conversation_id",
-            "proposal_key"
-          ]
-        },
-        "voice_commitments_task_id_key": {
-          "name": "voice_commitments_task_id_key",
-          "nullsNotDistinct": false,
-          "columns": [
-            "task_id"
-          ]
-        }
-      },
-      "policies": {},
-      "checkConstraints": {
-        "voice_commitments_title_present": {
-          "name": "voice_commitments_title_present",
-          "value": "btrim(\"voice_commitments\".\"title\") <> ''"
-        },
-        "voice_commitments_time_requires_date": {
-          "name": "voice_commitments_time_requires_date",
-          "value": "\"voice_commitments\".\"due_time\" IS NULL OR \"voice_commitments\".\"due_date\" IS NOT NULL"
-        },
-        "voice_commitments_review_state": {
-          "name": "voice_commitments_review_state",
-          "value": "(\"voice_commitments\".\"status\" = 'confirmed' AND \"voice_commitments\".\"task_id\" IS NOT NULL AND \"voice_commitments\".\"confirmed_at\" IS NOT NULL AND \"voice_commitments\".\"dismissed_at\" IS NULL) OR (\"voice_commitments\".\"status\" = 'dismissed' AND \"voice_commitments\".\"task_id\" IS NULL AND \"voice_commitments\".\"confirmed_at\" IS NULL AND \"voice_commitments\".\"dismissed_at\" IS NOT NULL) OR (\"voice_commitments\".\"status\" = 'needs-review' AND \"voice_commitments\".\"task_id\" IS NULL AND \"voice_commitments\".\"confirmed_at\" IS NULL AND \"voice_commitments\".\"dismissed_at\" IS NULL)"
-        }
-      },
-      "isRLSEnabled": false
-    },
-    "public.voice_conversations": {
-      "name": "voice_conversations",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
         },
         "user_id": {
           "name": "user_id",
@@ -1571,98 +1396,61 @@
           "primaryKey": false,
           "notNull": true
         },
-        "client_submission_id": {
-          "name": "client_submission_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "status": {
-          "name": "status",
-          "type": "voice_conversation_status",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'queued'"
-        },
-        "transcript": {
-          "name": "transcript",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "duration_ms": {
-          "name": "duration_ms",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "extraction_started_at": {
-          "name": "extraction_started_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "finished_at": {
-          "name": "finished_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "failure_code": {
-          "name": "failure_code",
+        "mailbox": {
+          "name": "mailbox",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
-        "updated_at": {
-          "name": "updated_at",
+        "provider_message_id": {
+          "name": "provider_message_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sender": {
+          "name": "sender",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "subject": {
+          "name": "subject",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "received_at": {
+          "name": "received_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
+          "notNull": true
+        },
+        "text_body": {
+          "name": "text_body",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
         }
       },
-      "indexes": {
-        "voice_conversations_user_status_idx": {
-          "name": "voice_conversations_user_status_idx",
-          "columns": [
-            {
-              "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "status",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "created_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
+      "indexes": {},
       "foreignKeys": {
-        "voice_conversations_user_id_fkey": {
-          "name": "voice_conversations_user_id_fkey",
-          "tableFrom": "voice_conversations",
+        "document_emails_document_id_fkey": {
+          "name": "document_emails_document_id_fkey",
+          "tableFrom": "document_emails",
+          "tableTo": "documents",
+          "columnsFrom": [
+            "document_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "document_emails_user_id_fkey": {
+          "name": "document_emails_user_id_fkey",
+          "tableFrom": "document_emails",
           "tableTo": "users",
           "columnsFrom": [
             "user_id"
@@ -1676,26 +1464,134 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "voice_conversations_user_submission_key": {
-          "name": "voice_conversations_user_submission_key",
+        "document_emails_user_id_mailbox_provider_message_id_key": {
+          "name": "document_emails_user_id_mailbox_provider_message_id_key",
           "nullsNotDistinct": false,
           "columns": [
             "user_id",
-            "client_submission_id"
+            "mailbox",
+            "provider_message_id"
           ]
         }
       },
       "policies": {},
-      "checkConstraints": {
-        "voice_conversations_duration_range": {
-          "name": "voice_conversations_duration_range",
-          "value": "\"voice_conversations\".\"duration_ms\" BETWEEN 1 AND 45000"
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.gmail_connections": {
+      "name": "gmail_connections",
+      "schema": "",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
         },
-        "voice_conversations_transcript_status": {
-          "name": "voice_conversations_transcript_status",
-          "value": "(\"voice_conversations\".\"status\" = 'failed' AND \"voice_conversations\".\"transcript\" IS NULL) OR (\"voice_conversations\".\"status\" <> 'failed' AND \"voice_conversations\".\"transcript\" IS NOT NULL)"
+        "connection_id": {
+          "name": "connection_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "refresh_token_encrypted": {
+          "name": "refresh_token_encrypted",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "connected_at": {
+          "name": "connected_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
         }
       },
+      "indexes": {},
+      "foreignKeys": {
+        "gmail_connections_user_id_fkey": {
+          "name": "gmail_connections_user_id_fkey",
+          "tableFrom": "gmail_connections",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.gmail_oauth_attempts": {
+      "name": "gmail_oauth_attempts",
+      "schema": "",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "state_hash": {
+          "name": "state_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "browser_hash": {
+          "name": "browser_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "verifier_encrypted": {
+          "name": "verifier_encrypted",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "gmail_oauth_attempts_user_id_fkey": {
+          "name": "gmail_oauth_attempts_user_id_fkey",
+          "tableFrom": "gmail_oauth_attempts",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
       "isRLSEnabled": false
     }
   },
@@ -1747,25 +1643,6 @@
         "platform_operator",
         "org_admin",
         "org_worker"
-      ]
-    },
-    "public.voice_commitment_status": {
-      "name": "voice_commitment_status",
-      "schema": "public",
-      "values": [
-        "needs-review",
-        "confirmed",
-        "dismissed"
-      ]
-    },
-    "public.voice_conversation_status": {
-      "name": "voice_conversation_status",
-      "schema": "public",
-      "values": [
-        "queued",
-        "processing",
-        "ready",
-        "failed"
       ]
     }
   },

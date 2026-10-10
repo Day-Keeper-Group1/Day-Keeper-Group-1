@@ -20,7 +20,13 @@ import {
   type SessionUser,
   type TaskSummary,
 } from "@/lib/contract/api";
-import { ctaFor, greeting, reminderToday } from "@/lib/home";
+import {
+  ctaFor,
+  foldLater,
+  greeting,
+  moreLabel,
+  reminderToday,
+} from "@/lib/home";
 import {
   DASHBOARD_SECTIONS_STORAGE_KEY,
   DASHBOARD_SECTIONS_UPDATED_EVENT,
@@ -288,6 +294,7 @@ export function HomeScreen({
         today={today}
         onToggle={handleToggle}
         onOpen={setOpenTaskId}
+        fold
       />
     ),
     needsReview: (
@@ -480,6 +487,7 @@ function DashboardTaskSection({
   today,
   onToggle,
   onOpen,
+  fold = false,
 }: {
   title: string;
   emptyMessage: string;
@@ -488,22 +496,38 @@ function DashboardTaskSection({
   today: string;
   onToggle: (task: TaskSummary) => void;
   onOpen: (taskId: string) => void;
+  /** A preview rather than a list to act on: the first few, then a count. */
+  fold?: boolean;
 }) {
+  const { shown, more } = fold ? foldLater(tasks) : { shown: tasks, more: 0 };
   return (
     <DashboardPanel title={title}>
       {tasks.length > 0 ? (
-        <ul>
-          {tasks.map((task) => (
-            <li key={task.id} className="border-t border-line first:border-t-0">
-              <TaskRow
-                task={task}
-                reminder={reminderToday(task, today)}
-                onToggle={onToggle}
-                onOpen={() => onOpen(task.id)}
-              />
-            </li>
-          ))}
-        </ul>
+        <>
+          <ul>
+            {shown.map((task) => (
+              <li
+                key={task.id}
+                className="border-t border-line first:border-t-0"
+              >
+                <TaskRow
+                  task={task}
+                  reminder={reminderToday(task, today)}
+                  onToggle={onToggle}
+                  onOpen={() => onOpen(task.id)}
+                />
+              </li>
+            ))}
+          </ul>
+          {more > 0 ? (
+            <Link
+              href="/calendar"
+              className="flex min-h-12 items-center gap-1.5 border-t border-line pl-10 text-caption font-bold text-primary hover:underline"
+            >
+              {moreLabel(more)} <span aria-hidden="true">&rarr;</span>
+            </Link>
+          ) : null}
+        </>
       ) : (
         <p className="min-h-12 text-row text-ink-dim">{emptyMessage}</p>
       )}
@@ -520,6 +544,10 @@ function DashboardPanel({
   titleAction?: React.ReactNode;
   children: React.ReactNode;
 }) {
+  /* A panel is as tall as what is in it. A fixed height cut rows in half and
+     put a scrollbar inside every card. A list too long for the page is folded
+     at the source (foldLater in src/lib/home.ts): the first few, then a count
+     she can follow, rather than content hidden behind a bar she has to find. */
   return (
     <Panel
       title={
@@ -532,16 +560,9 @@ function DashboardPanel({
           title
         )
       }
-      className="flex h-[160px] flex-col overflow-hidden"
+      className="flex flex-col"
     >
-      <div
-        role="region"
-        aria-label={`${title} section content`}
-        tabIndex={0}
-        className="min-h-0 flex-1 overflow-y-auto focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-      >
-        {children}
-      </div>
+      {children}
     </Panel>
   );
 }

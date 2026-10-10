@@ -1,0 +1,441 @@
+{
+  "date": "2026-09-28T07:43:32.073Z",
+  "promptSha256": "31b8e791ec67e60e348d5d55e2e57d99e52de1d2b2708d63d7ca1a5cb121d88d",
+  "results": [
+    {
+      "id": "bill",
+      "passed": true,
+      "fields": {
+        "document_type": "utility bill",
+        "issuer": "Example Energy",
+        "action_required": "Pay Example Energy",
+        "due_date": "2026-11-08",
+        "amount": "$84.50",
+        "reference": "EE-2048"
+      },
+      "calls": [
+        {
+          "call": {
+            "provider": "azure-email",
+            "model": "gpt-5.6-luna",
+            "effort": "medium",
+            "usage": {
+              "input_tokens": 1703,
+              "cached_tokens": 0,
+              "reasoning_tokens": 79,
+              "output_tokens": 242
+            },
+            "seconds": 4.09
+          },
+          "result": {
+            "contract_version": "2.0",
+            "provider": "azure-email",
+            "model": "gpt-5.6-luna",
+            "fields": [
+              {
+                "key": "document_type",
+                "value": "utility bill",
+                "status": "confirmed",
+                "confidence": 0.99
+              },
+              {
+                "key": "issuer",
+                "value": "Example Energy",
+                "status": "confirmed",
+                "confidence": 0.99
+              },
+              {
+                "key": "action_required",
+                "value": "Pay Example Energy",
+                "status": "confirmed",
+                "confidence": 0.99
+              },
+              {
+                "key": "due_date",
+                "value": "2026-11-08",
+                "status": "confirmed",
+                "confidence": 0.99
+              },
+              {
+                "key": "amount",
+                "value": "$84.50",
+                "status": "confirmed",
+                "confidence": 0.99
+              },
+              {
+                "key": "reference",
+                "value": "EE-2048",
+                "status": "confirmed",
+                "confidence": 0.99
+              }
+            ],
+            "identifiers": [
+              {
+                "label": "account reference",
+                "value": "EE-2048",
+                "status": "confirmed"
+              }
+            ],
+            "open_payload": {}
+          }
+        },
+        {
+          "call": {
+            "provider": "azure-email",
+            "model": "gpt-5.6-luna",
+            "effort": "medium",
+            "usage": {
+              "input_tokens": 1703,
+              "cached_tokens": 1700,
+              "reasoning_tokens": 76,
+              "output_tokens": 239
+            },
+            "seconds": 3.92
+          },
+          "result": {
+            "contract_version": "2.0",
+            "provider": "azure-email",
+            "model": "gpt-5.6-luna",
+            "fields": [
+              {
+                "key": "document_type",
+                "value": "utility bill",
+                "status": "confirmed",
+                "confidence": 0.99
+              },
+              {
+                "key": "issuer",
+                "value": "Example Energy",
+                "status": "confirmed",
+                "confidence": 0.99
+              },
+              {
+                "key": "action_required",
+                "value": "Pay Example Energy",
+                "status": "confirmed",
+                "confidence": 0.99
+              },
+              {
+                "key": "due_date",
+                "value": "2026-11-08",
+                "status": "confirmed",
+                "confidence": 0.99
+              },
+              {
+                "key": "amount",
+                "value": "$84.50",
+                "status": "confirmed",
+                "confidence": 0.99
+              },
+              {
+                "key": "reference",
+                "value": "EE-2048",
+                "status": "confirmed",
+                "confidence": 0.99
+              }
+            ],
+            "identifiers": [
+              {
+                "label": "account reference",
+                "value": "EE-2048",
+                "status": "confirmed"
+              }
+            ],
+            "open_payload": {}
+          }
+        }
+      ]
+    },
+    {
+      "id": "appointment",
+      "passed": true,
+      "fields": {
+        "document_type": "medical appointment notice",
+        "issuer": "Example Community Clinic",
+        "action_required": "Attend Example Community Clinic",
+        "due_date": "2026-11-12",
+        "amount": "No payment required",
+        "reference": "CL-1030",
+        "due_time": "10:30"
+      },
+      "calls": [
+        {
+          "call": {
+            "provider": "azure-email",
+            "model": "gpt-5.6-luna",
+            "effort": "medium",
+            "usage": {
+              "input_tokens": 1701,
+              "cached_tokens": 1610,
+              "reasoning_tokens": 61,
+              "output_tokens": 247
+            },
+            "seconds": 2.758
+          },
+          "result": {
+            "contract_version": "2.0",
+            "provider": "azure-email",
+            "model": "gpt-5.6-luna",
+            "fields": [
+              {
+                "key": "document_type",
+                "value": "medical appointment notice",
+                "status": "confirmed",
+                "confidence": 0.98
+              },
+              {
+                "key": "issuer",
+                "value": "Example Community Clinic",
+                "status": "confirmed",
+                "confidence": 0.98
+              },
+              {
+                "key": "action_required",
+                "value": "Attend Example Community Clinic",
+                "status": "confirmed",
+                "confidence": 0.99
+              },
+              {
+                "key": "due_date",
+                "value": "2026-11-12",
+                "status": "confirmed",
+                "confidence": 0.99
+              },
+              {
+                "key": "amount",
+                "value": "No payment required",
+                "status": "confirmed",
+                "confidence": 0.99
+              },
+              {
+                "key": "reference",
+                "value": "CL-1030",
+                "status": "confirmed",
+                "confidence": 0.99
+              },
+              {
+                "key": "due_time",
+                "value": "10:30",
+                "status": "confirmed",
+                "confidence": 0.99
+              }
+            ],
+            "identifiers": [
+              {
+                "label": "Booking reference",
+                "value": "CL-1030",
+                "status": "confirmed"
+              }
+            ],
+            "open_payload": {}
+          }
+        },
+        {
+          "call": {
+            "provider": "azure-email",
+            "model": "gpt-5.6-luna",
+            "effort": "medium",
+            "usage": {
+              "input_tokens": 1701,
+              "cached_tokens": 1698,
+              "reasoning_tokens": 71,
+              "output_tokens": 257
+            },
+            "seconds": 3.195
+          },
+          "result": {
+            "contract_version": "2.0",
+            "provider": "azure-email",
+            "model": "gpt-5.6-luna",
+            "fields": [
+              {
+                "key": "document_type",
+                "value": "medical appointment letter",
+                "status": "confirmed",
+                "confidence": 0.98
+              },
+              {
+                "key": "issuer",
+                "value": "Example Community Clinic",
+                "status": "confirmed",
+                "confidence": 0.98
+              },
+              {
+                "key": "action_required",
+                "value": "Attend Example Community Clinic",
+                "status": "confirmed",
+                "confidence": 0.99
+              },
+              {
+                "key": "due_date",
+                "value": "2026-11-12",
+                "status": "confirmed",
+                "confidence": 0.99
+              },
+              {
+                "key": "amount",
+                "value": "No payment required",
+                "status": "confirmed",
+                "confidence": 0.99
+              },
+              {
+                "key": "reference",
+                "value": "CL-1030",
+                "status": "confirmed",
+                "confidence": 0.98
+              },
+              {
+                "key": "due_time",
+                "value": "10:30",
+                "status": "confirmed",
+                "confidence": 0.99
+              }
+            ],
+            "identifiers": [
+              {
+                "label": "Booking reference",
+                "value": "CL-1030",
+                "status": "confirmed"
+              }
+            ],
+            "open_payload": {}
+          }
+        }
+      ]
+    },
+    {
+      "id": "newsletter",
+      "passed": true,
+      "fields": {
+        "document_type": "community news update",
+        "issuer": "Example Community Centre",
+        "action_required": "No action",
+        "due_date": "Not applicable",
+        "amount": "No payment required",
+        "reference": "Not applicable"
+      },
+      "calls": [
+        {
+          "call": {
+            "provider": "azure-email",
+            "model": "gpt-5.6-luna",
+            "effort": "medium",
+            "usage": {
+              "input_tokens": 1699,
+              "cached_tokens": 1610,
+              "reasoning_tokens": 59,
+              "output_tokens": 199
+            },
+            "seconds": 2.947
+          },
+          "result": {
+            "contract_version": "2.0",
+            "provider": "azure-email",
+            "model": "gpt-5.6-luna",
+            "fields": [
+              {
+                "key": "document_type",
+                "value": "community news update",
+                "status": "confirmed",
+                "confidence": 0.98
+              },
+              {
+                "key": "issuer",
+                "value": "Example Community Centre",
+                "status": "confirmed",
+                "confidence": 0.98
+              },
+              {
+                "key": "action_required",
+                "value": "No action",
+                "status": "confirmed",
+                "confidence": 0.99
+              },
+              {
+                "key": "due_date",
+                "value": "Not applicable",
+                "status": "confirmed",
+                "confidence": 0.99
+              },
+              {
+                "key": "amount",
+                "value": "No payment required",
+                "status": "confirmed",
+                "confidence": 0.99
+              },
+              {
+                "key": "reference",
+                "value": "Not applicable",
+                "status": "confirmed",
+                "confidence": 0.99
+              }
+            ],
+            "identifiers": [],
+            "open_payload": {}
+          }
+        },
+        {
+          "call": {
+            "provider": "azure-email",
+            "model": "gpt-5.6-luna",
+            "effort": "medium",
+            "usage": {
+              "input_tokens": 1699,
+              "cached_tokens": 1696,
+              "reasoning_tokens": 95,
+              "output_tokens": 244
+            },
+            "seconds": 3.081
+          },
+          "result": {
+            "contract_version": "2.0",
+            "provider": "azure-email",
+            "model": "gpt-5.6-luna",
+            "fields": [
+              {
+                "key": "document_type",
+                "value": "community update",
+                "status": "confirmed",
+                "confidence": 0.98
+              },
+              {
+                "key": "issuer",
+                "value": "Example Community Centre",
+                "status": "confirmed",
+                "confidence": 0.98
+              },
+              {
+                "key": "action_required",
+                "value": "No action",
+                "status": "confirmed",
+                "confidence": 0.99
+              },
+              {
+                "key": "due_date",
+                "value": "Not applicable",
+                "status": "confirmed",
+                "confidence": 0.99
+              },
+              {
+                "key": "amount",
+                "value": "No payment required",
+                "status": "confirmed",
+                "confidence": 0.99
+              },
+              {
+                "key": "reference",
+                "value": "Not applicable",
+                "status": "confirmed",
+                "confidence": 0.99
+              }
+            ],
+            "identifiers": [],
+            "open_payload": {
+              "update": "Example Community Centre has planted a herb garden."
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

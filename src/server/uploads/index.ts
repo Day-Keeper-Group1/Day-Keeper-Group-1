@@ -26,8 +26,8 @@
  *
  *   - ./intake.ts: a letter arriving. Steps one to three: the photographs are
  *     judged, stored, and recorded as rows.
- *   - ./reading.ts: a letter being read. Step four: one round per call, and
- *     how each round ends.
+ *   - ./reading.ts: a letter being read. Step four: one round per call, how
+ *     each round ends, and readToTheEnd(), which reads the rounds in turn.
  *   - ./reading-columns.ts: which values of a reading reach the letter's own
  *     columns. Pure.
  *
@@ -53,5 +53,6 @@ export {
   continueReadings,
   readDocument,
   readStoredDocument,
+  readToTheEnd,
 } from "./reading";
 export { columnsFromReading } from "./reading-columns";

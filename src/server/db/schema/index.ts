@@ -45,3 +45,4 @@ export * from "./readings";
 export * from "./tasks";
 export * from "./audit";
 export * from "./voice";
+export * from "./email";

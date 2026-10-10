@@ -21,7 +21,7 @@ export function AppShell({
     <AccessibilityProvider>
       <ActivityProvider>
         <div className="flex min-h-dvh">
-          <div className="hidden md:block">
+          <div className="sticky top-0 hidden h-dvh shrink-0 self-start overflow-y-auto md:block">
             <SidebarNav />
           </div>
 
