@@ -38,8 +38,7 @@ describe("ctaFor", () => {
     const cta = ctaFor(counts({ needsReview: 1, processing: 3, failed: 2 }));
     expect(cta).toEqual({
       big: "1 thing needs your OK",
-      small:
-        "From your photos we've prepared tasks and reminders. Check them before they go on your calendar.",
+      small: "Check the tasks found in your photos and conversations.",
       inert: false,
     });
   });
@@ -64,7 +63,8 @@ describe("ctaFor", () => {
     // the panel alone and stays in the To check list.
     expect(ctaFor(counts({ failed: 2 }))).toEqual({
       big: "Nothing to check right now",
-      small: "Photograph a letter and it will show up here.",
+      small:
+        "Add a photo or conversation and anything to check will appear here.",
       inert: true,
     });
   });

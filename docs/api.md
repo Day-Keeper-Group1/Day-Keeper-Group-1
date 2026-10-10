@@ -50,15 +50,17 @@ Sign in there with `POST /api/auth/login` and every other call carries the
 session. That page is described in `src/server/api/openapi.ts`, and
 `tests/openapi.test.ts` fails when a route handler is missing from it.
 
-The surface below is the one in [`scope.md`](scope.md). That file says what this
-release builds; this one says what each request and each response looks like. If
+The photographed-letter release surface is the one in [`scope.md`](scope.md).
+The Voice milestone endpoints are implemented separately and await review and
+deployment; [`voice.md`](voice.md) describes their scope. This
+file says what each request and each response looks like. If
 you are looking for an endpoint that is not in the table, read `scope.md` before
 adding it: most of what is missing is missing deliberately.
 
-The types are already in `src/lib/contract/api.ts`, and that file is the
-authority on the exact shape of every body here. **Import them rather than
-restating them.** The examples below are real bodies, so you can see what an
-endpoint feels like to call without reading TypeScript.
+The shared API types are in `src/lib/contract/api.ts`; the voice
+transcript and extraction types are in `src/lib/contract/voice.ts`. **Import them rather than
+restating them.** The examples below show concrete bodies, so you can see what
+an endpoint feels like to call without reading TypeScript.
 
 Rules that are not about the wire live in the code that enforces them, with the
 reasoning attached. This document names them and does not repeat them:
@@ -124,7 +126,7 @@ person as-is:
 | code | status | when |
 |---|---|---|
 | `unauthenticated` | 401 | not signed in, or the wrong password |
-| `forbidden` | 403 | signed in, but not allowed (a deactivated account) |
+| `forbidden` | 403 | signed in but not allowed, or a protected POST has a missing or foreign Origin |
 | `not_found` | 404 | no such thing, **or it belongs to someone else** |
 | `invalid_request` | 400 | the request was malformed; `fields` says where |
 | `conflict` | 409 | the thing is not in a state where this makes sense |
@@ -153,8 +155,183 @@ confirm that a letter with that id exists.
 | Undo that | `DELETE /api/tasks/:id/complete` |
 | Everything the home screen needs | `GET /api/home` |
 | Is the site up | `GET /api/health` |
+| Extract from a fictional voice fixture (prototype) | `POST /api/conversations/extract` |
+| Save a browser transcript | `POST /api/conversations` |
+| List recent Voice processing records | `GET /api/conversations` |
+| Read one Voice result | `GET /api/conversations/:id` |
+| Read a commitment with transcript evidence | `GET /api/conversations/:id/commitments/:commitmentId` |
+| Confirm a Voice commitment as a task | `POST /api/conversations/:id/commitments/:commitmentId/confirm` |
+| Dismiss a Voice commitment | `POST /api/conversations/:id/commitments/:commitmentId/dismiss` |
 
 There is no calendar endpoint, on purpose. See "The calendar".
+
+## Voice conversations
+
+**URL** : `/api/conversations`
+
+**Methods** : `POST`, `GET`
+
+**Auth required** : YES
+
+**POST data constraints** : JSON body, at most 128,000 UTF-8 bytes. It has a
+UUID `clientSubmissionId`, integer `durationMs` from 1 through 45,000, and a
+`transcript` in the validated contract shape. Utterance indexes run from zero
+in order; timestamps must fit within the duration. Audio bytes are never
+accepted. Repeating the same submission UUID for the same person returns the
+existing record without starting another extraction.
+
+**POST data example**
+
+```json
+{
+  "clientSubmissionId": "b5a13b10-c412-44c0-9180-3baa701bb99a",
+  "durationMs": 4200,
+  "transcript": {
+    "version": "1.0",
+    "utterances": [
+      {
+        "index": 0,
+        "speaker": "Speaker 1",
+        "text": "I will call the clinic tomorrow.",
+        "startMs": 0,
+        "endMs": 4200
+      }
+    ]
+  }
+}
+```
+
+**POST success** : `201 Created` with `{"id":"<uuid>","status":"queued"}`.
+An idempotent repeat answers `200 OK` with the current status. Extraction
+continues after the response; this endpoint does not wait for it.
+
+**GET success** : `200 OK` with the 20 most recent records, each containing
+`id`, `status` and `createdAt`. Use the record endpoint below to inspect a
+result. Neither list response contains transcript text.
+
+**POST requests** must carry the same Origin as the application page. A
+missing or foreign Origin returns `403 forbidden` before saving a transcript.
+
+**Error responses** : `400 invalid_request`, `401 unauthenticated` and
+`403 forbidden` for POST, and
+`500 server_error` in the shared envelope.
+
+### Voice conversation result
+
+**URL** : `/api/conversations/:id`
+
+**Method** : `GET`
+
+**Auth required** : YES
+
+**Success** : `200 OK` with `id`, `status`, `createdAt` and `commitments`.
+`status` is `queued`, `processing`, `ready` or `failed`. Commitments are
+included only when ready; each contains `id`, `title`, `dueDate`, `dueTime`,
+`status` (`needs-review`, `confirmed`, `dismissed`) and `taskId`. A failed
+record includes a generic `message` and no transcript. A ready record may
+have an empty commitment list when nothing clear was found. This endpoint is
+polled by the Voice page.
+
+**Error responses** : `401 unauthenticated`, `404 not_found` (including another
+person's id) and `500 server_error`.
+
+## Voice commitment review
+
+**URL** : `/api/conversations/:id/commitments/:commitmentId`
+
+**Method** : `GET`
+
+**Auth required** : YES
+
+**Success** : `200 OK` with the commitment fields, zero-based `evidence`
+indexes and the complete timestamped `transcript`. The interface highlights
+the indexed utterances. The transcript is available only to its owner.
+
+**Error responses** : `401 unauthenticated`, `404 not_found` and
+`500 server_error`.
+
+**Decision URLs** : append `/confirm` or `/dismiss`; both use `POST`, require
+the same session and Origin, and have no request body. A missing or foreign
+Origin returns `403 forbidden`. **Confirm** returns `200 OK` with
+`{"task": <TaskSummary>}`, creates exactly one shared task and its date-based
+reminders, and links the evidence to that task. **Dismiss** returns `200 OK`
+with `{"id":"<uuid>","status":"dismissed"}` and creates no task. A second
+decision returns `409 conflict`; an unknown or other person's commitment
+returns `404 not_found`. Neither path edits the transcript. Confirmed Voice
+tasks are read through the existing task endpoints and have a Voice source in
+their detail response.
+
+## Extract commitments from a fictional conversation (prototype)
+
+**URL** : `/api/conversations/extract`
+
+**Method** : `POST`
+
+**Auth required** : YES
+
+**Origin required** : the POST request must come from the application page;
+a missing or foreign Origin returns `403 forbidden`.
+
+**Data constraints** : `scenarioId` is one of `multiple`, `clear`, `missing`,
+`none`, `cancelled`, `unclear`, or `complex`. Other fields are refused. The
+request never contains audio or arbitrary conversation text.
+
+**Data example**
+
+```json
+{ "scenarioId": "clear" }
+```
+
+### Success Response
+
+**Code** : `200 OK`
+
+**Content example**
+
+```json
+{
+  "provider": "mock",
+  "model": null,
+  "seconds": 0.8,
+  "extraction": {
+    "version": "1.0",
+    "commitments": [
+      {
+        "id": "clear-1",
+        "title": "Book the doctor appointment",
+        "dueDate": "2026-10-02",
+        "dueTime": "10:30",
+        "status": "clear",
+        "evidence": [0, 1]
+      }
+    ]
+  }
+}
+```
+
+`extraction` is the validated voice contract in
+`src/lib/contract/voice.ts`. `provider` is `mock` or `azure`; Azure mode is
+selected server-side with `AI_VOICE_EXTRACTION_PROVIDER=azure` for the six
+reviewed fixtures. `complex` always uses Azure and has no prepared answer; it
+needs the team RACE key configured. This example is the mock answer for
+`clear`; Azure may use different wording while satisfying the same contract.
+
+### Error Responses
+
+- `400 invalid_request`: missing or unknown scenario.
+- `401 unauthenticated`: sign-in required.
+- `429 too_many_requests`: the shared school's-key daily budget is used up.
+- `500 server_error`: extraction or validation failed; model details are not
+  exposed to the browser.
+
+### Notes
+
+The server loads the fictional transcript, sends it to the chosen provider,
+checks the returned JSON and evidence indexes, then returns only the safe result
+and call metadata. No audio is sent or stored; no transcript or commitment is
+persisted. The page loads expected answers for the first six scenarios only.
+The seventh is an unscored live Azure demo. This is a prototype outside the
+current release scope.
 
 A person can now create their own account. The seed still plants Margaret, an
 operator account and one empty account per teammate, so a checkout has somebody

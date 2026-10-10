@@ -551,6 +551,7 @@ describe("tasks", () => {
           },
         ],
         pageCount: 2,
+        source: "document",
       });
       expect(Object.keys(result!)).toEqual([
         "id",
@@ -561,6 +562,7 @@ describe("tasks", () => {
         "dueTime",
         "status",
         "reminders",
+        "source",
         "fields",
         "identifiers",
         "pageCount",
@@ -571,19 +573,21 @@ describe("tasks", () => {
 
       // And the other task is shown beside its own letter.
       const other = await getTask(form.task!, margaret.id, MELBOURNE);
-      expect(other?.pageCount).toBe(3);
-      expect(other?.fields).toHaveLength(6);
-      expect(other?.identifiers).toEqual([]);
+      expect(other?.source).toBe("document");
+      if (other?.source !== "document")
+        throw new Error("Expected a letter task.");
+      expect(other.pageCount).toBe(3);
+      expect(other.fields).toHaveLength(6);
+      expect(other.identifiers).toEqual([]);
 
       // A task shows the fields that are stored and fills none in: with one
       // taken out of storage, it is missing here, where the letter screen
       // would say it could not be read.
       await rows("DELETE FROM extracted_fields WHERE field_key = 'amount'");
-      expect(
-        (await getTask(bill.task!, margaret.id, MELBOURNE))?.fields.map(
-          (field) => field.key,
-        ),
-      ).toEqual([
+      const remaining = await getTask(bill.task!, margaret.id, MELBOURNE);
+      if (remaining?.source !== "document")
+        throw new Error("Expected a letter task.");
+      expect(remaining.fields.map((field) => field.key)).toEqual([
         "document_type",
         "issuer",
         "action_required",

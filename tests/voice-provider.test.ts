@@ -47,7 +47,7 @@ const validPayload = {
       title: "Call the clinic",
       dueDate: null,
       dueTime: null,
-      status: "confirmed",
+      status: "clear",
       evidence: [0],
     },
   ],

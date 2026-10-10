@@ -43,6 +43,8 @@ const USER = {
 // being read, one failed, and all three sit in the inbox.
 const HOME: HomePayload = {
   counts: { needsReview: 1, processing: 1, failed: 1 },
+  voiceToCheck: [],
+  voiceProcessing: 0,
   inbox: [
     {
       id: "document-one",

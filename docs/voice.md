@@ -1,6 +1,47 @@
 # Module 3: Voice and Conversation Intelligence
 
-**Status:** proposed Milestone 1 plan for team review.
+**Status:** Milestone 1 prototype retained; the short-recording workflow is implemented on the Voice milestone branch and awaits review and deployment.
+
+## Short-recording milestone
+
+The user can record with the microphone or choose an audio file. The browser
+decodes and transcribes at most 45 seconds with `whisper-tiny.en` on WebAssembly.
+The speech model runs on the user's device; no audio is uploaded or stored.
+This is post-recording transcription, not live transcription. The user must keep
+the Voice page open until transcription finishes. Recording needs a secure
+context and microphone permission. Upload and recording are both available on
+desktop; mobile support is deferred until it has been tested separately.
+
+The browser submits only the timestamped transcript to the authenticated
+server. The server saves it, runs the existing commitment extractor, validates
+the cited utterance indexes and stores only `clear` proposals. Those proposals
+appear in the same Home **Needs review** area as photographed letters. Opening one
+shows its title, date and highlighted transcript evidence. **Confirm** makes
+one ordinary task and its reminders; **Dismiss** removes the proposal without
+making a task. The task detail retains the highlighted transcript as evidence.
+Neither action edits the transcript or the proposal. An empty `clear` result
+shows a neutral completion state; `uncertain` proposals are discarded.
+
+If extraction fails, the server clears that attempt's transcript and records
+only its failed state. A daily Netlify scheduled function is a backstop that
+clears queued or processing transcripts left by an interrupted host after two
+minutes. The app also checks for stale records when the user next opens Voice. Confirmed
+transcripts remain with their tasks; deletion and retention controls are later
+work. The database migration adds `voice_conversations` and
+`voice_commitments`; it does not alter the shared task columns.
+
+The local mock extractor recognizes the six reviewed fixture transcripts only.
+A newly recorded conversation needs `AI_VOICE_EXTRACTION_PROVIDER=azure` and
+the team's configured school key for meaningful extraction. The API uses the
+same daily key budget as document extraction. The recorded transcript has one
+anonymous speaker label, so it does not identify which person made a promise.
+
+The 45-second cap is a smoke-test product limit based on the desktop browser
+experiment, not a claim that every browser or every recording performs equally.
+The experiment and temporary planning material remain under the ignored
+`.storage/voice-temp/` folder until they are reviewed for publication.
+
+## Milestone 1 prototype (historical)
 
 The official project description defines Module 3 as consent-based call
 transcription and extraction of commitments and follow-ups. Module 3 remains
@@ -71,6 +112,9 @@ states. A saved-conversations list is not needed yet.
 Development and demonstration use only fictional or synthetic recordings and
 transcripts.
 
+The six-fixture RACE check and raw outcomes are recorded in
+[`experiments/module-03-voice/`](../experiments/module-03-voice/README.md).
+
 ### Interface behaviour
 
 - The selected audio can be played locally before extraction.
@@ -79,11 +123,15 @@ transcripts.
   DayKeeper displays those values inside its own components; Azure cannot send
   page layout, links or executable markup.
 - A missing date is shown neutrally as **No date found**.
+- Proposal `status` describes how clearly the transcript supports the action.
+  `clear` does not mean the user approved it. An unstated date alone does not
+  make an otherwise clear action uncertain.
 - An uncertain proposal is shown as **Needs checking**, using warning colour,
   text and an icon. Colour is never its only signal.
 - Uncertain proposals are excluded by default from any later task-creation
-  flow.
-- This milestone has no save or create-task action.
+  flow. Whether a future review screen lets the user confirm, correct or dismiss
+  them is a later design decision.
+- This milestone has no confirm, edit, save or create-task action.
 
 ### Acceptance criteria
 
@@ -132,7 +180,9 @@ fixed result without making an external call.
 - Every proposal cites at least one transcript utterance.
 - The cited evidence must support the action and any returned date or time.
 - Changed or cancelled plans must not be returned as active commitments.
-- Unclear proposals use `status: "uncertain"`.
+- Clear proposals use `status: "clear"`; unclear actions or conflicting details
+  use `status: "uncertain"`. This is evidence clarity, not model confidence or
+  user approval.
 - The model returns data only. It never returns interface markup.
 
 ### Evidence and attribution
@@ -159,13 +209,22 @@ Milestone 1 needs these core examples:
 3. No commitment.
 4. A commitment without a date.
 5. A changed or cancelled plan that must not become an active commitment.
+6. A request with unclear acceptance, returned as `uncertain`.
 
 An additional conflicting-date fixture can be added while refining the prompt
-to check that the result is marked uncertain rather than guessed.
+to check that the result is marked uncertain rather than guessed. The current
+fixtures test contract and mock behaviour; Azure's ability to identify
+uncertainty must be evaluated separately.
 
 Each fixture includes a transcript and the commitments expected from it. Model
 answers are compared with those expected results rather than judged only by
 appearance.
+
+A seventh, longer fictional conversation in
+`data/synthetic-conversations/complex-demo/` is for presenting live Azure
+extraction. It has a script and transcript but deliberately has no expected
+commitments. The interface shows only Azure's returned proposals and evidence;
+this demo is not part of the six-fixture score.
 
 Each scenario also keeps a human-readable script as its source material:
 
@@ -222,7 +281,7 @@ type CommitmentProposal = {
   title: string;
   dueDate: string | null; // YYYY-MM-DD
   dueTime: string | null; // HH:mm in the user's timezone
-  status: "confirmed" | "uncertain";
+  status: "clear" | "uncertain"; // clarity of transcript evidence, not user approval
   evidence: number[]; // indexes into transcript.utterances
 };
 

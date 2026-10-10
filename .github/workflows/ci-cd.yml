@@ -61,6 +61,10 @@ jobs:
         env:
           DATABASE_URL: postgres://daykeeper:daykeeper_local_dev@localhost:5432/daykeeper
       - run: npm run build
+      # The speech model runs in the browser. A server trace that includes its
+      # native libraries can make Netlify reject the function upload.
+      - name: Check Voice server traces
+        run: node scripts/check-voice-traces.mjs
       # KAN-98: the background reader is bundled apart from the app, only when
       # Netlify builds. Bundle it here too, so a change that breaks it is red
       # on the pull request rather than on the deploy.

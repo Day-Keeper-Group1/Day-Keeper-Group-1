@@ -1,0 +1,26 @@
+{
+  "version": "1.0",
+  "utterances": [
+    {
+      "index": 0,
+      "speaker": "Speaker 1",
+      "text": "Could you call the clinic to book my appointment?",
+      "startMs": 0,
+      "endMs": 3300
+    },
+    {
+      "index": 1,
+      "speaker": "Speaker 2",
+      "text": "I might be able to, but I need to check first.",
+      "startMs": 3700,
+      "endMs": 6900
+    },
+    {
+      "index": 2,
+      "speaker": "Speaker 1",
+      "text": "Okay, let me know.",
+      "startMs": 7300,
+      "endMs": 8700
+    }
+  ]
+}

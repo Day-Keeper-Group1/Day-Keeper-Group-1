@@ -32,6 +32,7 @@ import {
   reopenOwnedTaskRows,
   type TaskReminderRow,
 } from "@/server/db/queries/tasks";
+import { findOwnedVoiceByTask } from "@/server/db/queries/voice";
 // A task's fields are the fields of the letter it came from, and the letter
 // endpoints draw the same rows. Both word them in src/server/field-views.ts, so
 // the two cannot spell a label differently or disagree about what a hedged
@@ -115,8 +116,12 @@ export async function getTaskSummary(
   if (!isUuid(taskId)) return null;
 
   const rows = await findOwnedTaskRows(db(), userId, taskId);
-
-  return mapTaskRows(rows, timeZone, now)[0] ?? null;
+  const summary = mapTaskRows(rows, timeZone, now)[0] ?? null;
+  if (!summary || summary.documentId) return summary;
+  // A null document_id can mean a voice task or an orphaned photo task.
+  // Only a linked, confirmed voice commitment makes the former visible.
+  const voice = await findOwnedVoiceByTask(db(), userId, taskId);
+  return voice?.transcript ? summary : null;
 }
 
 /** Return one owned task with the fields and page count of its letter. */
@@ -127,7 +132,18 @@ export async function getTask(
   now: Date = new Date(),
 ): Promise<TaskDetail | null> {
   const summary = await getTaskSummary(taskId, userId, timeZone, now);
-  if (!summary?.documentId) return null;
+  if (!summary) return null;
+  if (!summary.documentId) {
+    const voice = await findOwnedVoiceByTask(db(), userId, taskId);
+    if (!voice?.transcript) return null;
+    return {
+      ...summary,
+      source: "voice",
+      conversationId: voice.conversationId,
+      transcript: voice.transcript,
+      evidence: voice.evidence,
+    };
+  }
 
   const [pageCount, fields, identifiers] = await Promise.all([
     findOwnedPageCount(db(), userId, summary.documentId),
@@ -146,6 +162,7 @@ export async function getTask(
 
   return {
     ...summary,
+    source: "document",
     documentId: summary.documentId,
     fields: views,
     identifiers: identifierViews(identifiers, views),

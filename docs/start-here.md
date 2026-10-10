@@ -25,6 +25,14 @@ lands on the calendar with its reminders marked. When you add an
 endpoint, add it to that file first: it is the specification, with the
 reasoning for the parts that look arbitrary.
 
+The Voice milestone branch also adds `/conversations/new`. A desktop browser
+records or opens up to 45 seconds of audio and transcribes it locally. Only
+the timestamped text reaches the server. The default mock extractor recognizes
+the six reviewed fixture transcripts, so a newly recorded conversation needs
+the team's Azure configuration for meaningful extraction. Clear commitments
+then enter Home's shared **To check** list and can become ordinary tasks.
+See [`voice.md`](voice.md) for the workflow and its limits.
+
 ## Running it
 
 You need Node 24 or newer, npm 11 or newer, and Docker Desktop.

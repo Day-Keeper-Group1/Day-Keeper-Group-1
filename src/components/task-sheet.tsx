@@ -68,7 +68,10 @@ export function TaskEntry({
   detail: TaskDetail | null;
   onToggle: (task: TaskSummary) => void;
 }) {
-  const facts = factLines(detail?.fields ?? [], detail?.identifiers ?? []);
+  const facts = factLines(
+    detail?.source === "document" ? detail.fields : [],
+    detail?.source === "document" ? detail.identifiers : [],
+  );
 
   return (
     <div>
@@ -83,13 +86,32 @@ export function TaskEntry({
         </div>
       ) : null}
 
-      {detail ? (
+      {detail?.source === "document" ? (
         <PhotoStrip
           documentId={detail.documentId}
           count={detail.pageCount}
           whose="task"
           className="mt-3"
         />
+      ) : null}
+      {detail?.source === "voice" ? (
+        <section className="mt-4" aria-label="Conversation transcript">
+          <h3 className="mb-2 text-caption font-bold">What was said</h3>
+          <div className="space-y-2">
+            {detail.transcript.utterances.map((line) => (
+              <p
+                key={line.index}
+                className={
+                  detail.evidence.includes(line.index)
+                    ? "rounded-md bg-primary-soft p-2 text-row"
+                    : "p-2 text-row"
+                }
+              >
+                {line.text}
+              </p>
+            ))}
+          </div>
+        </section>
       ) : null}
     </div>
   );
@@ -112,7 +134,7 @@ export function TaskSheet({
   onToggle: (task: TaskSummary) => void;
 }) {
   const detail = useTaskDetail(task?.id ?? null);
-  const kind = detail?.fields.find(
+  const kind = (detail?.source === "document" ? detail.fields : []).find(
     (field) => field.key === "document_type" && field.status === "confirmed",
   )?.value;
   const heading =

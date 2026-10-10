@@ -19,10 +19,13 @@ import { addDays, daysBetween } from "@/lib/contract/dates";
  * she can act on from here, so it stays in the "To check" list and never takes
  * the panel over from a letter that is actually waiting for her.
  *
- * The wording is the prototype's, verbatim. It lives here rather than in the
- * component so the plural forms are testable without rendering a screen.
+ * The wording lives here rather than in the component so the plural forms are
+ * testable without rendering a screen.
  */
-export function ctaFor(counts: HomeCounts): {
+export function ctaFor(
+  counts: HomeCounts,
+  voiceProcessing = 0,
+): {
   big: string;
   small: string;
   inert: boolean;
@@ -33,8 +36,7 @@ export function ctaFor(counts: HomeCounts): {
         counts.needsReview === 1
           ? "1 thing needs your OK"
           : `${counts.needsReview} things need your OK`,
-      small:
-        "From your photos we've prepared tasks and reminders. Check them before they go on your calendar.",
+      small: "Check the tasks found in your photos and conversations.",
       inert: false,
     };
   }
@@ -50,9 +52,18 @@ export function ctaFor(counts: HomeCounts): {
     };
   }
 
+  if (voiceProcessing > 0) {
+    return {
+      big: "Finding commitments…",
+      small: "Your conversation will be here when it is ready.",
+      inert: false,
+    };
+  }
+
   return {
     big: "Nothing to check right now",
-    small: "Photograph a letter and it will show up here.",
+    small:
+      "Add a photo or conversation and anything to check will appear here.",
     inert: true,
   };
 }

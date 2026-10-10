@@ -5,6 +5,7 @@ import {
   Camera,
   Eye,
   House,
+  MessageSquareText,
   type LucideIcon,
 } from "lucide-react";
 
@@ -28,6 +29,13 @@ export const PRIMARY_NAV: NavItem[] = [
   { label: "Photograph", href: "/documents/new", icon: Camera },
   { label: "Calendar", href: "/calendar", icon: CalendarDays },
 ];
+
+/** Prototype destination in the desktop sidebar; phones use the top-bar link. */
+export const VOICE_NAV: NavItem = {
+  label: "Conversations",
+  href: "/conversations/new",
+  icon: MessageSquareText,
+};
 
 /**
  * Entries the sidebar shows and the phone bar does not.

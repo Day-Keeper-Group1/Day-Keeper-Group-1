@@ -86,6 +86,7 @@ import {
   reopenOwnedTaskRows,
 } from "@/server/db/queries/tasks";
 import * as userQueries from "@/server/db/queries/users";
+import * as voiceQueries from "@/server/db/queries/voice";
 import * as documentService from "@/server/documents";
 import {
   countLettersToCheck,
@@ -299,6 +300,8 @@ const SERVICES: Record<string, Case> = {
     answers: {
       counts: { needsReview: 0, processing: 0, failed: 0 },
       inbox: [],
+      voiceToCheck: [],
+      voiceProcessing: 0,
       tasks: [],
     },
     listsTheAskersOwn: true,
@@ -545,7 +548,27 @@ const EMAIL_STATEMENTS = [
   "insertOwnedCorrectedEmailRound",
 ];
 
+/** Voice statements are exercised with owned and foreign records in voice.test.ts. */
+const VOICE_STATEMENTS = [
+  "findOwnedVoiceConversation",
+  "findOwnedVoiceBySubmission",
+  "listOwnedVoiceConversations",
+  "countOwnedVoiceProcessing",
+  "claimOwnedQueuedVoice",
+  "lockOwnedVoiceConversation",
+  "markOwnedVoiceReady",
+  "markOwnedVoiceFailed",
+  "listOwnedVoiceToCheck",
+  "listOwnedVoiceCommitments",
+  "lockOwnedVoiceCommitment",
+  "findOwnedVoiceCommitment",
+  "findOwnedVoiceByTask",
+  "markOwnedVoiceCommitmentConfirmed",
+  "markOwnedVoiceCommitmentDismissed",
+];
+
 const WRITES_THE_OWNER = [
+  "insertVoiceConversation",
   "insertOauthAttempt",
   "insertGmailConnection",
   "insertUser",
@@ -563,6 +586,8 @@ const WRITES_THE_OWNER = [
  * it does.
  */
 const UNSCOPED_ON_PURPOSE = [
+  // queries/voice.ts
+  "insertVoiceCommitments",
   // queries/users.ts
   "findActiveUserByEmail",
   "touchSessionAndFindUser",
@@ -827,6 +852,7 @@ describe("ownership", () => {
       audit: auditQueries,
       health: healthQueries,
       email: emailQueries,
+      voice: voiceQueries,
     };
     const statements = functionsOf(...Object.values(QUERIES));
 
@@ -837,6 +863,7 @@ describe("ownership", () => {
         [
           ...Object.keys(STATEMENTS),
           ...EMAIL_STATEMENTS,
+          ...VOICE_STATEMENTS,
           ...WRITES_THE_OWNER,
           ...UNSCOPED_ON_PURPOSE,
           ...PREDICATES,
@@ -847,7 +874,13 @@ describe("ownership", () => {
     it("has Owned in the name of every owner-scoped statement, and of no other", () => {
       expect(
         statements.filter((name) => name.includes("Owned")).sort(),
-      ).toEqual([...Object.keys(STATEMENTS), ...EMAIL_STATEMENTS].sort());
+      ).toEqual(
+        [
+          ...Object.keys(STATEMENTS),
+          ...EMAIL_STATEMENTS,
+          ...VOICE_STATEMENTS,
+        ].sort(),
+      );
     });
 
     it("has the reason written above every statement that is unscoped on purpose, and above no other", () => {

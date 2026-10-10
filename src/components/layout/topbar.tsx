@@ -123,6 +123,12 @@ export function Topbar({ user }: { user: SessionUser }) {
       </div>
 
       <div className="ml-auto flex items-center gap-2">
+        <Link
+          href="/conversations/new"
+          className="flex min-h-12 items-center rounded-lg px-2 text-caption font-semibold text-primary underline underline-offset-4 md:hidden"
+        >
+          Voice demo
+        </Link>
         <DropdownMenu>
           <DropdownMenuTrigger
             render={

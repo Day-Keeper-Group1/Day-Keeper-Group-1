@@ -114,6 +114,40 @@ Mistakes made on the way, so nobody repeats them:
 
 The code does not know where any of these are. It reads their addresses and credentials from environment variables, so the same code runs against Docker on a laptop and against the hosted services, and deploying means filling in a second set of variables rather than changing code.
 
+### Voice milestone deployment check
+
+The Voice branch adds browser transcription and server-side commitment
+extraction. The speech model downloads to the browser; Netlify does not run it
+and never receives audio. Before a Voice preview or production demonstration,
+set `AI_VOICE_EXTRACTION_PROVIDER=azure` in the corresponding Netlify deploy
+context and use the existing team Azure configuration and daily key limit.
+The default `mock` provider accepts only the six reviewed fixture transcripts;
+an arbitrary recording will fail extraction under that default. Confirm that
+the database migration has run before the new app is deployed, as the CD
+pipeline already orders those steps.
+
+The Voice capture screen is loaded only in the browser. CI checks that the
+speech library's native files do not enter a server trace and that both Voice
+app routes trace their prompt. An earlier preview failed during file upload
+with a request-size error even though the Next.js build passed; the CI trace
+check guards against one source of oversized server packages. The next preview
+deployed, passed the existing letter end-to-end test, and returned `200` from
+the Azure provider for a fictional Voice fixture, confirming deployed prompt
+access.
+
+`netlify.toml` schedules `voice-cleanup` once daily on a published production
+deploy as a backstop. It clears transcript data in queued or processing records
+older than two minutes after an interrupted function. The Voice page also
+performs this cleanup when someone opens a conversation, so an active user does
+not wait for the daily schedule and a preview deploy does not rely on it.
+Pull-request previews use the shared staging database and do not apply new
+migrations, so a preview of the Voice pull request cannot complete the Voice
+flow. Check the preview build and migration-independent routes before merge;
+Dashboard and other routes that read Voice tables may fail until the migration
+is applied. After CD applies the Voice migration and deploys `main`, use one
+fictional recording to check upload, extraction, Needs review, Confirm and
+task detail before the team uses the new path in a demonstration.
+
 Docker is only for local development. Nothing in the cloud runs a container: Netlify takes the built app and runs Next.js itself, and Supabase runs Postgres for us.
 
 ## What a merge to main does (KAN-86)

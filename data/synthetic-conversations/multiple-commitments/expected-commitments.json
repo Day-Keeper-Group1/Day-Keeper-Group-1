@@ -6,7 +6,7 @@
       "title": "Collect the prescription",
       "dueDate": "2026-10-03",
       "dueTime": null,
-      "status": "confirmed",
+      "status": "clear",
       "evidence": [0]
     },
     {
@@ -14,7 +14,7 @@
       "title": "Call the clinic",
       "dueDate": "2026-10-05",
       "dueTime": null,
-      "status": "confirmed",
+      "status": "clear",
       "evidence": [1]
     },
     {
@@ -22,8 +22,8 @@
       "title": "Bring the groceries",
       "dueDate": "2026-10-03",
       "dueTime": null,
-      "status": "confirmed",
-      "evidence": [2]
+      "status": "clear",
+      "evidence": [0, 2]
     }
   ]
 }

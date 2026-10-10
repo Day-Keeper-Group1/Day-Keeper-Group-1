@@ -13,6 +13,7 @@
 import { z } from "zod";
 
 export const VOICE_CONTRACT_VERSION = "1.0" as const;
+export const MAX_VOICE_DURATION_MS = 45_000;
 
 const isoDateSchema = z.string().refine(
   (value) => {
@@ -83,7 +84,7 @@ export const commitmentProposalSchema = z
     title: z.string().trim().min(1),
     dueDate: isoDateSchema.nullable(),
     dueTime: localTimeSchema.nullable(),
-    status: z.enum(["confirmed", "uncertain"]),
+    status: z.enum(["clear", "uncertain"]),
     evidence: z.array(z.number().int().nonnegative()).min(1),
   })
   .superRefine((commitment, ctx) => {
@@ -118,6 +119,18 @@ export const commitmentExtractionSchema = z
   });
 
 export type CommitmentExtraction = z.infer<typeof commitmentExtractionSchema>;
+
+/** One validated prototype extraction returned by the protected API. */
+export const voiceExtractionResponseSchema = z.object({
+  provider: z.enum(["mock", "azure"]),
+  model: z.string().nullable(),
+  seconds: z.number().finite().nonnegative(),
+  extraction: commitmentExtractionSchema,
+});
+
+export type VoiceExtractionResponse = z.infer<
+  typeof voiceExtractionResponseSchema
+>;
 
 export function parseConversationTranscript(
   input: unknown,

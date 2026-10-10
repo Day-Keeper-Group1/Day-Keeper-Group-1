@@ -18,6 +18,8 @@ import multipleExpected from "../../../data/synthetic-conversations/multiple-com
 import multipleTranscript from "../../../data/synthetic-conversations/multiple-commitments/transcript.json";
 import noCommitmentExpected from "../../../data/synthetic-conversations/no-commitment/expected-commitments.json";
 import noCommitmentTranscript from "../../../data/synthetic-conversations/no-commitment/transcript.json";
+import unclearExpected from "../../../data/synthetic-conversations/unclear-agreement/expected-commitments.json";
+import unclearTranscript from "../../../data/synthetic-conversations/unclear-agreement/transcript.json";
 import {
   conversationTranscriptSchema,
   type ConversationTranscript,
@@ -34,10 +36,20 @@ const fixturePairs = [
   [missingDateTranscript, missingDateExpected],
   [noCommitmentTranscript, noCommitmentExpected],
   [cancelledTranscript, cancelledExpected],
+  [unclearTranscript, unclearExpected],
 ] as const;
 
 function transcriptKey(transcript: ConversationTranscript): string {
-  return JSON.stringify(transcript.utterances);
+  // JSONB does not preserve object key order after a database round trip.
+  return JSON.stringify(
+    transcript.utterances.map((line) => [
+      line.index,
+      line.speaker,
+      line.text,
+      line.startMs,
+      line.endMs,
+    ]),
+  );
 }
 
 const expectedByTranscript = new Map<string, unknown>(

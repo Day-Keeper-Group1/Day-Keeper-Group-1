@@ -24,6 +24,14 @@ describe("voice commitment extraction prompt", () => {
     expect(instructions).toContain("Never invent or guess a date");
     expect(instructions).toContain("Never invent or guess a time");
     expect(instructions).toContain("relative phrase");
+    expect(instructions).toContain("Cite both utterances");
+  });
+
+  it("distinguishes evidence clarity from user approval", () => {
+    expect(instructions).toContain("`clear`");
+    expect(instructions).toContain("`uncertain`");
+    expect(instructions).toContain("not user approval");
+    expect(instructions).toContain("date that was never stated");
   });
 
   it("removes cancelled plans and keeps only the final changed action", () => {

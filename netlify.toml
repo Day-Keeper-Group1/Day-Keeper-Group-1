@@ -17,6 +17,9 @@
   command = "node scripts/build-reading-worker.mjs && next build --webpack"
   publish = ".next"
 
+[functions."voice-cleanup"]
+  schedule = "0 3 * * *"
+
 # The readers load their prompts from disk at runtime, by a path relative to
 # where the function runs, so the files go into the function's bundle with it.
 [functions.read-letter]
