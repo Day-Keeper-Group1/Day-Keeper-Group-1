@@ -128,9 +128,12 @@ pipeline already orders those steps.
 
 The Voice capture screen is loaded only in the browser. CI checks that the
 speech library's native files do not enter a server trace and that both Voice
-app routes trace their prompt. Without the browser-only boundary, a Netlify
-preview rejected the oversized function upload even though the Next.js build
-passed.
+app routes trace their prompt. An earlier preview failed during file upload
+with a request-size error even though the Next.js build passed; the CI trace
+check guards against one source of oversized server packages. The next preview
+deployed, passed the existing letter end-to-end test, and returned `200` from
+the Azure provider for a fictional Voice fixture, confirming deployed prompt
+access.
 
 `netlify.toml` schedules `voice-cleanup` once daily on a published production
 deploy as a backstop. It clears transcript data in queued or processing records
@@ -141,10 +144,9 @@ Pull-request previews use the shared staging database and do not apply new
 migrations, so a preview of the Voice pull request cannot complete the Voice
 flow. Check the preview build and migration-independent routes before merge;
 Dashboard and other routes that read Voice tables may fail until the migration
-is applied. After the CD
-pipeline applies the Voice migration and deploys `main`, use one fictional
-recording to check upload, extraction, Needs review, Confirm and task detail
-before the team uses the new path in a demonstration.
+is applied. After CD applies the Voice migration and deploys `main`, use one
+fictional recording to check upload, extraction, Needs review, Confirm and
+task detail before the team uses the new path in a demonstration.
 
 Docker is only for local development. Nothing in the cloud runs a container: Netlify takes the built app and runs Next.js itself, and Supabase runs Postgres for us.
 
