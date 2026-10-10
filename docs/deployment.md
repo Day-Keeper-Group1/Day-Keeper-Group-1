@@ -131,9 +131,12 @@ deploy as a backstop. It clears transcript data in queued or processing records
 older than two minutes after an interrupted function. The Voice page also
 performs this cleanup when someone opens a conversation, so an active user does
 not wait for the daily schedule and a preview deploy does not rely on it.
-Check a preview with one fictional recording through upload, extraction,
-Needs review, Confirm and task detail before the team uses the new path in a
-demonstration.
+Pull-request previews use the shared staging database and do not apply new
+migrations, so a preview of the Voice pull request cannot complete the Voice
+flow. Check the preview build and existing pages before merge. After the CD
+pipeline applies the Voice migration and deploys `main`, use one fictional
+recording to check upload, extraction, Needs review, Confirm and task detail
+before the team uses the new path in a demonstration.
 
 Docker is only for local development. Nothing in the cloud runs a container: Netlify takes the built app and runs Next.js itself, and Supabase runs Postgres for us.
 
