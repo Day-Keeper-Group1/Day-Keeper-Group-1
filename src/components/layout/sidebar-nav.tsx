@@ -1,24 +1,17 @@
 "use client";
 
-// The desktop sidebar includes Email below the phone bar's three destinations.
+// The desktop sidebar draws MENU_NAV, then the entries only it shows.
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Mail } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useActivity } from "./activity";
 import {
   DESKTOP_ONLY_NAV,
   isNavItemActive,
-  PRIMARY_NAV,
-  VOICE_NAV,
+  MENU_NAV,
   type NavItem,
 } from "./nav-items";
-
-const SIDEBAR_NAV: NavItem[] = [
-  ...PRIMARY_NAV,
-  { label: "Email", href: "/email", icon: Mail },
-];
 
 /**
  * One sidebar row.
@@ -88,7 +81,7 @@ export function SidebarNav() {
       </Link>
 
       <ul className="flex flex-1 flex-col gap-1">
-        {[...SIDEBAR_NAV, VOICE_NAV].map((item) => (
+        {MENU_NAV.map((item) => (
           <li key={item.href}>
             <SidebarLink
               item={item}

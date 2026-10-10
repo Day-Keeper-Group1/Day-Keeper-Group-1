@@ -5,7 +5,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LogOut, Mail, Menu, Settings } from "lucide-react";
+import { LogOut, Menu, Settings } from "lucide-react";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -19,12 +19,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { SessionUser } from "@/lib/contract/api";
-import { isNavItemActive, PRIMARY_NAV } from "./nav-items";
-
-const MOBILE_MENU = [
-  ...PRIMARY_NAV,
-  { label: "Email", href: "/email", icon: Mail },
-];
+import { isNavItemActive, MENU_NAV } from "./nav-items";
 
 /**
  * First and last initial, for the avatar.
@@ -82,7 +77,7 @@ export function Topbar({ user }: { user: SessionUser }) {
           >
             <DropdownMenuGroup>
               <DropdownMenuLabel>Navigation</DropdownMenuLabel>
-              {MOBILE_MENU.map((item) => {
+              {MENU_NAV.map((item) => {
                 const active = isNavItemActive(pathname, item.href);
                 return (
                   <DropdownMenuItem
@@ -123,12 +118,6 @@ export function Topbar({ user }: { user: SessionUser }) {
       </div>
 
       <div className="ml-auto flex items-center gap-2">
-        <Link
-          href="/conversations/new"
-          className="flex min-h-12 items-center rounded-lg px-2 text-caption font-semibold text-primary underline underline-offset-4 md:hidden"
-        >
-          Voice demo
-        </Link>
         <DropdownMenu>
           <DropdownMenuTrigger
             render={

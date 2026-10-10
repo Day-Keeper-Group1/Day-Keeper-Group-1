@@ -5,6 +5,7 @@ import {
   Camera,
   Eye,
   House,
+  Mail,
   MessageSquareText,
   type LucideIcon,
 } from "lucide-react";
@@ -30,12 +31,31 @@ export const PRIMARY_NAV: NavItem[] = [
   { label: "Calendar", href: "/calendar", icon: CalendarDays },
 ];
 
-/** Prototype destination in the desktop sidebar; phones use the top-bar link. */
+/** Letters that arrive by email rather than through the camera. */
+export const EMAIL_NAV: NavItem = {
+  label: "Email",
+  href: "/email",
+  icon: Mail,
+};
+
+/** KAN-89: conversations, spoken rather than photographed or posted. */
 export const VOICE_NAV: NavItem = {
   label: "Conversations",
   href: "/conversations/new",
   icon: MessageSquareText,
 };
+
+/**
+ * Every destination both bars draw, in one order.
+ *
+ * The three in PRIMARY_NAV are the prototype's and are also the phone's bottom
+ * bar; the two after them are reached from the sidebar on a wide screen and
+ * from the phone's menu on a narrow one. They are listed here rather than in
+ * each bar because the bars had drifted apart once already: Email was copied
+ * into both by hand, and Conversations reached only one of them, so a phone
+ * offered four destinations while a desktop offered six.
+ */
+export const MENU_NAV: NavItem[] = [...PRIMARY_NAV, EMAIL_NAV, VOICE_NAV];
 
 /**
  * Entries the sidebar shows and the phone bar does not.
