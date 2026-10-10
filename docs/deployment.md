@@ -126,6 +126,12 @@ an arbitrary recording will fail extraction under that default. Confirm that
 the database migration has run before the new app is deployed, as the CD
 pipeline already orders those steps.
 
+The Voice capture screen is loaded only in the browser. CI checks that the
+speech library's native files do not enter a server trace and that both Voice
+app routes trace their prompt. Without the browser-only boundary, a Netlify
+preview rejected the oversized function upload even though the Next.js build
+passed.
+
 `netlify.toml` schedules `voice-cleanup` once daily on a published production
 deploy as a backstop. It clears transcript data in queued or processing records
 older than two minutes after an interrupted function. The Voice page also
@@ -133,7 +139,9 @@ performs this cleanup when someone opens a conversation, so an active user does
 not wait for the daily schedule and a preview deploy does not rely on it.
 Pull-request previews use the shared staging database and do not apply new
 migrations, so a preview of the Voice pull request cannot complete the Voice
-flow. Check the preview build and existing pages before merge. After the CD
+flow. Check the preview build and migration-independent routes before merge;
+Dashboard and other routes that read Voice tables may fail until the migration
+is applied. After the CD
 pipeline applies the Voice migration and deploys `main`, use one fictional
 recording to check upload, extraction, Needs review, Confirm and task detail
 before the team uses the new path in a demonstration.
