@@ -1,0 +1,138 @@
+DayKeeper 1.0.0
+===============
+
+Release date: 15 October 2026
+Git tag:      v1.0.0
+Repository:   https://github.com/Day-Keeper-Group1/Day-Keeper-Group-1
+Deployed at:  https://preview--daykeeper-group1.netlify.app
+
+DayKeeper reads the letters, emails and phone calls an older person receives,
+finds what she has to do and by when, and, only after she has checked and
+confirmed it, puts the task on her calendar with reminders.
+RMIT COSC2648, project P000473SE, Group 1.
+
+
+What this release does
+----------------------
+
+Letters
+- Photograph a letter, every page of it, or upload a PDF; a PDF is turned into
+  one image per page in the browser.
+- The letter is read by two model readings that must agree, with a third
+  reading to break a tie (a voting workflow on Azure OpenAI). A due date or
+  amount the readings cannot settle is never guessed.
+- "Check what we found" shows what the letter says, the number to quote, and
+  exactly which reminders and calendar entry will be created. Nothing is saved
+  until she confirms. The photos stay with the letter and open with zoom.
+
+Tasks, calendar and reminders
+- Home: today, overdue, upcoming, and what is waiting for her check.
+- Calendar by month or week; a day shows each task with every detail read.
+- Task list with filters and search; ticking a task done stops its reminders.
+- Reminders are days marked on Home, 7, 3 and 1 days before the due date;
+  the calendar marks the due date. Nothing is sent by email or text.
+
+Email
+- Connect a Gmail mailbox (Google OAuth, read only). The last 30 days of the
+  inbox are listed, at most 20 messages; only the emails she chooses are read.
+- An email becomes a task through the same check as a letter; a field the
+  model could not settle, such as a date without a year, is highlighted for
+  her to correct next to the original email.
+
+Voice
+- Record a short conversation, up to 45 seconds, or upload a recording.
+- It is transcribed in the browser (whisper-tiny.en); the audio never leaves
+  the device. The transcript is sent to Azure OpenAI to find what she agreed to.
+- Each commitment is checked with the exact words it came from highlighted,
+  and becomes a task only when she confirms it.
+
+Settings
+- Profile, sign out of this device, Gmail connection.
+- Customisation: which sections Home shows and in what order, how the
+  calendar opens, how the task list is sorted and grouped.
+- Accessibility: three text sizes, palettes for four kinds of colour vision,
+  extra contrast and reduced motion.
+
+Accounts and operations
+- Register and sign in with email and password; sessions last 30 days.
+- Every pull request is built and tested, and gets its own preview site.
+- Every merge to main applies database migrations, deploys, and checks
+  /api/health. A failed run on main opens a GitHub issue.
+- A "Demo accounts" button in GitHub Actions refreshes the demonstration
+  account or empties one @example.com account.
+- The school's Azure key has a daily ceiling of 200 model calls for the whole
+  site.
+- Once a day a GitHub Actions workflow calls /api/health, so the free
+  Supabase database is not paused for inactivity.
+
+
+Fixed in this release (Jira bugs)
+---------------------------------
+
+KAN-66  Move the local Docker ports below Windows' dynamic port range.
+KAN-68  Contact never had a due date: the prompt threw away deadlines to
+        phone someone.
+KAN-93  Three small faults found while moving to Drizzle: task ids that are
+        not ids, what sign out says it does, the session lifetime written
+        twice.
+KAN-98  Letters are read in a Netlify background function, so the 30 second
+        request limit no longer cuts a reading short.
+
+
+Known issues (open Jira bugs)
+-----------------------------
+
+KAN-65  A reading can list things that are not identifiers (for example a
+        date of birth or the sender's own payment code), and they reach the
+        screen.
+
+
+Limits of this deployment (not bugs)
+------------------------------------
+
+- The Google app behind Gmail is in Testing: only the test mailbox listed in
+  readme.txt can connect, and its authorisation lasts 7 days. Reconnect it on
+  the Email page before a demonstration.
+- Free plans: Supabase pauses a project that gets too few database queries in
+  a week. A GitHub Actions workflow asks the site's database a question every
+  day to keep it running; if it is paused anyway, restore it from the Supabase
+  dashboard. Netlify stops a request at 30 seconds.
+- After 200 model calls in a day, new readings wait until midnight in
+  Melbourne.
+- Voice works in English only, and the recording must be 45 seconds or less.
+
+
+Change log
+----------
+
+1.0.0   15 October 2026
+        Email: connect Gmail, list the inbox, turn an email into a task, and
+        correct uncertain fields beside the original (#37).
+        Voice: record or upload a conversation, transcribe it in the browser,
+        find commitments, confirm them with the words highlighted (#23, #24,
+        #25, #60, #63).
+        Customisation and accessibility settings (#40); Settings shows the
+        signed-in account and signs out (#62).
+        Deployment on Netlify and Supabase under one project mailbox (#22),
+        a daily ceiling on the school's key (#26), CI/CD with pull request
+        previews, migrations in CD and a health check (#27, #28, #31, #33),
+        the Demo accounts button (#34, #61), a runbook (#36), and a daily
+        call that keeps the database from being paused.
+        The database layer moved to Drizzle ORM with versioned migrations
+        (#29, #30). Letters are read in a background function (#58).
+        Reminders as marked days on Home (#20); PDF upload (#21); a scrolling
+        fix (#59).
+
+0.3.0   24 September 2026
+        The fifteen test letters re-dated to November 2026; Contact keeps its
+        due date (#19). Documents brought up to date.
+
+0.2.0   24 September 2026
+        After the Week 9 class presentation: the photo viewer zooms, an upload
+        takes several pages at once, the seed holds only what a demonstration
+        needs, and the letter images are in Git LFS (#17, #18).
+
+0.1.0   16 September 2026
+        First stable version: upload a letter, read it under the voting
+        scheme, confirm it, see it on the calendar (#9 to #16). The reading
+        scheme was chosen by experiments 01 to 07.

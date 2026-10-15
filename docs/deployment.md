@@ -388,7 +388,7 @@ Checked on the providers' own pages on 2026-09-24.
 
 - **Netlify Free (credit based):** 300 credits a month; a production deploy costs 15, previews and branch deploys nothing. Functions in US East only. A request is stopped at 30 seconds (measured), a background function at 15 minutes, and a request body over about 4.5 MB is refused. See "Why Netlify and not Vercel".
 - **Vercel Hobby** (not used): personal, non commercial use only. A request may run for 300 seconds. https://vercel.com/docs/plans/hobby
-- **Supabase Free:** 500 MB database, 1 GB file storage, 5 GB egress a month, files up to 50 MB, two active projects. **A project with no activity for a week is paused.** The data stays, but the site cannot reach the database until someone restores the project from the dashboard; open it the day before any demonstration. https://supabase.com/pricing
+- **Supabase Free:** 500 MB database, 1 GB file storage, 5 GB egress a month, files up to 50 MB, two active projects. **A project with no activity for a week is paused.** The data stays, but the site cannot reach the database until someone restores the project from the dashboard; open it the day before any demonstration. Since 1.0.0 `.github/workflows/keep-awake.yml` calls `/api/health` once a day, which runs a query, so the project should no longer be paused. https://supabase.com/pricing
 - Supabase Storage speaks S3 and supports presigned URLs once the S3 connection is enabled in its Storage settings. https://supabase.com/docs/guides/storage/s3/compatibility
 
 ## Open items

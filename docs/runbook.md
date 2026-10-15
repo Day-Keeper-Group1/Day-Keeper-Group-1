@@ -14,7 +14,7 @@ The site is Netlify for the app and Supabase for the database and the photograph
 
 ## Before a demonstration
 
-1. Open the Supabase dashboard (the project mailbox signs in). A free project with no activity for seven days is paused, and a paused one has to be restored there before the site can reach it. Opening it the day before is enough.
+1. Open the Supabase dashboard (the project mailbox signs in). A free project with no activity for seven days is paused, and a paused one has to be restored there before the site can reach it. Opening it the day before is enough. Since 1.0.0 the daily Keep the database awake workflow should prevent the pause; if that workflow is red, look here first.
 2. Press **Refresh Margaret**, so her three reminders fall on the day.
 3. Open the site and sign in as Margaret.
 
