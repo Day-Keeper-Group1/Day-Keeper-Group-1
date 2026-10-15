@@ -1,0 +1,29 @@
+name: Keep the database awake
+
+# Supabase pauses a Free plan project that gets too few database queries in a
+# week; a few each day is enough to keep it running
+# (https://supabase.com/docs/guides/platform/free-project-pausing). After the
+# release nothing merges into main, so CD no longer touches the database, and
+# the deployed site must still answer whenever someone opens it. Once a day,
+# ask the site whether it can reach its database: GET /api/health runs
+# `select 1` there. Red means the site or its database is down; the runbook
+# (docs/runbook.md, "GET /api/health answers 503") says what to do.
+#
+# GitHub turns scheduled workflows off in a public repository after 60 days
+# without a commit; Actions, this workflow, Enable workflow turns it back on.
+
+on:
+  schedule:
+    - cron: "17 20 * * *" # 07:17 in Melbourne in summer, 06:17 in winter
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ask:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Ask the deployed site whether it can reach its database
+        run: curl --fail --silent --show-error --retry 6 --retry-all-errors --retry-delay 10 --max-time 20 https://preview--daykeeper-group1.netlify.app/api/health
