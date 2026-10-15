@@ -81,7 +81,10 @@ jobs:
           cache: npm
       - run: npm ci
       # What it did goes into the run's summary as well as its log.
+      # shell: bash turns on pipefail, so a failed script turns the run red
+      # instead of tee's success hiding it.
       - name: Change the account
+        shell: bash
         run: |
           if [ "$ACTION" = "Refresh Margaret" ]; then
             npm run -s account:refresh-margaret | tee -a "$GITHUB_STEP_SUMMARY"
