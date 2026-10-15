@@ -1,19 +1,6 @@
-"use client";
-
 import Link from "next/link";
-
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { Eye, SlidersHorizontal } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -22,16 +9,26 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { PageHeader } from "@/components/layout/page-header";
+import { SignOutButton } from "@/components/layout/sign-out-button";
+import { requireUser } from "@/server/auth/session";
 
-export default function SettingsPage() {
+/**
+ * The account page: who is signed in, and the ways into the preferences.
+ *
+ * Only what works is here. Changing a name, an email or a password, and
+ * deleting an account, have no endpoint in this release (docs/api.md), so
+ * they are not offered. The (app) layout has already checked the session;
+ * requireUser() here only reads it.
+ */
+export default async function SettingsPage() {
+  const user = await requireUser();
+
   return (
     <div className="max-w-2xl space-y-6">
       <PageHeader
         title="Settings"
-        description="Manage your profile and account."
+        description="Your account and your preferences."
       />
 
       <Link
@@ -44,48 +41,19 @@ export default function SettingsPage() {
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Profile</CardTitle>
-          <CardDescription>Your name and contact email.</CardDescription>
+          <CardDescription>The account you are signed in to.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="profile-name">Name</Label>
-            <Input id="profile-name" defaultValue="Alex Nguyen" />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="profile-email">Email</Label>
-            <Input
-              id="profile-email"
-              type="email"
-              defaultValue="alex.nguyen@example.com"
-            />
-          </div>
-          <Button size="sm">Save changes</Button>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Security</CardTitle>
-          <CardDescription>Update your password.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="current-password">Current password</Label>
-            <Input
-              id="current-password"
-              type="password"
-              autoComplete="current-password"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="new-password">New password</Label>
-            <Input
-              id="new-password"
-              type="password"
-              autoComplete="new-password"
-            />
-          </div>
-          <Button size="sm">Update password</Button>
+        <CardContent>
+          <dl className="space-y-3">
+            <div>
+              <dt className="text-sm text-muted-foreground">Name</dt>
+              <dd>{user.displayName}</dd>
+            </div>
+            <div>
+              <dt className="text-sm text-muted-foreground">Email</dt>
+              <dd>{user.email}</dd>
+            </div>
+          </dl>
         </CardContent>
       </Card>
 
@@ -132,35 +100,15 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      <Card className="border-destructive/30">
+      <Card>
         <CardHeader>
           <CardTitle className="text-base">Account</CardTitle>
           <CardDescription>
-            Sign out or permanently delete your account.
+            Sign out of DayKeeper on this device.
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-wrap gap-3">
-          <Button variant="outline">Sign out</Button>
-          <AlertDialog>
-            <AlertDialogTrigger
-              render={<Button variant="destructive">Delete account</Button>}
-            />
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete your account?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This will permanently delete your documents, tasks, and
-                  reminders. This action cannot be undone.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction className="bg-destructive text-white hover:bg-destructive/90">
-                  Delete account
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+        <CardContent>
+          <SignOutButton />
         </CardContent>
       </Card>
     </div>
