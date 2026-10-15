@@ -145,6 +145,38 @@ describe("clearing one account", () => {
 });
 
 describe("refreshing Margaret", () => {
+  it("goes through after she confirmed a conversation into a task", async () => {
+    // What the Voice page leaves behind: a transcript, and a commitment
+    // confirmed into one of her tasks. That commitment's key to the task does
+    // not cascade, so the task cannot go before the conversation does.
+    const [task] = await rows<{ id: string }>(
+      "select id from tasks where user_id = $1 limit 1",
+      [margaret],
+    );
+    const [conversation] = await rows<{ id: string }>(
+      `insert into voice_conversations
+         (user_id, client_submission_id, status, transcript, duration_ms)
+       values ($1, gen_random_uuid(), 'ready', '[]'::jsonb, 1000)
+       returning id`,
+      [margaret],
+    );
+    await rows(
+      `insert into voice_commitments
+         (conversation_id, proposal_key, title, evidence, status, task_id, confirmed_at)
+       values ($1, 'call-back', 'Call the clinic back', '[0]'::jsonb, 'confirmed', $2, now())`,
+      [conversation.id, task.id],
+    );
+
+    await refreshMargaret(db(), store);
+
+    expect(
+      await rows("select * from voice_conversations where user_id = $1", [
+        margaret,
+      ]),
+    ).toHaveLength(0);
+    expect(await rows("select * from voice_commitments")).toHaveLength(0);
+  });
+
   it("replaces her letters with the list's, dated from today, and touches nobody else", async () => {
     const before = await holdings();
     const oldLetters = (await rows("select * from documents"))

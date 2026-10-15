@@ -6,7 +6,8 @@
  * Migrations change what the tables are; this changes what is in them for one
  * account. Two things:
  *
- * - clear: remove one account's letters, tasks, reminders and photographs.
+ * - clear: remove one account's letters, conversations, tasks, reminders and
+ *   photographs.
  *   The account stays, so does its password and whoever is signed in to it,
  *   and so does its audit log: the school key's daily ceiling counts those
  *   lines (src/server/ai/school-key.ts), and clearing an account must not hand
@@ -29,7 +30,12 @@ import { eq } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 
 import type { Db } from "../../src/server/db/client";
-import { documents, tasks, users } from "../../src/server/db/schema";
+import {
+  documents,
+  tasks,
+  users,
+  voiceConversations,
+} from "../../src/server/db/schema";
 import { readDemoList, type DemoLetter } from "./demo-list";
 import { MARGARET_EMAIL, plantLetters, type StorePage } from "./seed-world";
 
@@ -86,15 +92,23 @@ async function accountId(db: Db, email: string): Promise<string> {
 }
 
 /**
- * Remove one account's letters and tasks. Reminders go with their tasks, and
- * pages, fields and readings with their letters (the foreign keys cascade).
- * Tasks are removed by owner and not through the letters, because a task
- * outlives its letter: that key sets null.
+ * Remove one account's letters, conversations and tasks. Reminders go with
+ * their tasks, and pages, fields and readings with their letters (the foreign
+ * keys cascade). Tasks are removed by owner and not through the letters,
+ * because a task outlives its letter: that key sets null.
+ *
+ * Conversations go first. A confirmed voice commitment points at its task with
+ * a key that does not cascade, so a task made from a conversation cannot be
+ * deleted while its commitment is there. Deleting the conversation takes its
+ * commitments with it.
  */
 async function removeRows(
   tx: Db,
   userId: string,
 ): Promise<{ letters: number; tasks: number }> {
+  await tx
+    .delete(voiceConversations)
+    .where(eq(voiceConversations.userId, userId));
   const goneTasks = await tx
     .delete(tasks)
     .where(eq(tasks.userId, userId))
