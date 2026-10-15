@@ -15,3 +15,7 @@ prototype reads them as fixtures and never writes user data here.
 The `unclear-agreement` example checks the difference between a clear action
 and a request that the other speaker has not accepted. Its `uncertain` status
 describes the transcript evidence; it is not user approval.
+
+`dental-callback` is different: a recorded conversation, `recording.wav`, for
+uploading on the Voice page during a demonstration. Its `script.md` says how
+it was made and what it gave on the deployed site.
