@@ -177,6 +177,9 @@ fixed result without making an external call.
   opinion or past event.
 - The title begins with an action word and makes sense outside the conversation.
 - No date or time is invented. Missing values are `null`.
+- A time said aloud with a morning or afternoon cue, such as "ten in the
+  morning", is stated and is written as `10:00`; an hour with no cue stays
+  `null` ([`02-spoken-times`](../experiments/module-03-voice/02-spoken-times/README.md), KAN-149).
 - Every proposal cites at least one transcript utterance.
 - The cited evidence must support the action and any returned date or time.
 - Changed or cancelled plans must not be returned as active commitments.

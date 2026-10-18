@@ -1,0 +1,305 @@
+{
+  "date": "2026-10-18T15:41:47.578Z",
+  "phase": "fixtures",
+  "provider": "azure",
+  "model": "gpt-5.6-luna",
+  "effort": "medium",
+  "promptSha256": "070161dcf46c6087d1e7a32f8cfabed6d860c1778999e2fec77518038dfc94d3",
+  "calls": 6,
+  "results": [
+    {
+      "run": "multiple",
+      "ok": true,
+      "seconds": 2.7967856,
+      "usage": {
+        "inputTokens": 973,
+        "cachedTokens": 0,
+        "reasoningTokens": 76,
+        "outputTokens": 209
+      },
+      "error": null,
+      "answer": {
+        "version": "1.0",
+        "commitments": [
+          {
+            "id": "commitment-1",
+            "title": "Collect the prescription",
+            "dueDate": "2026-10-03",
+            "dueTime": null,
+            "status": "clear",
+            "evidence": [0]
+          },
+          {
+            "id": "commitment-2",
+            "title": "Call the clinic",
+            "dueDate": "2026-10-05",
+            "dueTime": null,
+            "status": "clear",
+            "evidence": [1]
+          },
+          {
+            "id": "commitment-3",
+            "title": "Bring the groceries",
+            "dueDate": "2026-10-03",
+            "dueTime": null,
+            "status": "clear",
+            "evidence": [0, 2]
+          }
+        ]
+      },
+      "commitments": [
+        {
+          "id": "commitment-1",
+          "title": "Collect the prescription",
+          "dueDate": "2026-10-03",
+          "dueTime": null,
+          "status": "clear",
+          "evidence": [0]
+        },
+        {
+          "id": "commitment-2",
+          "title": "Call the clinic",
+          "dueDate": "2026-10-05",
+          "dueTime": null,
+          "status": "clear",
+          "evidence": [1]
+        },
+        {
+          "id": "commitment-3",
+          "title": "Bring the groceries",
+          "dueDate": "2026-10-03",
+          "dueTime": null,
+          "status": "clear",
+          "evidence": [0, 2]
+        }
+      ],
+      "expected": {
+        "version": "1.0",
+        "commitments": [
+          {
+            "id": "multiple-1",
+            "title": "Collect the prescription",
+            "dueDate": "2026-10-03",
+            "dueTime": null,
+            "status": "clear",
+            "evidence": [0]
+          },
+          {
+            "id": "multiple-2",
+            "title": "Call the clinic",
+            "dueDate": "2026-10-05",
+            "dueTime": null,
+            "status": "clear",
+            "evidence": [1]
+          },
+          {
+            "id": "multiple-3",
+            "title": "Bring the groceries",
+            "dueDate": "2026-10-03",
+            "dueTime": null,
+            "status": "clear",
+            "evidence": [0, 2]
+          }
+        ]
+      },
+      "passed": true,
+      "problems": []
+    },
+    {
+      "run": "clear",
+      "ok": true,
+      "seconds": 1.4028287,
+      "usage": {
+        "inputTokens": 971,
+        "cachedTokens": 0,
+        "reasoningTokens": 0,
+        "outputTokens": 58
+      },
+      "error": null,
+      "answer": {
+        "version": "1.0",
+        "commitments": [
+          {
+            "id": "commitment-1",
+            "title": "Book the doctor appointment",
+            "dueDate": "2026-10-02",
+            "dueTime": "10:30",
+            "status": "clear",
+            "evidence": [0, 1]
+          }
+        ]
+      },
+      "commitments": [
+        {
+          "id": "commitment-1",
+          "title": "Book the doctor appointment",
+          "dueDate": "2026-10-02",
+          "dueTime": "10:30",
+          "status": "clear",
+          "evidence": [0, 1]
+        }
+      ],
+      "expected": {
+        "version": "1.0",
+        "commitments": [
+          {
+            "id": "clear-1",
+            "title": "Book the doctor appointment",
+            "dueDate": "2026-10-02",
+            "dueTime": "10:30",
+            "status": "clear",
+            "evidence": [0, 1]
+          }
+        ]
+      },
+      "passed": true,
+      "problems": []
+    },
+    {
+      "run": "missing",
+      "ok": true,
+      "seconds": 1.5001520000000002,
+      "usage": {
+        "inputTokens": 953,
+        "cachedTokens": 0,
+        "reasoningTokens": 0,
+        "outputTokens": 49
+      },
+      "error": null,
+      "answer": {
+        "version": "1.0",
+        "commitments": [
+          {
+            "id": "commitment-1",
+            "title": "Mow the lawn",
+            "dueDate": null,
+            "dueTime": null,
+            "status": "clear",
+            "evidence": [1]
+          }
+        ]
+      },
+      "commitments": [
+        {
+          "id": "commitment-1",
+          "title": "Mow the lawn",
+          "dueDate": null,
+          "dueTime": null,
+          "status": "clear",
+          "evidence": [1]
+        }
+      ],
+      "expected": {
+        "version": "1.0",
+        "commitments": [
+          {
+            "id": "missing-date-1",
+            "title": "Mow the lawn",
+            "dueDate": null,
+            "dueTime": null,
+            "status": "clear",
+            "evidence": [1]
+          }
+        ]
+      },
+      "passed": true,
+      "problems": []
+    },
+    {
+      "run": "none",
+      "ok": true,
+      "seconds": 1.2537124999999996,
+      "usage": {
+        "inputTokens": 955,
+        "cachedTokens": 0,
+        "reasoningTokens": 0,
+        "outputTokens": 15
+      },
+      "error": null,
+      "answer": {
+        "version": "1.0",
+        "commitments": []
+      },
+      "commitments": [],
+      "expected": {
+        "version": "1.0",
+        "commitments": []
+      },
+      "passed": true,
+      "problems": []
+    },
+    {
+      "run": "cancelled",
+      "ok": true,
+      "seconds": 1.9516027000000005,
+      "usage": {
+        "inputTokens": 1023,
+        "cachedTokens": 0,
+        "reasoningTokens": 0,
+        "outputTokens": 15
+      },
+      "error": null,
+      "answer": {
+        "version": "1.0",
+        "commitments": []
+      },
+      "commitments": [],
+      "expected": {
+        "version": "1.0",
+        "commitments": []
+      },
+      "passed": true,
+      "problems": []
+    },
+    {
+      "run": "unclear",
+      "ok": true,
+      "seconds": 1.9160419999999994,
+      "usage": {
+        "inputTokens": 960,
+        "cachedTokens": 0,
+        "reasoningTokens": 82,
+        "outputTokens": 139
+      },
+      "error": null,
+      "answer": {
+        "version": "1.0",
+        "commitments": [
+          {
+            "id": "commitment-1",
+            "title": "Call the clinic to book the appointment",
+            "dueDate": null,
+            "dueTime": null,
+            "status": "uncertain",
+            "evidence": [0, 1]
+          }
+        ]
+      },
+      "commitments": [
+        {
+          "id": "commitment-1",
+          "title": "Call the clinic to book the appointment",
+          "dueDate": null,
+          "dueTime": null,
+          "status": "uncertain",
+          "evidence": [0, 1]
+        }
+      ],
+      "expected": {
+        "version": "1.0",
+        "commitments": [
+          {
+            "id": "unclear-1",
+            "title": "Call the clinic to book an appointment",
+            "dueDate": null,
+            "dueTime": null,
+            "status": "uncertain",
+            "evidence": [0, 1]
+          }
+        ]
+      },
+      "passed": true,
+      "problems": []
+    }
+  ]
+}

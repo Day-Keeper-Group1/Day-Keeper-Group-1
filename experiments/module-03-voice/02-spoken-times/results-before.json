@@ -1,0 +1,681 @@
+{
+  "date": "2026-10-18T15:39:55.636Z",
+  "phase": "before",
+  "provider": "azure",
+  "model": "gpt-5.6-luna",
+  "effort": "medium",
+  "promptSha256": "b3623cf270318ce98cb447fa437d7aa9078ed2a8078ce23edf16ac3ee89a3770",
+  "calls": 10,
+  "results": [
+    {
+      "run": "1",
+      "ok": true,
+      "seconds": 3.8565820000000004,
+      "usage": {
+        "inputTokens": 1134,
+        "cachedTokens": 0,
+        "reasoningTokens": 230,
+        "outputTokens": 339
+      },
+      "error": null,
+      "answer": {
+        "version": "1.0",
+        "commitments": [
+          {
+            "id": "commitment-1",
+            "title": "Call Bayside Dental to confirm",
+            "dueDate": "2026-11-06",
+            "dueTime": null,
+            "status": "clear",
+            "evidence": [2, 3]
+          },
+          {
+            "id": "commitment-2",
+            "title": "Bring the Medicare card to the check-up",
+            "dueDate": "2026-11-12",
+            "dueTime": "10:00",
+            "status": "clear",
+            "evidence": [1, 5, 6]
+          }
+        ]
+      },
+      "commitments": [
+        {
+          "id": "commitment-1",
+          "title": "Call Bayside Dental to confirm",
+          "dueDate": "2026-11-06",
+          "dueTime": null,
+          "status": "clear",
+          "evidence": [2, 3]
+        },
+        {
+          "id": "commitment-2",
+          "title": "Bring the Medicare card to the check-up",
+          "dueDate": "2026-11-12",
+          "dueTime": "10:00",
+          "status": "clear",
+          "evidence": [1, 5, 6]
+        }
+      ],
+      "medicare": {
+        "id": "commitment-2",
+        "title": "Bring the Medicare card to the check-up",
+        "dueDate": "2026-11-12",
+        "dueTime": "10:00",
+        "status": "clear",
+        "evidence": [1, 5, 6]
+      },
+      "callback": {
+        "id": "commitment-1",
+        "title": "Call Bayside Dental to confirm",
+        "dueDate": "2026-11-06",
+        "dueTime": null,
+        "status": "clear",
+        "evidence": [2, 3]
+      }
+    },
+    {
+      "run": "2",
+      "ok": true,
+      "seconds": 3.4295050000000002,
+      "usage": {
+        "inputTokens": 1134,
+        "cachedTokens": 1131,
+        "reasoningTokens": 248,
+        "outputTokens": 350
+      },
+      "error": null,
+      "answer": {
+        "version": "1.0",
+        "commitments": [
+          {
+            "id": "commitment-1",
+            "title": "Call the dental clinic back",
+            "dueDate": "2026-11-06",
+            "dueTime": null,
+            "status": "clear",
+            "evidence": [2, 3]
+          },
+          {
+            "id": "commitment-2",
+            "title": "Bring the Medicare card",
+            "dueDate": "2026-11-12",
+            "dueTime": null,
+            "status": "clear",
+            "evidence": [1, 5, 6]
+          }
+        ]
+      },
+      "commitments": [
+        {
+          "id": "commitment-1",
+          "title": "Call the dental clinic back",
+          "dueDate": "2026-11-06",
+          "dueTime": null,
+          "status": "clear",
+          "evidence": [2, 3]
+        },
+        {
+          "id": "commitment-2",
+          "title": "Bring the Medicare card",
+          "dueDate": "2026-11-12",
+          "dueTime": null,
+          "status": "clear",
+          "evidence": [1, 5, 6]
+        }
+      ],
+      "medicare": {
+        "id": "commitment-2",
+        "title": "Bring the Medicare card",
+        "dueDate": "2026-11-12",
+        "dueTime": null,
+        "status": "clear",
+        "evidence": [1, 5, 6]
+      },
+      "callback": {
+        "id": "commitment-1",
+        "title": "Call the dental clinic back",
+        "dueDate": "2026-11-06",
+        "dueTime": null,
+        "status": "clear",
+        "evidence": [2, 3]
+      }
+    },
+    {
+      "run": "3",
+      "ok": true,
+      "seconds": 2.9513712000000005,
+      "usage": {
+        "inputTokens": 1134,
+        "cachedTokens": 1131,
+        "reasoningTokens": 186,
+        "outputTokens": 293
+      },
+      "error": null,
+      "answer": {
+        "version": "1.0",
+        "commitments": [
+          {
+            "id": "commitment-1",
+            "title": "Call Bayside Dental to confirm",
+            "dueDate": "2026-11-06",
+            "dueTime": null,
+            "status": "clear",
+            "evidence": [2, 3]
+          },
+          {
+            "id": "commitment-2",
+            "title": "Bring the Medicare card to the checkup",
+            "dueDate": "2026-11-12",
+            "dueTime": null,
+            "status": "clear",
+            "evidence": [1, 5, 6]
+          }
+        ]
+      },
+      "commitments": [
+        {
+          "id": "commitment-1",
+          "title": "Call Bayside Dental to confirm",
+          "dueDate": "2026-11-06",
+          "dueTime": null,
+          "status": "clear",
+          "evidence": [2, 3]
+        },
+        {
+          "id": "commitment-2",
+          "title": "Bring the Medicare card to the checkup",
+          "dueDate": "2026-11-12",
+          "dueTime": null,
+          "status": "clear",
+          "evidence": [1, 5, 6]
+        }
+      ],
+      "medicare": {
+        "id": "commitment-2",
+        "title": "Bring the Medicare card to the checkup",
+        "dueDate": "2026-11-12",
+        "dueTime": null,
+        "status": "clear",
+        "evidence": [1, 5, 6]
+      },
+      "callback": {
+        "id": "commitment-1",
+        "title": "Call Bayside Dental to confirm",
+        "dueDate": "2026-11-06",
+        "dueTime": null,
+        "status": "clear",
+        "evidence": [2, 3]
+      }
+    },
+    {
+      "run": "4",
+      "ok": true,
+      "seconds": 2.9109655999999995,
+      "usage": {
+        "inputTokens": 1134,
+        "cachedTokens": 1131,
+        "reasoningTokens": 172,
+        "outputTokens": 282
+      },
+      "error": null,
+      "answer": {
+        "version": "1.0",
+        "commitments": [
+          {
+            "id": "commitment-1",
+            "title": "Call Bayside Dental back to confirm",
+            "dueDate": "2026-11-06",
+            "dueTime": null,
+            "status": "clear",
+            "evidence": [2, 3]
+          },
+          {
+            "id": "commitment-2",
+            "title": "Bring the Medicare card to the check-up",
+            "dueDate": "2026-11-12",
+            "dueTime": "10:00",
+            "status": "clear",
+            "evidence": [1, 5, 6]
+          }
+        ]
+      },
+      "commitments": [
+        {
+          "id": "commitment-1",
+          "title": "Call Bayside Dental back to confirm",
+          "dueDate": "2026-11-06",
+          "dueTime": null,
+          "status": "clear",
+          "evidence": [2, 3]
+        },
+        {
+          "id": "commitment-2",
+          "title": "Bring the Medicare card to the check-up",
+          "dueDate": "2026-11-12",
+          "dueTime": "10:00",
+          "status": "clear",
+          "evidence": [1, 5, 6]
+        }
+      ],
+      "medicare": {
+        "id": "commitment-2",
+        "title": "Bring the Medicare card to the check-up",
+        "dueDate": "2026-11-12",
+        "dueTime": "10:00",
+        "status": "clear",
+        "evidence": [1, 5, 6]
+      },
+      "callback": {
+        "id": "commitment-1",
+        "title": "Call Bayside Dental back to confirm",
+        "dueDate": "2026-11-06",
+        "dueTime": null,
+        "status": "clear",
+        "evidence": [2, 3]
+      }
+    },
+    {
+      "run": "5",
+      "ok": true,
+      "seconds": 3.757474599999998,
+      "usage": {
+        "inputTokens": 1134,
+        "cachedTokens": 1131,
+        "reasoningTokens": 315,
+        "outputTokens": 425
+      },
+      "error": null,
+      "answer": {
+        "version": "1.0",
+        "commitments": [
+          {
+            "id": "commitment-1",
+            "title": "Call Bayside Dental back to confirm",
+            "dueDate": "2026-11-06",
+            "dueTime": null,
+            "status": "clear",
+            "evidence": [2, 3]
+          },
+          {
+            "id": "commitment-2",
+            "title": "Bring the Medicare card to the check-up",
+            "dueDate": "2026-11-12",
+            "dueTime": "10:00",
+            "status": "clear",
+            "evidence": [1, 5, 6]
+          }
+        ]
+      },
+      "commitments": [
+        {
+          "id": "commitment-1",
+          "title": "Call Bayside Dental back to confirm",
+          "dueDate": "2026-11-06",
+          "dueTime": null,
+          "status": "clear",
+          "evidence": [2, 3]
+        },
+        {
+          "id": "commitment-2",
+          "title": "Bring the Medicare card to the check-up",
+          "dueDate": "2026-11-12",
+          "dueTime": "10:00",
+          "status": "clear",
+          "evidence": [1, 5, 6]
+        }
+      ],
+      "medicare": {
+        "id": "commitment-2",
+        "title": "Bring the Medicare card to the check-up",
+        "dueDate": "2026-11-12",
+        "dueTime": "10:00",
+        "status": "clear",
+        "evidence": [1, 5, 6]
+      },
+      "callback": {
+        "id": "commitment-1",
+        "title": "Call Bayside Dental back to confirm",
+        "dueDate": "2026-11-06",
+        "dueTime": null,
+        "status": "clear",
+        "evidence": [2, 3]
+      }
+    },
+    {
+      "run": "6",
+      "ok": true,
+      "seconds": 2.9229886000000005,
+      "usage": {
+        "inputTokens": 1134,
+        "cachedTokens": 1131,
+        "reasoningTokens": 188,
+        "outputTokens": 295
+      },
+      "error": null,
+      "answer": {
+        "version": "1.0",
+        "commitments": [
+          {
+            "id": "commitment-1",
+            "title": "Call Bayside Dental to confirm",
+            "dueDate": "2026-11-06",
+            "dueTime": null,
+            "status": "clear",
+            "evidence": [2, 3]
+          },
+          {
+            "id": "commitment-2",
+            "title": "Bring the Medicare card to the check-up",
+            "dueDate": "2026-11-12",
+            "dueTime": null,
+            "status": "clear",
+            "evidence": [1, 5, 6]
+          }
+        ]
+      },
+      "commitments": [
+        {
+          "id": "commitment-1",
+          "title": "Call Bayside Dental to confirm",
+          "dueDate": "2026-11-06",
+          "dueTime": null,
+          "status": "clear",
+          "evidence": [2, 3]
+        },
+        {
+          "id": "commitment-2",
+          "title": "Bring the Medicare card to the check-up",
+          "dueDate": "2026-11-12",
+          "dueTime": null,
+          "status": "clear",
+          "evidence": [1, 5, 6]
+        }
+      ],
+      "medicare": {
+        "id": "commitment-2",
+        "title": "Bring the Medicare card to the check-up",
+        "dueDate": "2026-11-12",
+        "dueTime": null,
+        "status": "clear",
+        "evidence": [1, 5, 6]
+      },
+      "callback": {
+        "id": "commitment-1",
+        "title": "Call Bayside Dental to confirm",
+        "dueDate": "2026-11-06",
+        "dueTime": null,
+        "status": "clear",
+        "evidence": [2, 3]
+      }
+    },
+    {
+      "run": "7",
+      "ok": true,
+      "seconds": 3.6939702,
+      "usage": {
+        "inputTokens": 1134,
+        "cachedTokens": 1131,
+        "reasoningTokens": 187,
+        "outputTokens": 296
+      },
+      "error": null,
+      "answer": {
+        "version": "1.0",
+        "commitments": [
+          {
+            "id": "commitment-1",
+            "title": "Call Bayside Dental to confirm",
+            "dueDate": "2026-11-06",
+            "dueTime": null,
+            "status": "clear",
+            "evidence": [2, 3]
+          },
+          {
+            "id": "commitment-2",
+            "title": "Bring the Medicare card to the check-up",
+            "dueDate": "2026-11-12",
+            "dueTime": "10:00",
+            "status": "clear",
+            "evidence": [1, 5, 6]
+          }
+        ]
+      },
+      "commitments": [
+        {
+          "id": "commitment-1",
+          "title": "Call Bayside Dental to confirm",
+          "dueDate": "2026-11-06",
+          "dueTime": null,
+          "status": "clear",
+          "evidence": [2, 3]
+        },
+        {
+          "id": "commitment-2",
+          "title": "Bring the Medicare card to the check-up",
+          "dueDate": "2026-11-12",
+          "dueTime": "10:00",
+          "status": "clear",
+          "evidence": [1, 5, 6]
+        }
+      ],
+      "medicare": {
+        "id": "commitment-2",
+        "title": "Bring the Medicare card to the check-up",
+        "dueDate": "2026-11-12",
+        "dueTime": "10:00",
+        "status": "clear",
+        "evidence": [1, 5, 6]
+      },
+      "callback": {
+        "id": "commitment-1",
+        "title": "Call Bayside Dental to confirm",
+        "dueDate": "2026-11-06",
+        "dueTime": null,
+        "status": "clear",
+        "evidence": [2, 3]
+      }
+    },
+    {
+      "run": "8",
+      "ok": true,
+      "seconds": 4.175869400000003,
+      "usage": {
+        "inputTokens": 1134,
+        "cachedTokens": 1131,
+        "reasoningTokens": 307,
+        "outputTokens": 413
+      },
+      "error": null,
+      "answer": {
+        "version": "1.0",
+        "commitments": [
+          {
+            "id": "commitment-1",
+            "title": "Call the dental clinic back",
+            "dueDate": "2026-11-06",
+            "dueTime": null,
+            "status": "clear",
+            "evidence": [0, 3]
+          },
+          {
+            "id": "commitment-2",
+            "title": "Bring the Medicare card to the check-up",
+            "dueDate": "2026-11-12",
+            "dueTime": null,
+            "status": "clear",
+            "evidence": [1, 5, 6]
+          }
+        ]
+      },
+      "commitments": [
+        {
+          "id": "commitment-1",
+          "title": "Call the dental clinic back",
+          "dueDate": "2026-11-06",
+          "dueTime": null,
+          "status": "clear",
+          "evidence": [0, 3]
+        },
+        {
+          "id": "commitment-2",
+          "title": "Bring the Medicare card to the check-up",
+          "dueDate": "2026-11-12",
+          "dueTime": null,
+          "status": "clear",
+          "evidence": [1, 5, 6]
+        }
+      ],
+      "medicare": {
+        "id": "commitment-2",
+        "title": "Bring the Medicare card to the check-up",
+        "dueDate": "2026-11-12",
+        "dueTime": null,
+        "status": "clear",
+        "evidence": [1, 5, 6]
+      },
+      "callback": {
+        "id": "commitment-1",
+        "title": "Call the dental clinic back",
+        "dueDate": "2026-11-06",
+        "dueTime": null,
+        "status": "clear",
+        "evidence": [0, 3]
+      }
+    },
+    {
+      "run": "9",
+      "ok": true,
+      "seconds": 3.3033823999999985,
+      "usage": {
+        "inputTokens": 1134,
+        "cachedTokens": 1131,
+        "reasoningTokens": 301,
+        "outputTokens": 410
+      },
+      "error": null,
+      "answer": {
+        "version": "1.0",
+        "commitments": [
+          {
+            "id": "commitment-1",
+            "title": "Call Bayside Dental to confirm",
+            "dueDate": "2026-11-06",
+            "dueTime": null,
+            "status": "clear",
+            "evidence": [2, 3]
+          },
+          {
+            "id": "commitment-2",
+            "title": "Bring the Medicare card to the checkup",
+            "dueDate": "2026-11-12",
+            "dueTime": "10:00",
+            "status": "clear",
+            "evidence": [1, 5, 6]
+          }
+        ]
+      },
+      "commitments": [
+        {
+          "id": "commitment-1",
+          "title": "Call Bayside Dental to confirm",
+          "dueDate": "2026-11-06",
+          "dueTime": null,
+          "status": "clear",
+          "evidence": [2, 3]
+        },
+        {
+          "id": "commitment-2",
+          "title": "Bring the Medicare card to the checkup",
+          "dueDate": "2026-11-12",
+          "dueTime": "10:00",
+          "status": "clear",
+          "evidence": [1, 5, 6]
+        }
+      ],
+      "medicare": {
+        "id": "commitment-2",
+        "title": "Bring the Medicare card to the checkup",
+        "dueDate": "2026-11-12",
+        "dueTime": "10:00",
+        "status": "clear",
+        "evidence": [1, 5, 6]
+      },
+      "callback": {
+        "id": "commitment-1",
+        "title": "Call Bayside Dental to confirm",
+        "dueDate": "2026-11-06",
+        "dueTime": null,
+        "status": "clear",
+        "evidence": [2, 3]
+      }
+    },
+    {
+      "run": "10",
+      "ok": true,
+      "seconds": 4.177914,
+      "usage": {
+        "inputTokens": 1134,
+        "cachedTokens": 1131,
+        "reasoningTokens": 303,
+        "outputTokens": 413
+      },
+      "error": null,
+      "answer": {
+        "version": "1.0",
+        "commitments": [
+          {
+            "id": "commitment-1",
+            "title": "Call back to confirm the checkup",
+            "dueDate": "2026-11-06",
+            "dueTime": null,
+            "status": "clear",
+            "evidence": [2, 3]
+          },
+          {
+            "id": "commitment-2",
+            "title": "Bring the Medicare card to the checkup",
+            "dueDate": "2026-11-12",
+            "dueTime": "10:00",
+            "status": "clear",
+            "evidence": [1, 5, 6]
+          }
+        ]
+      },
+      "commitments": [
+        {
+          "id": "commitment-1",
+          "title": "Call back to confirm the checkup",
+          "dueDate": "2026-11-06",
+          "dueTime": null,
+          "status": "clear",
+          "evidence": [2, 3]
+        },
+        {
+          "id": "commitment-2",
+          "title": "Bring the Medicare card to the checkup",
+          "dueDate": "2026-11-12",
+          "dueTime": "10:00",
+          "status": "clear",
+          "evidence": [1, 5, 6]
+        }
+      ],
+      "medicare": {
+        "id": "commitment-2",
+        "title": "Bring the Medicare card to the checkup",
+        "dueDate": "2026-11-12",
+        "dueTime": "10:00",
+        "status": "clear",
+        "evidence": [1, 5, 6]
+      },
+      "callback": {
+        "id": "commitment-1",
+        "title": "Call back to confirm the checkup",
+        "dueDate": "2026-11-06",
+        "dueTime": null,
+        "status": "clear",
+        "evidence": [2, 3]
+      }
+    }
+  ]
+}
