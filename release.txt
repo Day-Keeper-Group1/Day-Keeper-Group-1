@@ -1,8 +1,8 @@
-DayKeeper 1.0.0
+DayKeeper 1.0.1
 ===============
 
-Release date: 15 October 2026
-Git tag:      v1.0.0
+Release date: 19 October 2026
+Git tag:      v1.0.1
 Repository:   https://github.com/Day-Keeper-Group1/Day-Keeper-Group-1
 Deployed at:  https://preview--daykeeper-group1.netlify.app
 
@@ -47,7 +47,8 @@ Voice
   and becomes a task only when she confirms it.
 
 Settings
-- Profile, sign out of this device, Gmail connection.
+- Profile, sign out of this device, Gmail connection; Settings opens from
+  the account menu.
 - Customisation: which sections Home shows and in what order, how the
   calendar opens, how the task list is sorted and grouped.
 - Accessibility: three text sizes, palettes for four kinds of colour vision,
@@ -68,6 +69,19 @@ Accounts and operations
 
 Fixed in this release (Jira bugs)
 ---------------------------------
+
+1.0.1, found in test cycle 2:
+
+KAN-146 On a phone, keyboard focus no longer hides under the bottom bar,
+        and the hidden file input on Photograph is no longer a Tab stop.
+KAN-147 Settings, and from it Customisation and Accessibility, open from
+        the account menu on a phone.
+KAN-148 Labels no longer overlap on Home sections at phone width, and the
+        calendar month name shows at the largest text size.
+KAN-149 A time spoken with a morning or afternoon cue, such as "at 10 in
+        the morning", is kept on a conversation's commitment.
+
+1.0.0:
 
 KAN-66  Move the local Docker ports below Windows' dynamic port range.
 KAN-68  Contact never had a due date: the prompt threw away deadlines to
@@ -104,6 +118,10 @@ Limits of this deployment (not bugs)
 
 Change log
 ----------
+
+1.0.1   19 October 2026
+        The four bugs found in test cycle 2 (KAN-146 to KAN-149), fixed and
+        retested (#65). How the product is tested is in docs/testing.md.
 
 1.0.0   15 October 2026
         Email: connect Gmail, list the inbox, turn an email into a task, and
