@@ -243,6 +243,9 @@ export function VoiceCaptureScreen() {
               ref={picker}
               type="file"
               accept="audio/mpeg,audio/mp4,audio/wav,audio/webm,.mp3,.m4a,.wav,.webm"
+              // KAN-146: opened by "Upload audio", so not a Tab stop of its own.
+              tabIndex={-1}
+              aria-hidden="true"
               className="sr-only"
               onChange={(event) => {
                 const file = event.target.files?.[0];
