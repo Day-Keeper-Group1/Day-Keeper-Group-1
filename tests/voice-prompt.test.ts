@@ -27,6 +27,16 @@ describe("voice commitment extraction prompt", () => {
     expect(instructions).toContain("Cite both utterances");
   });
 
+  // KAN-149: experiments/module-03-voice/02-spoken-times measured this rule.
+  it("treats a spoken time with a morning or afternoon cue as explicit", () => {
+    expect(instructions).toContain('"nine in the morning"');
+    expect(instructions).toContain(
+      '"half past two in the afternoon" is `14:30`',
+    );
+    expect(instructions).toContain("such as 10:30, keeps that value");
+    expect(instructions).toContain('such as "at two", stays `null`');
+  });
+
   it("distinguishes evidence clarity from user approval", () => {
     expect(instructions).toContain("`clear`");
     expect(instructions).toContain("`uncertain`");
