@@ -325,8 +325,13 @@ export function CalendarScreen({
       <div className="grid gap-3.5 lg:grid-cols-2 lg:items-start lg:gap-6">
         <Panel>
           {/* The prototype's `.cal-head`: two 36px pale green squares either
-              side of a 16px bold month. Each answers taps 6px past its edge. */}
-          <div className="mb-2.5 flex items-center justify-between gap-1">
+              side of a 16px bold month. Each answers taps 6px past its edge.
+              KAN-148: the Month and Week switch shares the row only while the
+              month keeps at least 6rem (the title's flex basis), which is
+              room for "September" in bold. With Large or Largest text on a
+              phone, or on a narrow one, it moves to a row of its own rather
+              than squeezing the month under the next arrow. */}
+          <div className="mb-2.5 flex flex-wrap items-center gap-x-1 gap-y-2">
             <button
               type="button"
               aria-label={`Previous ${view}`}
@@ -336,7 +341,7 @@ export function CalendarScreen({
               &#8249;
             </button>
             <div
-              className="min-w-0 flex-1 text-center text-row font-bold"
+              className="min-w-0 flex-[1_1_6rem] text-center text-row font-bold"
               aria-live="polite"
             >
               {periodTitle}
@@ -349,7 +354,7 @@ export function CalendarScreen({
             >
               &#8250;
             </button>
-            <div className="flex shrink-0 gap-1">
+            <div className="ml-auto flex shrink-0 gap-1">
               {(["month", "week"] as const).map((calendarView) => (
                 <button
                   key={calendarView}

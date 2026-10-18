@@ -5,7 +5,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LogOut, Menu, Settings } from "lucide-react";
+import { LogOut, Menu } from "lucide-react";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -19,7 +19,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { SessionUser } from "@/lib/contract/api";
-import { isNavItemActive, MENU_NAV } from "./nav-items";
+import { ACCOUNT_NAV, isNavItemActive, MENU_NAV } from "./nav-items";
 
 /**
  * First and last initial, for the avatar.
@@ -147,17 +147,21 @@ export function Topbar({ user }: { user: SessionUser }) {
               </DropdownMenuLabel>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            {/* Settings stays in the desktop account menu. */}
-            <DropdownMenuItem
-              className="min-h-12 px-2 text-base max-md:hidden"
-              render={
-                <Link href="/settings">
-                  <Settings className="size-5" strokeWidth={1.75} />
-                  Settings
-                </Link>
-              }
-            />
-            <DropdownMenuSeparator className="max-md:hidden" />
+            {/* KAN-147: at every width, because on a phone nothing else leads
+                to Settings, and through it to Customisation and Accessibility. */}
+            {ACCOUNT_NAV.map((item) => (
+              <DropdownMenuItem
+                key={item.href}
+                className="min-h-12 px-2 text-base"
+                render={
+                  <Link href={item.href}>
+                    <item.icon className="size-5" strokeWidth={1.75} />
+                    {item.label}
+                  </Link>
+                }
+              />
+            ))}
+            <DropdownMenuSeparator />
             <DropdownMenuItem
               className="min-h-12 px-2 text-base"
               variant="destructive"

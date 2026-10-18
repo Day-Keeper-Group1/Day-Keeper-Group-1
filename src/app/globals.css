@@ -219,6 +219,20 @@
     scroll-padding-top: 4rem;
   }
 
+  /* KAN-146: the same for the phone's bottom bar, which is fixed and covers
+     the bottom of the screen below md
+     (src/components/layout/mobile-bottom-nav.tsx). When Tab moves focus, the
+     browser scrolls only until the control is inside the viewport, and
+     without this "inside" includes behind the bar, where the control and its
+     focus ring cannot be seen. 6rem is the clearance the page already keeps
+     for the bar and the camera button raised above it (pb-24 on <main> in
+     src/components/layout/app-shell.tsx); keep the two equal. */
+  @media (width < 48rem) {
+    html {
+      scroll-padding-bottom: calc(6rem + env(safe-area-inset-bottom));
+    }
+  }
+
   html[data-font-scale="large"] {
     font-size: 112.5%;
   }
