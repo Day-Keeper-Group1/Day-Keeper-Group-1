@@ -286,6 +286,14 @@ export default function UploadDocumentPage() {
         // files, and `multiple` lets the last two hand over several pages.
         // A PDF among her files can be picked too, and becomes its pages.
         multiple
+        // KAN-146: the visible "Tap to photograph" button and the add-page
+        // tile open this, so it is not a Tab stop of its own, and it is hidden
+        // from screen readers, which would otherwise announce an unlabelled
+        // "Choose File" button. Visually hidden rather than display:none,
+        // because iOS Safari will not open a picker for an input it cannot
+        // render.
+        tabIndex={-1}
+        aria-hidden="true"
         className="sr-only"
         onChange={(event) => {
           // Copied before the input is cleared: the list is live, and emptying

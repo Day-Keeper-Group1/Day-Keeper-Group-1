@@ -29,7 +29,9 @@ export function AppShell({
             <Topbar user={user} />
             {/* On a phone, the prototype's `.app` padding: 22px above, 18px at the
             sides, 96px below so the last row of a list clears the bottom bar
-            and the camera button raised above it. */}
+            and the camera button raised above it. The same 6rem is the
+            scroll-padding-bottom in src/app/globals.css that keeps a focused
+            control above the bar (KAN-146); keep the two equal. */}
             <main className="flex-1 px-[18px] pt-[22px] pb-24 md:px-6 md:py-8 md:pb-8">
               <div className="mx-auto w-full max-w-6xl">{children}</div>
             </main>
