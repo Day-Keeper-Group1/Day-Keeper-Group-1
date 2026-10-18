@@ -30,8 +30,8 @@ The prompt's only word on time was "an explicitly supported time in 24-hour
   `validateCommitmentOutcome()`, the two calls `extractSavedVoice` in
   `src/server/voice/records.ts` makes, with the default `VOICE_READER`:
   `gpt-5.6-luna`, reasoning effort `medium`. The protected
-  `/api/conversations/extract` route used by experiment 01 accepts only the six
-  scenario IDs, so it could not take this transcript.
+  `/api/conversations/extract` route used by experiment 01 accepts only the IDs of
+  its seven prepared transcripts, so it could not take this one.
 - Prompt: `src/server/voice/prompt.md`, sent with LF line endings exactly as the
   deployed site sends it. Before: SHA-256
   `b3623cf270318ce98cb447fa437d7aa9078ed2a8078ce23edf16ac3ee89a3770`, the
