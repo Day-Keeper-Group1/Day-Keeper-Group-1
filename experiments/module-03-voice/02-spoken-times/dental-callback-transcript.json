@@ -1,0 +1,61 @@
+{
+  "version": "1.0",
+  "utterances": [
+    {
+      "index": 0,
+      "speaker": "Speaker 1",
+      "text": "Hello Margaret, this is Sarah from Bayside Dental.",
+      "startMs": 0,
+      "endMs": 4320
+    },
+    {
+      "index": 1,
+      "speaker": "Speaker 1",
+      "text": "Your checkup is on Thursday, 12th of November, 2026, at 10 in the morning.",
+      "startMs": 4320,
+      "endMs": 12360
+    },
+    {
+      "index": 2,
+      "speaker": "Speaker 1",
+      "text": "Could you call us back by Friday, 6th of November, to confirm?",
+      "startMs": 12360,
+      "endMs": 18160
+    },
+    {
+      "index": 3,
+      "speaker": "Speaker 1",
+      "text": "Yes, I will call you back by Friday, 6th of November, 2026.",
+      "startMs": 18160,
+      "endMs": 26480
+    },
+    {
+      "index": 4,
+      "speaker": "Speaker 1",
+      "text": "Lovely.",
+      "startMs": 26480,
+      "endMs": 27960
+    },
+    {
+      "index": 5,
+      "speaker": "Speaker 1",
+      "text": "Please bring your Medicare card.",
+      "startMs": 27960,
+      "endMs": 30760
+    },
+    {
+      "index": 6,
+      "speaker": "Speaker 1",
+      "text": "I will bring my Medicare card to the check-up.",
+      "startMs": 30760,
+      "endMs": 34360
+    },
+    {
+      "index": 7,
+      "speaker": "Speaker 1",
+      "text": "Goodbye.",
+      "startMs": 34360,
+      "endMs": 35120
+    }
+  ]
+}
