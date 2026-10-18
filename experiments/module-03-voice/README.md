@@ -26,3 +26,10 @@ conversation when there is no conflicting day reference. The expected fixture
 also now cites both lines needed to support that date. Under the revised
 prompt, all six cases met the pass rule. This is a six-example functional
 check, not an accuracy estimate for real conversations or audio transcription.
+
+## Later experiments
+
+- [`02-spoken-times/`](02-spoken-times/README.md) (KAN-149, 19 October 2026):
+  a time said aloud, "at 10 in the morning" in the recorded dental call, was kept
+  in 6 of 10 reads; after an addition to the prompt's time rule, in 10 of 10,
+  with the six fixtures still passing.

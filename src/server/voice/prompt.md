@@ -18,7 +18,7 @@ A commitment is a promised, agreed or directly requested future action. It is no
 - `title`: a short standalone action beginning with an action word, such as `Call the clinic` or `Book the doctor appointment`.
 - `dueDate`: an explicitly supported calendar date in `YYYY-MM-DD` format, or `null`. Never invent or guess a date. A relative phrase such as "tomorrow" is insufficient unless the transcript also states the calendar date.
 - If an earlier utterance explicitly equates "tomorrow" with a calendar date, a later "tomorrow" in the same conversation can use that date when there is no conflicting day reference. Cite both utterances. That alone does not make the action `uncertain`.
-- `dueTime`: an explicitly supported time in 24-hour `HH:mm` format, or `null`. Never invent or guess a time.
+- `dueTime`: an explicitly supported time in 24-hour `HH:mm` format, or `null`. Never invent or guess a time. A time spoken in words or digits is explicit when it says morning or afternoon, or the conversation settles which: "nine in the morning" and "9 in the morning" are `09:00`, "half past two in the afternoon" is `14:30`, "quarter to four in the afternoon" is `15:45`. A time already written as a clock time, such as 10:30, keeps that value. An hour with no such cue, such as "at two", stays `null`.
 - `status`: `clear` when the action is unambiguous and every included detail is supported by the transcript; otherwise `uncertain`. This describes the evidence, not user approval. A date that was never stated can be `null` while the action remains `clear`.
 - `evidence`: one or more transcript utterance indexes that directly support the action. Include every line needed to support the title, date and time. Never cite an index absent from the transcript.
 

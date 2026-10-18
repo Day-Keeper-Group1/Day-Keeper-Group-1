@@ -7,6 +7,7 @@ import {
   House,
   Mail,
   MessageSquareText,
+  Settings,
   type LucideIcon,
 } from "lucide-react";
 
@@ -22,8 +23,8 @@ export type NavItem = {
  * Three destinations and no more: a person who is being asked to photograph a
  * letter should not first have to choose between five words. Your letters is
  * reached from Home's "All your letters" line, and Tasks and Settings keep
- * their routes but no entry: Settings hangs off the desktop avatar menu, and
- * the tasks page is a leftover of the earlier dashboard.
+ * their routes but no entry here: Settings hangs off the account menu (see
+ * ACCOUNT_NAV), and the tasks page is a leftover of the earlier dashboard.
  */
 export const PRIMARY_NAV: NavItem[] = [
   { label: "Home", href: "/dashboard", icon: House },
@@ -66,6 +67,20 @@ export const MENU_NAV: NavItem[] = [...PRIMARY_NAV, EMAIL_NAV, VOICE_NAV];
  */
 export const DESKTOP_ONLY_NAV: NavItem[] = [
   { label: "Accessibility", href: "/accessibility", icon: Eye },
+];
+
+/**
+ * KAN-147: what the account menu in the top bar offers above Sign out, at
+ * every width.
+ *
+ * Settings is the way to Customisation and Accessibility. It used to be in the
+ * desktop account menu only, so on a phone, whose bottom bar and navigation
+ * menu do not list it, nothing led to any of the three. The account menu is
+ * drawn at both widths, which makes it the one place that reaches Settings on
+ * both without adding a sixth word to the navigation.
+ */
+export const ACCOUNT_NAV: NavItem[] = [
+  { label: "Settings", href: "/settings", icon: Settings },
 ];
 
 /**

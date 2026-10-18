@@ -240,6 +240,9 @@ export function ConversationScreen({ scenarios }: { scenarios: Scenario[] }) {
             type="file"
             accept=".mp3,.m4a,.wav,.webm,audio/mpeg,audio/mp4,audio/wav,audio/webm"
             aria-label="Choose a conversation recording"
+            // KAN-146: opened by the visible button, so not a Tab stop of its own.
+            tabIndex={-1}
+            aria-hidden="true"
             className="sr-only"
             onChange={(event) => chooseAudio(event.target.files?.[0])}
           />

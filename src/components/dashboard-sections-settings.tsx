@@ -23,6 +23,7 @@ import {
   REQUIRED_DASHBOARD_SECTIONS,
   type DashboardSection,
 } from "@/lib/dashboard-sections";
+import { cn } from "@/lib/utils";
 
 export function DashboardSectionsSettings() {
   const [sections, setSections] = useState<DashboardSection[]>(
@@ -162,56 +163,76 @@ export function DashboardSectionsSettings() {
             {sections.map((section, index) => (
               <li
                 key={section}
-                className="flex min-h-14 items-center gap-3 rounded-lg border-2 border-border px-3 py-2"
+                className="flex min-h-14 flex-wrap items-center gap-3 rounded-lg border-2 border-border px-3 py-2"
               >
-                <label className="flex min-h-12 min-w-0 flex-1 items-center gap-3 text-base font-medium">
-                  <input
-                    type="checkbox"
-                    checked
-                    aria-describedby={
-                      REQUIRED_DASHBOARD_SECTIONS.includes(section)
-                        ? `required-section-${section}`
-                        : undefined
-                    }
-                    disabled={
-                      unavailable ||
-                      REQUIRED_DASHBOARD_SECTIONS.includes(section)
-                    }
-                    onChange={(event) =>
-                      toggleSection(section, event.target.checked)
-                    }
-                    className="size-5 shrink-0 accent-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-                  />
-                  <span>{DASHBOARD_SECTION_LABELS[section]}</span>
-                </label>
-                {REQUIRED_DASHBOARD_SECTIONS.includes(section) ? (
-                  <span
-                    id={`required-section-${section}`}
-                    className="max-w-40 text-right text-caption text-muted-foreground"
+                {/* KAN-148: the note sits under the name, not beside it.
+                    Beside it, on a phone, the note and the two buttons took
+                    the whole row and the name was drawn over the note. pl-8
+                    is the checkbox and the gap, so the note lines up with the
+                    name. A required section's checkbox cannot be pressed, so
+                    its label does without the 48px a pressable one keeps, and
+                    the note follows the name closely. The name keeps at least
+                    7.5rem (its flex basis): with Largest text on a phone the
+                    two buttons move to a line of their own rather than sit on
+                    top of a long name. */}
+                <div className="flex min-w-0 flex-[1_1_7.5rem] flex-col">
+                  <label
+                    className={cn(
+                      "flex items-center gap-3 text-base font-medium",
+                      !REQUIRED_DASHBOARD_SECTIONS.includes(section) &&
+                        "min-h-12",
+                    )}
                   >
-                    Always shown for urgent items
-                  </span>
-                ) : null}
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  aria-label={`Move ${DASHBOARD_SECTION_LABELS[section]} up`}
-                  disabled={unavailable || index === 0}
-                  onClick={() => moveSection(section, -1)}
-                >
-                  <ArrowUp className="size-5" strokeWidth={1.75} />
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  aria-label={`Move ${DASHBOARD_SECTION_LABELS[section]} down`}
-                  disabled={unavailable || index === sections.length - 1}
-                  onClick={() => moveSection(section, 1)}
-                >
-                  <ArrowDown className="size-5" strokeWidth={1.75} />
-                </Button>
+                    <input
+                      type="checkbox"
+                      checked
+                      aria-describedby={
+                        REQUIRED_DASHBOARD_SECTIONS.includes(section)
+                          ? `required-section-${section}`
+                          : undefined
+                      }
+                      disabled={
+                        unavailable ||
+                        REQUIRED_DASHBOARD_SECTIONS.includes(section)
+                      }
+                      onChange={(event) =>
+                        toggleSection(section, event.target.checked)
+                      }
+                      className="size-5 shrink-0 accent-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                    />
+                    <span>{DASHBOARD_SECTION_LABELS[section]}</span>
+                  </label>
+                  {REQUIRED_DASHBOARD_SECTIONS.includes(section) ? (
+                    <span
+                      id={`required-section-${section}`}
+                      className="pl-8 text-caption text-muted-foreground"
+                    >
+                      Always shown for urgent items
+                    </span>
+                  ) : null}
+                </div>
+                <div className="ml-auto flex shrink-0 gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    aria-label={`Move ${DASHBOARD_SECTION_LABELS[section]} up`}
+                    disabled={unavailable || index === 0}
+                    onClick={() => moveSection(section, -1)}
+                  >
+                    <ArrowUp className="size-5" strokeWidth={1.75} />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    aria-label={`Move ${DASHBOARD_SECTION_LABELS[section]} down`}
+                    disabled={unavailable || index === sections.length - 1}
+                    onClick={() => moveSection(section, 1)}
+                  >
+                    <ArrowDown className="size-5" strokeWidth={1.75} />
+                  </Button>
+                </div>
               </li>
             ))}
             {DASHBOARD_SECTIONS.filter(
